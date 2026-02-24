@@ -164,6 +164,14 @@ pwsh -File .\scripts\bootstrap\sync-local-compat.ps1
 
 核心价值：把“上下文工程经验”变成可量化、可对比、可复用的复盘资产，而不是一次性结论。
 
+## 许可证与第三方边界
+
+- 本仓库根许可证：`Apache-2.0`（见 `LICENSE`）。
+- 第三方来源与边界清单：`THIRD_PARTY_LICENSES.md`。
+- 第三方上游项目保留其各自许可证，不因本仓库发布而被重新授权。
+- 外部语料（如 `system-prompts-and-models-of-ai-tools`）默认作为“研究输入”处理，不应将原始语料直接并入核心编排协议。
+- 若你在 `third_party/` 本地镜像外部仓库并进行再分发，请自行确保满足对应上游许可证义务。
+
 ## 当前版本更新重点
 
 - 完成 AIOS-Core Pack 级集成与默认任务技能映射。
