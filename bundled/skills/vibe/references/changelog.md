@@ -1,5 +1,26 @@
 # VCO Changelog
 
+## v2.3.24 (2026-02-27)
+
+- 新增版本与打包治理闭环（main + bundled 同步约束）：
+  - `config/version-governance.json`
+  - `scripts/governance/sync-bundled-vibe.ps1`
+  - `scripts/governance/release-cut.ps1`
+  - `scripts/verify/vibe-version-consistency-gate.ps1`
+  - `scripts/verify/vibe-version-packaging-gate.ps1`
+  - `docs/version-packaging-governance.md`
+  - `references/release-ledger.jsonl`
+- 安装链路加固：
+  - `install.ps1` / `install.sh` 在复制 bundled 后，再按治理契约强制同步 canonical `vibe` 镜像到 runtime 目标目录，降低 main/bundled 漂移风险。
+- 校验链路加固：
+  - `check.ps1` / `check.sh` 新增 `version-governance` 存在性检查。
+  - `check.ps1` / `check.sh` 新增 release ledger 存在性检查。
+  - CI `vco-gates.yml` 新增 `vibe-version-consistency-gate.ps1` 与 `vibe-version-packaging-gate.ps1`。
+  - `scripts/verify/README.md` 与 `references/index.md` 新增治理文档与 gate 入口。
+- 修复 offline skills 锁稳定性问题：
+  - `scripts/verify/vibe-generate-skills-lock.ps1` 与 `scripts/verify/vibe-offline-skills-gate.ps1` 改为跨平台稳定哈希（文本统一 LF 后哈希）。
+  - 重新生成 `config/skills-lock.json`，移除失效条目并与当前 `bundled/skills` 对齐。
+
 ## v2.3.23 (2026-02-27)
 
 - 新增 Exploration Overlay（探索型任务增强，默认 `soft`，保持 post-route 非侵入）：
@@ -126,13 +147,20 @@
   - `deep_discovery_route_filter_applied`
   - `deep_discovery_route_mode_override`
   - `runtime_state_prompt_digest`
+- 可观测性增强：
+  - `scripts/router/modules/10-observability.ps1` 新增 deep-discovery 遥测字段。
+  - `scripts/router/modules/11-route-probe.ps1` 在 runtime state prompt 与 final_state 中加入 deep-discovery 摘要。
 - 新增验证脚本：
   - `scripts/verify/vibe-deep-discovery-gate.ps1`
   - `scripts/verify/vibe-deep-discovery-scenarios.ps1`
-- 文档更新：
+- 验证与文档入口更新：
+  - `scripts/verify/vibe-config-parity-gate.ps1`
+  - `scripts/verify/vibe-pack-routing-smoke.ps1`
+  - `check.ps1` / `check.sh`
   - `docs/deep-discovery-mode-design.md`
   - `docs/blackbox-probe-and-enhancement-playbook.md`
   - `references/index.md`
+  - `scripts/verify/README.md`
 
 ## v2.3.17 (2026-02-26)
 
@@ -149,6 +177,67 @@
   - `scripts/router/modules/34-data-scale-overlay.ps1` 在严格模式下将路径解析结果显式数组化，避免 `.Count` 访问异常。
 - 文档入口同步：
   - `references/index.md`、`SKILL.md`、`scripts/verify/README.md`、`scripts/research/README.md` 增加该模块总览入口，便于下次快速定位。
+
+## v2.3.16 (2026-02-26)
+
+- 路由器模块化重构（零退化拆分）：
+  - `scripts/router/resolve-pack-route.ps1` 从单体函数定义改为模块加载编排入口
+  - 新增函数模块目录：
+    - `scripts/router/modules/*.ps1`
+  - 新增 legacy 基线脚本用于契约对比：
+    - `scripts/router/legacy/resolve-pack-route.legacy.ps1`
+- 新增零退化契约门禁：
+  - `scripts/verify/vibe-router-contract-gate.ps1`
+  - 对 `legacy` vs `modular` 在固定矩阵下做严格 JSON 等价校验
+- 安装与运行完整性增强：
+  - `install.ps1` / `install.sh` 改为同步整个 `scripts/router` 目录（脚本 + modules）
+  - `check.ps1` / `check.sh` 新增 router modules 存在性检查
+  - `check.ps1 -Deep` / `check.sh --deep` 纳入 contract gate
+- CI 门禁升级：
+  - `.github/workflows/vco-gates.yml` 纳入 `vibe-router-contract-gate.ps1`
+- 新增治理文档：
+  - `docs/router-modularization-governance.md`（main + bundled）
+- 文档同步：
+  - `SKILL.md`、`references/index.md`、`scripts/verify/README.md` 更新模块化与契约门禁入口
+
+## v2.3.15 (2026-02-26)
+
+- 新增 AI Rerank Overlay（B+：召回安全双阶段路由，默认 shadow 不改路由）：
+  - 新增配置（main + bundled）：
+    - `config/ai-rerank-policy.json`
+    - `bundled/skills/vibe/config/ai-rerank-policy.json`
+  - 路由器输出新增：
+    - `ai_rerank_advice`
+    - `ai_rerank_route_override`
+  - 核心约束：
+    - Top-K 约束（`require_candidate_in_top_k`）
+    - task 边界约束（`enforce_task_allow`）
+    - 最低置信约束（`min_rerank_confidence`）
+    - rollout 采样约束（`max_live_apply_rate`）
+    - `preserve_routing_assignment` 默认保护（soft/strict 下也可阻断覆盖）
+  - 语义行为：
+    - `shadow`：仅给建议与 `would_override`，不改选中路由
+    - `soft/strict`：仅在硬约束全部通过且允许 apply 时才覆盖
+- 新增验证门禁：
+  - `scripts/verify/vibe-ai-rerank-gate.ps1`
+  - `scripts/verify/vibe-config-parity-gate.ps1` 纳入 `ai-rerank-policy` main/bundled parity
+- 健康检查增强：
+  - `check.ps1`、`check.sh` 新增 `ai-rerank-policy` 存在性检查
+  - 新增 deep 模式：
+    - `check.ps1 -Deep`
+    - `check.sh --deep`
+  - deep 模式会串行执行关键 verify gates（含 ai-rerank gate）
+- CI/门禁自动化：
+  - 新增 GitHub Actions：`.github/workflows/vco-gates.yml`
+  - 自动执行回归与治理门禁：
+    - `vibe-pack-regression-matrix`
+    - `vibe-routing-stability-gate -Strict`
+    - `vibe-config-parity-gate`
+    - `vibe-observability-gate`
+    - `vibe-ai-rerank-gate`
+- 新增文档：
+  - `docs/ai-rerank-overlay-integration.md`（main + bundled）
+  - `scripts/verify/README.md`、`references/index.md`、`SKILL.md` 同步更新
 
 ## v2.3.14 (2026-02-26)
 

@@ -24,6 +24,8 @@ jobs:
           & .\scripts\verify\vibe-offline-skills-gate.ps1
           & .\scripts\verify\vibe-router-contract-gate.ps1
           & .\scripts\verify\vibe-routing-stability-gate.ps1 -Strict
+          & .\scripts\verify\vibe-version-consistency-gate.ps1
           & .\scripts\verify\vibe-config-parity-gate.ps1
+          & .\scripts\verify\vibe-version-packaging-gate.ps1
           & .\scripts\verify\vibe-observability-gate.ps1
           & .\scripts\verify\vibe-ai-rerank-gate.ps1

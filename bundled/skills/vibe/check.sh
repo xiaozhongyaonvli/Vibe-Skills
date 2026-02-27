@@ -31,6 +31,8 @@ check_path() {
 }
 
 check_path "settings.json" "${TARGET_ROOT}/settings.json"
+check_path "vibe version governance config" "${TARGET_ROOT}/skills/vibe/config/version-governance.json"
+check_path "vibe release ledger" "${TARGET_ROOT}/skills/vibe/references/release-ledger.jsonl"
 for n in vibe dialectic local-vco-roles spec-kit-vibe-compat superclaude-framework-compat ralph-loop cancel-ralph tdd-guide think-harder; do
   check_path "skill/${n}" "${TARGET_ROOT}/skills/${n}/SKILL.md"
 done

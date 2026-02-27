@@ -32,6 +32,8 @@ Write-Host "Target: $TargetRoot"
 Check-Path -Label "settings.json" -Path (Join-Path $TargetRoot 'settings.json')
 Check-Path -Label "plugins manifest" -Path (Join-Path $TargetRoot 'config\plugins-manifest.codex.json')
 Check-Path -Label "upstream lock" -Path (Join-Path $TargetRoot 'config\upstream-lock.json')
+Check-Path -Label "vibe version governance config" -Path (Join-Path $TargetRoot "skills\vibe\config\version-governance.json")
+Check-Path -Label "vibe release ledger" -Path (Join-Path $TargetRoot "skills\vibe\references\release-ledger.jsonl")
 
 foreach ($name in $requiredSkills) {
   Check-Path -Label "skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md")

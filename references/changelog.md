@@ -1,5 +1,26 @@
 # VCO Changelog
 
+## v2.3.24 (2026-02-27)
+
+- 新增版本与打包治理闭环（main + bundled 同步约束）：
+  - `config/version-governance.json`
+  - `scripts/governance/sync-bundled-vibe.ps1`
+  - `scripts/governance/release-cut.ps1`
+  - `scripts/verify/vibe-version-consistency-gate.ps1`
+  - `scripts/verify/vibe-version-packaging-gate.ps1`
+  - `docs/version-packaging-governance.md`
+  - `references/release-ledger.jsonl`
+- 安装链路加固：
+  - `install.ps1` / `install.sh` 在复制 bundled 后，再按治理契约强制同步 canonical `vibe` 镜像到 runtime 目标目录，降低 main/bundled 漂移风险。
+- 校验链路加固：
+  - `check.ps1` / `check.sh` 新增 `version-governance` 存在性检查。
+  - `check.ps1` / `check.sh` 新增 release ledger 存在性检查。
+  - CI `vco-gates.yml` 新增 `vibe-version-consistency-gate.ps1` 与 `vibe-version-packaging-gate.ps1`。
+  - `scripts/verify/README.md` 与 `references/index.md` 新增治理文档与 gate 入口。
+- 修复 offline skills 锁稳定性问题：
+  - `scripts/verify/vibe-generate-skills-lock.ps1` 与 `scripts/verify/vibe-offline-skills-gate.ps1` 改为跨平台稳定哈希（文本统一 LF 后哈希）。
+  - 重新生成 `config/skills-lock.json`，移除失效条目并与当前 `bundled/skills` 对齐。
+
 ## v2.3.23 (2026-02-27)
 
 - 新增 Exploration Overlay（探索型任务增强，默认 `soft`，保持 post-route 非侵入）：

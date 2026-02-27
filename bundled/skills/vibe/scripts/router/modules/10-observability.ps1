@@ -106,8 +106,16 @@ function Write-ObservabilityRouteEvent {
             candidate_signal = [double]$Result.candidate_signal
             selected_pack = $selectedPack
             selected_skill = $selectedSkill
+            deep_discovery_route_filter_applied = [bool]$Result.deep_discovery_route_filter_applied
+            deep_discovery_route_mode_override = [bool]$Result.deep_discovery_route_mode_override
+            heartbeat_status = if ($Result.heartbeat_status) { [string]$Result.heartbeat_status.current_status } else { "disabled" }
+            heartbeat_pulse_count = if ($Result.heartbeat_status -and $Result.heartbeat_status.pulse_count -ne $null) { [int]$Result.heartbeat_status.pulse_count } else { 0 }
+            heartbeat_stall_score = if ($Result.heartbeat_status -and $Result.heartbeat_status.stall_score -ne $null) { [double]$Result.heartbeat_status.stall_score } else { 0.0 }
         }
         overlays = [pscustomobject]@{
+            deep_discovery_triggered = [bool]($Result.deep_discovery_advice -and $Result.deep_discovery_advice.trigger_active)
+            deep_discovery_confirm_required = [bool]($Result.deep_discovery_advice -and $Result.deep_discovery_advice.confirm_required)
+            deep_discovery_route_filter_applied = [bool]$Result.deep_discovery_route_filter_applied
             ai_rerank_triggered = [bool]($Result.ai_rerank_advice -and $Result.ai_rerank_advice.trigger -and $Result.ai_rerank_advice.trigger.active)
             ai_rerank_would_override = [bool]($Result.ai_rerank_advice -and $Result.ai_rerank_advice.would_override)
             ai_rerank_route_override = [bool]$Result.ai_rerank_route_override
@@ -119,7 +127,31 @@ function Write-ObservabilityRouteEvent {
             python_clean_code_confirm_required = [bool]($Result.python_clean_code_advice -and $Result.python_clean_code_advice.confirm_required)
             system_design_confirm_required = [bool]($Result.system_design_advice -and $Result.system_design_advice.confirm_required)
             cuda_kernel_confirm_required = [bool]($Result.cuda_kernel_advice -and $Result.cuda_kernel_advice.confirm_required)
+            retrieval_confirm_required = [bool]($Result.retrieval_advice -and $Result.retrieval_advice.confirm_required)
+            retrieval_profile_id = if ($Result.retrieval_advice -and $Result.retrieval_advice.profile_id) { [string]$Result.retrieval_advice.profile_id } else { "none" }
+            retrieval_needs_requery = [bool]($Result.retrieval_advice -and $Result.retrieval_advice.coverage_gate -and $Result.retrieval_advice.coverage_gate.needs_requery)
+            heartbeat_confirm_required = [bool]($Result.heartbeat_advice -and $Result.heartbeat_advice.confirm_required)
+            dialectic_team_explicit_requested = [bool]($Result.dialectic_team_advice -and $Result.dialectic_team_advice.explicit_requested)
+            dialectic_team_mode_allowed = [bool]($Result.dialectic_team_advice -and $Result.dialectic_team_advice.team_mode_allowed)
+            dialectic_team_should_apply = [bool]($Result.dialectic_team_advice -and $Result.dialectic_team_advice.should_apply_team_mode)
+            dialectic_team_confirm_required = [bool]($Result.dialectic_team_advice -and $Result.dialectic_team_advice.confirm_required)
+            dialectic_team_route_override = [bool]$Result.dialectic_team_route_override
+            daily_dialectic_scope_applicable = [bool]($Result.daily_dialectic_advice -and $Result.daily_dialectic_advice.scope_applicable)
+            daily_dialectic_confirm_required = [bool]($Result.daily_dialectic_advice -and $Result.daily_dialectic_advice.confirm_required)
             any_confirm_required = (Test-OverlayConfirmRequired -Result $Result)
+        }
+        heartbeat = [pscustomobject]@{
+            enabled = [bool]($Result.heartbeat_advice -and $Result.heartbeat_advice.enabled)
+            mode = if ($Result.heartbeat_advice) { [string]$Result.heartbeat_advice.mode } else { "off" }
+            enforcement = if ($Result.heartbeat_advice) { [string]$Result.heartbeat_advice.enforcement } else { "none" }
+            reason = if ($Result.heartbeat_advice) { [string]$Result.heartbeat_advice.reason } else { "policy_off" }
+            status = if ($Result.heartbeat_status) { [string]$Result.heartbeat_status.current_status } else { "disabled" }
+            lifecycle_status = if ($Result.heartbeat_status) { [string]$Result.heartbeat_status.lifecycle_status } else { "disabled" }
+            pulse_count = if ($Result.heartbeat_status -and $Result.heartbeat_status.pulse_count -ne $null) { [int]$Result.heartbeat_status.pulse_count } else { 0 }
+            stall_score = if ($Result.heartbeat_status -and $Result.heartbeat_status.stall_score -ne $null) { [double]$Result.heartbeat_status.stall_score } else { 0.0 }
+            suspect_stall = if ($Result.heartbeat_status) { [bool]$Result.heartbeat_status.suspect_stall } else { $false }
+            hard_stall = if ($Result.heartbeat_status) { [bool]$Result.heartbeat_status.hard_stall } else { $false }
+            auto_diagnosis_triggered = if ($Result.heartbeat_advice) { [bool]$Result.heartbeat_advice.auto_diagnosis_triggered } else { $false }
         }
     }
 
@@ -146,5 +178,6 @@ function Write-ObservabilityRouteEvent {
         throw
     }
 }
+
 
 

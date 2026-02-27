@@ -36,6 +36,40 @@ copy_dir_content() {
   cp -R "${src}/." "${dst}/"
 }
 
+sync_vibe_canonical_to_target() {
+  local canonical_root="${SCRIPT_DIR}"
+  local target_vibe_root="${TARGET_ROOT}/skills/vibe"
+  local files=(
+    "SKILL.md"
+    "check.ps1"
+    "check.sh"
+    "install.ps1"
+    "install.sh"
+  )
+  local dirs=(
+    "config"
+    "protocols"
+    "references"
+    "docs"
+    "scripts"
+  )
+
+  local rel src dst
+  for rel in "${files[@]}"; do
+    src="${canonical_root}/${rel}"
+    dst="${target_vibe_root}/${rel}"
+    [[ -f "${src}" ]] || continue
+    mkdir -p "$(dirname "${dst}")"
+    cp "${src}" "${dst}"
+  done
+
+  for rel in "${dirs[@]}"; do
+    src="${canonical_root}/${rel}"
+    dst="${target_vibe_root}/${rel}"
+    copy_dir_content "${src}" "${dst}"
+  done
+}
+
 ensure_skill_present() {
   local name="$1"
   local required="$2"
@@ -92,6 +126,9 @@ VIBE_ROUTER_DEST_DIR="${TARGET_ROOT}/skills/vibe/scripts/router"
 if [[ -d "${VIBE_ROUTER_SRC_DIR}" ]]; then
   copy_dir_content "${VIBE_ROUTER_SRC_DIR}" "${VIBE_ROUTER_DEST_DIR}"
 fi
+
+# Enforce canonical vibe mirror files/dirs to avoid main-vs-bundled drift after install.
+sync_vibe_canonical_to_target
 
 required_core=(
   dialectic local-vco-roles spec-kit-vibe-compat superclaude-framework-compat

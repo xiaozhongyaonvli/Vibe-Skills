@@ -3,7 +3,8 @@
 ## Missing skill after install
 - Run `check.ps1`
 - Confirm target path is `~/.codex/skills`
-- Re-run `install.ps1 -Profile full`
+- Re-run `install.ps1 -Profile full -StrictOffline`
+- Run `scripts/verify/vibe-offline-skills-gate.ps1` and fix lock mismatch if any
 
 ## MCP unavailable
 - Verify server entries in `mcp/servers.template.json`

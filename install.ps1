@@ -62,6 +62,43 @@ function Ensure-SkillPresent {
   }
 }
 
+function Sync-VibeCanonicalToTarget {
+  param(
+    [string]$RepoRoot,
+    [string]$TargetRoot
+  )
+
+  $governancePath = Join-Path $RepoRoot 'config\version-governance.json'
+  if (-not (Test-Path -LiteralPath $governancePath)) { return }
+
+  try {
+    $governance = Get-Content -LiteralPath $governancePath -Raw -Encoding UTF8 | ConvertFrom-Json
+  } catch {
+    Write-Warning "Failed to parse version-governance.json; skip canonical sync."
+    return
+  }
+
+  $canonicalRoot = Join-Path $RepoRoot ([string]$governance.source_of_truth.canonical_root)
+  $mirrorFiles = @($governance.packaging.mirror.files)
+  $mirrorDirs = @($governance.packaging.mirror.directories)
+  $targetVibeRoot = Join-Path $TargetRoot 'skills\vibe'
+
+  foreach ($rel in $mirrorFiles) {
+    $src = Join-Path $canonicalRoot $rel
+    $dst = Join-Path $targetVibeRoot $rel
+    if (-not (Test-Path -LiteralPath $src)) { continue }
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
+    Copy-Item -LiteralPath $src -Destination $dst -Force
+  }
+
+  foreach ($dir in $mirrorDirs) {
+    $srcDir = Join-Path $canonicalRoot $dir
+    $dstDir = Join-Path $targetVibeRoot $dir
+    if (-not (Test-Path -LiteralPath $srcDir)) { continue }
+    Copy-DirContent -Source $srcDir -Destination $dstDir
+  }
+}
+
 Write-Host "=== VCO Codex Installer ===" -ForegroundColor Cyan
 Write-Host "Profile: $Profile"
 Write-Host "Target : $TargetRoot"
@@ -92,6 +129,9 @@ $vibeRouterTargetDir = Join-Path $TargetRoot 'skills\vibe\scripts\router'
 if (Test-Path -LiteralPath $vibeRouterSourceDir) {
   Copy-DirContent -Source $vibeRouterSourceDir -Destination $vibeRouterTargetDir
 }
+
+# Enforce canonical vibe mirror files/dirs to avoid main-vs-bundled drift after install.
+Sync-VibeCanonicalToTarget -RepoRoot $RepoRoot -TargetRoot $TargetRoot
 
 $requiredCore = @('dialectic', 'local-vco-roles', 'spec-kit-vibe-compat', 'superclaude-framework-compat', 'ralph-loop', 'cancel-ralph', 'tdd-guide', 'think-harder')
 $requiredSp = @('brainstorming', 'writing-plans', 'subagent-driven-development', 'systematic-debugging')

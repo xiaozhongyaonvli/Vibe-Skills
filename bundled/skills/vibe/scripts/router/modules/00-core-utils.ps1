@@ -6,6 +6,47 @@ function Normalize-Key {
     return ($InputText.Trim().Replace("\", "/")).ToLowerInvariant()
 }
 
+function Get-RoutingPromptNormalization {
+    param([string]$PromptText)
+
+    $original = if ($PromptText) { [string]$PromptText } else { "" }
+    $originalLower = $original.ToLowerInvariant()
+    $normalized = $original
+    $prefixDetected = $false
+    $prefixToken = $null
+
+    # Normalize only explicit VCO invocation tokens and keep user intent text unchanged.
+    $prefixPattern = '^\s*(?<prefix>\$vibe|/vibe)(?![a-z0-9_])(?<trail>\s*[:：]?\s*)'
+    $match = [Regex]::Match($original, $prefixPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if ($match.Success) {
+        $prefixDetected = $true
+        $prefixToken = [string]$match.Groups["prefix"].Value
+        $normalized = $original.Substring($match.Length)
+    }
+
+    $normalized = $normalized.TrimStart()
+    if (-not $normalized) {
+        $normalized = $original.TrimStart()
+    }
+
+    return [pscustomobject]@{
+        original = $original
+        original_lower = $originalLower
+        normalized = $normalized
+        normalized_lower = $normalized.ToLowerInvariant()
+        prefix_detected = $prefixDetected
+        prefix_token = if ($prefixToken) { $prefixToken.ToLowerInvariant() } else { $null }
+        changed = ($originalLower -ne $normalized.ToLowerInvariant())
+    }
+}
+
+function Get-RoutingPromptLower {
+    param([string]$PromptText)
+
+    $normalization = Get-RoutingPromptNormalization -PromptText $PromptText
+    return [string]$normalization.normalized_lower
+}
+
 function Resolve-Alias {
     param(
         [string]$Skill,
@@ -260,6 +301,8 @@ function Test-OverlayConfirmRequired {
     param([object]$Result)
 
     if (-not $Result) { return $false }
+    if ($Result.heartbeat_advice -and [bool]$Result.heartbeat_advice.confirm_required) { return $true }
+    if ($Result.deep_discovery_advice -and [bool]$Result.deep_discovery_advice.confirm_required) { return $true }
     if ($Result.openspec_advice -and [string]$Result.openspec_advice.enforcement -eq "confirm_required") { return $true }
     if ($Result.prompt_overlay_advice -and [bool]$Result.prompt_overlay_advice.confirm_required) { return $true }
     if ($Result.data_scale_advice -and [bool]$Result.data_scale_advice.confirm_required) { return $true }
@@ -269,7 +312,11 @@ function Test-OverlayConfirmRequired {
     if ($Result.python_clean_code_advice -and [bool]$Result.python_clean_code_advice.confirm_required) { return $true }
     if ($Result.system_design_advice -and [bool]$Result.system_design_advice.confirm_required) { return $true }
     if ($Result.cuda_kernel_advice -and [bool]$Result.cuda_kernel_advice.confirm_required) { return $true }
+    if ($Result.retrieval_advice -and [bool]$Result.retrieval_advice.confirm_required) { return $true }
+    if ($Result.dialectic_team_advice -and [bool]$Result.dialectic_team_advice.confirm_required) { return $true }
+    if ($Result.daily_dialectic_advice -and [bool]$Result.daily_dialectic_advice.confirm_required) { return $true }
     return $false
 }
+
 
 

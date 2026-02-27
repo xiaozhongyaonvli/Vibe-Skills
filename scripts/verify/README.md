@@ -11,6 +11,8 @@ For a single entrypoint that ties route probing, semantic expansion, threshold t
 - `vibe-skill-index-routing-audit.ps1`: per-skill keyword index routing checks using common Chinese business phrases and ambiguous same-pack scenarios.
 - `vibe-routing-stability-gate.ps1`: synonym-group and task-cross routing gate. Reports `route_stability`, `top1_top2_gap`, `fallback_rate`, and `misroute_rate`, with optional strict thresholds.
 - `vibe-config-parity-gate.ps1`: config parity gate for main vs bundled VCO JSON configs using normalized structural comparison + hash + diff-path output.
+- `vibe-version-consistency-gate.ps1`: release metadata consistency gate across `config/version-governance.json`, maintenance markers, changelog header, and release ledger.
+- `vibe-version-packaging-gate.ps1`: validates version/source-of-truth and packaging mirror consistency between canonical root and `bundled/skills/vibe`.
 - `vibe-context-retro-smoke.ps1`: validates Context Retro Advisor integration in SKILL/protocol/fallback docs and main/bundled sync for retro-critical files.
 - `vibe-retro-context-regression-matrix.ps1`: fixed-case regression matrix for retro trigger thresholds and CF-1..CF-6 classification stability.
 - `cer-compare.ps1`: compares two CER JSON reports and outputs Markdown/JSON delta summaries (pattern/fallback/stability/context-pressure/gap).
@@ -71,6 +73,18 @@ Run config parity gate (main vs bundled):
 
 ```powershell
 & ".\vibe-config-parity-gate.ps1" -WriteArtifacts
+```
+
+Run version consistency gate:
+
+```powershell
+& ".\vibe-version-consistency-gate.ps1" -WriteArtifacts
+```
+
+Run version + packaging governance gate:
+
+```powershell
+& ".\vibe-version-packaging-gate.ps1" -WriteArtifacts
 ```
 
 Run OpenSpec governance gate:
