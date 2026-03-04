@@ -26,6 +26,7 @@ function Get-LlmAccelerationPolicyDefaults {
         provider = [pscustomobject]@{
             type = "openai" # openai|mock
             model = "gpt-5.2-codex"
+            base_url = ""
             timeout_ms = 2500
             max_output_tokens = 900
             temperature = 0.2
@@ -90,6 +91,7 @@ function Get-LlmAccelerationPolicy {
         provider = [pscustomobject]@{
             type = if ($provider.type) { [string]$provider.type } else { [string]$defaults.provider.type }
             model = if ($provider.model) { [string]$provider.model } else { [string]$defaults.provider.model }
+            base_url = if ($provider.base_url) { [string]$provider.base_url } else { [string]$defaults.provider.base_url }
             timeout_ms = if ($provider.timeout_ms -ne $null) { [int]$provider.timeout_ms } else { [int]$defaults.provider.timeout_ms }
             max_output_tokens = if ($provider.max_output_tokens -ne $null) { [int]$provider.max_output_tokens } else { [int]$defaults.provider.max_output_tokens }
             temperature = if ($provider.temperature -ne $null) { [double]$provider.temperature } else { [double]$defaults.provider.temperature }
@@ -424,6 +426,7 @@ function Invoke-LlmAccelerationProvider {
 
     return Invoke-OpenAiResponsesCreate `
         -Model ([string]$PolicyResolved.provider.model) `
+        -BaseUrl ([string]$PolicyResolved.provider.base_url) `
         -Input $input `
         -TextFormat $textFormat `
         -Instructions $instructions `
