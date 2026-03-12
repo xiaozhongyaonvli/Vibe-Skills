@@ -6,7 +6,7 @@
 
 - canonical root；
 - `bundled/skills/vibe` 镜像；
-- `bundled/skills/vibe/bundled/skills/vibe` nested mirror；
+- `bundled/skills/vibe/bundled/skills/vibe` 可选 compatibility mirror；
 - 本地操作者 scratch / agent state；
 - 运行期 `outputs/*` 证据产物。
 
@@ -27,7 +27,7 @@
 | Temporary scratch | `.tmp/` | 默认不入库；一次性补丁/调查文件及时删除 |
 | Runtime outputs | `outputs/**` | 视为可再生证据，不作为 canonical 资产 |
 | Governed workset | `config/`, `docs/`, `references/`, `scripts/`, `protocols/` | 保留为后续分批审阅/提交对象，不要用 ignore 掩盖 |
-| High-risk mirror workset | `bundled/skills/vibe/**`, nested bundled | 只能走 canonical -> sync，禁止 mirror-first 修改 |
+| High-risk mirror workset | `bundled/skills/vibe/**`, optional `nested_bundled` when materialized | 只能走 canonical -> sync，禁止 mirror-first 修改 |
 
 ## Repo Policy
 
@@ -97,9 +97,41 @@ pwsh -NoProfile -File .\scripts\governance\install-local-worktree-excludes.ps1
 6. 如涉及 install / release，再运行 runtime freshness / coherence / frontmatter gates。
 7. 只有在 local hygiene 与 outputs boundary 都合格后，才继续新的 wave 执行。
 
+## Phase-End Hygiene
+
+Every cleanup batch ends with the same bounded rule:
+
+1. purge temporary scratch first
+2. verify repo hygiene second
+3. audit managed node ownership third
+4. keep node termination report-only unless a managed candidate is explicitly confirmed
+
+The canonical operator entrypoint is:
+
+```powershell
+pwsh -NoProfile -File .\scripts\governance\phase-end-cleanup.ps1 -WriteArtifacts
+```
+
+What it does:
+
+- removes `.tmp/` when it exists
+- refreshes local excludes for `task_plan.md`, `findings.md`, `progress.md`
+- reruns `vibe-repo-cleanliness-gate.ps1`
+- reruns `vibe-output-artifact-boundary-gate.ps1`
+- runs `Invoke-NodeProcessAudit.ps1`
+- runs `Invoke-NodeZombieCleanup.ps1` in report-only mode
+
+For batches that changed mirror / packaging surfaces, use:
+
+```powershell
+pwsh -NoProfile -File .\scripts\governance\phase-end-cleanup.ps1 -WriteArtifacts -IncludeMirrorGates
+```
+
+`-ApplyManagedNodeCleanup` is intentionally not part of the default path. It may only be used after the audit output proves the target process is `vco-managed`.
+
 ## Guardrails
 
 - 不要用 `.gitignore` 去隐藏真实 canonical 工作集。
-- 不要直接在 bundled / nested mirror 中做“只改副本不改 canonical”的修补。
+- 不要直接在 bundled mirror 中做“只改副本不改 canonical”的修补；`nested_bundled` 若被 materialize，同样遵守这条规则。
 - 不要因为 `.tmp/` 被忽略，就默认删除 `.tmp/vco-runtime-backups/*`；如果 manifest 仍引用它们，必须先审计引用关系。
 - planning scratch 可以存在，但它们不应再污染仓库视图。

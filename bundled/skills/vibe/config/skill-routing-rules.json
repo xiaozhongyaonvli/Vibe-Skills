@@ -1605,6 +1605,77 @@
 
                                                              ]
                                   },
+                   "video-studio":  {
+                                        "task_allow":  [
+                                                           "planning",
+                                                           "coding",
+                                                           "debug",
+                                                           "research"
+                                                       ],
+                                        "positive_keywords":  [
+                                                                  "video",
+                                                                  "video editing",
+                                                                  "edit video",
+                                                                  "clip",
+                                                                  "clips",
+                                                                  "montage",
+                                                                  "highlight",
+                                                                  "highlight reel",
+                                                                  "subtitle",
+                                                                  "subtitles",
+                                                                  "caption",
+                                                                  "captions",
+                                                                  "b-roll",
+                                                                  "transition",
+                                                                  "transitions",
+                                                                  "ffmpeg",
+                                                                  "ffprobe",
+                                                                  "remotion",
+                                                                  "capcut",
+                                                                  "剪映",
+                                                                  "视频",
+                                                                  "视频制作",
+                                                                  "视频剪辑",
+                                                                  "剪辑",
+                                                                  "混剪",
+                                                                  "字幕",
+                                                                  "转场",
+                                                                  "片头",
+                                                                  "片尾",
+                                                                  "配音",
+                                                                  "口播",
+                                                                  "BGM",
+                                                                  "打磨",
+                                                                  "抛光",
+                                                                  "音量标准化",
+                                                                  "去静音",
+                                                                  "jumpcut",
+                                                                  "jump cut",
+                                                                  "jump-cut",
+                                                                  "remove silence",
+                                                                  "silence removal",
+                                                                  "silencedetect",
+                                                                  "srt",
+                                                                  "burn subtitles",
+                                                                  "去停顿",
+                                                                  "剪掉停顿",
+                                                                  "口播剪辑"
+                                                              ],
+                                        "negative_keywords":  [
+                                                                  "video memory",
+                                                                  "vram",
+                                                                  "显存",
+                                                                  "显存不足",
+                                                                  "cuda out of memory"
+                                                              ],
+                                        "equivalent_group":  "video-production",
+                                        "canonical_for_task":  [
+                                                                   "planning",
+                                                                   "coding",
+                                                                   "debug",
+                                                                   "research"
+                                                               ]
+                                    },
                    "screenshot":  {
                                       "task_allow":  [
                                                          "coding",
@@ -1733,6 +1804,35 @@
 
                                                                  ]
                                       },
+                   "node-zombie-guardian":  {
+                                                 "task_allow":  [
+                                                                    "debug",
+                                                                    "review"
+                                                                ],
+                                                 "positive_keywords":  [
+                                                                           "node zombie",
+                                                                           "zombie node",
+                                                                           "orphan node",
+                                                                           "stale node process",
+                                                                           "node process audit",
+                                                                           "cleanup zombie node",
+                                                                           "僵尸node",
+                                                                           "僵尸进程",
+                                                                           "node进程审计",
+                                                                           "清理僵尸node"
+                                                                       ],
+                                                 "negative_keywords":  [
+                                                                           "github actions",
+                                                                           "sentry",
+                                                                           "vercel",
+                                                                           "netlify",
+                                                                           "mcp server"
+                                                                       ],
+                                                 "equivalent_group":  null,
+                                                 "canonical_for_task":  [
+                                                                            "debug"
+                                                                        ]
+                                             },
                    "security-best-practices":  {
                                                    "task_allow":  [
                                                                       "review",
@@ -3790,6 +3890,7 @@
                                                 },
                    "markitdown":  {
                                       "task_allow":  [
+                                                         "planning",
                                                          "coding",
                                                          "research"
                                                      ],
@@ -4293,9 +4394,10 @@
                             },
                    "zarr-python":  {
                                        "task_allow":  [
-                                                          "coding",
-                                                          "research"
-                                                      ],
+                                                           "planning",
+                                                           "coding",
+                                                           "research"
+                                                       ],
                                        "positive_keywords":  [
                                                                  "zarr",
                                                                  "chunked array",
@@ -4314,10 +4416,11 @@
                                                               ]
                                    },
                    "tiledbvcf":  {
-                                     "task_allow":  [
-                                                        "coding",
-                                                        "research"
-                                                    ],
+                                      "task_allow":  [
+                                                         "planning",
+                                                         "coding",
+                                                         "research"
+                                                     ],
                                      "positive_keywords":  [
                                                                "tiledbvcf",
                                                                "vcf",

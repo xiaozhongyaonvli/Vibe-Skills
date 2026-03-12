@@ -1,58 +1,50 @@
 # VCO Docs
 
-该目录承载 VCO 的治理正文、能力平面集成说明、运行时/打包规则、执行计划与 release 证据入口。
+`docs/` 是 VCO 的文档层 landing surface。这里现在按三段式分流：
+
+- `Current Entry`: 从哪里继续当前整改批次；
+- `Runtime Entry`: 去哪里读取当前运行态、proof 和阶段回执；
+- `Background / Governance Entry`: 去哪里读取长期治理正文与稳定 SOP。
 
 ## Start Here
 
-- [`docs-information-architecture.md`](docs-information-architecture.md)：`docs/` 的正式信息架构、命名约定与导航规则。
-- [`repo-cleanliness-governance.md`](repo-cleanliness-governance.md)：cleanup-first 基线，定义 local noise / governed workset / mirror pressure 的边界。
-- [`output-artifact-boundary-governance.md`](output-artifact-boundary-governance.md)：`outputs/**` 的长期资产 / 运行产物分层规则。
-- [`runtime-freshness-install-sop.md`](runtime-freshness-install-sop.md)：canonical -> installed runtime 的 freshness/install SOP。
-- [`../references/index.md`](../references/index.md)：reference 资产导航入口。
-- [../scripts/README.md](../scripts/README.md)：scripts 根入口；统一跳转到 governance / verify / common surfaces.
-- [../scripts/verify/README.md](../scripts/verify/README.md)：gate 运行入口；[../scripts/verify/gate-family-index.md](../scripts/verify/gate-family-index.md) 提供 verify family 索引。
-- [`../scripts/governance/README.md`](../scripts/governance/README.md)：governance operator surface（sync / rollout / release / audit）。
-- [`../config/index.md`](../config/index.md)：machine-readable policy / routing / release / cleanliness 配置入口。`n- [`plans/2026-03-08-repo-full-cleanup-master-plan.md`](plans/2026-03-08-repo-full-cleanup-master-plan.md)：repo cleanup umbrella plan；统一 Batch0-9 的收口顺序与 definition of done。`n- [`external-tooling/README.md`](external-tooling/README.md)：MCP / skill / manual 边界与外部工具职责说明。`n- [`../scripts/common/README.md`](../scripts/common/README.md)：shared helpers / wave runner / UTF-8 no BOM 写入约束。
+### Current Entry
 
-## Governance Spine
+- [`plans/README.md`](plans/README.md): 当前 active plan、支撑性当前材料、历史 wave 规划与 closure 报告入口
+- [`plans/2026-03-11-vco-repo-simplification-remediation-plan.md`](plans/2026-03-11-vco-repo-simplification-remediation-plan.md): 当前整改主计划；它是执行入口，不是长期治理合同
 
-- [`ecosystem-absorption-dedup-governance.md`](ecosystem-absorption-dedup-governance.md)：生态吸收、去冗余、owner 分层总纲。
-- [`absorption-admission-matrix.md`](absorption-admission-matrix.md)：上游项目准入与吸收状态矩阵。
-- [`promotion-board-governance.md`](promotion-board-governance.md) / [`promotion-board-v2-governance.md`](promotion-board-v2-governance.md)：promotion board、entry/exit evidence 规则。
-- [`observability-consistency-governance.md`](observability-consistency-governance.md)：telemetry、一致性、rollback 与 promotion-aware observability。
-- [`release-train-v2-governance.md`](release-train-v2-governance.md) / [`release-evidence-bundle-v3-governance.md`](release-evidence-bundle-v3-governance.md)：release 证据、cut、closure 合同。
-- [`manual-apply-policy-governance.md`](manual-apply-policy-governance.md) / [`subagent-handoff-governance.md`](subagent-handoff-governance.md)：人工补丁与多 agent handoff 约束。
+### Runtime Entry
 
-## Capability Planes
+- [`status/README.md`](status/README.md): 当前真实状态、proof 入口、阻塞项与阶段回执总索引
+- [`status/current-state.md`](status/current-state.md): 当前批次的 artifact-backed runtime summary
+- [`status/non-regression-proof-bundle.md`](status/non-regression-proof-bundle.md): minimum closure proof contract
+- [`releases/README.md`](releases/README.md): current governed release surface and historical release packetization
 
-- **Memory / Prompt**：[`memory-governance-integration.md`](memory-governance-integration.md)、[`memory-runtime-v2-integration.md`](memory-runtime-v2-integration.md)、[`memory-runtime-v3-governance.md`](memory-runtime-v3-governance.md)、[`mem0-optin-backend-integration.md`](mem0-optin-backend-integration.md)、[`letta-policy-integration.md`](letta-policy-integration.md)、[`prompt-overlay-integration.md`](prompt-overlay-integration.md)、[`prompt-intelligence-governance.md`](prompt-intelligence-governance.md)、[`prompt-intelligence-productization.md`](prompt-intelligence-productization.md)。
-- **Browser / Desktop / Conflict**：[`turix-cua-overlay.md`](turix-cua-overlay.md)、[`browserops-provider-integration.md`](browserops-provider-integration.md)、[`browserops-scorecard-governance.md`](browserops-scorecard-governance.md)、[`agent-s-shadow-integration.md`](agent-s-shadow-integration.md)、[`desktopops-replay-governance.md`](desktopops-replay-governance.md)、[`cross-plane-conflict-governance.md`](cross-plane-conflict-governance.md)、[`cross-plane-replay-governance.md`](cross-plane-replay-governance.md)、[`cross-plane-task-contract-governance.md`](cross-plane-task-contract-governance.md)。
-- **Document / Connector / Upstream**：[`docling-document-plane-integration.md`](docling-document-plane-integration.md)、[`docling-contract-v2-governance.md`](docling-contract-v2-governance.md)、[`document-plane-benchmark-governance.md`](document-plane-benchmark-governance.md)、[`connector-admission-governance.md`](connector-admission-governance.md)、[`connector-scorecard-governance.md`](connector-scorecard-governance.md)、[`connector-action-ledger-governance.md`](connector-action-ledger-governance.md)、[`upstream-corpus-governance.md`](upstream-corpus-governance.md)、[`upstream-eval-pilot-scenarios.md`](upstream-eval-pilot-scenarios.md)。
-- **Role / Capability Productization**：[`role-pack-governance.md`](role-pack-governance.md)、[`role-pack-v2-governance.md`](role-pack-v2-governance.md)、[`role-pack-distillation-governance.md`](role-pack-distillation-governance.md)、[`capability-dedup-graph-governance.md`](capability-dedup-graph-governance.md)、[`capability-lifecycle-governance.md`](capability-lifecycle-governance.md)、[`continuous-value-extraction-operations.md`](continuous-value-extraction-operations.md)。
+### Background / Governance Entry
 
-## Runtime / Packaging / Freshness
+- [`docs-information-architecture.md`](docs-information-architecture.md): `docs/` 目录语义、索引规则、长期维护边界
+- [`architecture.md`](architecture.md): VCO 总体结构、边界与主执行面
+- [`repo-cleanliness-governance.md`](repo-cleanliness-governance.md): canonical / mirror / runtime / archive 的 cleanliness contract
+- [`version-packaging-governance.md`](version-packaging-governance.md): canonical / bundled / nested / installed runtime 的 packaging topology
+- [`runtime-freshness-install-sop.md`](runtime-freshness-install-sop.md): install -> freshness -> coherence 的 operator SOP
+- [`output-artifact-boundary-governance.md`](output-artifact-boundary-governance.md): `outputs/**` 与 `references/fixtures/**` 的长期边界
 
-- [`version-packaging-governance.md`](version-packaging-governance.md)：canonical version、mirror topology、packaging source-of-truth。
-- [`frontmatter-bom-governance.md`](frontmatter-bom-governance.md)：byte-0 frontmatter / UTF-8 BOM stop-ship 治理。
-- [`runtime-freshness-install-sop.md`](runtime-freshness-install-sop.md)：install 后 freshness gate、receipt 与 install SOP。
-- [`repo-cleanliness-governance.md`](repo-cleanliness-governance.md) / [`output-artifact-boundary-governance.md`](output-artifact-boundary-governance.md)：cleanup-first 与 outputs boundary。
-- [`rollback-drill-governance.md`](rollback-drill-governance.md) / [`gate-reliability-governance.md`](gate-reliability-governance.md)：回滚演练、gate 可靠性与 stop-ship 约束。
+## Cross-Layer Handoff
 
-## Plans / Releases / Status
+- [`../config/index.md`](../config/index.md): machine-readable policy, routing, packaging, and cleanliness surface
+- [`../scripts/README.md`](../scripts/README.md): governance, verify, router, and common script entrypoints
+- [`../references/index.md`](../references/index.md): contracts, matrices, ledgers, fixtures, and overlays
 
-- [`plans/README.md`](plans/README.md)：执行计划、triage、阶段状态文档入口；planning 与治理正文分层存放，避免混入 root docs。
-- [`releases/README.md`](releases/README.md)：release notes、installed runtime 验证与 release closure 入口。
-- 重点执行文档：
-  - [`plans/2026-03-08-vco-wave121-140-operatorized-value-extraction-plan.md`](plans/2026-03-08-vco-wave121-140-operatorized-value-extraction-plan.md)
-  - [`plans/2026-03-08-vco-wave101-120-value-extraction-plan.md`](plans/2026-03-08-vco-wave101-120-value-extraction-plan.md)
-  - [`plans/2026-03-07-vco-wave40-63-execution-plan.md`](plans/2026-03-07-vco-wave40-63-execution-plan.md)
-  - [`plans/2026-03-07-vco-wave64-82-execution-plan.md`](plans/2026-03-07-vco-wave64-82-execution-plan.md)
-  - [`plans/2026-03-07-vco-wave83-100-execution-plan.md`](plans/2026-03-07-vco-wave83-100-execution-plan.md)
-  - [`plans/2026-03-07-vco-wave83-100-execution-status.md`](plans/2026-03-07-vco-wave83-100-execution-status.md)
-  - [`plans/2026-03-08-repo-cleanliness-batch2-4-triage.md`](plans/2026-03-08-repo-cleanliness-batch2-4-triage.md)
-## Cleanup-First Rules
+## Secondary Stable Surfaces
 
-- 不通过 mass rename 制造新漂移；优先补索引、taxonomy、README 锚点。
-- 新增 `docs/*.md` 必须同时进入本 README；若对应脚本 / reference 存在，也要补双向链接。
-- `plans/` 只放执行与状态文档；`releases/` 只放 release evidence；root `docs/` 保持治理 / 集成正文。
-- 镜像整理不在 `bundled/` 独立进行；必须走 canonical edit -> sync -> parity gates。
+- [`compatibility-matrix.md`](compatibility-matrix.md): 兼容性边界与差异面
+- [`observability-consistency-governance.md`](observability-consistency-governance.md): 可观测性与一致性治理
+- [`blackbox-probe-and-enhancement-playbook.md`](blackbox-probe-and-enhancement-playbook.md): blackbox probing / semantic enhancement 的统一工程手册
+- [`external-tooling/README.md`](external-tooling/README.md): 外部 tooling / provider / MCP 边界说明
+
+## Rules
+
+- root `docs/*.md` 只放长期治理正文、集成说明和稳定 operator SOP，不把 dated plan / batch report 升级成 canonical contract
+- `docs/plans/` 负责当前执行入口与时间绑定计划；`docs/status/` 负责当前运行态与 proof；`docs/releases/` 负责 current release surface 与 release history
+- `status/current-state.md` 只做 artifact-backed 状态摘要；truth source 在 `outputs/verify/**` 与运行态回执中，而不是这份文档本身
+- 新增 root 级治理正文时，必须更新本索引；新增时间绑定材料时，更新对应子目录的 `README.md` 即可

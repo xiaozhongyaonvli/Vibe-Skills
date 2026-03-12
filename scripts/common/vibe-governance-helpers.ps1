@@ -312,7 +312,7 @@ function Get-VgoInstalledRuntimeConfig {
             'scripts/verify/vibe-release-install-runtime-coherence-gate.ps1',
             'scripts/router/resolve-pack-route.ps1'
         )
-        require_nested_bundled_root = $true
+        require_nested_bundled_root = $false
     }
 
     $runtimeConfig = $null
@@ -400,6 +400,12 @@ function Get-VgoMirrorTopologyTargets {
         $syncEnabled = if ($target.PSObject.Properties.Name -contains 'sync_enabled') { [bool]$target.sync_enabled } else { -not ($role -eq 'canonical') }
         $parityPolicy = if ($target.PSObject.Properties.Name -contains 'parity_policy' -and -not [string]::IsNullOrWhiteSpace([string]$target.parity_policy)) { [string]$target.parity_policy } else { if ($role -eq 'canonical') { 'authoritative' } else { 'full' } }
 
+        $materializationMarker = Join-Path $fullPath 'SKILL.md'
+        $targetExists = (Test-Path -LiteralPath $fullPath)
+        if ($targetExists) {
+            $targetExists = (Test-Path -LiteralPath $materializationMarker)
+        }
+
         $topologyTargets += [pscustomobject]@{
             id = $targetId
             path = $targetPath.Replace('\', '/')
@@ -409,7 +415,7 @@ function Get-VgoMirrorTopologyTargets {
             presence_policy = $presencePolicy
             sync_enabled = $syncEnabled
             parity_policy = $parityPolicy
-            exists = (Test-Path -LiteralPath $fullPath)
+            exists = $targetExists
             isCanonical = ($role -eq 'canonical')
         }
     }

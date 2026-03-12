@@ -80,7 +80,10 @@ function Get-SkillDirHash {
 
     foreach ($file in $files) {
         $relative = $file.FullName.Substring($DirPath.Length + 1).Replace('\', '/')
-        if ($relative.Equals("config/skills-lock.json", [System.StringComparison]::OrdinalIgnoreCase)) {
+        if (
+            $relative.Equals("config/skills-lock.json", [System.StringComparison]::OrdinalIgnoreCase) -or
+            $relative.EndsWith("/config/skills-lock.json", [System.StringComparison]::OrdinalIgnoreCase)
+        ) {
             continue
         }
         $fileHash = Get-NormalizedFileHash -Path $file.FullName

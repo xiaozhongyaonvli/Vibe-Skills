@@ -169,6 +169,8 @@ $slugLookup = @{}
 foreach ($slug in $uniqueSlugs) {
     $slugLookup[$slug] = $true
 }
+$freshnessScopeSlugs = @($manifest.freshness_policy.scope_slugs | ForEach-Object { [string]$_ })
+$uniqueFreshnessScopeSlugs = @($freshnessScopeSlugs | Sort-Object -Unique)
 
 $requiredTopLevelFields = @($manifest.schema.required_top_level_fields)
 foreach ($field in $requiredTopLevelFields) {
@@ -181,9 +183,15 @@ Add-Assertion -Collection $results -Condition ($actualSlugs.Count -eq $expectedE
 Add-Assertion -Collection $results -Condition ($uniqueSlugs.Count -eq $actualSlugs.Count) -Message 'manifest slugs are unique'
 Add-Assertion -Collection $results -Condition ($actualSlugs.Count -eq $uniqueSlugs.Count) -Message 'manifest canonical slug registry has no duplicates'
 Add-Assertion -Collection $results -Condition ($manifest.alias_config -eq 'config/upstream-source-aliases.json') -Message 'manifest alias_config points to canonical alias registry' -Details $manifest.alias_config
+Add-Assertion -Collection $results -Condition ($freshnessScopeSlugs.Count -eq 15) -Message 'freshness scope contains 15 mirror-managed slugs' -Details $freshnessScopeSlugs
+Add-Assertion -Collection $results -Condition ($freshnessScopeSlugs.Count -eq $uniqueFreshnessScopeSlugs.Count) -Message 'freshness scope slugs are unique'
 
 foreach ($slug in $actualSlugs) {
     Add-Assertion -Collection $results -Condition ($slug -match $slugRegex) -Message ('slug is lower-kebab-case: ' + $slug) -Details $slug
+}
+foreach ($slug in $freshnessScopeSlugs) {
+    Add-Assertion -Collection $results -Condition ($slugLookup.ContainsKey($slug)) -Message ('freshness scope slug exists in manifest: ' + $slug) -Details $slug
+    Add-Assertion -Collection $results -Condition ($slug -match $slugRegex) -Message ('freshness scope slug is lower-kebab-case: ' + $slug) -Details $slug
 }
 
 $requiredEntryFields = @($manifest.schema.entry_required_fields)
@@ -197,6 +205,9 @@ foreach ($entry in @($manifest.entries)) {
     Add-Assertion -Collection $results -Condition ($allowedLanes -contains [string]$entry.lane) -Message ('[{0}] lane is allowed' -f $entry.slug) -Details $entry.lane
     Add-Assertion -Collection $results -Condition ($allowedStatuses -contains [string]$entry.status) -Message ('[{0}] status is allowed' -f $entry.slug) -Details $entry.status
     Add-Assertion -Collection $results -Condition (@($entry.canonical_assets).Count -ge 1) -Message ('[{0}] has canonical assets' -f $entry.slug)
+}
+foreach ($root in @($manifest.mirror_roots)) {
+    Add-Assertion -Collection $results -Condition ([int]$root.expected_entry_count -eq $freshnessScopeSlugs.Count) -Message ('mirror root {0} expected_entry_count matches freshness scope' -f $root.id) -Details ([ordered]@{ expected_entry_count = [int]$root.expected_entry_count; scope_count = $freshnessScopeSlugs.Count })
 }
 
 $summaryLaneCounts = Convert-PropertyBagToHashtable -InputObject $manifest.summary.lane_counts

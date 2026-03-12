@@ -1,9 +1,9 @@
 ﻿{
     "version":  1,
-    "generated_at":  "2026-03-05T23:35:45+08:00",
+    "generated_at":  "2026-03-12T00:45:29+08:00",
     "source":  "bundled/skills",
-    "skill_count":  338,
-    "total_bytes":  29829948,
+    "skill_count":  340,
+    "total_bytes":  41914351,
     "skills":  [
                    {
                        "name":  ".system",
@@ -1438,6 +1438,14 @@
                        "dir_hash":  "1e3023b06e481bf7bf12b0d0c4eb6a2e919d0c831eaec5b6470d24db5021cfc1"
                    },
                    {
+                       "name":  "node-zombie-guardian",
+                       "relative_path":  "bundled/skills/node-zombie-guardian",
+                       "file_count":  1,
+                       "bytes":  3034,
+                       "skill_md_hash":  "80b488df562d5a62a796fda7c2c6732a0e6d9533d2901f4c540639d53c55d918",
+                       "dir_hash":  "e210ae56d76d5d179e132dc3f835d1f06c06a2dea42bbd91c1712f301c684cbb"
+                   },
+                   {
                        "name":  "nowait-reasoning-optimizer",
                        "relative_path":  "bundled/skills/nowait-reasoning-optimizer",
                        "file_count":  3,
@@ -2608,10 +2616,18 @@
                    {
                        "name":  "vibe",
                        "relative_path":  "bundled/skills/vibe",
-                       "file_count":  509,
-                       "bytes":  4950058,
-                       "skill_md_hash":  "78c62e29b6072320fcee893b456e59145a8e2892b547564190a0cc30069cdef8",
-                       "dir_hash":  "ab7f3f6cc8fe694673ae139ad889371077b85700bb40acb08333405400ea7714"
+                       "file_count":  1230,
+                       "bytes":  16997132,
+                       "skill_md_hash":  "4c40d959fb0e6e8404876674cfdcc1670cb4a7346941e94fe1382f350911cf06",
+                       "dir_hash":  "846ccae9998347a578e6bdd22fdbd8a7eb8b0e49026b5b85351523513690a0cc"
+                   },
+                   {
+                       "name":  "video-studio",
+                       "relative_path":  "bundled/skills/video-studio",
+                       "file_count":  3,
+                       "bytes":  34295,
+                       "skill_md_hash":  "c0afc1d387f42c7badd5f44c36a704f83e04464f43912fa5b781914c02d04726",
+                       "dir_hash":  "b4802ae041fb7a3c9db33f5fe7fbcb3d566da5a72ba4f648bf8f8570b8b2c2da"
                    },
                    {
                        "name":  "visualization-best-practices",

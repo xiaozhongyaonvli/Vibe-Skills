@@ -3,6 +3,19 @@
   "schema_version": 2,
   "updated": "2026-03-07",
   "catalog_purpose": "Preserve Deep Discovery capability-hit compatibility while upgrading the catalog into a governed capability ledger for productized capabilities, discovery corpora, and eval corpora without creating a second runtime surface.",
+  "metadata_hardening": {
+    "mode": "expanded",
+    "policy": "config/skill-metadata-policy.json",
+    "gate": "scripts/verify/skill-metadata-gate.ps1",
+    "enforced_scopes": [
+      "capability_catalog.skills",
+      "capability_catalog.advice_overlays",
+      "pack_manifest.skill_candidates",
+      "pack_manifest.defaults_by_task",
+      "skill_alias_map.alias_targets",
+      "local_vco_roles.template_7"
+    ]
+  },
   "governance": {
     "catalog_kind": "governed_capability_ledger",
     "compatibility_contract": {

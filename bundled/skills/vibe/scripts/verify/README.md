@@ -18,6 +18,29 @@ For a single entrypoint that ties route probing, semantic expansion, threshold t
 3. 根据本次变更所属治理域，补跑对应 plane / overlay / capability / release family gate。
 4. 只有在 planning board、promotion、release evidence 变化时，才补 closure / release-train / promotion gates。
 
+## Phase-End Minimal Checklist
+
+When the batch goal is "close the phase cleanly without regression", use this minimal sequence:
+
+```powershell
+pwsh -NoProfile -File .\..\governance\phase-end-cleanup.ps1 -WriteArtifacts
+```
+
+That wrapper keeps the cleanup order explicit:
+
+1. purge `.tmp/`
+2. refresh local excludes for `task_plan.md`, `findings.md`, `progress.md`
+3. rerun `vibe-repo-cleanliness-gate.ps1`
+4. rerun `vibe-output-artifact-boundary-gate.ps1`
+5. run repo-safe node audit
+6. run node cleanup in report-only mode
+
+If the batch touched mirror / packaging surfaces, rerun the mirror-aware variant instead:
+
+```powershell
+pwsh -NoProfile -File .\..\governance\phase-end-cleanup.ps1 -WriteArtifacts -IncludeMirrorGates
+```
+
 ## Gate Families
 
 - **Runtime Integrity / Packaging**：`vibe-bom-frontmatter-gate.ps1`、`vibe-version-consistency-gate.ps1`、`vibe-version-packaging-gate.ps1`、`vibe-config-parity-gate.ps1`、`vibe-installed-runtime-freshness-gate.ps1`。
@@ -28,6 +51,8 @@ For a single entrypoint that ties route probing, semantic expansion, threshold t
 - **Capability / Upstream / Release**：capability、role-pack、upstream value ops、promotion、release、observability family。
 
 详见：`gate-family-index.md`
+**Managed Runtime / Process Hygiene**: `vibe-node-zombie-gate.ps1` validates VCO-managed Node ownership, stale-process classification, and report-only cleanup safety boundaries.
+
 ## Fixture Taxonomy
 
 - **Wave28 canonical pilot fixtures**: `fixtures/pilot-memory.json`, `fixtures/pilot-prompt.json`, `fixtures/pilot-browserops.json`, `fixtures/pilot-desktopops.json`. These are the only pilot inputs consumed by `vibe-pilot-scenarios.ps1` and referenced by `config/promotion-board.json`.
@@ -42,6 +67,7 @@ For a single entrypoint that ties route probing, semantic expansion, threshold t
 - `vibe-trigger-keyword-hygiene-gate.ps1`: trigger keyword hygiene gate (empty/whitespace/case-duplicate detection + cross-pack collision report, optional strict collision fail).
 - `vibe-skill-index-routing-audit.ps1`: per-skill keyword index routing checks using common Chinese business phrases and ambiguous same-pack scenarios.
 - `vibe-routing-stability-gate.ps1`: synonym-group and task-cross routing gate. Reports `route_stability`, `top1_top2_gap`, `fallback_rate`, and `misroute_rate`, with optional strict thresholds.
+- `vibe-node-zombie-gate.ps1`: validates node zombie guardian safety (audit/report usefulness + cleanup never targets `external` or `unknown`) and emits proof artifacts.
 - `vibe-config-parity-gate.ps1`: config parity gate for main vs bundled VCO JSON configs using normalized structural comparison + hash + diff-path output.
 - `vibe-version-consistency-gate.ps1`: release metadata consistency gate across `config/version-governance.json`, maintenance markers, changelog header, and release ledger.
 - `vibe-version-packaging-gate.ps1`: validates version/source-of-truth and packaging mirror consistency between canonical root and `bundled/skills/vibe`.
@@ -125,6 +151,15 @@ Run strict gate (after default gate is passing consistently):
 & ".\vibe-routing-stability-gate.ps1" -Strict -WriteArtifacts
 ```
 
+Run node zombie guardian safety gate (when touching `node-zombie-guardian`):
+
+```powershell
+& ".\vibe-node-zombie-gate.ps1" -WriteArtifacts
+```
+
+Notes:
+- If you added/edited `bundled/skills/node-zombie-guardian/`, regenerate `config/skills-lock.json` via `vibe-generate-skills-lock.ps1` before running offline-skill parity gates.
+
 Run config parity gate (main vs bundled):
 
 ```powershell
@@ -141,6 +176,12 @@ Run version + packaging governance gate:
 
 ```powershell
 & ".\vibe-version-packaging-gate.ps1" -WriteArtifacts
+```
+
+Run managed Node zombie safety gate:
+
+```powershell
+& ".\vibe-node-zombie-gate.ps1" -WriteArtifacts
 ```
 
 Run repo cleanliness gate (local hygiene first):

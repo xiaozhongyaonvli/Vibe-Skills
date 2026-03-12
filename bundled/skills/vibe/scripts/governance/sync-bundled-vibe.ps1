@@ -83,7 +83,7 @@ function Sync-ToMirrorTarget {
 
     $targetRoot = [string]$Target.fullPath
     $shouldCreate = [bool]$Target.required -or ([string]$Target.presence_policy -eq 'required')
-    $targetExists = Test-Path -LiteralPath $targetRoot
+    $targetExists = [bool]$Target.exists
     if (-not $targetExists) {
         if ($shouldCreate) {
             if ($Preview) {

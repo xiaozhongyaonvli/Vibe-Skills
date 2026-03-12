@@ -9,7 +9,7 @@ Wave38 要解决的问题不是“再接入几个社区仓库”，而是把 `aw
 1. VCO 仍然是唯一控制面与执行编排入口。
 2. `config/capability-catalog.json` 记录 capability slice 与 material-layer retained value。
 3. discovery/eval 语料只能进入 catalog、pilot、evidence、gate，不得形成新的运行入口。
-4. 保证这些上游不会变成第二 runtime surface。
+4. 保证这些上游不会变成第二 runtime surface / second runtime surface。
 
 ## 2. Canonical 边界
 
@@ -109,4 +109,4 @@ material layer 只回答三类问题：
 
 ## 9. 当前结论
 
-> `awesome-vibe-coding`、`awesome-ai-tools`、`vibe-coding-cn`、`awesome-ai-agents-e2b` 只被吸收到 discovery / eval / capability material layer；它们可以影响 catalog、pilot、evidence，但不能直接长成第二 runtime surface。
+> `awesome-vibe-coding`、`awesome-ai-tools`、`vibe-coding-cn`、`awesome-ai-agents-e2b` 只被吸收到 discovery / eval / capability material layer；它们可以影响 catalog、pilot、evidence，但不能直接长成第二 runtime surface / second runtime surface。

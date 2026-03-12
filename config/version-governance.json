@@ -73,7 +73,8 @@
                                                          "protocols",
                                                          "references",
                                                          "docs",
-                                                         "scripts"
+                                                         "scripts",
+                                                         "mcp"
                                                      ]
                                  },
                       "allow_bundled_only":  [
@@ -103,7 +104,7 @@
                                                                                "scripts/verify/vibe-release-install-runtime-coherence-gate.ps1",
                                                                                "scripts/router/resolve-pack-route.ps1"
                                                                            ],
-                                              "require_nested_bundled_root":  true
+                                              "require_nested_bundled_root":  false
                                           }
                 },
     "metrics":  {

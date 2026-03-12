@@ -312,7 +312,7 @@
                                                "scholar-evaluation"
                                            ],
                       "defaults_by_task":  {
-                                               "planning":  "peer-review",
+                                               "planning":  "scientific-critical-thinking",
                                                "review":  "peer-review",
                                                "research":  "peer-review"
                                            }
@@ -826,11 +826,87 @@
                                                "xlsx",
                                                "xan"
                                            ],
-                      "defaults_by_task":  {
-                                               "planning":  "docs-write",
-                                               "coding":  "spreadsheet",
-                                               "research":  "content-research-writer"
+                       "defaults_by_task":  {
+                                                "planning":  "docs-write",
+                                                "coding":  "spreadsheet",
+                                                "review":  "docs-review",
+                                                "research":  "content-research-writer"
                                             }
+                  },
+                  {
+                      "id":  "media-video",
+                      "priority":  86,
+                      "grade_allow":  [
+                                          "M",
+                                          "L",
+                                          "XL"
+                                      ],
+                      "task_allow":  [
+                                         "planning",
+                                         "coding",
+                                         "debug",
+                                         "research"
+                                     ],
+                      "trigger_keywords":  [
+                                               "video",
+                                               "videos",
+                                               "video editing",
+                                               "edit video",
+                                               "clip",
+                                               "clips",
+                                               "highlight reel",
+                                               "b-roll",
+                                               "subtitle",
+                                               "subtitles",
+                                               "caption",
+                                               "captions",
+                                               "transition",
+                                               "transitions",
+                                               "fade",
+                                               "montage",
+                                               "ffmpeg",
+                                               "ffprobe",
+                                               "remotion",
+                                               "capcut",
+                                               "剪映",
+                                               "视频",
+                                               "做视频",
+                                               "视频制作",
+                                               "视频剪辑",
+                                               "剪辑",
+                                               "混剪",
+                                               "字幕",
+                                               "转场",
+                                               "片头",
+                                               "片尾",
+                                               "配音",
+                                               "口播",
+                                               "BGM",
+                                               "去静音",
+                                               "去掉静音",
+                                               "音量标准化",
+                                               "画面节奏",
+                                               "jumpcut",
+                                               "jump cut",
+                                               "jump-cut",
+                                               "remove silence",
+                                               "silence removal",
+                                               "silencedetect",
+                                               "srt",
+                                               "burn subtitles",
+                                               "去停顿",
+                                               "剪掉停顿",
+                                               "口播剪辑"
+                                           ],
+                      "skill_candidates":  [
+                                               "video-studio"
+                                           ],
+                      "defaults_by_task":  {
+                                               "planning":  "video-studio",
+                                               "coding":  "video-studio",
+                                               "debug":  "video-studio",
+                                               "research":  "video-studio"
+                                           }
                   },
                   {
                       "id":  "docs-markitdown-conversion",
@@ -932,6 +1008,9 @@
                                                "sentry",
                                                "vercel",
                                                "netlify",
+                                               "node zombie",
+                                               "zombie node",
+                                               "orphan node",
                                                "devops",
                                                "部署",
                                                "发布",
@@ -940,6 +1019,8 @@
                                                "持续集成",
                                                "持续交付",
                                                "故障排查",
+                                               "僵尸node",
+                                               "僵尸进程",
                                                "威胁建模",
                                                "github actions",
                                                "日志排查",
@@ -950,6 +1031,7 @@
                                                "gh-fix-ci",
                                                "mcp-integration",
                                                "netlify-deploy",
+                                               "node-zombie-guardian",
                                                "performance-testing",
                                                "security-best-practices",
                                                "security-ownership-map",

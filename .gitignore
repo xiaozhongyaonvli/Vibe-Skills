@@ -5,9 +5,10 @@ outputs/
 **/outputs/
 **/telemetry/
 
-# Local operator / tool state
+# Local operator noise
 .serena/
 .tmp/
+third_party/vco-ecosystem-mirror/
 
 # MCP local machine config (keep templates tracked)
 mcp/servers.json

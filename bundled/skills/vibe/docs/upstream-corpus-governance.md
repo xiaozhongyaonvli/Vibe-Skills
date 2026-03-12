@@ -89,11 +89,11 @@ Wave34 把 `third_party/vco-ecosystem-mirror` 的 15 个镜像来源纳入 **ups
 
 `upstream_corpus` 的 freshness 与 canonical packaging parity 分离：
 
-- `workspace_live` 允许暂时是 partial root；
-- `runtime_backup_20260307_140452` 作为当前 authoritative freshness baseline；
-- gate 的 pass rule 是 `at_least_one_required_root_with_full_coverage_and_matching_heads`；
-- live root 缺项目或不是 git repo 会被记录为 warning / state，但不会单独导致 gate fail；
-- 如果 required root 缺项、无法解析 HEAD、或与 manifest 的 `observed_head_sha` 漂移，freshness gate 必须 fail。
+- freshness 只覆盖 `freshness_policy.scope_slugs` 中声明的 **15 个 mirror-managed sources**；
+- `agent-s`、`browser-use`、`letta`、`mem0` 继续保留在 manifest，但属于 shadow / policy source，不要求存在于 mirror root；
+- `workspace_live`（`third_party/vco-ecosystem-mirror`）是当前唯一 authoritative freshness baseline；
+- gate 的 pass rule 是 `at_least_one_required_root_with_scope_coverage_and_matching_heads`；
+- 如果 required root 缺项、不是 git repo、无法解析 HEAD、或与 manifest 的 `observed_head_sha` 漂移，freshness gate 必须 fail。
 
 ## Audit Workflow
 

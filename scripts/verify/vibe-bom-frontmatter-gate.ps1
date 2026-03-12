@@ -98,7 +98,7 @@ foreach ($scope in @($policy.scopes)) {
         'bundled' { $basePath = $context.bundledRoot }
         'nested_bundled' {
             $basePath = $context.nestedBundledRoot
-            if ([string]::IsNullOrWhiteSpace($basePath) -or -not (Test-Path -LiteralPath $basePath)) {
+            if ($null -eq $context.nestedTarget -or -not [bool]$context.nestedTarget.exists) {
                 $active = $false
                 $skipReason = 'nested_bundled target absent'
             }

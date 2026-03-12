@@ -23,8 +23,9 @@ Core rules:
 1. `canonical` is the only authoritative target.
 2. All sync operations copy from canonical to mirrors.
 3. `nested_bundled` is optional to exist, but if it exists it must match canonical and bundled.
-4. `allow_bundled_only` remains the only approved exception set for packaged mirror-only files.
-5. Installed runtime stays outside repo parity, but it must obey the runtime freshness contract.
+4. Repo topology no longer treats `nested_bundled` as an installed-runtime hard requirement; it is a compatibility mirror, not an always-required runtime root.
+5. `allow_bundled_only` remains the only approved exception set for packaged mirror-only files.
+6. Installed runtime stays outside repo parity, but it must obey the runtime freshness contract.
 
 ## Execution-Context Lock
 
@@ -46,9 +47,11 @@ Shared entrypoint:
 Repo parity and mirror parity continue to use the packaging contract from `config/version-governance.json`:
 
 - mirror files: `SKILL.md`, `check.ps1`, `check.sh`, `install.ps1`, `install.sh`
-- mirror directories: `config`, `protocols`, `references`, `docs`, `scripts`
+- mirror directories: `config`, `protocols`, `references`, `docs`, `scripts`, `mcp`
 - normalized JSON ignore keys: `updated`, `generated_at`
 - bundled-only allowlist: `docs/CODEX_ECOSYSTEM_MAINTENANCE_PRINCIPLES.md`
+
+`mcp` is part of the governed payload because the install scripts copy `mcp/` into the target runtime and `check.ps1` / `check.sh` validate `mcp/servers.template.json`.
 
 ## Topology-Driven Sync
 
@@ -65,7 +68,7 @@ Sync guarantees:
 Recommended command:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\governance\sync-bundled-vibe.ps1 -PruneBundledExtras
+powershell -NoProfile -File .\scripts\governance\sync-bundled-vibe.ps1 -PruneBundledExtras
 ```
 
 ## Gate Stack
@@ -108,6 +111,8 @@ That means:
 
 The installed runtime freshness gate remains the receipt authority. The coherence gate validates that release/install/runtime documentation, scripts, and receipt expectations stay aligned.
 
+`require_nested_bundled_root = false` means installed-runtime freshness does not fail only because a nested compatibility mirror is absent. If a nested layout is still materialized for compatibility, it remains governed by the same parity and hygiene rules.
+
 ## Shell Degraded Behavior
 
 Shell environments without authoritative PowerShell execution must not fake freshness success.
@@ -134,7 +139,7 @@ Operational meaning:
 Example sequence:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\governance\sync-bundled-vibe.ps1 -PruneBundledExtras
+powershell -NoProfile -File .\scripts\governance\sync-bundled-vibe.ps1 -PruneBundledExtras
 pwsh -NoProfile -File .\scripts\verify\vibe-version-packaging-gate.ps1 -WriteArtifacts
 pwsh -NoProfile -File .\scripts\verify\vibe-nested-bundled-parity-gate.ps1 -WriteArtifacts
 pwsh -NoProfile -File .\scripts\verify\vibe-mirror-edit-hygiene-gate.ps1 -WriteArtifacts

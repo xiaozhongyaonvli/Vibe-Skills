@@ -78,22 +78,32 @@
                },
     "freshness_policy":  {
                              "head_source":  "observed_head_sha_from_2026-03-07_audit",
-                             "pass_rule":  "at_least_one_required_root_with_full_coverage_and_matching_heads",
+                             "pass_rule":  "at_least_one_required_root_with_scope_coverage_and_matching_heads",
                              "warn_on_partial_live_root":  true,
                              "allow_non_git_live_root":  true,
-                             "notes":  "Workspace live root currently exposes only a 4-project partial surface. The latest runtime backup root is the authoritative freshness baseline until the live mirror is resynced to all 15 projects."
+                             "notes":  "Freshness is evaluated against the in-repo live mirror for the 15 mirror-managed upstream sources. Shadow-only policy sources remain registered in the manifest but are intentionally excluded from mirror freshness coverage.",
+                             "scope_slugs":  [
+                                                 "activepieces",
+                                                 "agent-squad",
+                                                 "antigravity-awesome-skills",
+                                                 "awesome-agent-skills",
+                                                 "awesome-ai-agents-e2b",
+                                                 "awesome-ai-tools",
+                                                 "awesome-claude-code-subagents",
+                                                 "awesome-claude-skills-composio",
+                                                 "awesome-mcp-servers",
+                                                 "awesome-vibe-coding",
+                                                 "claude-skills",
+                                                 "composio",
+                                                 "docling",
+                                                 "prompt-engineering-guide",
+                                                 "vibe-coding-cn"
+                                             ]
                          },
     "mirror_roots":  [
                          {
                              "id":  "workspace_live",
-                             "path":  "../../third_party/vco-ecosystem-mirror",
-                             "role":  "working_mirror",
-                             "expected_entry_count":  15,
-                             "required_for_freshness_gate":  false
-                         },
-                         {
-                             "id":  "runtime_backup_20260307_140452",
-                             "path":  "../../.tmp/vco-runtime-backups/vibe-20260307-140452/third_party/vco-ecosystem-mirror",
+                             "path":  "third_party/vco-ecosystem-mirror",
                              "role":  "freshness_baseline",
                              "expected_entry_count":  15,
                              "required_for_freshness_gate":  true

@@ -108,7 +108,7 @@ function Get-InstalledRuntimeConfig {
             'scripts/router/resolve-pack-route.ps1',
             'scripts/common/vibe-governance-helpers.ps1'
         )
-        require_nested_bundled_root = $true
+        require_nested_bundled_root = $false
     }
     $runtimeConfig = $null
     if ($Governance.PSObject.Properties.Name -contains 'runtime' -and $null -ne $Governance.runtime) {

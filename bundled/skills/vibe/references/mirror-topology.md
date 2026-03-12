@@ -16,6 +16,7 @@ This reference is the human-readable mirror map for `config/version-governance.j
 - Every mirror sync starts from `canonical`, never from another mirror.
 - `bundled` must always exist and stay in full parity with canonical packaging scope.
 - `nested_bundled` may be absent, but if present it must stay in full parity with canonical and bundled.
+- `nested_bundled` is a repo compatibility mirror; installed-runtime freshness no longer treats its absence as a standalone failure.
 - Installed runtime is governed separately by the runtime freshness contract and is not a repo mirror target.
 
 ## Packaging Scope
@@ -23,8 +24,10 @@ This reference is the human-readable mirror map for `config/version-governance.j
 The mirror topology only applies to the governed package payload:
 
 - top-level files: `SKILL.md`, `check.ps1`, `check.sh`, `install.ps1`, `install.sh`
-- top-level directories: `config`, `protocols`, `references`, `docs`, `scripts`
+- top-level directories: `config`, `protocols`, `references`, `docs`, `scripts`, `mcp`
 - approved bundled-only exception: `docs/CODEX_ECOSYSTEM_MAINTENANCE_PRINCIPLES.md`
+
+`mcp` is governed because install-time payload assembly copies it into the runtime target and the routine checks require `mcp/servers.template.json` to exist.
 
 ## Governance Gates
 

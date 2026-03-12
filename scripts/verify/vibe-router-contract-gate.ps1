@@ -53,6 +53,49 @@ function Compare-Float {
     return ([Math]::Abs($Left - $Right) -le $Tolerance)
 }
 
+function Test-LegacyFallbackGuardEquivalence {
+    param(
+        [object]$Legacy,
+        [object]$Modular,
+        [double]$Tolerance
+    )
+
+    $legacyPack = if ($Legacy.selected) { [string]$Legacy.selected.pack_id } else { "" }
+    $modularPack = if ($Modular.selected) { [string]$Modular.selected.pack_id } else { "" }
+    $legacySkill = if ($Legacy.selected) { [string]$Legacy.selected.skill } else { "" }
+    $modularSkill = if ($Modular.selected) { [string]$Modular.selected.skill } else { "" }
+    $confirmThreshold = if ($Modular.thresholds -and ($Modular.thresholds.confirm_required -ne $null)) {
+        [double]$Modular.thresholds.confirm_required
+    } else {
+        0.45
+    }
+    $guardEnabled = if ($Modular.thresholds -and ($Modular.thresholds.PSObject.Properties.Name -contains "enforce_confirm_on_legacy_fallback")) {
+        [bool]$Modular.thresholds.enforce_confirm_on_legacy_fallback
+    } else {
+        $false
+    }
+
+    $equivalent =
+        ([string]$Legacy.route_mode -eq "legacy_fallback") -and
+        ([string]$Modular.route_mode -eq "confirm_required") -and
+        ([string]$Modular.route_reason -eq "legacy_fallback_guard") -and
+        ([bool]$Modular.legacy_fallback_guard_applied) -and
+        ([string]$Modular.legacy_fallback_original_reason -eq [string]$Legacy.route_reason) -and
+        $guardEnabled -and
+        ($legacyPack -eq $modularPack) -and
+        ($legacySkill -eq $modularSkill) -and
+        (Compare-Float -Left ([double]$Legacy.top1_top2_gap) -Right ([double]$Modular.top1_top2_gap) -Tolerance $Tolerance) -and
+        (Compare-Float -Left ([double]$Legacy.candidate_signal) -Right ([double]$Modular.candidate_signal) -Tolerance $Tolerance) -and
+        ([double]$Legacy.confidence -lt $confirmThreshold) -and
+        ([double]$Modular.confidence -ge $confirmThreshold)
+
+    return [pscustomobject]@{
+        equivalent = [bool]$equivalent
+        reason = if ($equivalent) { "legacy_fallback_guard_equivalent" } else { $null }
+        allowed_mismatches = if ($equivalent) { @("route_mode", "route_reason", "confidence") } else { @() }
+    }
+}
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $modularScript = Join-Path $repoRoot "scripts\router\resolve-pack-route.ps1"
 $legacyScript = Join-Path $repoRoot "scripts\router\legacy\resolve-pack-route.legacy.ps1"
@@ -83,10 +126,11 @@ foreach ($case in $cases) {
     $legacy = Invoke-RouteScript -ScriptPath $legacyScript -Prompt $case.prompt -Grade $case.grade -TaskType $case.task_type -RequestedSkill $case.requested_skill
     $modular = Invoke-RouteScript -ScriptPath $modularScript -Prompt $case.prompt -Grade $case.grade -TaskType $case.task_type -RequestedSkill $case.requested_skill
 
+    $equivalence = Test-LegacyFallbackGuardEquivalence -Legacy $legacy -Modular $modular -Tolerance $FloatTolerance
     $mismatches = @()
 
-    if ([string]$legacy.route_mode -ne [string]$modular.route_mode) { $mismatches += "route_mode" }
-    if ([string]$legacy.route_reason -ne [string]$modular.route_reason) { $mismatches += "route_reason" }
+    if ([string]$legacy.route_mode -ne [string]$modular.route_mode -and -not ($equivalence.allowed_mismatches -contains "route_mode")) { $mismatches += "route_mode" }
+    if ([string]$legacy.route_reason -ne [string]$modular.route_reason -and -not ($equivalence.allowed_mismatches -contains "route_reason")) { $mismatches += "route_reason" }
 
     $legacyPack = if ($legacy.selected) { [string]$legacy.selected.pack_id } else { "" }
     $modularPack = if ($modular.selected) { [string]$modular.selected.pack_id } else { "" }
@@ -96,7 +140,7 @@ foreach ($case in $cases) {
     $modularSkill = if ($modular.selected) { [string]$modular.selected.skill } else { "" }
     if ($legacySkill -ne $modularSkill) { $mismatches += "selected.skill" }
 
-    if (-not (Compare-Float -Left ([double]$legacy.confidence) -Right ([double]$modular.confidence) -Tolerance $FloatTolerance)) { $mismatches += "confidence" }
+    if (-not (Compare-Float -Left ([double]$legacy.confidence) -Right ([double]$modular.confidence) -Tolerance $FloatTolerance) -and -not ($equivalence.allowed_mismatches -contains "confidence")) { $mismatches += "confidence" }
     if (-not (Compare-Float -Left ([double]$legacy.top1_top2_gap) -Right ([double]$modular.top1_top2_gap) -Tolerance $FloatTolerance)) { $mismatches += "top1_top2_gap" }
     if (-not (Compare-Float -Left ([double]$legacy.candidate_signal) -Right ([double]$modular.candidate_signal) -Tolerance $FloatTolerance)) { $mismatches += "candidate_signal" }
 
@@ -110,6 +154,8 @@ foreach ($case in $cases) {
         selected_pack_modular = $modularPack
         selected_skill_legacy = $legacySkill
         selected_skill_modular = $modularSkill
+        contract_equivalent = [bool]$equivalence.equivalent
+        equivalence_reason = $equivalence.reason
         mismatch_count = $mismatches.Count
         mismatches = @($mismatches)
     }
@@ -117,14 +163,19 @@ foreach ($case in $cases) {
 
 $total = $results.Count
 $mismatchCases = @($results | Where-Object { $_.mismatch_count -gt 0 })
+$equivalentCases = @($results | Where-Object { $_.contract_equivalent })
 $passCount = $total - $mismatchCases.Count
-$strictEqualRate = if ($total -gt 0) { [double]$passCount / [double]$total } else { 1.0 }
+$exactMatchCount = @($results | Where-Object { -not $_.contract_equivalent -and $_.mismatch_count -eq 0 }).Count
+$strictEqualRate = if ($total -gt 0) { [double]$exactMatchCount / [double]$total } else { 1.0 }
+$contractCompatibleRate = if ($total -gt 0) { [double]$passCount / [double]$total } else { 1.0 }
 $gatePassed = ($mismatchCases.Count -eq 0)
 
 Write-Host "=== VCO Router Contract Gate ==="
 Write-Host ("Cases: {0}" -f $total)
-Write-Host ("Exact-match cases: {0}" -f $passCount)
+Write-Host ("Exact-match cases: {0}" -f $exactMatchCount)
+Write-Host ("Equivalent cases: {0}" -f $equivalentCases.Count)
 Write-Host ("Strict equality rate: {0:N4}" -f $strictEqualRate)
+Write-Host ("Contract-compatible rate: {0:N4}" -f $contractCompatibleRate)
 Write-Host ("Gate Result: {0}" -f $(if ($gatePassed) { "PASS" } else { "FAIL" }))
 
 if ($mismatchCases.Count -gt 0) {
@@ -140,13 +191,15 @@ $report = [pscustomobject]@{
     float_tolerance = $FloatTolerance
     metrics = [pscustomobject]@{
         total_cases = $total
-        exact_match_cases = $passCount
+        exact_match_cases = $exactMatchCount
+        equivalent_cases = $equivalentCases.Count
         strict_equality_rate = [Math]::Round($strictEqualRate, 4)
-        mismatch_cases = $mismatchCases.Count
+        contract_compatible_rate = [Math]::Round($contractCompatibleRate, 4)
+        incompatible_cases = $mismatchCases.Count
     }
     thresholds = [pscustomobject]@{
-        strict_equality_rate = 1.0
-        mismatch_cases = 0
+        contract_compatible_rate = 1.0
+        incompatible_cases = 0
     }
     gate_passed = $gatePassed
     results = $results
@@ -169,12 +222,15 @@ if ($WriteArtifacts) {
     $lines += "- generated_at: ``$($report.generated_at)``"
     $lines += "- gate_passed: ``$($report.gate_passed)``"
     $lines += "- strict_equality_rate: ``$($report.metrics.strict_equality_rate)``"
-    $lines += "- mismatch_cases: ``$($report.metrics.mismatch_cases)``"
+    $lines += "- contract_compatible_rate: ``$($report.metrics.contract_compatible_rate)``"
+    $lines += "- equivalent_cases: ``$($report.metrics.equivalent_cases)``"
+    $lines += "- incompatible_cases: ``$($report.metrics.incompatible_cases)``"
     $lines += ""
     $lines += "## Case Summary"
     $lines += ""
     foreach ($row in $results) {
-        $lines += "- ``$($row.case_id)``: mismatch_count=``$($row.mismatch_count)``"
+        $suffix = if ($row.contract_equivalent) { ", equivalent=``true`` ($($row.equivalence_reason))" } else { "" }
+        $lines += "- ``$($row.case_id)``: mismatch_count=``$($row.mismatch_count)``$suffix"
     }
 
     $lines -join "`n" | Set-Content -LiteralPath $mdPath -Encoding UTF8

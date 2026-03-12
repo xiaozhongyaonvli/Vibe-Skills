@@ -61,9 +61,9 @@ function Get-CanonicalJson {
 }
 
 function Get-StringHash {
-    param([string]$Input)
+    param([Parameter(Mandatory)] [string]$Text)
 
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Input)
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
         $hashBytes = $sha.ComputeHash($bytes)
@@ -224,6 +224,8 @@ $pairs = @(
     [pscustomobject]@{ id = "docling-provider-policy"; main = "config/docling-provider-policy.json"; bundled = "bundled/skills/vibe/config/docling-provider-policy.json" },
     [pscustomobject]@{ id = "connector-admission-policy"; main = "config/connector-admission-policy.json"; bundled = "bundled/skills/vibe/config/connector-admission-policy.json" },
     [pscustomobject]@{ id = "role-pack-policy"; main = "config/role-pack-policy.json"; bundled = "bundled/skills/vibe/config/role-pack-policy.json" },
+    [pscustomobject]@{ id = "process-health-policy"; main = "config/process-health-policy.json"; bundled = "bundled/skills/vibe/config/process-health-policy.json" },
+    [pscustomobject]@{ id = "process-ledger-policy"; main = "config/process-ledger-policy.json"; bundled = "bundled/skills/vibe/config/process-ledger-policy.json" },
     [pscustomobject]@{ id = "promotion-board"; main = "config/promotion-board.json"; bundled = "bundled/skills/vibe/config/promotion-board.json" }
 )
 
@@ -273,8 +275,8 @@ foreach ($pair in $pairs) {
 
         $mainCanonical = Get-CanonicalJson -Node $normMain
         $bundledCanonical = Get-CanonicalJson -Node $normBundled
-        $mainHash = Get-StringHash -Input $mainCanonical
-        $bundledHash = Get-StringHash -Input $bundledCanonical
+        $mainHash = Get-StringHash -Text $mainCanonical
+        $bundledHash = Get-StringHash -Text $bundledCanonical
         $hashMatch = ($mainHash -eq $bundledHash)
 
         if (-not $hashMatch) {

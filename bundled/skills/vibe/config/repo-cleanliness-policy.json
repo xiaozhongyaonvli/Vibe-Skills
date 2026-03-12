@@ -27,6 +27,7 @@
                                   "scripts/",
                                   "bundled/",
                                   "protocols/",
+                                  "mcp/",
                                   "third_party/"
                               ],
     "high_risk_managed_roots":  [

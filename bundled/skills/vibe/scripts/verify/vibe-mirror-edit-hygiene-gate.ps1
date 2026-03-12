@@ -232,6 +232,18 @@ foreach ($entry in $gitEntries) {
         canonical_counterpart = $canonicalCounterpart
     }
 
+    $isOptionalNestedRemoval = (
+        $matchedMirror.id -eq 'nested_bundled' -and
+        $entry.status -eq 'D' -and
+        -not [bool]$matchedMirror.required -and
+        [string]$matchedMirror.presence_policy -ne 'required'
+    )
+
+    if ($isOptionalNestedRemoval) {
+        $results.reconciled_mirror_edits += [pscustomobject]$classification
+        continue
+    }
+
     if ($allowBundledOnly -contains $canonicalCounterpart) {
         $results.allowlisted_mirror_edits += [pscustomobject]$classification
         continue

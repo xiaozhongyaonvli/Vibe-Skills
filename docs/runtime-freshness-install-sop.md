@@ -8,14 +8,15 @@ This SOP is the operator-facing playbook for the VCO install path after Wave33.
 - install copies the governed payload into `${TARGET_ROOT}/skills/vibe`
 - runtime freshness authoritatively validates the installed copy against canonical source
 - routine checks call the freshness and coherence gates only from the canonical repo root
+- repo-level `nested_bundled` is now treated as an optional compatibility mirror, not as a mandatory installed-runtime root
 
 ## Canonical Operator Flow
 
 ### PowerShell
 
 ```powershell
-pwsh -NoProfile -File .\install.ps1 -Profile full -TargetRoot "$env:USERPROFILE\.codex"
-pwsh -NoProfile -File .\check.ps1 -Profile full -TargetRoot "$env:USERPROFILE\.codex"
+powershell -NoProfile -File .\install.ps1 -Profile full -TargetRoot "$env:USERPROFILE\.codex"
+powershell -NoProfile -File .\check.ps1 -Profile full -TargetRoot "$env:USERPROFILE\.codex"
 ```
 
 ### Bash
@@ -30,19 +31,19 @@ bash ./check.sh --profile full --target-root "$HOME/.codex"
 Run the authoritative runtime freshness gate directly:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\verify\vibe-installed-runtime-freshness-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteReceipt
+powershell -NoProfile -File .\scripts\verify\vibe-installed-runtime-freshness-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteReceipt
 ```
 
 Run the frontmatter / BOM gate against the installed runtime immediately after install/check:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\verify\vibe-bom-frontmatter-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteArtifacts
+powershell -NoProfile -File .\scripts\verify\vibe-bom-frontmatter-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteArtifacts
 ```
 
 Run the release / install / runtime coherence gate:
 
 ```powershell
-pwsh -NoProfile -File .\scripts\verify\vibe-release-install-runtime-coherence-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteArtifacts
+powershell -NoProfile -File .\scripts\verify\vibe-release-install-runtime-coherence-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteArtifacts
 ```
 
 ## Receipt Contract
@@ -60,6 +61,12 @@ Operational expectations:
 1. install writes the receipt only after the freshness gate passes
 2. `check.ps1` / `check.sh` validate receipt presence and semantic alignment when possible
 3. the coherence gate verifies that the configured contract and the emitting gate stay in sync
+
+Nested compatibility note:
+
+- `runtime.installed_runtime.require_nested_bundled_root = false`
+- freshness does not fail only because a nested compatibility mirror is absent
+- if a nested layout is present in the installed payload, it must still remain parity-safe
 
 ## Shell Degraded Behavior
 

@@ -3,7 +3,7 @@
 - Repo entry: [`../README.md`](../README.md)
 - Docs entry: [`../docs/README.md`](../docs/README.md)
 - References entry: [`../references/index.md`](../references/index.md)
-- Cleanup umbrella: [`../docs/plans/2026-03-08-repo-full-cleanup-master-plan.md`](../docs/plans/2026-03-08-repo-full-cleanup-master-plan.md)
+- Cleanup umbrella: [`../docs/plans/2026-03-11-vco-repo-simplification-remediation-plan.md`](../docs/plans/2026-03-11-vco-repo-simplification-remediation-plan.md)
 
 ## What Lives Here
 

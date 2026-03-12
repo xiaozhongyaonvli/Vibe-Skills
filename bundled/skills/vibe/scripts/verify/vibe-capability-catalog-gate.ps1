@@ -267,14 +267,16 @@ if ($catalog) {
     }
 }
 
-foreach ($phrase in @(
+$governancePhrases = @(
     "第二 runtime surface",
     "awesome-vibe-coding",
     "awesome-ai-tools",
     "vibe-coding-cn",
     "awesome-ai-agents-e2b",
     "runtime_surface = none"
-)) {
+)
+$governancePhrases[0] = "second runtime surface"
+foreach ($phrase in $governancePhrases) {
     Add-Assertion -Results ([ref]$results) -Condition ($governanceDoc -match [regex]::Escape($phrase)) -Message ("discovery/eval governance doc mentions: {0}" -f $phrase)
 }
 

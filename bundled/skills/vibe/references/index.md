@@ -1,21 +1,37 @@
 # VCO References Index
 
-Navigation guide for VCO contracts, registries, matrices, ledgers, scenarios, and overlay reference packs.
+Navigation guide for VCO long-lived contracts, registries, matrices, ledgers, scenarios, fixtures, and overlay reference packs. This page is the contract and reference layer, not the operator console.
 
 ## Start Here
 
+### Contract Entrypoints
+
 | Asset | Purpose |
 | --- | --- |
+| [unified-task-contract.md](unified-task-contract.md) | cleanup-first 任务合同与跨平面执行边界 |
+| [tool-rule-contract.md](tool-rule-contract.md) | 工具、规则、允许/禁止项合同 |
+| [mirror-topology.md](mirror-topology.md) | canonical, bundled, and nested topology invariants |
+| [release-evidence-bundle-contract.md](release-evidence-bundle-contract.md) | 什么构成 release 或 closure proof 的证据合同 |
 | [reference-asset-taxonomy.md](reference-asset-taxonomy.md) | `references/` 的正式分类、命名约定与维护规则 |
-| [unified-task-contract.md](unified-task-contract.md) | 跨平面任务合同的 cleanup-first 入口 |
-| [mirror-topology.md](mirror-topology.md) | canonical / bundled / nested mirror topology 参考基线 |
-| [changelog.md](changelog.md) | 参考层变更账本与长期演进轨迹 |
-| [../docs/README.md](../docs/README.md) | 治理正文 / 集成说明 / plans / releases 总入口 |
-| [../scripts/verify/gate-family-index.md](../scripts/verify/gate-family-index.md) | `scripts/verify/` gate family 导航与推荐运行顺序 |
-| [../docs/plans/2026-03-08-repo-cleanliness-batch2-4-triage.md](../docs/plans/2026-03-08-repo-cleanliness-batch2-4-triage.md) | cleanup-first 的 Batch 2-4 拆分与 stop rules |
-| [../docs/plans/2026-03-08-repo-full-cleanup-master-plan.md](../docs/plans/2026-03-08-repo-full-cleanup-master-plan.md) | full-repo cleanup umbrella plan；定义 batch0-9 的 plane-governance 收口顺序 |
-| [fixtures/README.md](fixtures/README.md) | fixture migration stage2 的 baseline / migration map 入口 |
-| [overlays/index.md](overlays/index.md) | overlay reference packs 的统一导航入口 |
+
+### Evidence Entrypoints
+
+| Asset | Purpose |
+| --- | --- |
+| [release-ledger.jsonl](release-ledger.jsonl) | release ledger |
+| [cross-plane-replay-ledger.md](cross-plane-replay-ledger.md) | replay 证据账本 |
+| [connector-action-ledger.md](connector-action-ledger.md) | connector action ledger |
+| [upstream-value-ledger.md](upstream-value-ledger.md) | upstream value extraction ledger |
+| [changelog.md](changelog.md) | reference 层变更账本与长期演进轨迹 |
+
+### Adjacent Runtime / Execution Context
+
+这些入口保留可达性，但它们属于运行态、操作态或时间绑定上下文，不属于 `references/` 的 spine：
+
+- [`../docs/status/current-state.md`](../docs/status/current-state.md)
+- [`../docs/status/non-regression-proof-bundle.md`](../docs/status/non-regression-proof-bundle.md)
+- [`../scripts/verify/gate-family-index.md`](../scripts/verify/gate-family-index.md)
+- [`../docs/plans/README.md`](../docs/plans/README.md)
 
 ## Contracts / Handbooks
 
@@ -69,7 +85,7 @@ Navigation guide for VCO contracts, registries, matrices, ledgers, scenarios, an
 | [upstream-value-ledger.md](upstream-value-ledger.md) | upstream value extraction ledger |
 | [rollout-proposal-contract.md](rollout-proposal-contract.md) | rollout proposal contract |
 
-## Scenarios / Checklists / Quality Bars
+## Validation / Playbooks
 
 | Asset | Purpose |
 | --- | --- |
@@ -81,6 +97,7 @@ Navigation guide for VCO contracts, registries, matrices, ledgers, scenarios, an
 | [document-failure-taxonomy.md](document-failure-taxonomy.md) | document failure taxonomy |
 | [prompt-risk-checklist.md](prompt-risk-checklist.md) | prompt risk checklist |
 | [upstream-distillation-quality-bar.md](upstream-distillation-quality-bar.md) | upstream distillation quality bar |
+| [fixtures/README.md](fixtures/README.md) | fixture migration stage2 的 baseline / migration map 入口 |
 
 ## Overlay Packs
 
@@ -91,26 +108,16 @@ Navigation guide for VCO contracts, registries, matrices, ledgers, scenarios, an
 | [overlays/ruc-nlpir](overlays/ruc-nlpir) | FlashRAG / WebThinker / DeepAgent overlay references |
 | [overlays/agency](overlays/agency) | agency-style role overlays |
 
-## Wave Execution Backlog Anchors
-
-| Wave Set | Primary Assets |
-| --- | --- |
-| Wave19-30 | [../docs/plans/2026-03-07-vco-full-spectrum-integration-plan.md](../docs/plans/2026-03-07-vco-full-spectrum-integration-plan.md) |
-| Wave31-39 | [../docs/plans/2026-03-07-vco-deep-value-extraction-drift-closure-plan.md](../docs/plans/2026-03-07-vco-deep-value-extraction-drift-closure-plan.md) |
-| Wave40-63 | [../docs/plans/2026-03-07-vco-wave40-63-execution-plan.md](../docs/plans/2026-03-07-vco-wave40-63-execution-plan.md), [../config/wave40-63-planning-board.json](../config/wave40-63-planning-board.json) |
-| Wave64-82 | [../docs/plans/2026-03-07-vco-wave64-82-execution-plan.md](../docs/plans/2026-03-07-vco-wave64-82-execution-plan.md), [../config/wave64-82-planning-board.json](../config/wave64-82-planning-board.json) |
-| Wave83-100 | [../docs/plans/2026-03-07-vco-wave83-100-execution-plan.md](../docs/plans/2026-03-07-vco-wave83-100-execution-plan.md), [../docs/plans/2026-03-07-vco-wave83-100-execution-status.md](../docs/plans/2026-03-07-vco-wave83-100-execution-status.md) |
-
 ## Reading Order
 
-1. 先看 [reference-asset-taxonomy.md](reference-asset-taxonomy.md) 了解资产类型；
-2. 再看 [tool-registry.md](tool-registry.md)、[unified-task-contract.md](unified-task-contract.md)、[mirror-topology.md](mirror-topology.md)、[changelog.md](changelog.md) 建立 cleanup-first 基线；
-3. 然后按 registry / catalog 理解“当前拥有哪些能力与规则面”；
-4. 再按 matrix / scorecard 理解 admission、dedup、quality；
-5. 最后进入 contract、scenario、overlay packs 做深读。
+1. 先看 [unified-task-contract.md](unified-task-contract.md)、[tool-rule-contract.md](tool-rule-contract.md)、[mirror-topology.md](mirror-topology.md) 建立 contract-first 边界；
+2. 再看 [tool-registry.md](tool-registry.md) 与 [capability-catalog.md](capability-catalog.md) 理解能力面；
+3. 然后进入 matrix / scorecard 判断 admission、dedup、quality；
+4. 接着进入 ledger / evidence 读取长期证明链；
+5. 最后按 validation / playbooks / overlays 深读具体场景与实现参考。
 
 ## Maintenance Rules
 
 - 新增 reference 资产必须进入本 index。
 - 新增 ledger / scorecard / contract 时，需至少补一个对应的 docs 或 gate 锚点。
-- 不把 wave 执行正文塞进 `references/`；波次执行文档只放 `docs/plans/`。
+- 不把 wave 执行正文塞进 `references/`；时间绑定正文继续放 `docs/plans/` 或 `docs/status/`。

@@ -69,6 +69,9 @@
     "netlify-deploy": {
       "keywords": ["netlify deploy", "deploy netlify", "发布到netlify", "部署到netlify"]
     },
+    "node-zombie-guardian": {
+      "keywords": ["node zombie", "zombie node", "orphan node", "stale node process", "node process audit", "cleanup zombie node", "僵尸node", "僵尸进程", "node进程审计", "清理僵尸node"]
+    },
     "openai-docs": {
       "keywords": ["openai docs", "responses api", "chat completions", "openai官方文档", "查询openai文档", "responses接口"]
     },
@@ -131,6 +134,9 @@
     },
     "transcribe": {
       "keywords": ["transcribe", "speech to text", "meeting transcript", "语音转文字", "会议转录", "说话人分离", "会议录音转文字", "区分说话人", "录音转文字"]
+    },
+    "video-studio": {
+      "keywords": ["video", "video editing", "edit video", "clips", "clip", "montage", "highlight reel", "subtitle", "subtitles", "caption", "captions", "b-roll", "transition", "transitions", "ffmpeg", "ffprobe", "remotion", "capcut", "剪映", "视频", "视频制作", "视频剪辑", "剪辑", "混剪", "字幕", "转场", "配音", "口播", "片头", "片尾", "bgm", "短视频", "抛光", "打磨", "音量标准化", "去静音", "jumpcut", "jump cut", "remove silence", "silence removal", "srt", "burn subtitles", "去停顿", "剪掉停顿"]
     },
     "screenshot": {
       "keywords": ["screenshot", "capture screen", "截屏", "截图", "屏幕快照"]

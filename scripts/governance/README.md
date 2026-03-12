@@ -21,6 +21,7 @@
 | Script | Family | Mutates state | Preview mode | Output | Notes |
 | --- | --- | --- | --- | --- | --- |
 | [`sync-bundled-vibe.ps1`](sync-bundled-vibe.ps1) | mirror / packaging | yes | `-Preview` | host + preview receipt | canonical -> bundled -> nested mirror sync |
+| [`phase-end-cleanup.ps1`](phase-end-cleanup.ps1) | batch hygiene | no by default | skips writes unless `-WriteArtifacts`; node cleanup stays report-only unless `-ApplyManagedNodeCleanup` | json + optional runtime artifacts | purges `.tmp/`, refreshes local excludes, reruns cleanup gates, then performs repo-safe node audit / cleanup orchestration |
 | [`install-local-worktree-excludes.ps1`](install-local-worktree-excludes.ps1) | cleanliness | yes | `-DryRun` | host | writes `.git/info/exclude` local-only patterns |
 | [export-repo-cleanliness-inventory.ps1](export-repo-cleanliness-inventory.ps1) | cleanliness inventory | no | n/a | json + artifacts | exports plane split / top dirty prefixes / bucket summary for cleanup triage |
 | [`release-cut.ps1`](release-cut.ps1) | release | yes | no explicit preview yet | host | updates version governance, changelog, release note, ledger, then syncs mirrors |
@@ -38,6 +39,30 @@
 2. **Inventory / preview / advice-first**：当前 dirty 状态不清楚时，先运行 `export-repo-cleanliness-inventory.ps1 -WriteArtifacts`，再使用 `-WhatIf` / `-DryRun` / advice-first 路径。
 3. **Apply**：只有在 preview / gate 结果可接受时，才执行真正写入。
 4. **Postcheck**：操作完成后立即重跑对应 gates，确保 mirror / packaging / release evidence 没有漂移。
+
+## Phase-End Hygiene
+
+Use [`phase-end-cleanup.ps1`](phase-end-cleanup.ps1) at the end of each cleanup batch when you need one bounded operator entrypoint for:
+
+1. `.tmp/` purge
+2. local worktree exclude refresh
+3. cleanliness / outputs boundary recheck
+4. optional mirror hygiene recheck
+5. repo-safe node audit, followed by report-only cleanup
+
+Recommended default:
+
+```powershell
+pwsh -NoProfile -File .\scripts\governance\phase-end-cleanup.ps1 -WriteArtifacts
+```
+
+Mirror-aware batch:
+
+```powershell
+pwsh -NoProfile -File .\scripts\governance\phase-end-cleanup.ps1 -WriteArtifacts -IncludeMirrorGates
+```
+
+Managed node termination is never implicit. Only pass `-ApplyManagedNodeCleanup` after the audit output proves the candidate is `vco-managed`.
 
 ## Maintenance Notes
 
