@@ -10,6 +10,20 @@ The short answer:
 - first-time operators should not install all host plugins up front
 - the stable default is: close the repo-governed surfaces first, run doctor, then provision host plugins one by one based on real gaps
 
+If you remember one line:
+
+**the standard recommended install does not require all five host plugins on day one.**
+
+Also keep a separate boundary in mind:
+
+- `scrapling` is not a host plugin here; it is a default local runtime surface in the full lane
+- `Cognee` is not a host plugin either; it is the governed long-term memory enhancement lane
+- `Composio / Activepieces` are not "missing host plugins"; they are setup-required external action integrations
+
+Start here:
+
+- [`recommended-full-path.en.md`](./recommended-full-path.en.md)
+
 ## Boundary First
 
 The following plugins are currently marked as `manual-codex` in `config/plugins-manifest.codex.json`:

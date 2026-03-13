@@ -15,6 +15,12 @@ If you only remember one thing:
 `recommended full-featured` is about closing the repo-governed surface.  
 `enterprise-governed` is about repeatable, auditable, rollback-safe delivery.
 
+In the current rollout, the recommended path also separates three default lanes:
+
+- `scrapling` as a default local runtime surface
+- `Cognee` as the default long-term enhancement lane
+- `Composio / Activepieces` as prewired but setup-required external action surfaces
+
 ## Path 1: Minimum Viable
 
 ### Best for
@@ -74,13 +80,15 @@ If this is only an initial evaluation, you can stop here.
 
 Do not move to the next path until you confirm the repo-owned surface is healthy.
 
-## Path 2: Recommended Full-Featured
+## Path 2: Recommended Full-Featured (Standard Recommended Install)
 
 ### Best for
 
 - heavy users who want the full shipped payload and governance surface installed in one pass
 - individual developers who want fuller doctor and gate coverage
 - team leads who want the closest thing to a real full-featured setup
+
+This is the **default recommendation for most users**.
 
 ### Goal
 
@@ -143,6 +151,30 @@ The repo will not fake:
 - `npm` deprecation warnings can be noisy without meaning failure
 - on Linux / macOS, shell warnings caused by missing `pwsh` do not automatically mean the repo closure failed
 - reusing provider keys already present in `settings.json` is expected behavior, not lost configuration
+
+### What counts as complete for this path
+
+For the standard recommended install:
+
+- `fully_ready` is ideal
+- `manual_actions_pending` is still a valid and acceptable result
+- `core_install_incomplete` is the state that should block you
+
+Do not treat remaining manual actions as failure if the repo-owned surface is already closed.
+
+### How to enhance after this path
+
+Suggested order:
+
+1. add provider secrets
+2. add `superpowers` and `hookify`
+3. add `github`, `context7`, and `serena`
+4. only then consider `everything-claude-code`, `claude-code-settings`, and `ralph-loop` if doctor still points to a real gap
+
+See:
+
+- [`install/recommended-full-path.en.md`](./install/recommended-full-path.en.md)
+- [`install/host-plugin-policy.en.md`](./install/host-plugin-policy.en.md)
 
 ## Path 3: Enterprise-Governed
 

@@ -10,6 +10,21 @@
 - 第一次安装时，不建议把所有宿主插件一口气全装上。
 - 默认策略应该是：先把 repo-governed surfaces 装好并跑完 doctor，再按缺口逐项补宿主插件。
 
+如果你只记一条：
+
+**标准推荐安装不要求第一天就装完这 5 个宿主插件。**
+
+同时要把几类东西分开看：
+
+- `scrapling` 不是宿主插件，它是 `full` lane 里的默认本地 runtime 面
+- `Cognee` 也不是宿主插件，它是受治理的默认长程记忆增强面
+- `Composio / Activepieces` 更不是“缺失宿主插件”，它们是 setup-required 的外部操作集成面
+先把仓库负责的面闭环，再决定是否增强，才是默认策略。
+
+先看：
+
+- [`recommended-full-path.md`](./recommended-full-path.md)
+
 ## 先认清边界
 
 当前 `config/plugins-manifest.codex.json` 里的以下插件都被标记为 `manual-codex`：
@@ -199,6 +214,15 @@ pip install ivy
 - 推荐优先安装：`superpowers`、`hookify`
 - 默认延后：`everything-claude-code`、`claude-code-settings`、`ralph-loop`
 - 其余 MCP / CLI / provider secrets 全部按真实需求补齐
+
+如果你只想照一个稳定顺序增强，而不想自己重新设计策略，可以直接用这个顺序：
+
+1. `OPENAI_API_KEY` 等 provider secrets
+2. `superpowers`
+3. `hookify`
+4. `github` / `context7` / `serena`
+5. `everything-claude-code` / `claude-code-settings` / `ralph-loop`
+6. `claude-flow` / `xan` / `ivy`
 
 这套策略的目标不是“看起来最满”，而是：
 

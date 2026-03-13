@@ -1,10 +1,10 @@
 {
     "schema_version":  2,
     "release":  {
-                    "version":  "2.3.36",
+                    "version":  "2.3.37",
                     "updated":  "2026-03-13",
                     "channel":  "stable",
-                    "notes":  "Install-surface messaging hardening: governed full-feature framing, cold-start path onboarding, and explicit host-managed readiness boundaries."
+                    "notes":  "Default full-profile install alignment: scrapling promoted into the governed default lane, Cognee clarified as the long-term enhancement owner, and Composio/Activepieces exposed as setup-required external action surfaces."
                 },
     "source_of_truth":  {
                             "canonical_root":  ".",

@@ -95,10 +95,37 @@ You can start here.
 
 ### Install Guide
 
+#### Start with the standard recommended install
+
+For most users, the **standard recommended install** is the default entry point.
+
+It does not mean "install every enhancement on day one". It means:
+
+- close the repo-governed surfaces first
+- accept `manual_actions_pending` as an honest state when host-managed surfaces are still missing
+- enhance the setup in layers instead of forcing every plugin, MCP surface, and secret into the first run
+
+This is the right default for:
+
+- heavy AI users who want a stable real setup
+- team leads who want to evaluate the governed surface before broader rollout
+- operators who want less first-day conflict and less first-day debugging
+
+Start here:
+
+- [`docs/install/recommended-full-path.en.md`](./docs/install/recommended-full-path.en.md)
+- [`docs/cold-start-install-paths.en.md`](./docs/cold-start-install-paths.en.md)
+
 #### What "full-featured" means here
 
 A full-featured VibeSkills setup is not just "the repo cloned successfully".
 It means all shipped skills and governance assets are installed locally, the active MCP profile is materialized, the runtime passes deep health checks, and the remaining host-managed surfaces are called out explicitly instead of being silently skipped.
+
+In the current default recommendation, that now means three different layers are made explicit:
+
+- `scrapling` is treated as a default local runtime surface for the full profile, and the installer attempts to provision it during the standard external CLI pass
+- `Cognee` is treated as the default long-term enhancement lane for governed graph memory, not as a replacement for session truth
+- `Composio` and `Activepieces` are treated as predeclared external action surfaces that ship with governance context, but still require setup before use
 
 #### Our "full-featured" promise is governed, not magical
 
@@ -157,9 +184,24 @@ bash ./scripts/bootstrap/one-shot-setup.sh --strict-offline
 Both one-shot bootstraps do the same governed work:
 
 - install the shipped runtime payload under `~/.codex`
-- install automatable external CLIs where supported
+- install automatable external CLIs where supported, including the default `scrapling` surface in the full lane when Python packaging is available
 - materialize `mcp/servers.active.json` from the selected profile
 - run the deep readiness check
+
+#### What counts as complete for the standard recommended install
+
+For most users, the standard recommended install is complete when:
+
+- the one-shot bootstrap succeeds
+- the deep doctor succeeds
+- shipped payload, bundled mirrors, active MCP profile, and runtime coherence are closed on the repo-owned side
+- remaining gaps are listed clearly instead of being hidden
+
+So:
+
+- `fully_ready` is ideal
+- `manual_actions_pending` is still a valid and acceptable result for this path
+- `core_install_incomplete` is the real blocking failure
 
 #### Re-run the deep doctor
 
@@ -183,6 +225,7 @@ These surfaces are intentionally not faked by the repo and must be provisioned o
 
 - Host plugin surfaces still tracked by the current doctor / manifest: `superpowers`, `everything-claude-code`, `claude-code-settings`, `hookify`, `ralph-loop`
 - Plugin-backed MCP surfaces: `github`, `context7`, `serena`
+- External action integrations that are now shipped as governed prewired surfaces, but remain setup-required: `Composio`, `Activepieces`
 - Provider secrets when you want online execution: `OPENAI_API_KEY` and any optional provider keys you actually use
 
 But the default policy is not "install all five host plugins on day one".
@@ -198,6 +241,29 @@ Full decision rules and install guidance:
 - [`docs/install/host-plugin-policy.en.md`](./docs/install/host-plugin-policy.en.md)
 
 If those are not provisioned yet, the doctor should end in `manual_actions_pending`, not in a false "everything is ready" state.
+
+#### If you want to enhance the setup further
+
+A lower-risk order is:
+
+1. add provider secrets first
+2. add the recommended host plugins next
+   Prioritize `superpowers` and `hookify`.
+3. verify the default local and enhancement surfaces
+   Confirm `scrapling` is callable and treat `Cognee` as the governed long-term graph-memory lane instead of introducing a second session-truth system.
+4. add plugin-backed MCP surfaces
+   For example `github`, `context7`, and `serena`.
+5. wire external action integrations only when you actually need them
+   `Composio` and `Activepieces` are intentionally predeclared but not auto-enabled; they stay confirm-gated and setup-required.
+6. only add the remaining host plugins when doctor still points to a concrete gap
+   For example `everything-claude-code`, `claude-code-settings`, and `ralph-loop`.
+7. add optional CLI / toolchain enhancements last
+   For example `claude-flow`, `xan`, and `ivy`.
+
+See:
+
+- [`docs/install/recommended-full-path.en.md`](./docs/install/recommended-full-path.en.md)
+- [`docs/install/host-plugin-policy.en.md`](./docs/install/host-plugin-policy.en.md)
 
 #### Not sure which install path to choose
 

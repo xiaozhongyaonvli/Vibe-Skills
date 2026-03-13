@@ -131,11 +131,29 @@ function Write-DoctorArtifacts {
         $lines += ''
     }
 
+    if ($Artifact.enhancement_surfaces.Count -gt 0) {
+        $lines += '## Enhancement Surfaces'
+        $lines += ''
+        foreach ($surface in $Artifact.enhancement_surfaces) {
+            $lines += ('- `{0}`: role=`{1}` status=`{2}` next_step=`{3}`' -f $surface.name, $surface.role, $surface.status, $surface.next_step)
+        }
+        $lines += ''
+    }
+
     if ($Artifact.mcp.servers.Count -gt 0) {
         $lines += '## MCP Servers'
         $lines += ''
         foreach ($server in $Artifact.mcp.servers) {
             $lines += ('- `{0}`: mode=`{1}` status=`{2}` next_step=`{3}`' -f $server.name, $server.mode, $server.status, $server.next_step)
+        }
+        $lines += ''
+    }
+
+    if ($Artifact.integration_surfaces.Count -gt 0) {
+        $lines += '## External Integration Surfaces'
+        $lines += ''
+        foreach ($surface in $Artifact.integration_surfaces) {
+            $lines += ('- `{0}`: status=`{1}` risk=`{2}` confirm_required=`{3}` next_step=`{4}`' -f $surface.name, $surface.status, $surface.risk_tier, $surface.confirm_required, $surface.next_step)
         }
         $lines += ''
     }
@@ -159,6 +177,8 @@ $settingsPath = Join-Path $TargetRoot 'settings.json'
 $pluginsManifestPath = Join-Path $repoRoot 'config\plugins-manifest.codex.json'
 $serversTemplatePath = Join-Path $repoRoot 'mcp\servers.template.json'
 $secretsPolicyPath = Join-Path $repoRoot 'config\secrets-policy.json'
+$toolRegistryPath = Join-Path $repoRoot 'config\tool-registry.json'
+$memoryGovernancePath = Join-Path $repoRoot 'config\memory-governance.json'
 
 $settings = $null
 if (Test-Path -LiteralPath $settingsPath) {
@@ -179,6 +199,8 @@ if ($null -ne $settings -and $settings.PSObject.Properties.Name -contains 'vco' 
 $activeMcpPath = Join-Path $TargetRoot 'mcp\servers.active.json'
 $pluginsManifest = Get-Content -LiteralPath $pluginsManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $serversTemplate = Get-Content -LiteralPath $serversTemplatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+$toolRegistry = Get-Content -LiteralPath $toolRegistryPath -Raw -Encoding UTF8 | ConvertFrom-Json
+$memoryGovernance = Get-Content -LiteralPath $memoryGovernancePath -Raw -Encoding UTF8 | ConvertFrom-Json
 $profilePath = Join-Path $repoRoot ("mcp\profiles\{0}.json" -f $profile)
 $profileObject = if (Test-Path -LiteralPath $profilePath) {
     Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -227,9 +249,9 @@ foreach ($plugin in @($pluginsManifest.core) + @($pluginsManifest.optional)) {
 $externalTools = @(
     [pscustomobject]@{ name = 'git'; present = [bool](Test-CommandPresent -Name 'git'); required_for = @('bootstrap') },
     [pscustomobject]@{ name = 'npm'; present = [bool](Test-CommandPresent -Name 'npm'); required_for = @('claude-flow', 'ralph-wiggum') },
-    [pscustomobject]@{ name = 'python'; present = [bool](Test-CommandPresent -Name 'python'); required_for = @('scrapling', 'ivy') },
+    [pscustomobject]@{ name = 'python'; present = [bool]((Test-CommandPresent -Name 'python') -or (Test-CommandPresent -Name 'python3')); required_for = @('default-mcp:scrapling', 'ivy') },
     [pscustomobject]@{ name = 'claude-flow'; present = [bool](Test-CommandPresent -Name 'claude-flow'); required_for = @('mcp:claude-flow') },
-    [pscustomobject]@{ name = 'scrapling'; present = [bool](Test-CommandPresent -Name 'scrapling'); required_for = @('mcp:scrapling') },
+    [pscustomobject]@{ name = 'scrapling'; present = [bool](Test-CommandPresent -Name 'scrapling'); required_for = @('default-full-profile-mcp:scrapling') },
     [pscustomobject]@{ name = 'xan'; present = [bool](Test-CommandPresent -Name 'xan'); required_for = @('csv-acceleration') }
 )
 
@@ -295,6 +317,75 @@ foreach ($secret in @($secretsPolicy.allowed_secret_refs)) {
     }
 }
 
+$secretStateIndex = @{}
+foreach ($secretSurface in $secretSurfaces) {
+    $secretStateIndex[[string]$secretSurface.name] = [string]$secretSurface.status
+}
+
+$taskDefaults = @($memoryGovernance.defaults_by_task.PSObject.Properties)
+$cogneeDefaultCount = @($taskDefaults | Where-Object {
+    $null -ne $_.Value -and
+    $_.Value.PSObject.Properties.Name -contains 'long_term' -and
+    [string]$_.Value.long_term -eq 'cognee'
+}).Count
+$enhancementSurfaces = @(
+    [pscustomobject]@{
+        name = 'cognee'
+        role = 'default_long_term_graph_memory_owner'
+        status = if (
+            $memoryGovernance.role_boundaries.PSObject.Properties.Name -contains 'cognee' -and
+            [string]$memoryGovernance.role_boundaries.cognee.status -eq 'active' -and
+            $taskDefaults.Count -gt 0 -and
+            $cogneeDefaultCount -eq $taskDefaults.Count
+        ) {
+            'declared_default_owner'
+        } else {
+            'governance_review_required'
+        }
+        task_default_coverage = ('{0}/{1}' -f $cogneeDefaultCount, $taskDefaults.Count)
+        next_step = 'Optional enhancement lane. Enable Cognee only when you want governed cross-session graph memory; keep state_store as the session truth-source.'
+    }
+)
+
+$integrationSurfaces = @()
+foreach ($tool in @($toolRegistry.tools) | Where-Object { $_.tool_id -in @('activepieces-mcp', 'composio-tool-router') }) {
+    $secretRefs = @($tool.secret_refs)
+    $secretStates = [ordered]@{}
+    foreach ($secretRef in $secretRefs) {
+        $secretStates[[string]$secretRef] = if ($secretStateIndex.ContainsKey([string]$secretRef)) {
+            $secretStateIndex[[string]$secretRef]
+        } else {
+            'not_configured'
+        }
+    }
+
+    $allSecretsReady = ($secretStates.Count -gt 0)
+    foreach ($state in $secretStates.Values) {
+        if ($state -notin @('configured_in_env', 'runtime_present')) {
+            $allSecretsReady = $false
+            break
+        }
+    }
+
+    $nextStep = if ([string]$tool.tool_id -eq 'activepieces-mcp') {
+        'Set ACTIVEPIECES_MCP_TOKEN, replace the placeholder project endpoint, and enable the MCP surface only when you need governed external automation.'
+    } else {
+        'Set COMPOSIO_API_KEY, create a session-scoped COMPOSIO_SESSION_MCP_URL, and keep Composio actions confirm-gated.'
+    }
+
+    $integrationSurfaces += [pscustomobject]@{
+        name = [string]$tool.display_name
+        tool_id = [string]$tool.tool_id
+        status = if ($allSecretsReady) { 'ready_for_host_registration' } else { 'prewired_setup_required' }
+        risk_tier = [string]$tool.risk_tier
+        confirm_required = [bool]($tool.human_confirmation.per_action_required)
+        enable_required = [bool]($tool.human_confirmation.enable_required)
+        secret_refs = @($secretRefs)
+        secret_states = [pscustomobject]$secretStates
+        next_step = $nextStep
+    }
+}
+
 $blockingIssues = New-Object System.Collections.Generic.List[string]
 $manualActions = New-Object System.Collections.Generic.List[string]
 $warnings = New-Object System.Collections.Generic.List[string]
@@ -342,6 +433,7 @@ $artifact = [ordered]@{
     }
     plugins = @($pluginResults)
     external_tools = @($externalTools)
+    enhancement_surfaces = @($enhancementSurfaces)
     mcp = [ordered]@{
         profile = $profile
         profile_path = if (Test-Path -LiteralPath $profilePath) { (Get-VgoRelativePathPortable -BasePath $repoRoot -TargetPath $profilePath) } else { $null }
@@ -349,6 +441,7 @@ $artifact = [ordered]@{
         active_file_exists = [bool](Test-Path -LiteralPath $activeMcpPath)
         servers = @($mcpServers)
     }
+    integration_surfaces = @($integrationSurfaces)
     secret_surfaces = @($secretSurfaces)
     summary = [ordered]@{
         readiness_state = $readinessState

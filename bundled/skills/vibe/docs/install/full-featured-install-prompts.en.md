@@ -1,10 +1,14 @@
-# Full-Featured Install Prompts
+# Full-Featured Install Prompts (Standard Recommended Install)
 
-This document provides **copy-paste prompts for AI coding assistants / agents** so users can trigger the VibeSkills recommended full-featured install path more easily.
+This document provides **copy-paste prompts for AI coding assistants / agents** so users can trigger the VibeSkills standard recommended install path more easily.
 
 Boundary first:
 
 - "full-featured" here means **repo-governed full closure**
+- for most users, that is the same thing as the **standard recommended install**
+- the current default lane should treat `scrapling` as a default local runtime surface
+- the current default lane should treat `Cognee` as the governed long-term enhancement lane
+- `Composio / Activepieces` should be described as prewired but setup-required external action surfaces
 - Windows is the current strongest reference path
 - Linux only reaches the current authoritative full-featured lane when `pwsh` is available
 - Linux without `pwsh` can still install and run, but it is `degraded-but-supported`, not equivalent to the full Windows lane
@@ -40,11 +44,20 @@ Please install the current repository using the VibeSkills recommended full-feat
    - remaining host-managed surfaces
    - whether this platform has reached the strongest "recommended full-featured" state currently available
 5. Do not pretend that host plugins, external MCP surfaces, or provider secrets were auto-installed.
-6. If the result is `manual_actions_pending`, list the remaining manual actions instead of calling it a failure.
-7. If host plugins still need to be provisioned, follow the current default policy:
+6. Treat `scrapling` as part of the default full lane:
+   - if Python packaging is available, allow the installer to attempt `scrapling[ai]`
+   - report clearly whether the `scrapling` CLI ended up callable
+7. Treat `Cognee` as the default long-term enhancement lane, not as a replacement for session truth.
+8. Treat `Composio / Activepieces` as prewired external action integrations:
+   - visible by default
+   - still setup-required
+   - not auto-enabled
+   - still confirm-gated when enabled
+9. If the result is `manual_actions_pending`, list the remaining manual actions instead of calling it a failure.
+10. If host plugins still need to be provisioned, follow the current default policy:
    - recommend `superpowers` and `hookify` first
    - do not require `everything-claude-code`, `claude-code-settings`, and `ralph-loop` on first install by default
-8. Do not modify runtime logic during this flow; only install, check, and summarize.
+11. Do not modify runtime logic during this flow; only install, check, and summarize.
 ```
 
 ## Windows Prompt
@@ -127,7 +140,7 @@ If you want to place this into a README, issue template, or community post, add 
 
 ## Related Docs
 
-- [`recommended-full-path.md`](./recommended-full-path.md)
+- [`recommended-full-path.en.md`](./recommended-full-path.en.md)
 - [`host-plugin-policy.en.md`](./host-plugin-policy.en.md)
 - [`../one-shot-setup.md`](../one-shot-setup.md)
 - [`../cold-start-install-paths.en.md`](../cold-start-install-paths.en.md)

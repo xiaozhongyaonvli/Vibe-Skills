@@ -1,5 +1,11 @@
 # 冷启动安装路径
 
+当前推荐路径还会把三类默认面分开：
+
+- `scrapling`：默认本地 runtime 面
+- `Cognee`：默认长程增强面
+- `Composio / Activepieces`：默认预接线但 setup-required 的外部操作面
+
 这份文档是给第一次接触 `vco-skills-codex` 的用户和团队看的。
 
 目标不是把所有人都推向同一条安装路径，而是先回答四个现实问题：
@@ -11,8 +17,8 @@
 
 如果你只记一句话：
 
-`最小可用` 追求尽快跑通。  
-`推荐满血` 追求仓库负责部分的完整闭环。  
+`最小可用` 追求尽快跑通。
+`推荐满血` 是 **标准推荐安装**，追求仓库负责部分的完整闭环。
 `企业治理` 追求可审计、可复现、可回滚的长期交付。
 
 ## 路径一：最小可用
@@ -74,13 +80,15 @@ bash ./scripts/bootstrap/one-shot-setup.sh --skip-external-install
 
 只有在你确认“仓库自身闭环没有问题”之后，才值得进入下一条路径。
 
-## 路径二：推荐满血
+## 路径二：推荐满血（标准推荐安装）
 
 ### 适合谁
 
 - 想真正把仓库负责的 shipped payload 和治理面一次性装全的重度用户
 - 想要更完整 doctor / gate 结果的个人开发者
 - 想进入“尽量接近满血体验”的团队负责人
+
+这条路就是 **大多数用户的默认推荐安装路径**。
 
 ### 目标
 
@@ -143,6 +151,30 @@ bash ./check.sh --profile full --deep
 - `npm` 的 deprecated warnings 很吵，不等于失败
 - Linux / macOS 没有 `pwsh` 时出现 shell warning，不等于仓库闭环失败
 - bootstrap 复用目标 `settings.json` 中已有 provider key 是正常行为，不是“配置丢失”
+
+### 装到什么程度，才算这条路已经完成
+
+对于标准推荐安装：
+
+- `fully_ready` 是最好结果
+- `manual_actions_pending` 也是正常且可接受的结果
+- `core_install_incomplete` 才是真正需要先停下修复的状态
+
+如果你只是多数用户，不应该把“第一次安装后仍有人工动作”误读为失败。
+
+### 如果还想继续增强，怎么加
+
+建议顺序：
+
+1. 先补 provider secrets
+2. 再补 `superpowers`、`hookify`
+3. 再补 `github`、`context7`、`serena`
+4. 最后才按真实缺口考虑 `everything-claude-code`、`claude-code-settings`、`ralph-loop`
+
+具体决策见：
+
+- [`install/recommended-full-path.md`](./install/recommended-full-path.md)
+- [`install/host-plugin-policy.md`](./install/host-plugin-policy.md)
 
 ## 路径三：企业治理
 

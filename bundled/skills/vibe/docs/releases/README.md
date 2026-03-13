@@ -10,7 +10,7 @@ This directory stores governed VCO release notes and the minimum runtime-facing 
 
 ### Current Release Surface
 
-- [`v2.3.36.md`](v2.3.36.md): install-surface messaging hardening, host-plugin boundary disclosure, and governed version alignment
+- [`v2.3.37.md`](v2.3.37.md): default full-profile install alignment for scrapling, clearer enhancement/integration boundaries, and governed version closure
 
 ### Release Runtime / Proof Handoff
 
@@ -21,6 +21,7 @@ This directory stores governed VCO release notes and the minimum runtime-facing 
 
 ## Recent Governed Releases
 
+- [`v2.3.37.md`](v2.3.37.md) - 2026-03-13 - scrapling default full-lane promotion / doctor surface split / install-surface version closure
 - [`v2.3.36.md`](v2.3.36.md) - 2026-03-13 - install-surface messaging hardening / host-plugin policy / version alignment
 - [`v2.3.34.md`](v2.3.34.md) - 2026-03-13 - full-feature framing correction / cold-start onboarding / readiness boundary disclosure
 - [`v2.3.33.md`](v2.3.33.md) - 2026-03-13 - provider seeding fix / slow-install expectation hardening / bundled config sync repair

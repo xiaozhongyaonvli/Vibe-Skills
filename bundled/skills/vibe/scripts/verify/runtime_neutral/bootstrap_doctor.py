@@ -110,11 +110,25 @@ def write_artifacts(repo_root: Path, artifact: dict[str, Any], output_directory:
                 f"- `{tool['name']}`: present=`{tool['present']}` required_for=`{', '.join(tool['required_for'])}`"
             )
         lines.append("")
+    if artifact["enhancement_surfaces"]:
+        lines += ["## Enhancement Surfaces", ""]
+        for surface in artifact["enhancement_surfaces"]:
+            lines.append(
+                f"- `{surface['name']}`: role=`{surface['role']}` status=`{surface['status']}` next_step=`{surface['next_step']}`"
+            )
+        lines.append("")
     if artifact["mcp"]["servers"]:
         lines += ["## MCP Servers", ""]
         for server in artifact["mcp"]["servers"]:
             lines.append(
                 f"- `{server['name']}`: mode=`{server['mode']}` status=`{server['status']}` next_step=`{server['next_step']}`"
+            )
+        lines.append("")
+    if artifact["integration_surfaces"]:
+        lines += ["## External Integration Surfaces", ""]
+        for surface in artifact["integration_surfaces"]:
+            lines.append(
+                f"- `{surface['name']}`: status=`{surface['status']}` risk=`{surface['risk_tier']}` confirm_required=`{surface['confirm_required']}` next_step=`{surface['next_step']}`"
             )
         lines.append("")
     if artifact["secret_surfaces"]:
@@ -139,6 +153,8 @@ def evaluate(repo_root: Path, target_root: Path) -> dict[str, Any]:
     plugins_manifest = load_json(repo_root / "config" / "plugins-manifest.codex.json")
     servers_template = load_json(repo_root / "mcp" / "servers.template.json")
     secrets_policy = load_json(repo_root / "config" / "secrets-policy.json")
+    tool_registry = load_json(repo_root / "config" / "tool-registry.json")
+    memory_governance = load_json(repo_root / "config" / "memory-governance.json")
     profile_path = repo_root / "mcp" / "profiles" / f"{profile}.json"
     profile_object = load_json(profile_path) if profile_path.exists() else {"profile": profile, "enabled_servers": []}
     active_mcp_path = target_root / "mcp" / "servers.active.json"
@@ -175,9 +191,9 @@ def evaluate(repo_root: Path, target_root: Path) -> dict[str, Any]:
     external_tools = [
         {"name": "git", "present": command_present("git"), "required_for": ["bootstrap"]},
         {"name": "npm", "present": command_present("npm"), "required_for": ["claude-flow", "ralph-wiggum"]},
-        {"name": "python", "present": command_present("python") or command_present("python3"), "required_for": ["scrapling", "ivy"]},
+        {"name": "python", "present": command_present("python") or command_present("python3"), "required_for": ["default-mcp:scrapling", "ivy"]},
         {"name": "claude-flow", "present": command_present("claude-flow"), "required_for": ["mcp:claude-flow"]},
-        {"name": "scrapling", "present": command_present("scrapling"), "required_for": ["mcp:scrapling"]},
+        {"name": "scrapling", "present": command_present("scrapling"), "required_for": ["default-full-profile-mcp:scrapling"]},
         {"name": "xan", "present": command_present("xan"), "required_for": ["csv-acceleration"]},
     ]
 
@@ -232,6 +248,61 @@ def evaluate(repo_root: Path, target_root: Path) -> dict[str, Any]:
             }
         )
 
+    secret_status_by_name = {item["name"]: item["status"] for item in secret_surfaces}
+
+    cognee_boundary = ((memory_governance.get("role_boundaries") or {}).get("cognee") or {})
+    task_defaults = memory_governance.get("defaults_by_task") or {}
+    total_task_defaults = sum(1 for config in task_defaults.values() if isinstance(config, dict))
+    cognee_default_count = sum(
+        1 for config in task_defaults.values() if isinstance(config, dict) and str(config.get("long_term") or "") == "cognee"
+    )
+    enhancement_surfaces = [
+        {
+            "name": "cognee",
+            "role": "default_long_term_graph_memory_owner",
+            "status": (
+                "declared_default_owner"
+                if str(cognee_boundary.get("status") or "") == "active"
+                and total_task_defaults > 0
+                and cognee_default_count == total_task_defaults
+                else "governance_review_required"
+            ),
+            "task_default_coverage": f"{cognee_default_count}/{total_task_defaults}" if total_task_defaults else "0/0",
+            "next_step": "Optional enhancement lane. Enable Cognee only when you want governed cross-session graph memory; keep state_store as the session truth-source.",
+        }
+    ]
+
+    integration_surfaces: list[dict[str, Any]] = []
+    for tool in tool_registry.get("tools") or []:
+        tool_id = str(tool.get("tool_id") or "")
+        if tool_id not in {"activepieces-mcp", "composio-tool-router"}:
+            continue
+        secret_refs = [str(item) for item in tool.get("secret_refs") or []]
+        secret_states = {name: secret_status_by_name.get(name, "not_configured") for name in secret_refs}
+        ready_states = {"configured_in_env", "runtime_present"}
+        status = (
+            "ready_for_host_registration"
+            if secret_refs and all(state in ready_states for state in secret_states.values())
+            else "prewired_setup_required"
+        )
+        if tool_id == "activepieces-mcp":
+            next_step = "Set ACTIVEPIECES_MCP_TOKEN, replace the placeholder project endpoint, and enable the MCP surface only when you need governed external automation."
+        else:
+            next_step = "Set COMPOSIO_API_KEY, create a session-scoped COMPOSIO_SESSION_MCP_URL, and keep Composio actions confirm-gated."
+        integration_surfaces.append(
+            {
+                "name": str(tool.get("display_name") or tool_id),
+                "tool_id": tool_id,
+                "status": status,
+                "risk_tier": str(tool.get("risk_tier") or "unknown"),
+                "confirm_required": bool(((tool.get("human_confirmation") or {}).get("per_action_required"))),
+                "enable_required": bool(((tool.get("human_confirmation") or {}).get("enable_required"))),
+                "secret_refs": secret_refs,
+                "secret_states": secret_states,
+                "next_step": next_step,
+            }
+        )
+
     blocking_issues: list[str] = []
     manual_actions: list[str] = []
     warnings: list[str] = []
@@ -276,6 +347,7 @@ def evaluate(repo_root: Path, target_root: Path) -> dict[str, Any]:
         },
         "plugins": plugins,
         "external_tools": external_tools,
+        "enhancement_surfaces": enhancement_surfaces,
         "mcp": {
             "profile": profile,
             "profile_path": str(profile_path.relative_to(repo_root)) if profile_path.exists() else None,
@@ -283,6 +355,7 @@ def evaluate(repo_root: Path, target_root: Path) -> dict[str, Any]:
             "active_file_exists": active_mcp_path.exists(),
             "servers": mcp_servers,
         },
+        "integration_surfaces": integration_surfaces,
         "secret_surfaces": secret_surfaces,
         "summary": {
             "readiness_state": readiness_state,

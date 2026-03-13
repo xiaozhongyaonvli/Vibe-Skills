@@ -13,6 +13,14 @@ function Test-CanonicalRepoExecution {
   param([string]$RepoRoot)
   return (Test-Path -LiteralPath (Join-Path $RepoRoot '.git'))
 }
+function Get-PreferredPythonCommand {
+  foreach ($candidate in @('python', 'python3')) {
+    if (Get-Command $candidate -ErrorAction SilentlyContinue) {
+      return $candidate
+    }
+  }
+  return $null
+}
 function Get-InstallGovernance {
   param([string]$RepoRoot)
   $governancePath = Join-Path $RepoRoot 'config\version-governance.json'
@@ -380,6 +388,7 @@ if (-not (Test-Path -LiteralPath $settingsTarget)) {
 }
 if ($InstallExternal) {
   Write-Host "Installing optional external dependencies..."
+  $pythonCommand = Get-PreferredPythonCommand
   if (Get-Command git -ErrorAction SilentlyContinue) {
     $temp = Join-Path $env:TEMP ("superclaude-" + [guid]::NewGuid().ToString("N"))
     try {
@@ -412,6 +421,24 @@ if ($InstallExternal) {
       Write-Warning "Failed to install open-ralph-wiggum"
     }
   }
+  if ($pythonCommand) {
+    if (-not (Get-Command scrapling -ErrorAction SilentlyContinue)) {
+      try {
+        & $pythonCommand -m pip install 'scrapling[ai]' | Out-Null
+        if (Get-Command scrapling -ErrorAction SilentlyContinue) {
+          Write-Host "Installed scrapling[ai]"
+        } else {
+          Write-Warning "scrapling[ai] package install completed, but the scrapling CLI is still not callable from PATH. Ensure your Python scripts directory is exported before relying on the default scrapling MCP surface."
+        }
+      } catch {
+        Write-Warning "Failed to install scrapling[ai]. Install manually (python -m pip install `"scrapling[ai]`") to enable the default scrapling MCP surface."
+      }
+    } else {
+      Write-Host "scrapling already installed"
+    }
+  } else {
+    Write-Warning "python/python3 not detected. Install Python + scrapling[ai] (python -m pip install `"scrapling[ai]`") to enable the default scrapling MCP surface."
+  }
   if (-not (Get-Command xan -ErrorAction SilentlyContinue)) {
     if (Get-Command scoop -ErrorAction SilentlyContinue) {
       try {
@@ -426,15 +453,15 @@ if ($InstallExternal) {
   } else {
     Write-Host "xan already installed"
   }
-  if (Get-Command python -ErrorAction SilentlyContinue) {
+  if ($pythonCommand) {
     try {
-      python -c "import ivy; print(ivy.__version__)" *> $null
+      & $pythonCommand -c "import ivy; print(ivy.__version__)" *> $null
       Write-Host "ivy Python package already installed"
     } catch {
       Write-Warning "ivy Python package not detected. Install manually (pip install ivy) to enable framework-interop analyzer hints."
     }
   } else {
-    Write-Warning "python not detected. Install Python + ivy (pip install ivy) if you want framework-interop analyzer hints."
+    Write-Warning "python/python3 not detected. Install Python + ivy (pip install ivy) if you want framework-interop analyzer hints."
   }
   if (-not (Get-Command fuck-u-code -ErrorAction SilentlyContinue)) {
     Write-Warning "fuck-u-code CLI not detected. Install manually if you want external quality-debt analyzer hints (quality-debt-overlay remains functional without it)."

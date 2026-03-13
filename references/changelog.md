@@ -1,5 +1,14 @@
 # VCO Changelog
 
+## v2.3.37 (2026-03-13)
+
+- Promoted `scrapling` into the standard governed `full` install lane so the default full-profile path now carries a concrete local scraping/runtime surface instead of treating it as a purely optional afterthought.
+- Updated bootstrap doctor semantics to explicitly distinguish three governed surfaces: `scrapling` as the default full-profile runtime surface, `Cognee` as the default long-term enhancement lane, and `Composio / Activepieces` as prewired but setup-required external action surfaces.
+- Expanded the install and onboarding docs across README, cold-start paths, one-shot setup, and host-plugin policy so operators can see the truthful boundary between repo-owned closure and host-managed provisioning.
+- Aligned the governed release surface to `2.3.37` across version governance, maintenance markers, changelog, release ledger, and release navigation.
+- Detailed release notes: `docs/releases/v2.3.37.md`.
+
+
 ## v2.3.36 (2026-03-13)
 
 - Hardened the install-facing narrative so `full-featured` now means governed closure of the repository-owned surface, not fake automatic readiness for all host plugins or MCP providers.

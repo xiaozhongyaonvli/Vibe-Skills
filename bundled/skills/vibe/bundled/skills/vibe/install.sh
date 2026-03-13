@@ -381,13 +381,27 @@ if [[ "${INSTALL_EXTERNAL}" == "true" ]]; then
   fi
 
   if [[ -n "${PYTHON_BIN}" ]]; then
+    if ! command -v scrapling >/dev/null 2>&1; then
+      if "${PYTHON_BIN}" -m pip install 'scrapling[ai]' >/dev/null 2>&1; then
+        if command -v scrapling >/dev/null 2>&1; then
+          echo "[INFO] Installed scrapling[ai]"
+        else
+          echo "[WARN] scrapling[ai] package install completed, but the scrapling CLI is still not callable from PATH. Export your Python scripts directory before relying on the default scrapling MCP surface."
+        fi
+      else
+        echo "[WARN] Failed to install scrapling[ai]. Install manually (${PYTHON_BIN} -m pip install 'scrapling[ai]') to enable the default scrapling MCP surface."
+      fi
+    else
+      echo "[INFO] scrapling already installed"
+    fi
+
     if "${PYTHON_BIN}" -c "import ivy; print(ivy.__version__)" >/dev/null 2>&1; then
       echo "[INFO] ivy Python package already installed"
     else
       echo "[WARN] ivy Python package not detected. Install manually (pip install ivy) to enable framework-interop analyzer hints."
     fi
   else
-    echo "[WARN] python not detected. Install Python + ivy (pip install ivy) if you want framework-interop analyzer hints."
+    echo "[WARN] python not detected. Install Python + scrapling[ai] (python -m pip install 'scrapling[ai]') and ivy (pip install ivy) if you want the default scraping surface and framework-interop analyzer hints."
   fi
 
   if ! command -v fuck-u-code >/dev/null 2>&1; then

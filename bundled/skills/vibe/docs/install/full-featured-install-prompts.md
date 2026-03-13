@@ -1,15 +1,22 @@
-# 满血版安装提示词
+# 满血版安装提示词（标准推荐安装）
 
-这份文档给的是**可直接复制给 AI 编码助手 / Agent 的安装提示词**，目标是让用户更容易完成 VibeSkills 的“推荐满血版”安装。
+这份文档给的是**可直接复制给 AI 编码助手 / Agent 的安装提示词**，目标是让用户更容易完成 VibeSkills 的“标准推荐安装”。
 
 注意边界：
 
 - 这里的“满血版”指 **repo-governed full closure**。
+- 对多数用户，它等价于“标准推荐安装”，不是“第一天就把所有增强面全部装满”。
 - Windows 是当前最强参考路径。
 - Linux 只有在宿主已具备 `pwsh` 时，才可进入当前权威满血路径。
 - Linux 如果没有 `pwsh`，仍可安装和使用，但属于 `degraded-but-supported`，不应被表述成等价满血。
 
 ## 通用主提示词
+
+补充约束：
+
+- 把 `scrapling` 视作默认本地 runtime 面
+- 把 `Cognee` 视作默认长程增强面
+- 把 `Composio / Activepieces` 视作默认预接线但 setup-required 的 external action surfaces
 
 适合：
 
@@ -20,7 +27,7 @@
 直接复制：
 
 ```text
-请你把当前仓库按 VibeSkills 推荐满血路径安装好，并严格遵守 truth-first 原则：
+请你把当前仓库按 VibeSkills 标准推荐安装路径装好，并严格遵守 truth-first 原则：
 
 1. 先识别当前系统是 Windows 还是 Linux。
 2. 如果是 Windows：

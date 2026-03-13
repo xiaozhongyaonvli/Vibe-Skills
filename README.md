@@ -95,7 +95,34 @@ VibeSkills 的目标不是把这些组件堆在一起。
 
 ### 安装指南
 
+#### 标准推荐安装，先记这一条
+
+对大多数用户来说，**标准推荐安装** 就是默认入口。
+
+它的含义不是“第一次就把所有增强面全部装满”，而是：
+
+- 先把 repo-governed surfaces 尽量闭环
+- 允许结果诚实落在 `manual_actions_pending`
+- 再按真实缺口逐层增强，而不是第一天就把宿主插件、MCP、密钥全部堆上去
+
+最适合这条路的人：
+
+- 想稳定把 VibeSkills 用起来的重度 AI 用户
+- 想先验证这套治理面是否值得团队推广的负责人
+- 不想第一天就背负大量宿主冲突和排障成本的人
+
+先看这两份入口文档：
+
+- [`docs/install/recommended-full-path.md`](./docs/install/recommended-full-path.md)
+- [`docs/cold-start-install-paths.md`](./docs/cold-start-install-paths.md)
+
 #### 这里说的“满血版”是什么
+
+在当前默认推荐链路里，这个“满血版”会把三层语义明确拆开：
+
+- `scrapling`：默认本地 runtime / MCP 面，属于 `full` profile 的开箱链路
+- `Cognee`：默认长程图记忆增强面，不取代 `state_store` 的 session truth 身份
+- `Composio / Activepieces`：默认预接线的外部操作能力接入面，但必须 setup 后才能使用
 
 这里的“满血版”不是“仓库 clone 下来就算完成”，而是：
 
@@ -161,9 +188,25 @@ bash ./scripts/bootstrap/one-shot-setup.sh --strict-offline
 这两个 one-shot bootstrap 都会完成同一套治理安装动作：
 
 - 安装 shipped runtime payload 到 `~/.codex`
+- 在支持的平台上安装可自动安装的外部 CLI，其中标准推荐安装会尝试把 `scrapling` 收敛进默认链路
 - 在支持的平台上安装可自动安装的外部 CLI
 - 根据选定 profile 物化 `mcp/servers.active.json`
 - 运行 deep readiness check
+
+#### 标准推荐安装，完成到什么程度才算合理
+
+对多数用户，标准推荐安装完成的合理定义是：
+
+- one-shot bootstrap 跑通
+- deep doctor 跑通
+- shipped payload、bundled mirrors、active MCP profile、doctor / coherence 路径已经闭环
+- 剩余缺口被明确列出，而不是被静默吞掉
+
+因此：
+
+- `fully_ready` 是最好结果
+- `manual_actions_pending` 对标准推荐安装来说也是**正常且可接受**的结果
+- 真正不应接受的是 `core_install_incomplete`
 
 #### 重新执行 deep doctor
 
@@ -182,6 +225,12 @@ bash ./check.sh --profile full --deep
 ```
 
 #### 想进入真正的满血 MCP 体验，还需要手工补齐这些项
+
+这里还要额外看清三类对象：
+
+- `scrapling`：已经进入标准推荐安装的默认本地能力面
+- `Cognee`：应该被看作默认长程图记忆 enhancement lane，而不是第二个 session truth
+- `Composio / Activepieces`：属于预接线但仍需 setup 的 external action surfaces
 
 这些部分不会被仓库伪装成“自动完成”，必须在宿主环境里自己 provision：
 
@@ -202,6 +251,35 @@ bash ./check.sh --profile full --deep
 - [`docs/install/host-plugin-policy.md`](./docs/install/host-plugin-policy.md)
 
 如果这些还没有 provision，doctor 的正确结果应该是 `manual_actions_pending`，而不是虚假的“everything ready”。
+
+#### 如果你想进一步增强，按这条顺序加
+
+建议把顺序理解成：
+
+1. 先补 provider secrets
+2. 先确认 `scrapling` 可调用，把它当作默认 full-profile scraping surface
+3. 把 `Cognee` 放在长程增强面，不让它接管 `state_store`
+4. 再补默认推荐的宿主插件和 plugin-backed MCP surfaces
+5. `Composio / Activepieces` 仅在你确实需要外部操作能力时再做 setup，并保持 confirm-gated
+6. 最后再补其余宿主插件与可选 CLI 增强
+
+不要一开始把所有增强面都堆上去。更稳的顺序是：
+
+1. 先补 provider secrets
+   例如 `OPENAI_API_KEY`，先把在线能力跑通。
+2. 再补默认推荐的宿主插件
+   优先 `superpowers`、`hookify`。
+3. 再补 plugin-backed MCP surfaces
+   例如 `github`、`context7`、`serena`。
+4. 只有 doctor 仍然指向明确缺口时，再补其余宿主插件
+   例如 `everything-claude-code`、`claude-code-settings`、`ralph-loop`。
+5. 最后再补可选 CLI / 工具链增强
+   例如 `claude-flow`、`xan`、`ivy`。
+
+增强路线详见：
+
+- [`docs/install/recommended-full-path.md`](./docs/install/recommended-full-path.md)
+- [`docs/install/host-plugin-policy.md`](./docs/install/host-plugin-policy.md)
 
 #### 不知道该走哪条安装路径
 

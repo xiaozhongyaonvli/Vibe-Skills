@@ -1,4 +1,4 @@
 ﻿{
   "profile": "full",
-  "enabled_servers": ["github", "context7", "serena", "claude-flow"]
+  "enabled_servers": ["github", "context7", "serena", "scrapling", "claude-flow"]
 }
