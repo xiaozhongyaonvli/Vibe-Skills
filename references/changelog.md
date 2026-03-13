@@ -1,5 +1,14 @@
 # VCO Changelog
 
+## v2.3.34 (2026-03-13)
+
+- Reframed the README install narrative so “full-featured” now means governed closure of the repo-owned surface, not a fake claim that the whole ecosystem is automatically ready.
+- Added explicit operator-facing boundary language for host plugins, plugin-backed MCP surfaces, and provider secrets so incomplete host provisioning resolves to `manual_actions_pending` instead of ambiguous expectations.
+- Added cold-start onboarding documents for three install modes: `minimum viable`, `recommended full-featured`, and `enterprise-governed`, with commands, acceptance criteria, and stop rules.
+- Wired the new onboarding docs into the main README, English README, docs index, and one-shot setup guide so first-time users can enter through a deterministic path instead of guessing.
+- Detailed release notes: `docs/releases/v2.3.34.md`.
+
+
 ## v2.3.33 (2026-03-13)
 
 - Fixed one-shot bootstrap provider seeding so existing `settings.json` keys are reused instead of triggering misleading `OPENAI_API_KEY not provided` warnings.

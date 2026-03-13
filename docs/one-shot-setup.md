@@ -2,6 +2,11 @@
 
 `vco-skills-codex` 现在提供一个面向 Codex 运行时的单命令 bootstrap 入口，用来把 **仓库可自动化的部分** 一次性落地，并在最后给出一份深度 readiness 报告。
 
+如果你还不知道自己应该走哪种安装方式，先看：
+
+- [`cold-start-install-paths.md`](./cold-start-install-paths.md)
+- [`cold-start-install-paths.en.md`](./cold-start-install-paths.en.md)
+
 ## One Command
 
 ```powershell

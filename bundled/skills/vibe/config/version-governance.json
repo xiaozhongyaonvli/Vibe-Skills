@@ -1,10 +1,10 @@
 {
     "schema_version":  2,
     "release":  {
-                    "version":  "2.3.33",
+                    "version":  "2.3.34",
                     "updated":  "2026-03-13",
                     "channel":  "stable",
-                    "notes":  "Wave31-39 deep extraction / drift closure: mirror topology governance, upstream corpus governance, docling/connector/role-pack/capability catalog productization, and promotion-release closure."
+                    "notes":  "Install-surface messaging hardening: governed full-feature framing, cold-start path onboarding, and explicit host-managed readiness boundaries."
                 },
     "source_of_truth":  {
                             "canonical_root":  ".",

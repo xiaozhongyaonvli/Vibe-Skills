@@ -100,6 +100,19 @@ You can start here.
 A full-featured VibeSkills setup is not just "the repo cloned successfully".
 It means all shipped skills and governance assets are installed locally, the active MCP profile is materialized, the runtime passes deep health checks, and the remaining host-managed surfaces are called out explicitly instead of being silently skipped.
 
+#### Our "full-featured" promise is governed, not magical
+
+In VibeSkills, "full-featured" means repo-governed completion, not fake "everything is automatically ready".
+
+That means:
+
+- the payload, scripts, mirrors, profiles, and doctor gates shipped by this repo should install, sync, and verify in one governed path
+- host-managed surfaces such as host plugins, external MCP services, and provider secrets are still real operator responsibilities
+- if those host-side prerequisites are not provisioned yet, the correct end state is `manual_actions_pending`, not a dishonest "all ready"
+
+We do not blur "no install error" into "the whole ecosystem is now operational".
+We make the closure boundary explicit so operators know what is already governed and what still needs manual provisioning.
+
 #### Full-feature prerequisites
 
 - `git`
@@ -173,6 +186,14 @@ These surfaces are intentionally not faked by the repo and must be provisioned o
 - Provider secrets when you want online execution: `OPENAI_API_KEY` and any optional provider keys you actually use
 
 If those are not provisioned yet, the doctor should end in `manual_actions_pending`, not in a false "everything is ready" state.
+
+#### Not sure which install path to choose
+
+If this is your first time with the repo, do not guess.
+
+Start with:
+
+- [`docs/cold-start-install-paths.en.md`](./docs/cold-start-install-paths.en.md): three onboarding paths for `minimum viable`, `recommended full-featured`, and `enterprise-governed` installs, including who each path is for, commands, acceptance criteria, and stop rules
 
 ### Routing and Governance Checks
 

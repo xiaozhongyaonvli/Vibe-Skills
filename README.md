@@ -104,6 +104,19 @@ VibeSkills 的目标不是把这些组件堆在一起。
 - 安装后已经跑过 deep health check
 - 仍然需要宿主侧手工 provision 的插件、MCP、密钥被明确列出来，而不是被静默跳过
 
+#### 我们承诺的“满血版”，不是伪 fully ready
+
+VibeSkills 的“满血版”承诺是治理完成，不是神奇自动化。
+
+这意味着：
+
+- 仓库负责交付的 payload、脚本、镜像、profile 和 doctor gates，会尽可能一次性安装、同步并验证完成
+- 宿主机自己必须负责的 host plugins、外部 MCP、provider secrets，会被明确暴露为前置条件或后续动作
+- 如果这些宿主侧条件还没补齐，最终状态应该是 `manual_actions_pending`，而不是假装一切都 ready
+
+我们不把“没有报错”包装成“全生态已经就绪”。
+我们把“哪些已经闭环、哪些仍需人工补齐”讲清楚，这才是一个可治理、可交付、可长期维护的满血版。
+
 #### 满血安装前置条件
 
 - `git`
@@ -117,9 +130,9 @@ VibeSkills 的目标不是把这些组件堆在一起。
 
 #### Operator Notes
 
-- 鍚敤澶栭儴 CLI 瀹夎鏃讹紝鏈€鎱㈢殑姝ラ閫氬父鏄?`claude-flow` 鐨?`npm` 瀹夎锛涜窇鍑犲垎閽熷睘浜庢甯搁鏈熴€?
-- `npm` 鍦ㄨ繖涓樁娈电殑 deprecated warnings 灞炰簬 advisory signal锛屽彧鏈夊綋鍛戒护闈?exit non-zero 鏃舵墠绠楀畨瑁呭け璐ャ€?
-- 濡傛灉鐩爣 `settings.json` 宸茬粡鍐欏叆 `OPENAI_API_KEY` 鎴?`ARK_API_KEY`锛宐ootstrap 浼氬鐢ㄧ幇鏈夊€硷紝鑰屼笉鍐嶈鎶?鈥渘ot provided鈥?銆?
+- 启用外部 CLI 安装时，最慢的步骤通常是 `claude-flow` 的 `npm` 安装；跑几分钟属于正常预期。
+- `npm` 在这个阶段出现的 deprecated warnings 属于 advisory signal，只有当命令 `exit non-zero` 时才算安装失败。
+- 如果目标 `settings.json` 已经写入 `OPENAI_API_KEY` 或 `ARK_API_KEY`，bootstrap 会复用现有值，而不再误报 “not provided”。
 
 #### Windows
 
@@ -177,6 +190,14 @@ bash ./check.sh --profile full --deep
 - 需要在线能力时的 provider secrets：`OPENAI_API_KEY`，以及你实际使用的其他 provider keys
 
 如果这些还没有 provision，doctor 的正确结果应该是 `manual_actions_pending`，而不是虚假的“everything ready”。
+
+#### 不知道该走哪条安装路径
+
+如果你是第一次接触这个仓库，不要直接猜。
+
+先看这份冷启动演练文档：
+
+- [`docs/cold-start-install-paths.md`](./docs/cold-start-install-paths.md)：最小可用 / 推荐满血 / 企业治理 三条安装路径、适用人群、命令、验收方式与 stop rules
 
 ### 路由与治理验证
 

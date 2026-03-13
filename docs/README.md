@@ -18,6 +18,8 @@
 - [`status/current-state.md`](./status/current-state.md)：当前 closure batch 的 runtime summary。
 - [`status/non-regression-proof-bundle.md`](./status/non-regression-proof-bundle.md)：minimum closure proof contract。
 - [`releases/README.md`](./releases/README.md)：受治理的 release surface 与历史 release packetization。
+- [`cold-start-install-paths.md`](./cold-start-install-paths.md)：新人冷启动安装路径，区分最小可用、推荐满血与企业治理三条入口。
+- [`one-shot-setup.md`](./one-shot-setup.md)：one-shot bootstrap、readiness states 与 deep doctor 口径。
 
 ### Developer Entry
 
