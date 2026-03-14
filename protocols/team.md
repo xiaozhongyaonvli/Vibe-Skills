@@ -75,7 +75,7 @@ See references/team-templates.md for predefined compositions:
 
 If `local-vco-roles` is installed, you may also use:
 - local-vco-dialectic-review (Template 7)
-- Role prompts sourced from `~/.codex/skills/local-vco-roles/references/role-prompts/`
+- Role prompts sourced from the installed skills root resolved from `CODEX_HOME` when set, otherwise the host default Codex home (commonly `~/.codex`)
 
 ## Supervisor-Style Dispatch Pattern (Agent-as-Tools)
 

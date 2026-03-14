@@ -1,5 +1,5 @@
 param(
-  [string]$CodexRoot = (Join-Path $env:USERPROFILE ".codex"),
+  [string]$CodexRoot = '',
   [string]$RuntimeConfigPath = "",
   [ValidateSet("lite", "upstream")]
   [string]$Mode = "lite",
@@ -7,6 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot '..\common\vibe-governance-helpers.ps1')
 
 function Write-Section {
   param([string]$Title)
@@ -23,7 +24,7 @@ function Get-NonEmptyOrNull {
 function Resolve-RuntimeConfigPath {
   param([string]$ExplicitPath, [string]$Root)
   $p = Get-NonEmptyOrNull -Value $ExplicitPath
-  if ($p) { return $p }
+  if ($p) { return (Resolve-VgoPathSpec -PathSpec $p -TargetRoot $Root) }
   return (Join-Path $Root "skills\\vibe\\config\\ruc-nlpir-runtime.json")
 }
 
@@ -42,6 +43,9 @@ function Try-GitHead {
   }
 }
 
+if ([string]::IsNullOrWhiteSpace($CodexRoot)) {
+  $CodexRoot = Resolve-VgoTargetRoot
+}
 $runtimePath = Resolve-RuntimeConfigPath -ExplicitPath $RuntimeConfigPath -Root $CodexRoot
 if (-not (Test-Path -LiteralPath $runtimePath)) {
   throw "Runtime config not found: $runtimePath"
@@ -65,7 +69,7 @@ foreach ($name in @("FlashRAG", "WebThinker", "DeepAgent")) {
     $repoOk = $false
     continue
   }
-  $path = $repo.path
+  $path = Resolve-VgoPathSpec -PathSpec ([string]$repo.path) -TargetRoot $CodexRoot
   $expected = $repo.expected_commit
   if (-not (Test-Path -LiteralPath $path)) {
     Write-Host ("- {0}: MISSING ({1})" -f $name, $path) -ForegroundColor Red
@@ -82,7 +86,11 @@ foreach ($name in @("FlashRAG", "WebThinker", "DeepAgent")) {
 }
 
 Write-Section "Python runtime"
-$venvPython = $runtime.python.venv_python_win
+$venvPythonSpec = if ($IsWindows) { [string]$runtime.python.venv_python_win } else { [string]$runtime.python.venv_python_unix }
+if ([string]::IsNullOrWhiteSpace($venvPythonSpec)) {
+  $venvPythonSpec = [string]$runtime.python.venv_python_win
+}
+$venvPython = Resolve-VgoPathSpec -PathSpec $venvPythonSpec -TargetRoot $CodexRoot
 $venvOk = $false
 if ($venvPython -and (Test-Path -LiteralPath $venvPython)) {
   $venvOk = $true
@@ -144,7 +152,8 @@ if (-not $apiKeySet) {
 }
 if ($Mode -eq "upstream") {
   if (-not $repoOk) {
-    Write-Host "- Upstream repos missing; re-clone into $($runtime.vendor_root)" -ForegroundColor Yellow
+    $vendorRoot = Resolve-VgoPathSpec -PathSpec ([string]$runtime.vendor_root) -TargetRoot $CodexRoot
+    Write-Host "- Upstream repos missing; re-clone into $vendorRoot" -ForegroundColor Yellow
   }
   if (-not $venvOk) {
     Write-Host "- Upstream mode expects isolated venv; install it first." -ForegroundColor Yellow

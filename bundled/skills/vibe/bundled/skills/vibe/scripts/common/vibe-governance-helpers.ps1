@@ -113,6 +113,203 @@ function Resolve-VgoRepoRoot {
     return [System.IO.Path]::GetFullPath($candidates[$candidates.Count - 1])
 }
 
+function Resolve-VgoHomeDirectory {
+    param(
+        [AllowEmptyString()] [string]$HomePath = ''
+    )
+
+    $candidates = New-Object System.Collections.Generic.List[string]
+    if (-not [string]::IsNullOrWhiteSpace($HomePath)) {
+        [void]$candidates.Add($HomePath)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:HOME)) {
+        [void]$candidates.Add($env:HOME)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
+        [void]$candidates.Add($env:USERPROFILE)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:HOMEDRIVE) -and -not [string]::IsNullOrWhiteSpace($env:HOMEPATH)) {
+        [void]$candidates.Add(($env:HOMEDRIVE + $env:HOMEPATH))
+    }
+
+    try {
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+            [void]$candidates.Add($userProfile)
+        }
+    } catch {
+    }
+
+    foreach ($candidate in $candidates) {
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+
+        try {
+            return [System.IO.Path]::GetFullPath($candidate)
+        } catch {
+            continue
+        }
+    }
+
+    throw 'Unable to resolve a platform-neutral user home directory.'
+}
+
+function Resolve-VgoTargetRoot {
+    param(
+        [AllowEmptyString()] [string]$TargetRoot = ''
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($TargetRoot)) {
+        return [System.IO.Path]::GetFullPath($TargetRoot)
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
+        return [System.IO.Path]::GetFullPath($env:CODEX_HOME)
+    }
+
+    $homeDir = Resolve-VgoHomeDirectory
+    return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.codex'))
+}
+
+function Resolve-VgoInstalledSkillsRoot {
+    param(
+        [AllowEmptyString()] [string]$TargetRoot = ''
+    )
+
+    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot) 'skills'))
+}
+
+function Resolve-VgoExternalRoot {
+    param(
+        [AllowEmptyString()] [string]$TargetRoot = ''
+    )
+
+    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot) '_external'))
+}
+
+function Resolve-VgoPathSpec {
+    param(
+        [AllowEmptyString()] [string]$PathSpec = '',
+        [AllowEmptyString()] [string]$RepoRoot = '',
+        [AllowEmptyString()] [string]$TargetRoot = ''
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PathSpec)) {
+        return ''
+    }
+
+    $expanded = [string]$PathSpec
+    $codexRoot = Resolve-VgoTargetRoot -TargetRoot $TargetRoot
+    $skillsRoot = Resolve-VgoInstalledSkillsRoot -TargetRoot $TargetRoot
+    $externalRoot = Resolve-VgoExternalRoot -TargetRoot $TargetRoot
+
+    $expanded = $expanded.Replace('${CODEX_HOME}', $codexRoot)
+    $expanded = $expanded.Replace('${CODEX_SKILLS_ROOT}', $skillsRoot)
+    $expanded = $expanded.Replace('${VCO_EXTERNAL_ROOT}', $externalRoot)
+
+    if ($expanded -eq '~') {
+        return (Resolve-VgoHomeDirectory)
+    }
+    if ($expanded.StartsWith('~/') -or $expanded.StartsWith('~\')) {
+        $suffix = $expanded.Substring(2)
+        return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoHomeDirectory) $suffix))
+    }
+
+    if ([System.IO.Path]::IsPathRooted($expanded)) {
+        return [System.IO.Path]::GetFullPath($expanded)
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($RepoRoot)) {
+        return [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $expanded))
+    }
+
+    return [System.IO.Path]::GetFullPath($expanded)
+}
+
+function Get-VgoPowerShellCommand {
+    $currentProcessPath = $null
+    try {
+        $currentProcessPath = (Get-Process -Id $PID -ErrorAction Stop).Path
+    } catch {
+        $currentProcessPath = $null
+    }
+
+    $candidates = @(
+        $currentProcessPath,
+        (Join-Path $PSHOME 'pwsh.exe'),
+        (Join-Path $PSHOME 'pwsh'),
+        (Join-Path $PSHOME 'powershell.exe'),
+        (Join-Path $PSHOME 'powershell'),
+        (Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1),
+        (Get-Command powershell -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1),
+        (Get-Command pwsh.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1),
+        (Get-Command powershell.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1)
+    )
+
+    foreach ($candidate in $candidates) {
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+
+        if (Test-Path -LiteralPath $candidate) {
+            return [System.IO.Path]::GetFullPath($candidate)
+        }
+    }
+
+    throw 'Unable to resolve a PowerShell host for governed sub-process execution.'
+}
+
+function Get-VgoPowerShellFileInvocation {
+    param(
+        [Parameter(Mandatory)] [string]$ScriptPath,
+        [string[]]$ArgumentList = @(),
+        [switch]$NoProfile
+    )
+
+    $hostPath = Get-VgoPowerShellCommand
+    $hostLeaf = [System.IO.Path]::GetFileName($hostPath).ToLowerInvariant()
+    $args = @()
+
+    if ($NoProfile) {
+        $args += '-NoProfile'
+    }
+
+    if ($hostLeaf -like 'powershell*') {
+        $args += @('-ExecutionPolicy', 'Bypass')
+    }
+
+    $args += @('-File', [System.IO.Path]::GetFullPath($ScriptPath))
+    if ($ArgumentList.Count -gt 0) {
+        $args += $ArgumentList
+    }
+
+    return [pscustomobject]@{
+        host_path = $hostPath
+        host_leaf = $hostLeaf
+        arguments = @($args)
+    }
+}
+
+function Invoke-VgoPowerShellFile {
+    param(
+        [Parameter(Mandatory)] [string]$ScriptPath,
+        [string[]]$ArgumentList = @(),
+        [switch]$NoProfile
+    )
+
+    $invocation = Get-VgoPowerShellFileInvocation -ScriptPath $ScriptPath -ArgumentList $ArgumentList -NoProfile:$NoProfile
+    $global:LASTEXITCODE = 0
+    & $invocation.host_path @($invocation.arguments)
+    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+
+    return [pscustomobject]@{
+        host_path = [string]$invocation.host_path
+        arguments = @($invocation.arguments)
+        exit_code = $exitCode
+    }
+}
+
 function Get-VgoRelativePathPortable {
     param(
         [Parameter(Mandatory)] [string]$BasePath,

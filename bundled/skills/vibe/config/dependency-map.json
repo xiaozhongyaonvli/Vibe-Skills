@@ -2,67 +2,67 @@
   "version": 1,
   "items": [
     {
-      "source": "C:/Users/羽裳/.codex/skills/vibe",
+      "source": "${CODEX_HOME}/skills/vibe",
       "target": "bundled/skills/vibe"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/dialectic",
+      "source": "${CODEX_HOME}/skills/dialectic",
       "target": "bundled/skills/dialectic"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/local-vco-roles",
+      "source": "${CODEX_HOME}/skills/local-vco-roles",
       "target": "bundled/skills/local-vco-roles"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/spec-kit-vibe-compat",
+      "source": "${CODEX_HOME}/skills/spec-kit-vibe-compat",
       "target": "bundled/skills/spec-kit-vibe-compat"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/superclaude-framework-compat",
+      "source": "${CODEX_HOME}/skills/superclaude-framework-compat",
       "target": "bundled/skills/superclaude-framework-compat"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/ralph-loop",
+      "source": "${CODEX_HOME}/skills/ralph-loop",
       "target": "bundled/skills/ralph-loop"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/cancel-ralph",
+      "source": "${CODEX_HOME}/skills/cancel-ralph",
       "target": "bundled/skills/cancel-ralph"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/tdd-guide",
+      "source": "${CODEX_HOME}/skills/tdd-guide",
       "target": "bundled/skills/tdd-guide"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/think-harder",
+      "source": "${CODEX_HOME}/skills/think-harder",
       "target": "bundled/skills/think-harder"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/brainstorming",
+      "source": "${CODEX_HOME}/skills/brainstorming",
       "target": "bundled/superpowers-skills/brainstorming"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/writing-plans",
+      "source": "${CODEX_HOME}/skills/writing-plans",
       "target": "bundled/superpowers-skills/writing-plans"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/subagent-driven-development",
+      "source": "${CODEX_HOME}/skills/subagent-driven-development",
       "target": "bundled/superpowers-skills/subagent-driven-development"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/systematic-debugging",
+      "source": "${CODEX_HOME}/skills/systematic-debugging",
       "target": "bundled/superpowers-skills/systematic-debugging"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/requesting-code-review",
+      "source": "${CODEX_HOME}/skills/requesting-code-review",
       "target": "bundled/superpowers-skills/requesting-code-review"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/receiving-code-review",
+      "source": "${CODEX_HOME}/skills/receiving-code-review",
       "target": "bundled/superpowers-skills/receiving-code-review"
     },
     {
-      "source": "C:/Users/羽裳/.codex/skills/verification-before-completion",
+      "source": "${CODEX_HOME}/skills/verification-before-completion",
       "target": "bundled/superpowers-skills/verification-before-completion"
     }
   ]

@@ -1,10 +1,14 @@
 param(
-    [string]$TargetRoot = (Join-Path $env:USERPROFILE '.codex'),
+    [string]$TargetRoot = '',
     [switch]$WriteArtifacts,
     [switch]$WriteReceipt
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\common\vibe-governance-helpers.ps1')
+if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
+    $TargetRoot = Resolve-VgoTargetRoot
+}
+
 function Assert-True {
     param(
         [bool]$Condition,
@@ -129,6 +133,57 @@ function Get-InstalledRuntimeConfig {
     }
     return [pscustomobject]$merged
 }
+function Test-InstalledSkillResolution {
+    param(
+        [Parameter(Mandatory)] [string]$TargetRoot,
+        [Parameter(Mandatory)] [string]$InstalledRoot,
+        [Parameter(Mandatory)] [string]$Skill
+    )
+
+    $modulePath = Join-Path $InstalledRoot 'scripts\router\modules\46-confirm-ui.ps1'
+    $expectedPath = Join-Path (Join-Path $TargetRoot 'skills') (Join-Path $Skill 'SKILL.md')
+    $result = [ordered]@{
+        skill = [string]$Skill
+        module_path = [System.IO.Path]::GetFullPath($modulePath)
+        expected_path = [System.IO.Path]::GetFullPath($expectedPath)
+        module_exists = [bool](Test-Path -LiteralPath $modulePath)
+        expected_exists = [bool](Test-Path -LiteralPath $expectedPath)
+        resolved_path = $null
+        resolved_exists = $false
+        matches_expected = $false
+        uses_target_skills_root = $false
+        error = $null
+    }
+
+    if (-not $result.module_exists) {
+        $result.error = 'installed confirm-ui module missing'
+        return [pscustomobject]$result
+    }
+
+    $previousCodexHome = $env:CODEX_HOME
+    try {
+        $env:CODEX_HOME = [System.IO.Path]::GetFullPath($TargetRoot)
+        . $modulePath
+        $resolved = Resolve-SkillMdPath -RepoRoot '' -Skill $Skill
+        if (-not [string]::IsNullOrWhiteSpace($resolved)) {
+            $resolvedFull = [System.IO.Path]::GetFullPath($resolved)
+            $result.resolved_path = $resolvedFull
+            $result.resolved_exists = [bool](Test-Path -LiteralPath $resolvedFull)
+            $result.matches_expected = $resolvedFull -eq $result.expected_path
+            $targetSkillsRoot = [System.IO.Path]::GetFullPath((Join-Path $TargetRoot 'skills'))
+            if (-not $targetSkillsRoot.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+                $targetSkillsRoot = $targetSkillsRoot + [System.IO.Path]::DirectorySeparatorChar
+            }
+            $result.uses_target_skills_root = $resolvedFull.StartsWith($targetSkillsRoot, [System.StringComparison]::OrdinalIgnoreCase)
+        }
+    } catch {
+        $result.error = $_.Exception.Message
+    } finally {
+        $env:CODEX_HOME = $previousCodexHome
+    }
+
+    return [pscustomobject]$result
+}
 $context = Get-VgoGovernanceContext -ScriptPath $PSCommandPath -EnforceExecutionContext
 $repoRoot = $context.repoRoot
 $governance = $context.governance
@@ -166,6 +221,9 @@ $results = [ordered]@{
     files = @()
     directories = @()
     runtime_markers = @()
+    behavior = [ordered]@{
+        installed_skill_resolution = @()
+    }
     nested = [ordered]@{
         required = [bool]$requireNestedBundledRoot
         path = [System.IO.Path]::GetFullPath($installedNestedRoot)
@@ -273,6 +331,16 @@ foreach ($rel in $requiredRuntimeMarkers) {
         installed_exists = [bool]$installedMarkerExists
         parity = [bool]$parity
     }
+}
+$skillsToResolve = @('vibe', 'dialectic')
+foreach ($skill in $skillsToResolve) {
+    $resolution = Test-InstalledSkillResolution -TargetRoot $TargetRoot -InstalledRoot $installedRoot -Skill $skill
+    $assertions += Assert-True -Condition $resolution.module_exists -Message "[behavior:$skill] installed confirm-ui module exists"
+    $assertions += Assert-True -Condition $resolution.expected_exists -Message "[behavior:$skill] expected installed skill exists"
+    $assertions += Assert-True -Condition $resolution.resolved_exists -Message "[behavior:$skill] resolved skill path exists"
+    $assertions += Assert-True -Condition $resolution.uses_target_skills_root -Message "[behavior:$skill] resolves under target skills root"
+    $assertions += Assert-True -Condition $resolution.matches_expected -Message "[behavior:$skill] resolves expected installed skill path"
+    $results.behavior.installed_skill_resolution += $resolution
 }
 $total = @($assertions).Count
 $passed = @($assertions | Where-Object { $_ }).Count

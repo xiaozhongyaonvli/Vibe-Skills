@@ -11,6 +11,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot '..\common\vibe-governance-helpers.ps1')
 
 function Read-JsonFile {
     param([string]$Path)
@@ -179,10 +180,7 @@ function Resolve-AuditPath {
         [string]$Candidate
     )
     if ([string]::IsNullOrWhiteSpace($Candidate)) { return "" }
-    if ([System.IO.Path]::IsPathRooted($Candidate)) {
-        return [System.IO.Path]::GetFullPath($Candidate)
-    }
-    return [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $Candidate))
+    return (Resolve-VgoPathSpec -PathSpec $Candidate -RepoRoot $RepoRoot)
 }
 
 function Get-MirrorStateText {

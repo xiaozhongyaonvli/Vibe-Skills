@@ -1,5 +1,5 @@
 param(
-    [string]$TargetRoot = (Join-Path $env:USERPROFILE '.codex'),
+    [string]$TargetRoot = '',
     [string]$Profile,
     [string]$OutputPath,
     [switch]$Force
@@ -9,6 +9,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot '..\common\vibe-governance-helpers.ps1')
+if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
+    $TargetRoot = Resolve-VgoTargetRoot
+}
 
 function Get-SettingsProfile {
     param(

@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 if (-not $RepoRoot) {
   $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 }
+. (Join-Path $RepoRoot 'scripts\common\vibe-governance-helpers.ps1')
 
 $mapPath = Join-Path $RepoRoot 'config\dependency-map.json'
 if (-not (Test-Path -LiteralPath $mapPath)) {
@@ -36,7 +37,8 @@ function Copy-Compat {
 }
 
 foreach ($it in $data.items) {
-  Copy-Compat -Source $it.source -Target $it.target
+  $resolvedSource = Resolve-VgoPathSpec -PathSpec ([string]$it.source)
+  Copy-Compat -Source $resolvedSource -Target $it.target
 }
 
 if ($SyncRootVibe -and -not $DryRun) {

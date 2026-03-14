@@ -74,7 +74,7 @@ function Get-SkillDirHash {
         [string]$DirPath
     )
 
-    $files = Get-ChildItem -LiteralPath $DirPath -Recurse -File | Sort-Object FullName
+    $files = @(Get-ChildItem -LiteralPath $DirPath -Recurse -File | Sort-Object FullName)
     $entries = New-Object System.Collections.Generic.List[string]
     $totalBytes = 0
 
@@ -295,7 +295,7 @@ if ($extraInSkills.Count -gt 0) {
 
 if ($hashMismatches.Count -gt 0) {
     $failed = $true
-    $preview = $hashMismatches | Select-Object -First 10
+    $preview = @($hashMismatches | Select-Object -First 10)
     foreach ($row in $preview) {
         Write-Host ("[FAIL] dir hash mismatch {0} expected={1} actual={2}" -f $row.skill, $row.expected, $row.actual) -ForegroundColor Red
     }
@@ -306,7 +306,7 @@ if ($hashMismatches.Count -gt 0) {
 
 if ($skillMdMismatches.Count -gt 0) {
     $failed = $true
-    $preview = $skillMdMismatches | Select-Object -First 10
+    $preview = @($skillMdMismatches | Select-Object -First 10)
     foreach ($row in $preview) {
         Write-Host ("[FAIL] SKILL.md hash mismatch {0} expected={1} actual={2}" -f $row.skill, $row.expected, $row.actual) -ForegroundColor Red
     }

@@ -1,33 +1,34 @@
 {
   "version": 1,
   "updated_at": "2026-03-05",
-  "vendor_root": "C:/Users/羽裳/.codex/_external/ruc-nlpir",
+  "vendor_root": "${VCO_EXTERNAL_ROOT}/ruc-nlpir",
   "repos": {
     "FlashRAG": {
       "upstream_repo": "https://github.com/RUC-NLPIR/FlashRAG",
-      "path": "C:/Users/羽裳/.codex/_external/ruc-nlpir/FlashRAG",
+      "path": "${VCO_EXTERNAL_ROOT}/ruc-nlpir/FlashRAG",
       "expected_commit": "6aca76d1325c0eed9e00fba6ec692bf8b8a52b39",
       "requirements_relpath": "requirements.txt",
       "license_relpath": "LICENSE"
     },
     "WebThinker": {
       "upstream_repo": "https://github.com/RUC-NLPIR/WebThinker",
-      "path": "C:/Users/羽裳/.codex/_external/ruc-nlpir/WebThinker",
+      "path": "${VCO_EXTERNAL_ROOT}/ruc-nlpir/WebThinker",
       "expected_commit": "db387eb3261de9b5e2db7d2d7fb20af2aceb7882",
       "requirements_relpath": "requirements.txt",
       "license_relpath": "LICENSE"
     },
     "DeepAgent": {
       "upstream_repo": "https://github.com/RUC-NLPIR/DeepAgent",
-      "path": "C:/Users/羽裳/.codex/_external/ruc-nlpir/DeepAgent",
+      "path": "${VCO_EXTERNAL_ROOT}/ruc-nlpir/DeepAgent",
       "expected_commit": "d2bf7263c28e5c57f548ad9fe3b2fe9bfba9b310",
       "requirements_relpath": "requirements.txt",
       "license_relpath": "LICENSE"
     }
   },
   "python": {
-    "venv_path": "C:/Users/羽裳/.codex/_external/ruc-nlpir/.venv",
-    "venv_python_win": "C:/Users/羽裳/.codex/_external/ruc-nlpir/.venv/Scripts/python.exe"
+    "venv_path": "${VCO_EXTERNAL_ROOT}/ruc-nlpir/.venv",
+    "venv_python_win": "${VCO_EXTERNAL_ROOT}/ruc-nlpir/.venv/Scripts/python.exe",
+    "venv_python_unix": "${VCO_EXTERNAL_ROOT}/ruc-nlpir/.venv/bin/python"
   },
   "llm": {
     "base_url_default": "https://right.codes/codex/v1",

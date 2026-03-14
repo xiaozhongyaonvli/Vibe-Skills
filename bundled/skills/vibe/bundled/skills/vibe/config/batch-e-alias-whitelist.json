@@ -402,7 +402,7 @@
                         "removal_phase":  "E3",
                         "reason":  "Referenced by dependency-map and installer/bundling flow; requires packaging migration first.",
                         "blocking_references":  [
-                                                    ".\\skills\\vibe\\config\\dependency-map.json:41:      \"source\": \"C:/Users/羽裳/.codex/superpowers/skills/brainstorming\","
+                                                    ".\\skills\\vibe\\config\\dependency-map.json:41:      \"source\": \"${CODEX_HOME}/skills/brainstorming\","
                                                 ],
                         "preconditions":  [
                                               "Migrate `skills/vibe/config/dependency-map.json` source paths to canonical skill references (or explicit non-alias path policy).",
@@ -419,7 +419,7 @@
                         "removal_phase":  "E3",
                         "reason":  "Referenced by dependency-map and installer/bundling flow; requires packaging migration first.",
                         "blocking_references":  [
-                                                    ".\\skills\\vibe\\config\\dependency-map.json:45:      \"source\": \"C:/Users/羽裳/.codex/superpowers/skills/writing-plans\","
+                                                    ".\\skills\\vibe\\config\\dependency-map.json:45:      \"source\": \"${CODEX_HOME}/skills/writing-plans\","
                                                 ],
                         "preconditions":  [
                                               "Migrate `skills/vibe/config/dependency-map.json` source paths to canonical skill references (or explicit non-alias path policy).",
@@ -436,7 +436,7 @@
                         "removal_phase":  "E3",
                         "reason":  "Referenced by dependency-map and installer/bundling flow; requires packaging migration first.",
                         "blocking_references":  [
-                                                    ".\\skills\\vibe\\config\\dependency-map.json:49:      \"source\": \"C:/Users/羽裳/.codex/superpowers/skills/subagent-driven-development\","
+                                                    ".\\skills\\vibe\\config\\dependency-map.json:49:      \"source\": \"${CODEX_HOME}/skills/subagent-driven-development\","
                                                 ],
                         "preconditions":  [
                                               "Migrate `skills/vibe/config/dependency-map.json` source paths to canonical skill references (or explicit non-alias path policy).",
@@ -453,7 +453,7 @@
                         "removal_phase":  "E3",
                         "reason":  "Referenced by dependency-map and installer/bundling flow; requires packaging migration first.",
                         "blocking_references":  [
-                                                    ".\\skills\\vibe\\config\\dependency-map.json:53:      \"source\": \"C:/Users/羽裳/.codex/superpowers/skills/systematic-debugging\","
+                                                    ".\\skills\\vibe\\config\\dependency-map.json:53:      \"source\": \"${CODEX_HOME}/skills/systematic-debugging\","
                                                 ],
                         "preconditions":  [
                                               "Migrate `skills/vibe/config/dependency-map.json` source paths to canonical skill references (or explicit non-alias path policy).",
@@ -470,7 +470,7 @@
                         "removal_phase":  "E3",
                         "reason":  "Referenced by dependency-map and installer/bundling flow; requires packaging migration first.",
                         "blocking_references":  [
-                                                    ".\\skills\\vibe\\config\\dependency-map.json:57:      \"source\": \"C:/Users/羽裳/.codex/superpowers/skills/requesting-code-review\","
+                                                    ".\\skills\\vibe\\config\\dependency-map.json:57:      \"source\": \"${CODEX_HOME}/skills/requesting-code-review\","
                                                 ],
                         "preconditions":  [
                                               "Migrate `skills/vibe/config/dependency-map.json` source paths to canonical skill references (or explicit non-alias path policy).",
@@ -487,7 +487,7 @@
                         "removal_phase":  "E3",
                         "reason":  "Referenced by dependency-map and installer/bundling flow; requires packaging migration first.",
                         "blocking_references":  [
-                                                    ".\\skills\\vibe\\config\\dependency-map.json:61:      \"source\": \"C:/Users/羽裳/.codex/superpowers/skills/receiving-code-review\","
+                                                    ".\\skills\\vibe\\config\\dependency-map.json:61:      \"source\": \"${CODEX_HOME}/skills/receiving-code-review\","
                                                 ],
                         "preconditions":  [
                                               "Migrate `skills/vibe/config/dependency-map.json` source paths to canonical skill references (or explicit non-alias path policy).",
@@ -504,7 +504,7 @@
                         "removal_phase":  "E3",
                         "reason":  "Referenced by dependency-map and installer/bundling flow; requires packaging migration first.",
                         "blocking_references":  [
-                                                    ".\\skills\\vibe\\config\\dependency-map.json:65:      \"source\": \"C:/Users/羽裳/.codex/superpowers/skills/verification-before-completion\","
+                                                    ".\\skills\\vibe\\config\\dependency-map.json:65:      \"source\": \"${CODEX_HOME}/skills/verification-before-completion\","
                                                 ],
                         "preconditions":  [
                                               "Migrate `skills/vibe/config/dependency-map.json` source paths to canonical skill references (or explicit non-alias path policy).",

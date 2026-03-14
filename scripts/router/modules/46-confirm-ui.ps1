@@ -1,5 +1,10 @@
 ﻿# Auto-extracted router module. Keep function bodies behavior-identical.
 
+$confirmUiHelperPath = Join-Path (Split-Path $PSScriptRoot -Parent) '..\common\vibe-governance-helpers.ps1'
+if (-not (Get-Command Resolve-VgoInstalledSkillsRoot -ErrorAction SilentlyContinue) -and (Test-Path -LiteralPath $confirmUiHelperPath)) {
+    . $confirmUiHelperPath
+}
+
 function Get-ConfirmUiPolicyDefaults {
     return [pscustomobject]@{
         enabled = $true
@@ -299,7 +304,7 @@ function Resolve-SkillMdPath {
         if (Test-Path -LiteralPath $bundled) { return $bundled }
     }
 
-    $userRoot = Join-Path $env:USERPROFILE ".codex\\skills"
+    $userRoot = Resolve-VgoInstalledSkillsRoot
     $installed = Join-Path $userRoot (Join-Path $skillId "SKILL.md")
     if (Test-Path -LiteralPath $installed) { return $installed }
 

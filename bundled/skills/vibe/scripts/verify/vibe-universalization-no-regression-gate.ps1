@@ -88,7 +88,7 @@ function Invoke-SubGate {
         }
     }
 
-    $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $gateFull)
+    $args = @()
 
     if ($WriteArtifacts -and $SupportsArtifacts) {
         $args += '-WriteArtifacts'
@@ -97,14 +97,15 @@ function Invoke-SubGate {
         }
     }
 
-    $process = Start-Process -FilePath 'powershell.exe' -ArgumentList $args -Wait -PassThru -NoNewWindow
-    $code = [int]$process.ExitCode
+    $result = Invoke-VgoPowerShellFile -ScriptPath $gateFull -ArgumentList $args -NoProfile
+    $code = [int]$result.exit_code
 
     return [pscustomobject]@{
         gate = $GateScriptRel
         result = if ($code -eq 0) { 'PASS' } else { 'FAIL' }
         exit_code = $code
         path = $gateFull
+        host_path = $result.host_path
     }
 }
 

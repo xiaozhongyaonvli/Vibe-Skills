@@ -1,7 +1,7 @@
 param(
     [ValidateSet('minimal', 'full')]
     [string]$Profile = 'full',
-    [string]$TargetRoot = (Join-Path $env:USERPROFILE '.codex'),
+    [string]$TargetRoot = '',
     [switch]$SkipExternalInstall,
     [switch]$StrictOffline,
     [switch]$SyncUserEnv,
@@ -15,6 +15,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot '..\common\vibe-governance-helpers.ps1')
+if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
+    $TargetRoot = Resolve-VgoTargetRoot
+}
 
 function Test-NonEmptyString {
     param([AllowNull()][string]$Value)

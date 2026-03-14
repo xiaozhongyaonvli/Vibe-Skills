@@ -1,12 +1,16 @@
 param(
   [ValidateSet("minimal", "full")]
   [string]$Profile = "full",
-  [string]$TargetRoot = (Join-Path $env:USERPROFILE ".codex"),
+  [string]$TargetRoot = '',
   [switch]$SkipRuntimeFreshnessGate,
   [switch]$Deep
 )
 
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $RepoRoot 'scripts\common\vibe-governance-helpers.ps1')
+if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
+  $TargetRoot = Resolve-VgoTargetRoot
+}
 
 function Test-CanonicalRepoExecution {
   param([string]$RepoRoot)

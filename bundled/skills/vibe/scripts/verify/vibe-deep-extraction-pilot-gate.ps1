@@ -24,7 +24,7 @@ $board = Get-Content -LiteralPath (Join-Path $context.repoRoot 'config/promotion
 $fixturePath = Join-Path $context.repoRoot 'scripts/verify/fixtures/pilot-deep-extraction.json'
 $fixture = if (Test-Path -LiteralPath $fixturePath) { Get-Content -LiteralPath $fixturePath -Raw -Encoding UTF8 | ConvertFrom-Json } else { $null }
 $runtimeOnlyTracked = @('references/docling-output-spec.md')
-$runtimeRoot = [string]$manifest.runtime_mirror_root
+$runtimeRoot = Resolve-VgoPathSpec -PathSpec ([string]$manifest.runtime_mirror_root) -RepoRoot $context.repoRoot
 $runtimeOnlyArtifactCount = 0
 foreach ($rel in $runtimeOnlyTracked) {
   if (-not [string]::IsNullOrWhiteSpace($runtimeRoot)) {

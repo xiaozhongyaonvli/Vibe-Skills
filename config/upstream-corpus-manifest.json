@@ -110,7 +110,7 @@
                          },
                          {
                              "id":  "installed_runtime",
-                             "path":  "C:/Users/羽裳/.codex/skills/vibe/third_party/vco-ecosystem-mirror",
+                             "path":  "${CODEX_HOME}/skills/vibe/third_party/vco-ecosystem-mirror",
                              "role":  "freshness_baseline",
                              "expected_entry_count":  15,
                              "required_for_freshness_gate":  true
@@ -445,6 +445,6 @@
                                              ]
                     }
                 ],
-    "runtime_mirror_root":  "C:/Users/羽裳/.codex/skills/vibe/third_party/vco-ecosystem-mirror",
+    "runtime_mirror_root":  "${CODEX_HOME}/skills/vibe/third_party/vco-ecosystem-mirror",
     "alias_config":  "config/upstream-source-aliases.json"
 }

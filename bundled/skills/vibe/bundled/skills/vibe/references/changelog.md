@@ -1,5 +1,14 @@
 # VCO Changelog
 
+## v2.3.38 (2026-03-14)
+
+- Removed author-machine path leakage from governed runtime JSON surfaces by replacing hard-coded user paths in `config/dependency-map.json`, `config/upstream-corpus-manifest.json`, `config/ruc-nlpir-runtime.json`, and `config/batch-e-alias-whitelist.json` with `${CODEX_HOME}` / `${VCO_EXTERNAL_ROOT}` forms.
+- Landed matching path-resolution helpers and consumer updates so config tokenization does not regress runtime behavior, including sync/bootstrap/governance flows and Linux-sensitive RUC-NLPIR preflight handling.
+- Resynced canonical, bundled, and nested-bundled mirrors, then re-materialized the smoke installed runtime to prove the installed surface matches the new canonical governance state.
+- Verified release readiness with zero leaked author-machine paths in the governed config surfaces plus green `vibe-upstream-corpus-manifest-gate.ps1`, `vibe-deep-extraction-pilot-gate.ps1`, `vibe-installed-runtime-freshness-gate.ps1`, and `check.ps1 -Profile full`.
+- Detailed release notes: `docs/releases/v2.3.38.md`.
+
+
 ## v2.3.37 (2026-03-13)
 
 - Promoted `scrapling` into the standard governed `full` install lane so the default full-profile path now carries a concrete local scraping/runtime surface instead of treating it as a purely optional afterthought.

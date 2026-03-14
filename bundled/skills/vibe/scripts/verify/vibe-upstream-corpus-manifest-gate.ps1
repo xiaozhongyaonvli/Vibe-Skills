@@ -187,6 +187,7 @@ foreach ($field in $requiredTopLevelFields) {
 }
 Add-Assertion -Collection $results -Condition ($manifest.PSObject.Properties.Name -contains 'alias_config') -Message 'manifest top-level field exists: alias_config'
 Add-Assertion -Collection $results -Condition ($manifest.PSObject.Properties.Name -contains 'runtime_mirror_root') -Message 'manifest top-level field exists: runtime_mirror_root'
+Add-Assertion -Collection $results -Condition ([string]$manifest.runtime_mirror_root -like '${CODEX_HOME}/*' -or [string]$manifest.runtime_mirror_root -like '${CODEX_HOME}\*') -Message 'manifest runtime_mirror_root is CODEX_HOME-scoped, not author-machine scoped' -Details $manifest.runtime_mirror_root
 Add-Assertion -Collection $results -Condition ($manifest.summary.total_entries -eq $expectedEntryCount) -Message ('manifest summary.total_entries = {0}' -f $expectedEntryCount) -Details $manifest.summary.total_entries
 Add-Assertion -Collection $results -Condition ($actualSlugs.Count -eq $expectedEntryCount) -Message ('manifest entries count = {0}' -f $expectedEntryCount) -Details $actualSlugs.Count
 Add-Assertion -Collection $results -Condition ($uniqueSlugs.Count -eq $actualSlugs.Count) -Message 'manifest slugs are unique'

@@ -1,7 +1,7 @@
 param(
   [ValidateSet("minimal", "full")]
   [string]$Profile = "full",
-  [string]$TargetRoot = (Join-Path $env:USERPROFILE ".codex"),
+  [string]$TargetRoot = '',
   [switch]$InstallExternal,
   [switch]$StrictOffline,
   [switch]$AllowExternalSkillFallback,
@@ -9,6 +9,11 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $RepoRoot 'scripts\common\vibe-governance-helpers.ps1')
+if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
+  $TargetRoot = Resolve-VgoTargetRoot
+}
+
 function Test-CanonicalRepoExecution {
   param([string]$RepoRoot)
   return (Test-Path -LiteralPath (Join-Path $RepoRoot '.git'))
