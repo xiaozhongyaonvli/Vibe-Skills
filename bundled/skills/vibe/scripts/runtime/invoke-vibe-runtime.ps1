@@ -58,8 +58,8 @@ function Get-VibeRelativePathCompat {
     $baseWithSeparator = $baseFull.TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
     $baseUri = New-Object System.Uri($baseWithSeparator)
     $targetUri = New-Object System.Uri($targetFull)
-    $relative = $baseUri.MakeRelativeUri($targetUri).ToString()
-    return ([System.Uri]::UnescapeDataString($relative) -replace '/', '\')
+    $relative = [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString())
+    return $relative.Replace('/', [System.IO.Path]::DirectorySeparatorChar)
 }
 
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath

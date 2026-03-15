@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import shutil
 import subprocess
 import tempfile
@@ -39,6 +40,17 @@ def _ps_single_quote(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+def _create_fake_command(directory: Path, name: str) -> Path:
+    suffix = ".cmd" if os.name == "nt" else ""
+    command_path = directory / f"{name}{suffix}"
+    if os.name == "nt":
+        command_path.write_text("@echo off\r\nexit /b 0\r\n", encoding="utf-8")
+    else:
+        command_path.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
+        command_path.chmod(command_path.stat().st_mode | stat.S_IXUSR)
+    return command_path
+
+
 def resolve_python_command_spec_via_powershell(command_spec: str, path_entries: list[Path]) -> dict[str, object]:
     shell = resolve_powershell()
     if shell is None:
@@ -46,13 +58,17 @@ def resolve_python_command_spec_via_powershell(command_spec: str, path_entries: 
 
     helper = REPO_ROOT / "scripts" / "common" / "vibe-governance-helpers.ps1"
     scoped_path = os.pathsep.join(str(entry) for entry in path_entries)
-    ps_script = (
-        f"$env:PATH = {_ps_single_quote(scoped_path)}; "
-        "$env:PATHEXT = '.CMD;.EXE;.BAT;.PS1'; "
-        f". {_ps_single_quote(str(helper))}; "
-        f"$result = Resolve-VgoPythonCommandSpec -Command {_ps_single_quote(command_spec)}; "
-        "$result | ConvertTo-Json -Depth 5"
+    ps_script_parts = [f"$env:PATH = {_ps_single_quote(scoped_path)}; "]
+    if os.name == "nt":
+        ps_script_parts.append("$env:PATHEXT = '.CMD;.EXE;.BAT;.PS1'; ")
+    ps_script_parts.extend(
+        [
+            f". {_ps_single_quote(str(helper))}; ",
+            f"$result = Resolve-VgoPythonCommandSpec -Command {_ps_single_quote(command_spec)}; ",
+            "$result | ConvertTo-Json -Depth 5",
+        ]
     )
+    ps_script = "".join(ps_script_parts)
     completed = subprocess.run(
         [shell, "-NoLogo", "-NoProfile", "-Command", ps_script],
         cwd=REPO_ROOT,
@@ -185,6 +201,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 self.assertFalse(str(Path(artifacts[key])).lower().startswith(repo_root_text), key)
                 if key in relative_artifacts:
                     self.assertFalse(Path(relative_artifacts[key]).is_absolute(), key)
+                    if os.name != "nt":
+                        self.assertNotIn("\\", relative_artifacts[key], key)
 
             requirement_doc_path = resolve_artifact_path("requirement_doc")
             execution_plan_path = resolve_artifact_path("execution_plan")
@@ -222,7 +240,7 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
     def test_resolve_vgo_python_command_spec_falls_back_to_python3(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             fake_dir = Path(tempdir)
-            (fake_dir / "python3.cmd").write_text("@echo off\r\nexit /b 0\r\n", encoding="utf-8")
+            _create_fake_command(fake_dir, "python3")
 
             resolved = resolve_python_command_spec_via_powershell("${VGO_PYTHON}", [fake_dir])
 
@@ -232,11 +250,11 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
     def test_resolve_vgo_python_command_spec_uses_py_launcher_with_dash3_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             fake_dir = Path(tempdir)
-            (fake_dir / "py.cmd").write_text("@echo off\r\nexit /b 0\r\n", encoding="utf-8")
+            _create_fake_command(fake_dir, "py")
 
             resolved = resolve_python_command_spec_via_powershell("${VGO_PYTHON}", [fake_dir])
 
-            self.assertTrue(str(resolved["host_leaf"]).startswith("py."))
+            self.assertTrue(str(resolved["host_leaf"]).startswith("py"))
             self.assertEqual(["-3"], resolved["prefix_arguments"])
 
 
