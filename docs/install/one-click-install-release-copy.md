@@ -1,83 +1,63 @@
-# 一键安装发布文案
+# 一步式安装：复制给 AI 就能开始
 
-这份文档是给普通用户、围观用户、社区帖、README 首屏、发布帖直接复用的。
+如果你不想自己研究安装细节，最简单的方式就是：
 
-当前对外推荐版本：[`v2.3.47`](../releases/v2.3.47.md)
+**把下面整段提示词复制给你的 AI 助手，让它帮你完成安装。**
 
-它比 operator 文档更短、更适合传播，但不会夸大能力边界。
-
-适合人群：
-
-- 想先把 VibeSkills 用起来的普通重度大模型用户
-- 想低成本围观、评估、再决定是否推广给团队的负责人
-- 想发社区帖、发 README 首屏、发群公告的人
-
-## 一句话版本
-
-`VibeSkills v2.3.47` 是当前推荐的对外版本。它不是另一个 skills 列表，而是一套把 skills 路由、治理、组合、验证起来的通用基座，让通用大模型更稳定地完成任务。先来用，先来围观，觉得方向对就先 Star。
-
-## 社区短版文案
-
-VibeSkills `v2.3.47` 现在是当前推荐的公开版本。
-
-如果你是重度 AI 用户，这是现在最适合上手的一版：
-
-- 一条受治理的推荐安装路径
-- Windows / Linux 都有清晰入口
-- `scrapling` 已进入默认 full lane
-- `Cognee` 被明确定位为默认长期增强层
-- `Composio / Activepieces` 作为外部操作能力预留，但保持 setup-required
-
-它不是“什么都自动装好”的神话版本，而是当前最清晰、最诚实、最适合普通用户开始体验的 repo-governed 安装面。
-
-先来用，先来围观，觉得这套方向值得做大，就先 Star。
-
-## 发布长版文案
-
-VibeSkills `v2.3.47` 是当前对外推荐版本。
-
-这一版的重点不是再堆更多零散 skills，而是把“普通用户如何真正开始用”这件事讲清楚：
-
-- 当前推荐版本被明确标出来
-- 标准推荐安装路径更清楚
-- Windows 和 Linux 都有可见入口
-- 默认增强层和外部操作层的边界更清楚
-
-你应该期待的是：
-
-- 一次性 bootstrap repo 负责交付的内容
-- 一次 truth-first 的 doctor / readiness 结果
-- 清楚知道哪些部分已经闭环，哪些部分还属于宿主侧手工 provision
-
-你不应该期待的是：
-
-- 明明缺 host plugins / provider secrets，还被包装成 fully ready
-- 所有外部 MCP 和宿主插件都被静默自动装好
-
-如果你要的不是另一个 skills 仓库，而是一套更稳定、更可治理、更适合长期演进的 skills 基座，就从 `v2.3.47` 开始。
-
-## 复制给 AI 助手的一键安装提示词
+## 复制给 AI 的提示词
 
 ```text
-请按当前平台的最强推荐 VibeSkills 安装路径帮我完成安装。
+你现在是我的 VibeSkills 安装助手。
+
+请在当前仓库中帮我完成安装，并且用普通人也能看懂的方式告诉我结果。
 
 要求：
-1. 先识别当前系统是 Windows 还是 Linux。
-2. 如果是 Windows，优先执行：
-   - `pwsh -File .\scripts\bootstrap\one-shot-setup.ps1`
-   - `pwsh -File .\check.ps1 -Profile full -Deep`
-   - 只有在 `pwsh` 不可用时才回退到 Windows PowerShell
-3. 如果是 Linux，执行：
-   - `bash ./scripts/bootstrap/one-shot-setup.sh`
-   - `bash ./check.sh --profile full --deep`
-   - 并明确告诉我当前 Linux 是否具备 `pwsh`，因为没有 `pwsh` 的 Linux 只应被视为 degraded-but-supported，而不是最强 full lane
-4. 如实报告最终 `readiness_state`。
-5. 不要把 host plugins、外部 MCP、provider secrets 伪装成已经自动安装完成。
-6. 如果结果是 `manual_actions_pending`，把剩余人工动作明确列出来。
-7. 默认先建议我补 `superpowers` 和 `hookify`，不要默认要求第一天就把 5 个宿主插件全部装满。
+1. 先判断当前系统是 Windows、Linux 还是 macOS。
+2. 先阅读 `README.md`、`docs/quick-start.md` 和 `docs/install/one-click-install-release-copy.md`，再开始执行。
+3. 如果是 Windows：
+   - 优先执行 `pwsh -File .\scripts\bootstrap\one-shot-setup.ps1`
+   - 然后执行 `pwsh -File .\check.ps1 -Profile full -Deep`
+   - 只有在 `pwsh` 不可用时，才回退到 Windows PowerShell。
+4. 如果是 Linux 或 macOS：
+   - 执行 `bash ./scripts/bootstrap/one-shot-setup.sh`
+   - 然后执行 `bash ./check.sh --profile full --deep`
+   - 明确告诉我当前环境是否具备 `pwsh`，因为没有 `pwsh` 时应被视为支持但有约束，而不是“什么都已经满血完成”。
+5. 安装完成后，用中文给我一个清晰总结：
+   - 已经完成了什么
+   - 还缺什么
+   - 哪些步骤需要我手动处理
+6. 不要把宿主插件、外部 MCP、provider secrets 伪装成已经自动配置好了。
+7. 如果最终状态是 `manual_actions_pending`，请把剩余人工动作整理成一个短清单。
+8. 默认优先建议我补最关键的宿主能力，不要第一天就要求我把所有插件全部装满。
 ```
 
-## 直接命令版
+## 这段提示词会帮你做什么
+
+正常情况下，AI 会替你完成这些事：
+
+- 判断你当前的平台
+- 选择正确的一键安装路径
+- 运行安装和检查命令
+- 明确告诉你哪些已经完成
+- 如实告诉你哪些还需要人工补齐
+
+你不需要一开始就搞懂整套安装矩阵。
+先让 AI 帮你把第一步走通就够了。
+
+## 它不会假装替你做完什么
+
+这一步式安装入口会尽量把仓库自己能负责的部分跑起来。
+
+但它不会假装下面这些事情已经自动完成：
+
+- 宿主插件已经全部装好
+- 外部 MCP 已经全部接好
+- provider secrets 已经自动填入
+- 所有增强能力已经 fully ready
+
+如果还差这些，正确结果应该是：AI 明确告诉你“这里还需要手动补齐”。
+
+## 如果你更喜欢手动执行
 
 Windows：
 
@@ -86,33 +66,21 @@ pwsh -File .\scripts\bootstrap\one-shot-setup.ps1
 pwsh -File .\check.ps1 -Profile full -Deep
 ```
 
-Linux：
+Linux / macOS：
 
 ```bash
 bash ./scripts/bootstrap/one-shot-setup.sh
 bash ./check.sh --profile full --deep
 ```
 
-## 必须说清楚的现实边界
+如果你只是想先开始用，我仍然更推荐前面的 AI 提示词入口。
 
-对外传播时，最重要的一句边界说明是：
+## 安装之后看哪里
 
-- `v2.3.47` 是当前推荐的受治理安装面
-- 它尽可能闭环 repo 自己负责交付的安装链路
-- 它不会假装替你自动完成所有宿主插件、provider secrets、外部 MCP 集成
+安装完成后，建议继续看：
 
-因此，对普通用户来说，`manual_actions_pending` 是一个正常、诚实、可接受的结果，不应该被误读成安装失败。
+1. [`../quick-start.md`](../quick-start.md)
+2. [`../manifesto.md`](../manifesto.md)
+3. [`recommended-full-path.md`](./recommended-full-path.md)
 
-## 如果用户想继续增强
-
-- 先补 provider secrets，例如 `OPENAI_API_KEY`
-- 再补推荐的宿主插件，优先 `superpowers`、`hookify`
-- 再补 `github`、`context7`、`serena` 等 plugin-backed MCP surfaces
-- 把 `Composio / Activepieces` 视为外部操作能力扩展层，有需要再 setup，并保持治理与确认门禁
-
-## 相关文档
-
-- [`recommended-full-path.md`](./recommended-full-path.md)
-- [`full-featured-install-prompts.md`](./full-featured-install-prompts.md)
-- [`../cold-start-install-paths.md`](../cold-start-install-paths.md)
-- [`../releases/v2.3.47.md`](../releases/v2.3.47.md)
+如果你是第一次接触这个项目，先看前两份就够了。

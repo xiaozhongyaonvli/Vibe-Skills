@@ -19,4 +19,5 @@ Primary policy:
 
 ## Current Entry
 
+- [`2026-03-19-public-docs-entrypoint-restructure.md`](./2026-03-19-public-docs-entrypoint-restructure.md): 冻结公开入口文档组重构目标；聚焦 README、manifesto、一步式安装入口与 quick-start 导航收敛。
 - [`2026-03-15-linux-router-host-neutrality-and-route-quality-recovery.md`](./2026-03-15-linux-router-host-neutrality-and-route-quality-recovery.md): Frozen requirement baseline for Linux host-neutral router recovery, route quality repair, path-neutral cleanup, and proof-aligned release truth.

@@ -2,362 +2,115 @@
 
 # VibeSkills
 
-> The skills substrate that ends skill chaos.
-> Turn general-purpose AI from “able to call skills” into “able to complete tasks reliably”.
+> Bring scattered skills, plugins, workflows, and hard-earned experience into one AI agent system that is easier to use and harder to derail.
 
-VibeSkills is an open skills ecosystem for general-purpose AI models.
+`VibeSkills` is the public-facing name. `VCO` is the governed runtime behind it.
 
-Powered by Vibe Code Orchestrator `VCO`, it does not just collect skills. It adds intelligent routing, framework-level governance, quality gates, multi-skill composition, and multi-agent coordination so scattered capabilities can be turned into a safer, more standardized, more stable, and more reliable execution exoskeleton.
+This is not another skill list.
+It is closer to a Swiss-army-knife-style integrated agent system: a way to gather strong but scattered skills, projects, plugins, and working habits into one surface that is easier to call, easier to govern, and easier to keep understandable over time.
 
-We are not trying to build another skill repository.
-We are trying to build a universal skills substrate for general-purpose AI.
+## Why It Exists
 
-## Why VibeSkills Exists
+I kept seeing the same pattern: there are many excellent tools, skills, plugins, and agent projects.
 
-The problem today is not a lack of skills.
+Each of them is useful. Many of them are genuinely strong. But real usage gets messy very quickly. Things are hard to discover, they overlap, they conflict, and you are often left deciding everything yourself: which capability to use, when to clarify requirements first, when to verify, when to leave evidence, and when to stop the model from running too far ahead.
 
-The real problems are:
+So this gradually turned into an integration project.
+I started collecting the pitfalls, norms, review steps, safety boundaries, maintenance lessons, and the best parts of different upstream projects into one system.
 
-- skills are fragmented and hard to discover
-- skills are opaque and difficult to trust
-- skills do not compose well in real workflows
-- custom skills are often inconsistent and poorly governed
-- even strong models still lack a long-running capability governance layer
+I was not trying to build a louder toolbox.
+I was trying to build a calmer way to work with AI.
 
-VibeSkills is not about improving one isolated skill.
-It is about changing how the entire skills ecosystem is used.
+## What Problem It Solves
 
-## What We Believe
+If you already use AI heavily, you have probably run into some version of these problems:
 
-The future is not more skills.
-The future is skill governance.
+- too many skills, and no clear sense of which one to use right now
+- projects, plugins, and workflows that overlap and conflict with one another
+- models that jump straight into execution before the task is clear
+- work that finishes without verification, evidence, or a maintenance trail
+- onboarding that feels too technical for ordinary people to start comfortably
 
-VibeSkills aims to become a universal skills substrate for general-purpose AI:
+`VibeSkills` tries to reduce that choice cost, composition cost, and loss-of-control cost.
 
-- users should not have to memorize skills
-- models should be able to choose better execution paths
-- multiple skills should be composable by design
-- complex tasks should have explicit boundaries, protocols, and quality gates
-- agents should evolve from single executors into coordinated teams
+## How It Works
 
-This is not another prompt pack.
-This is not another tool list.
-This is an attempt to build a real capability infrastructure layer for general-purpose intelligence.
+The easiest way to understand it is as three layers.
 
-## How It Is Different
+### 1. Smart routing
 
-Many systems stop at:
+In the right situations, you should not have to remember which exact skill to call.
 
-- connecting more tools
-- exposing more skills
-- making prompts look more agentic
+`VibeSkills` combines rule-based routing and AI-assisted routing so the right capability is more likely to be activated in the right context, without forcing you to memorize the ecosystem first.
 
-VibeSkills focuses on something else:
+### 2. Governed workflows
 
-- routing to the right skill and execution flow
-- governing before execution, not only after failure
-- composing multiple skills into stable workflows
-- coordinating multi-agent teams for larger tasks
-- maintaining consistent quality, boundaries, and reliability across scenarios
+This is not only about calling tools.
+It is also about how work gets done.
 
-Not “more features”.
-But a more reliable execution system.
+That is why the system tries to keep requirement clarification, confirmation, execution, verification, review, and traceability inside one working flow instead of letting the model sprint into a black box.
 
-## What Lives In This Repository
+### 3. Integrated capabilities
 
-This repository is organized around a single control plane, `VCO`, and includes:
+This is not just a pile of skills.
 
-- the `VCO` orchestration layer for task grading, routing, and execution control
-- the Pack Router for mapping task semantics to the right skills
-- governance layers for quality debt, prompt assets, memory, ML lifecycle, system design, CUDA, and more
-- verification gates for routing stability, offline closure, governance policy, and regression control
-- bundled skill mirrors for repeatable installation and compatibility
-- optional integrations such as AIOS-Core, OpenSpec, GSD-Lite, prompts.chat, GitNexus, claude-flow, and ralph-loop
+It also includes plugins, project integrations, workflow design, AI norms, safety boundaries, maintenance lessons, and the mistakes I have already made and do not want to repeat.
+`VCO` is the runtime layer that keeps those capabilities organized instead of leaving them scattered in unrelated places.
 
-The point is not to pile components together.
-The point is to make them work under one governed execution surface.
+## Who It Is For
 
-## Manifesto
+`VibeSkills` is mainly for:
 
-If you want the full statement of what this ecosystem is trying to build, what it rejects, and what it publicly commits to, start here:
+- ordinary people who want AI to help more reliably
+- heavy AI / Agent / automation users
+- individuals or small teams that want more disciplined AI workflows
+- anyone tired of a skill ecosystem that is rich in options but poor in usability
 
-- [`docs/manifesto.en.md`](./docs/manifesto.en.md)
+If you only want a single-purpose utility, this repo may be heavier than you need.
+If you want AI to become steadier, easier to manage, and more useful over time, it is a much better fit.
 
-## Current Recommended Release
+## Why It Is Different From a Normal Skill Repository
 
-- Current outward-facing recommended version: [`v2.3.47`](./docs/releases/v2.3.47.md)
-- Ordinary-user one-click release copy: [`docs/install/one-click-install-release-copy.en.md`](./docs/install/one-click-install-release-copy.en.md)
-- Operator-grade install path: [`docs/install/recommended-full-path.en.md`](./docs/install/recommended-full-path.en.md)
+Many repositories answer one question: what is available here?
+
+`VibeSkills` cares more about questions like:
+
+- what should be used right now, not just what exists
+- what should happen first and what should happen later
+- which capabilities can work together safely
+- how results get checked, explained, and preserved
+
+It is not trying to stack more things.
+It is trying to make those things easier to use well.
 
 ## Start Here
 
-If you are:
-
-- a heavy AI user doing development, research, analysis, or automation
-- a team lead who wants AI to become operationally reliable instead of occasionally impressive
-- someone frustrated by too many scattered and hard-to-compose skills
-
-You can start here.
-
-### Install Guide
-
-#### Ordinary-user fast path
-
-If you want the simplest public-facing onboarding path for ordinary users, community posts, or "copy this into your AI assistant" onboarding, start here:
+If you just want to get started, the simplest path is not to study the whole install matrix yourself.
+Copy the one-step install prompt and let your AI assistant do the first pass for you:
 
 - [`docs/install/one-click-install-release-copy.en.md`](./docs/install/one-click-install-release-copy.en.md)
 
-This is the current public install copy for `v2.3.47`.
+If you want a lighter navigation page before choosing a path:
 
-#### Start with the standard recommended install
+- [`docs/quick-start.en.md`](./docs/quick-start.en.md)
 
-For most users, the **standard recommended install** is the default entry point.
+## Read More
 
-It does not mean "install every enhancement on day one". It means:
+If you want to keep going, this is the recommended order:
 
-- close the repo-governed surfaces first
-- accept `manual_actions_pending` as an honest state when host-managed surfaces are still missing
-- enhance the setup in layers instead of forcing every plugin, MCP surface, and secret into the first run
+1. [`docs/quick-start.en.md`](./docs/quick-start.en.md)
+   Start with the shortest guided entry.
+2. [`docs/manifesto.en.md`](./docs/manifesto.en.md)
+   See why this project exists and what it is trying to protect.
+3. [`docs/install/one-click-install-release-copy.en.md`](./docs/install/one-click-install-release-copy.en.md)
+   Hand the install path to your AI assistant.
 
-This is the right default for:
-
-- heavy AI users who want a stable real setup
-- team leads who want to evaluate the governed surface before broader rollout
-- operators who want less first-day conflict and less first-day debugging
-
-Start here:
+If you are already a heavy user and want fuller install detail:
 
 - [`docs/install/recommended-full-path.en.md`](./docs/install/recommended-full-path.en.md)
 - [`docs/cold-start-install-paths.en.md`](./docs/cold-start-install-paths.en.md)
 
-#### What "full-featured" means here
-
-A full-featured VibeSkills setup is not just "the repo cloned successfully".
-It means all shipped skills and governance assets are installed locally, the active MCP profile is materialized, the runtime passes deep health checks, and the remaining host-managed surfaces are called out explicitly instead of being silently skipped.
-
-In the current default recommendation, that now means three different layers are made explicit:
-
-- `scrapling` is treated as a default local runtime surface for the full profile, and the installer attempts to provision it during the standard external CLI pass
-- `Cognee` is treated as the default long-term enhancement lane for governed graph memory, not as a replacement for session truth
-- `Composio` and `Activepieces` are treated as predeclared external action surfaces that ship with governance context, but still require setup before use
-
-#### Our "full-featured" promise is governed, not magical
-
-In VibeSkills, "full-featured" means repo-governed completion, not fake "everything is automatically ready".
-
-That means:
-
-- the payload, scripts, mirrors, profiles, and doctor gates shipped by this repo should install, sync, and verify in one governed path
-- host-managed surfaces such as host plugins, external MCP services, and provider secrets are still real operator responsibilities
-- if those host-side prerequisites are not provisioned yet, the correct end state is `manual_actions_pending`, not a dishonest "all ready"
-
-We do not blur "no install error" into "the whole ecosystem is now operational".
-We make the closure boundary explicit so operators know what is already governed and what still needs manual provisioning.
-
-#### Full-feature prerequisites
-
-- `git`
-- `node` and `npm`
-- `python3` or `python`
-- Windows: `powershell` or `pwsh`
-- Linux/macOS: `bash`
-- Recommended on Linux/macOS for the strongest governed verification path: `pwsh` (PowerShell 7)
-
-With `pwsh`, Linux gets the strongest currently supported path, but it still ships as `supported-with-constraints` rather than `full-authoritative`.
-Without `pwsh`, Linux/macOS still gets the full shipped content and the MCP active profile, but the PowerShell doctor gates are downgraded to shell-safe warnings.
-
-Operator notes:
-
-- The one-shot bootstrap can be slow when external CLI installation is enabled, especially during `npm` installation of `claude-flow`. Several minutes is normal.
-- `npm` deprecation warnings during external CLI installation are advisory unless the command exits non-zero.
-- If the target `settings.json` already contains `OPENAI_API_KEY` or `ARK_API_KEY`, the bootstrap now keeps those values and reports that they were reused instead of emitting a misleading "not provided" warning.
-
-#### Windows
-
-```powershell
-pwsh -File .\scripts\bootstrap\one-shot-setup.ps1
-# Windows PowerShell fallback:
-powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap\one-shot-setup.ps1
-```
-
-#### Linux / macOS
-
-```bash
-bash ./scripts/bootstrap/one-shot-setup.sh
-```
-
-Optional examples:
-
-```bash
-# install to a custom Codex root
-bash ./scripts/bootstrap/one-shot-setup.sh --target-root "$HOME/.codex"
-
-# enforce the offline closure gate during install
-bash ./scripts/bootstrap/one-shot-setup.sh --strict-offline
-```
-
-Both one-shot bootstraps do the same governed work:
-
-- install the shipped runtime payload under `~/.codex`
-- install automatable external CLIs where supported, including the default `scrapling` surface in the full lane when Python packaging is available
-- materialize `mcp/servers.active.json` from the selected profile
-- run the deep readiness check
-
-#### What counts as complete for the standard recommended install
-
-For most users, the standard recommended install is complete when:
-
-- the one-shot bootstrap succeeds
-- the deep doctor succeeds
-- shipped payload, bundled mirrors, active MCP profile, and runtime coherence are closed on the repo-owned side
-- remaining gaps are listed clearly instead of being hidden
-
-So:
-
-- `fully_ready` is ideal
-- `manual_actions_pending` is still a valid and acceptable result for this path
-- `core_install_incomplete` is the real blocking failure
-
-#### Re-run the deep doctor
-
-Windows:
-
-```powershell
-pwsh -File .\check.ps1 -Profile full -Deep
-# Windows PowerShell fallback:
-powershell -ExecutionPolicy Bypass -File .\check.ps1 -Profile full -Deep
-```
-
-Linux / macOS:
-
-```bash
-bash ./check.sh --profile full --deep
-```
-
-Upgrade note:
-
-- pulling the repo does not refresh `${TARGET_ROOT}/skills/vibe`
-- after a repo upgrade, re-run `install.ps1` / `install.sh` or the matching one-shot bootstrap for the same target root before treating freshness failures as receipt-only issues
-
-#### Manual follow-up required for a true full MCP experience
-
-These surfaces are intentionally not faked by the repo and must be provisioned on the host:
-
-- Host plugin surfaces still tracked by the current doctor / manifest: `superpowers`, `everything-claude-code`, `claude-code-settings`, `hookify`, `ralph-loop`
-- Plugin-backed MCP surfaces: `github`, `context7`, `serena`
-- External action integrations that are now shipped as governed prewired surfaces, but remain setup-required: `Composio`, `Activepieces`
-- Provider secrets when you want online execution: `OPENAI_API_KEY` and any optional provider keys you actually use
-
-But the default policy is not "install all five host plugins on day one".
-
-Recommended policy:
-
-- first install: do not treat all five as up-front prerequisites; run one-shot + deep doctor first
-- author/reference Windows Codex lane: provision `superpowers` and `hookify` first
-- `everything-claude-code`, `claude-code-settings`, and `ralph-loop`: add them only when doctor still points to a concrete remaining gap
-
-Full decision rules and install guidance:
-
-- [`docs/install/host-plugin-policy.en.md`](./docs/install/host-plugin-policy.en.md)
-
-If those are not provisioned yet, the doctor should end in `manual_actions_pending`, not in a false "everything is ready" state.
-
-#### If you want to enhance the setup further
-
-A lower-risk order is:
-
-1. add provider secrets first
-2. add the recommended host plugins next
-   Prioritize `superpowers` and `hookify`.
-3. verify the default local and enhancement surfaces
-   Confirm `scrapling` is callable and treat `Cognee` as the governed long-term graph-memory lane instead of introducing a second session-truth system.
-4. add plugin-backed MCP surfaces
-   For example `github`, `context7`, and `serena`.
-5. wire external action integrations only when you actually need them
-   `Composio` and `Activepieces` are intentionally predeclared but not auto-enabled; they stay confirm-gated and setup-required.
-6. only add the remaining host plugins when doctor still points to a concrete gap
-   For example `everything-claude-code`, `claude-code-settings`, and `ralph-loop`.
-7. add optional CLI / toolchain enhancements last
-   For example `claude-flow`, `xan`, and `ivy`.
-
-See:
-
-- [`docs/install/recommended-full-path.en.md`](./docs/install/recommended-full-path.en.md)
-- [`docs/install/host-plugin-policy.en.md`](./docs/install/host-plugin-policy.en.md)
-
-#### Not sure which install path to choose
-
-If this is your first time with the repo, do not guess.
-
-Start with:
-
-- [`docs/cold-start-install-paths.en.md`](./docs/cold-start-install-paths.en.md): three onboarding paths for `minimum viable`, `recommended full-featured`, and `enterprise-governed` installs, including who each path is for, commands, acceptance criteria, and stop rules
-- [`docs/install/full-featured-install-prompts.en.md`](./docs/install/full-featured-install-prompts.en.md): copy-paste install prompts for AI assistants, covering Windows and Linux
-
-### Routing and Governance Checks
-
-```powershell
-pwsh -File .\scripts\verify\vibe-pack-routing-smoke.ps1
-pwsh -File .\scripts\verify\vibe-routing-stability-gate.ps1 -Strict
-```
-
-### Deep Dive
-
-- [`SKILL.md`](./SKILL.md): the main VCO protocol and execution model
-- [`docs/README.md`](./docs/README.md): governance docs, plans, releases, and integration spine
-- [`docs/one-shot-setup.md`](./docs/one-shot-setup.md): the exact one-shot bootstrap path and readiness-state model
-- [`config/index.md`](./config/index.md): machine-readable routing, cleanliness, packaging, and rollout config
-- [`references/index.md`](./references/index.md): contracts, registries, matrices, ledgers, and overlays
-- [`scripts/README.md`](./scripts/README.md): router, governance, verify, overlay, and setup surfaces
-
-## Why Star This Project
-
-If you believe that:
-
-- general-purpose AI needs a real governed skills infrastructure
-- AI execution systems cannot remain at the stage of scattered scripts and prompt glue code
-- open source should define the next generation of standards, boundaries, and collaboration models for skills ecosystems
-
-then this project is worth watching.
-
-Starring it is not just bookmarking a repository.
-It is joining a direction:
-turning skills from scattered plugins into reliable infrastructure for general-purpose intelligence.
-
-## Join Us
-
-### If you are a user
-
-- use it
-- file issues and real-world scenarios
-- tell us where it is still unstable or not intelligent enough
-- help us shape the system around real workflows
-
-### If you are a developer or agent framework builder
-
-- contribute skills, routing strategies, governance rules, and verification scripts grounded in real user demand
-- help reduce duplication, hidden conflicts, and uncontrolled execution in the ecosystem
-- help move skills from “usable” to “reliable, governed, stable, and composable”
-
-## Key Entry Points
-
-- [`docs/manifesto.en.md`](./docs/manifesto.en.md): the public manifesto and technical commitments of VibeSkills
-- [`docs/ecosystem-absorption-dedup-governance.md`](./docs/ecosystem-absorption-dedup-governance.md): ecosystem absorption, deduplication, and layered governance
-- [`docs/observability-consistency-governance.md`](./docs/observability-consistency-governance.md): observability, consistency, and manual rollback governance
-- [`docs/memory-governance-integration.md`](./docs/memory-governance-integration.md): memory boundaries and role separation
-- [`docs/prompt-overlay-integration.md`](./docs/prompt-overlay-integration.md): prompt asset overlay integration
-- [`docs/data-scale-overlay-integration.md`](./docs/data-scale-overlay-integration.md): large-scale data overlay integration
-- [`docs/system-design-overlay-integration.md`](./docs/system-design-overlay-integration.md): system design advisory integration
-- [`docs/pilot-scenarios-and-eval.md`](./docs/pilot-scenarios-and-eval.md): pilot scenarios and evaluation plan
-
-## License
-
-- Root license: [`Apache-2.0`](./LICENSE)
-- Third-party boundary: [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md)
-- Repository notice: [`NOTICE`](./NOTICE)
-
 ## In One Sentence
 
-VibeSkills aims to give general-purpose AI a skills substrate that is governable, composable, verifiable, and able to evolve over time.
-
-If you believe this is the direction AI infrastructure should take, use it, star it, and help build it.
+`VibeSkills` is not trying to sound grand.
+It is trying to do one practical thing well: help AI call the right capabilities, follow a better process, and finish real work more reliably.
