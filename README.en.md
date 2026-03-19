@@ -2,36 +2,65 @@
 
 # VibeSkills
 
-> Bring scattered skills, plugins, workflows, and hard-earned experience into one AI agent system that is easier to use and harder to derail.
+```text
+             VibeSkills
+          cute octopus core
+
+        skills   plugins   workflows
+            \       |       /
+             \      |      /
+              \     |     /
+               [ governed ]
+              /   runtime  \
+             /      |       \
+      routing   verification   traceability
+```
+
+> Not another skills repository. An AI agent system that integrates calling, governance, verification, and traceability into one working surface.
 
 `VibeSkills` is the public-facing name. `VCO` is the governed runtime behind it.
 
-This is not another skill list.
-It is closer to a Swiss-army-knife-style integrated agent system: a way to gather strong but scattered skills, projects, plugins, and working habits into one surface that is easier to call, easier to govern, and easier to keep understandable over time.
+Once you are surrounded by strong but scattered skills, plugins, workflows, and agent projects, the problem is usually no longer “missing capability.”
+The problem is fragmentation, overlap, conflict, and models that move faster than your ability to keep them under control.
 
-## Why It Exists
+`VibeSkills` is not trying to add one more tool to that pile.
+It is trying to do something harder and more useful: pull powerful but scattered capabilities into one system so AI is more likely to call the right thing, follow the right process, and leave behind work that people can still inspect later.
 
-I kept seeing the same pattern: there are many excellent tools, skills, plugins, and agent projects.
+## Capability Snapshot
 
-Each of them is useful. Many of them are genuinely strong. But real usage gets messy very quickly. Things are hard to discover, they overlap, they conflict, and you are often left deciding everything yourself: which capability to use, when to clarify requirements first, when to verify, when to leave evidence, and when to stop the model from running too far ahead.
+| Scale                          | Runtime              | Governance                                 |
+| ------------------------------ | -------------------- | ------------------------------------------ |
+| `340` bundled skills           | `dual-layer routing` | `129` config-backed policies and contracts |
+| `19` governed upstream sources | `governed runtime`   | `verification and cleanup`                 |
 
-So this gradually turned into an integration project.
-I started collecting the pitfalls, norms, review steps, safety boundaries, maintenance lessons, and the best parts of different upstream projects into one system.
+`VibeSkills` is not presenting a static directory of capabilities. It is presenting an AI system where scale, execution discipline, and governance density are already part of the same surface.
 
-I was not trying to build a louder toolbox.
-I was trying to build a calmer way to work with AI.
+## Why It Feels Different Immediately
 
-## What Problem It Solves
+Most skill repositories answer one question: `what is available here?`
 
-If you already use AI heavily, you have probably run into some version of these problems:
+`VibeSkills` cares more about a different set of questions:
 
-- too many skills, and no clear sense of which one to use right now
+- what should be called now, instead of making you search the whole ecosystem yourself
+- what should happen first, instead of letting the model sprint straight into execution
+- which capabilities can be combined safely, and where boundaries need to stay explicit
+- how results get verified, preserved, and kept out of long-term black-box decay
+
+It is not about stacking more capability.
+It is about integrating calling, governance, verification, and review into a system that can hold up under real use.
+
+## The Real Problems It Tries To Solve
+
+If you already use AI heavily, you have probably seen some version of these failures:
+
+- too many skills, with no clear answer for which one fits the moment
 - projects, plugins, and workflows that overlap and conflict with one another
-- models that jump straight into execution before the task is clear
-- work that finishes without verification, evidence, or a maintenance trail
-- onboarding that feels too technical for ordinary people to start comfortably
+- models that start executing before the task is actually clear
+- work that ends without verification, evidence, or rollback surfaces
+- a workflow that becomes more powerful over time, but also less understandable
 
-`VibeSkills` tries to reduce that choice cost, composition cost, and loss-of-control cost.
+`VibeSkills` does not pretend those problems disappear on their own.
+Its value is that it takes them seriously and designs around them.
 
 ## How It Works
 
@@ -69,41 +98,16 @@ It also includes plugins, project integrations, workflow design, AI norms, safet
 If you only want a single-purpose utility, this repo may be heavier than you need.
 If you want AI to become steadier, easier to manage, and more useful over time, it is a much better fit.
 
-## Why It Is Different From a Normal Skill Repository
+## Start With Understanding
 
-Many repositories answer one question: what is available here?
-
-`VibeSkills` cares more about questions like:
-
-- what should be used right now, not just what exists
-- what should happen first and what should happen later
-- which capabilities can work together safely
-- how results get checked, explained, and preserved
-
-It is not trying to stack more things.
-It is trying to make those things easier to use well.
-
-## Start Here
-
-If you just want to get started, the simplest path is not to study the whole install matrix yourself.
-Copy the one-step install prompt and let your AI assistant do the first pass for you:
-
-- [`docs/install/one-click-install-release-copy.en.md`](./docs/install/one-click-install-release-copy.en.md)
-
-If you want a lighter navigation page before choosing a path:
+If you want the shortest path to understanding the system before you install it:
 
 - [`docs/quick-start.en.md`](./docs/quick-start.en.md)
+- [`docs/manifesto.en.md`](./docs/manifesto.en.md)
 
-## Read More
+If you are ready to install after that, use the one-step AI-assisted entry:
 
-If you want to keep going, this is the recommended order:
-
-1. [`docs/quick-start.en.md`](./docs/quick-start.en.md)
-   Start with the shortest guided entry.
-2. [`docs/manifesto.en.md`](./docs/manifesto.en.md)
-   See why this project exists and what it is trying to protect.
-3. [`docs/install/one-click-install-release-copy.en.md`](./docs/install/one-click-install-release-copy.en.md)
-   Hand the install path to your AI assistant.
+- [`docs/install/one-click-install-release-copy.en.md`](./docs/install/one-click-install-release-copy.en.md)
 
 If you are already a heavy user and want fuller install detail:
 
@@ -112,5 +116,5 @@ If you are already a heavy user and want fuller install detail:
 
 ## In One Sentence
 
-`VibeSkills` is not trying to sound grand.
-It is trying to do one practical thing well: help AI call the right capabilities, follow a better process, and finish real work more reliably.
+`VibeSkills` is not trying to sound more impressive.
+It is trying to turn the most failure-prone part of real AI work into something more callable, more governable, more verifiable, and more maintainable over time.

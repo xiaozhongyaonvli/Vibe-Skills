@@ -24,6 +24,9 @@ Those surfaces live under [`../status/README.md`](../status/README.md).
 
 ### Current Entry
 
+- [`2026-03-19-public-readme-octopus-identity-zone-plan.md`](./2026-03-19-public-readme-octopus-identity-zone-plan.md): README 章鱼识别区执行计划；聚焦小章鱼中枢的 Markdown 品牌识别层。
+- [`2026-03-19-public-readme-capability-snapshot-plan.md`](./2026-03-19-public-readme-capability-snapshot-plan.md): README 能力快照展示执行计划；聚焦纯 Markdown 能力战报面板与更强首屏辨识度。
+- [`2026-03-19-public-readme-propagation-optimization-plan.md`](./2026-03-19-public-readme-propagation-optimization-plan.md): README 首屏传播优化执行计划；聚焦更锋利的公开叙事、proof bar 和安装入口后移。
 - [`2026-03-19-public-docs-entrypoint-restructure-plan.md`](./2026-03-19-public-docs-entrypoint-restructure-plan.md): 公开入口文档组重构执行计划；聚焦 README、manifesto、一步式安装文案与 quick-start 的普通用户优先收敛。
 - [`2026-03-15-linux-router-host-neutrality-and-route-quality-recovery-plan.md`](./2026-03-15-linux-router-host-neutrality-and-route-quality-recovery-plan.md): Linux host-neutral router recovery 正式执行计划；聚焦无 `pwsh` 路由权威闭环、`confirm_required` 过保守收敛、planning/migration prompt 排名修复，以及 proof / promotion / release truth 一体收口。
 
@@ -78,6 +81,7 @@ Those surfaces live under [`../status/README.md`](../status/README.md).
 
 | Date       | Type                  | File                                                                                                                                                       | Focus                                                                                                                                                     |
 | ---------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-19 | docs plan             | [2026-03-19-public-readme-propagation-optimization-plan.md](./2026-03-19-public-readme-propagation-optimization-plan.md)                                   | README 首屏传播优化；强化判断冲击、数字冲击、对比冲击联合叙事，并以后置安装维持宣传主轴                                                                   |
 | 2026-03-19 | docs plan             | [2026-03-19-public-docs-entrypoint-restructure-plan.md](./2026-03-19-public-docs-entrypoint-restructure-plan.md)                                           | 公开入口文档组重构；收敛 README、manifesto、一步式安装入口与 quick-start 的普通用户优先叙事                                                               |
 | 2026-03-15 | recovery plan         | [2026-03-15-linux-router-host-neutrality-and-route-quality-recovery-plan.md](./2026-03-15-linux-router-host-neutrality-and-route-quality-recovery-plan.md) | Linux host-neutral router authority recovery、route conservatism tuning、planning prompt rerank repair、path neutrality cleanup 与 proof-backed promotion |
 | 2026-03-15 | runtime contract plan | [2026-03-15-vco-governed-runtime-contract-plan.md](./2026-03-15-vco-governed-runtime-contract-plan.md)                                                     | `vibe` 统一治理入口、固定 6 段状态机、interactive / benchmark 双模式、内部等级编排与 mandatory phase cleanup                                              |
