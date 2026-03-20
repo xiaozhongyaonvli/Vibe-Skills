@@ -29,6 +29,7 @@ Requirements:
 6. Do not pretend that host plugins, external MCP surfaces, or provider secrets were automatically configured if they were not.
 7. If the final state is `manual_actions_pending`, turn the remaining manual work into a short checklist.
 8. By default, recommend the most important host-managed follow-up first instead of telling me to install everything at once.
+> Reminder: Do not directly reuse repository example values ​​for AI-powered intelligent governance layer configurations. When enabling this layer, users must provide and confirm the `url`, `apikey`, and `model` themselves. If AI assists in installation or generating the configuration, the prompt should clearly remind users to fill in these three items before continuing to write the configuration.
 ```
 
 ## What This Prompt Will Help With
