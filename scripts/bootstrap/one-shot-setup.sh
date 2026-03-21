@@ -40,10 +40,8 @@ resolve_host_id() {
   case "${host_id}" in
     codex) printf '%s' 'codex' ;;
     claude|claude-code) printf '%s' 'claude-code' ;;
-    generic) printf '%s' 'generic' ;;
-    opencode) printf '%s' 'opencode' ;;
     *)
-      echo "[FAIL] Unsupported VCO host id: ${host_id}. Supported values: codex, claude-code, generic, opencode" >&2
+      echo "[FAIL] Unsupported VCO host id: ${host_id}. Supported values: codex, claude-code" >&2
       exit 1
       ;;
   esac
@@ -54,18 +52,14 @@ prompt_for_host_id() {
   echo "Select the install target before bootstrap:"
   echo "  1) codex        - strongest governed lane"
   echo "  2) claude-code  - preview scaffold lane"
-  echo "  3) generic      - runtime-core for other agents"
-  echo "  4) opencode     - runtime-core for OpenCode"
   while true; do
-    read -r -p "Install into which agent? [1-4]: " choice
+    read -r -p "Install into which agent? [1-2]: " choice
     normalized="$(printf '%s' "${choice}" | tr '[:upper:]' '[:lower:]' | xargs)"
     case "${normalized}" in
       1|codex) HOST_ID='codex'; return 0 ;;
       2|claude|claude-code) HOST_ID='claude-code'; return 0 ;;
-      3|generic|other|other-agent|other-agents) HOST_ID='generic'; return 0 ;;
-      4|opencode) HOST_ID='opencode'; return 0 ;;
       *)
-        echo "[WARN] Unsupported choice: ${choice}. Enter 1, 2, 3, 4, or a host name." >&2
+        echo "[WARN] Unsupported choice: ${choice}. Enter 1, 2, or a supported host name." >&2
         ;;
     esac
   done
@@ -84,7 +78,7 @@ ensure_requested_host_id() {
     return 0
   fi
   echo "[FAIL] No host was provided for one-shot bootstrap." >&2
-  echo "[FAIL] Pass --host codex|claude-code|generic|opencode when running non-interactively." >&2
+  echo "[FAIL] Pass --host codex|claude-code when running non-interactively." >&2
   return 1
 }
 
@@ -93,8 +87,6 @@ resolve_default_target_root() {
   case "${host_id}" in
     codex) printf '%s' "${CODEX_HOME:-${HOME}/.codex}" ;;
     claude-code) printf '%s' "${CLAUDE_HOME:-${HOME}/.claude}" ;;
-    generic) printf '%s' "${VIBESKILLS_HOME:-${HOME}/.vibe-skills/generic}" ;;
-    opencode) printf '%s' "${OPENCODE_HOME:-${HOME}/.vibe-skills/opencode}" ;;
     *)
       echo "[FAIL] Unsupported VCO host id for target-root resolution: ${host_id}" >&2
       exit 1
@@ -116,14 +108,6 @@ assert_target_root_matches_host_intent() {
   if [[ "${host_id}" == "claude-code" && "${leaf}" == ".codex" ]]; then
     echo "[FAIL] Target root '${target_root}' looks like a Codex home, but host='claude-code'." >&2
     echo "[FAIL] Use --host codex for the official closure lane or choose a Claude Code target root." >&2
-    exit 1
-  fi
-  if [[ "${host_id}" == "generic" && ( "${leaf}" == ".codex" || "${leaf}" == ".claude" ) ]]; then
-    echo "[FAIL] Target root '${target_root}' looks like a concrete host home, but host='generic'. Use the matching host adapter instead of the neutral runtime-core lane." >&2
-    exit 1
-  fi
-  if [[ "${host_id}" == "opencode" && ( "${leaf}" == ".codex" || "${leaf}" == ".claude" ) ]]; then
-    echo "[FAIL] Target root '${target_root}' conflicts with host='opencode'. Choose a neutral target root or use the matching concrete host adapter." >&2
     exit 1
   fi
 }

@@ -2,19 +2,18 @@
 
 ## Profiles
 
-- `minimal`: install required runtime-core payload only
-- `full`: install full vendored mirror and host-specific extras for the selected adapter mode
+- `minimal`: install required runtime payload only
+- `full`: install the full vendored mirror and host-specific extras for the selected supported host
 
-## Host Selector
+## Supported Hosts
 
-- `codex`: official governed lane
-- `claude-code`: preview scaffold lane
-- `generic`: neutral runtime-core lane
-- `opencode`: neutral runtime-core lane for experiments, not host-native closure
+暂时只支持：
 
-`TargetRoot` is a filesystem path.
-`HostId` / `--host` is the adapter choice.
-Changing the path alone does not change adapter semantics.
+- `codex`
+- `claude-code`
+
+`TargetRoot` 是文件路径。
+`HostId` / `--host` 才是宿主选择。
 
 ## Recommended Commands
 
@@ -22,41 +21,24 @@ Changing the path alone does not change adapter semantics.
 
 ```powershell
 pwsh -File .\scripts\bootstrap\one-shot-setup.ps1 -HostId codex
+pwsh -File .\check.ps1 -HostId codex -Profile full -Deep
 pwsh -File .\scripts\bootstrap\one-shot-setup.ps1 -HostId claude-code
-pwsh -File .\install.ps1 -HostId generic -Profile full
-pwsh -File .\check.ps1 -HostId generic -Profile full
+pwsh -File .\check.ps1 -HostId claude-code -Profile full -Deep
 ```
 
 ### Linux / macOS
 
 ```bash
 bash ./scripts/bootstrap/one-shot-setup.sh --host codex
+bash ./check.sh --host codex --profile full --deep
 bash ./scripts/bootstrap/one-shot-setup.sh --host claude-code
-bash ./install.sh --host generic --profile full
-bash ./check.sh --host generic --profile full
+bash ./check.sh --host claude-code --profile full --deep
 ```
 
 ## Truth Boundaries
 
-- Only `codex` is the full governed-with-constraints lane.
-- `claude-code` is scaffold + preview check, not full closure.
-- `claude-code` writes `settings.vibe.preview.json` as an example scaffold and does not overwrite the real `settings.json`.
-- `generic` and `opencode` install only runtime-core into neutral target roots.
-- Provider URL / API key / model remain local user-managed inputs for non-governed lanes.
-- Installation guidance must tell users where to configure those values locally, not ask them to paste secrets into chat.
-
-## Verification
-
-```powershell
-pwsh -File .\check.ps1 -HostId codex -Profile full -Deep
-pwsh -File .\check.ps1 -HostId claude-code -Profile full -Deep
-pwsh -File .\check.ps1 -HostId generic -Profile full
-pwsh -File .\scripts\verify\vgo-adapter-closure-gate.ps1 -WriteArtifacts
-pwsh -File .\scripts\verify\vgo-adapter-target-root-guard-gate.ps1 -WriteArtifacts
-```
-
-```bash
-bash ./check.sh --host codex --profile full --deep
-bash ./check.sh --host claude-code --profile full --deep
-bash ./check.sh --host generic --profile full
-```
+- `codex` 是当前最完整的 repo-governed 路径
+- `claude-code` 是 preview scaffold，不是 full closure
+- `claude-code` 只写 `settings.vibe.preview.json` 作为参考，不覆盖真实 `settings.json`
+- provider 的 `url` / `apikey` / `model` 仍然是本地用户侧配置
+- 安装提示必须告诉用户去本地 settings 或本地环境变量里配置，不要让用户把密钥贴到聊天里

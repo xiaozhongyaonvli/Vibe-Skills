@@ -173,10 +173,8 @@ function Resolve-VgoHostId {
         'codex' { return 'codex' }
         'claude' { return 'claude-code' }
         'claude-code' { return 'claude-code' }
-        'generic' { return 'generic' }
-        'opencode' { return 'opencode' }
         default {
-            throw "Unsupported VCO host id: $resolved. Supported values: codex, claude-code, generic, opencode"
+            throw "Unsupported VCO host id: $resolved. Supported values: codex, claude-code"
         }
     }
 }
@@ -200,18 +198,6 @@ function Resolve-VgoDefaultTargetRoot {
                 return [System.IO.Path]::GetFullPath($env:CLAUDE_HOME)
             }
             return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.claude'))
-        }
-        'generic' {
-            if (-not [string]::IsNullOrWhiteSpace($env:VIBESKILLS_HOME)) {
-                return [System.IO.Path]::GetFullPath($env:VIBESKILLS_HOME)
-            }
-            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.vibe-skills\generic'))
-        }
-        'opencode' {
-            if (-not [string]::IsNullOrWhiteSpace($env:OPENCODE_HOME)) {
-                return [System.IO.Path]::GetFullPath($env:OPENCODE_HOME)
-            }
-            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.vibe-skills\opencode'))
         }
         default {
             throw "Unsupported VCO host id: $resolvedHostId"
@@ -269,22 +255,6 @@ function Assert-VgoTargetRootMatchesHostIntent {
             if ($normalizedLeaf -eq '.codex') {
                 throw ([string]::Format(
                     "TargetRoot '{0}' looks like a Codex home, but HostId resolved to 'claude-code'. Use -HostId codex for the official closure lane or choose a Claude Code target root.",
-                    $TargetRoot
-                ))
-            }
-        }
-        'generic' {
-            if ($normalizedLeaf -in @('.codex', '.claude')) {
-                throw ([string]::Format(
-                    "TargetRoot '{0}' looks like a concrete host home, but HostId resolved to 'generic'. Use the matching host adapter instead of the neutral runtime-core lane.",
-                    $TargetRoot
-                ))
-            }
-        }
-        'opencode' {
-            if ($normalizedLeaf -in @('.codex', '.claude')) {
-                throw ([string]::Format(
-                    "TargetRoot '{0}' conflicts with HostId 'opencode'. Choose a neutral target root or use the matching concrete host adapter.",
                     $TargetRoot
                 ))
             }

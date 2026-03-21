@@ -1,12 +1,11 @@
 # Prompt-Based Install (Recommended Default)
 
-This is the default install path for most users.
+This is the default installation path.
 
-The flow is intentionally simple:
+At the moment, only two target hosts are supported:
 
-1. Copy the prompt below into your AI assistant
-2. Make the assistant ask which agent you want to install into
-3. Let it choose the correct install path for that host
+- `codex`
+- `claude-code`
 
 ## Prompt To Copy Into AI
 
@@ -15,19 +14,20 @@ You are now my VibeSkills installation assistant.
 Repository: https://github.com/foryourhealth111-pixel/Vibe-Skills
 
 Before running any install command, you must ask me:
-"Which agent do you want to install VibeSkills into? Options: codex, claude-code, opencode, or another agent (generic)."
+"Which host do you want to install VibeSkills into? Currently supported: codex or claude-code."
 
 Rules:
-1. Do not start installation until I explicitly answer which target agent I want.
-2. Detect whether the current system is Windows or Linux / macOS, and use the matching command format.
-3. If I choose `codex`:
+1. Do not start installation until I explicitly answer which target host I want.
+2. If I answer with anything other than `codex` or `claude-code`, tell me clearly that this version does not support that host yet, and stop instead of pretending installation is complete.
+3. Detect whether the current system is Windows or Linux / macOS, and use the matching command format.
+4. If I choose `codex`:
    - on Linux / macOS, run `bash ./scripts/bootstrap/one-shot-setup.sh --host codex`
    - then run `bash ./check.sh --host codex --profile full --deep`
    - on Windows, use the equivalent `pwsh` commands.
    - do not tell me to install `hookify`, `everything-claude-code`, `claude-code-settings`, or `ralph-loop` for Codex.
    - keep Codex guidance limited to officially supportable local settings, MCP, and optional CLI dependencies.
    - if online model access is needed, tell me to configure `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and related values in `~/.codex/settings.json` under `env` or in local environment variables, not in chat.
-4. If I choose `claude-code`:
+5. If I choose `claude-code`:
    - on Linux / macOS, run `bash ./scripts/bootstrap/one-shot-setup.sh --host claude-code`
    - then run `bash ./check.sh --host claude-code --profile full --deep`
    - on Windows, use the equivalent `pwsh` commands.
@@ -36,20 +36,14 @@ Rules:
    - do not ask me to paste API keys into chat.
    - tell me to open `~/.claude/settings.json` and add only the required `env` fields while preserving my existing settings.
    - use `~/.claude/settings.vibe.preview.json` only as a reference, never as a full-file replacement.
-5. If I choose `opencode`:
-   - on Linux / macOS, run `bash ./scripts/bootstrap/one-shot-setup.sh --host opencode`
-   - then run `bash ./check.sh --host opencode --profile full --deep`
-   - on Windows, use the equivalent `pwsh` commands.
-   - explicitly tell me this is a runtime-core path, not host-native closure.
-6. If I choose another agent or one that is not on the supported list:
-   - prefer the `generic` lane, or switch to the manual copy install path
-   - do not pretend host-native integration is complete.
-7. For `claude-code`, `opencode`, and `generic`, you must explicitly remind me before continuing that I need to provide:
-   - `url`, `apikey`, and `model` must be filled into local host settings or local environment variables by me
-   - do not ask me to paste those secrets into chat
-   - if those three values are not configured locally, you must not describe the environment as online-ready.
+   - if AI-governance online capability is needed, remind me to configure these fields locally:
+     - `VCO_AI_PROVIDER_URL`
+     - `VCO_AI_PROVIDER_API_KEY`
+     - `VCO_AI_PROVIDER_MODEL`
+6. For both `codex` and `claude-code`, never ask me to paste secrets, URLs, or model values into chat. Only point me to local settings or local environment variables.
+7. If the required local provider fields are not configured yet, you must not describe the environment as online-ready.
 8. After installation, give me a concise English summary of:
-   - the target agent
+   - the target host
    - the commands actually executed
    - what is complete
    - what I still need to do manually
@@ -58,15 +52,14 @@ Rules:
 
 ## Who This Path Is For
 
-- users who want AI to choose the install path for them
-- users who do not want to study the install matrix first
-- users who want a first real install pass, then a truthful list of what is still host-managed
+- users who want AI to choose between `codex` and `claude-code`
+- users who do not want to study the scripts first
+- users who want one truthful install pass plus a clear manual follow-up list
 
 ## What This Path Helps With
 
-- confirming the target agent first so the install does not silently land in the wrong lane
-- choosing between `codex`, `claude-code`, `opencode`, and `generic`
-- running install and check commands
+- confirming the target host first
+- running the matching bootstrap + check flow
 - explaining what is still host-managed
 
 ## What It Does Not Pretend To Do
@@ -75,18 +68,18 @@ These may still remain host-side or user-side tasks:
 
 - local host configuration
 - MCP registration and authorization
-- locally filling in `url`, `apikey`, and `model`
-- host-native closure for non-Codex lanes
+- local `url` / `apikey` / `model` configuration
+- manual merge into Claude Code's real `settings.json`
 
 ## Second Main Install Path
 
-If you do not want AI to run installation, or the environment is offline, has no admin rights, or the host is unsupported, use:
+If you do not want AI to run installation, or the environment is offline or has no admin rights, use:
 
 - [`manual-copy-install.en.md`](./manual-copy-install.en.md)
 
 ## Advanced References
 
-If you need the more detailed lane truth and advanced boundaries, see:
+If you need the more detailed host boundaries, see:
 
 - [`recommended-full-path.en.md`](./recommended-full-path.en.md)
-- [`../cold-start-install-paths.md`](../cold-start-install-paths.md)
+- [`../cold-start-install-paths.en.md`](../cold-start-install-paths.en.md)

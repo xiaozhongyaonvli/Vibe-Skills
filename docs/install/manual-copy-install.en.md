@@ -1,18 +1,15 @@
-# Manual Copy Install (Offline / No-Admin / Other Agents)
+# Manual Copy Install (Offline / No-Admin)
 
-This is the second main install path.
+This is the second main path, but it still only supports the same two hosts:
 
-Use it when:
+- `codex`
+- `claude-code`
 
-- you do not want AI to execute install commands for you
-- the environment is offline
-- you do not have admin rights
-- your target host is not `codex`, `claude-code`, or `opencode`
-- you only want to place the runtime-core first and wire the host yourself later
+If your target is not one of those two hosts, the current version should be treated as unsupported. Do not describe manual copy as successful host support.
 
 ## What You Get
 
-Manual copy install gives you **runtime-core**, not host-native closure.
+Manual copy gives you the repo-owned runtime payload, not full host-native closure.
 
 That means you get:
 
@@ -22,12 +19,12 @@ That means you get:
 - `config/skills-lock.json` if present
 - the canonical `skills/vibe/` runtime mirror
 
-It does **not** automatically give you:
+It does not automatically give you:
 
 - host plugin provisioning
 - MCP registration
 - provider credential wiring
-- host-native settings closure
+- automatic merge into Claude Code's real `settings.json`
 
 ## Manual Copy Steps
 
@@ -39,7 +36,7 @@ Assume your target directory is: `<TARGET_ROOT>`
 mkdir -p <TARGET_ROOT>/skills <TARGET_ROOT>/commands <TARGET_ROOT>/config
 ```
 
-2. Copy runtime-core skills
+2. Copy runtime skills
 
 ```bash
 cp -R ./bundled/skills/. <TARGET_ROOT>/skills/
@@ -60,41 +57,40 @@ cp ./config/skills-lock.json <TARGET_ROOT>/config/skills-lock.json
 
 If `skills-lock.json` is not present, skip it.
 
-## The Most Important Rule For Other Agents
+## Host-Specific Follow-Up
 
-If you are not installing into `codex`, and especially if you are wiring another agent, you must provide these three values yourself:
+### Codex
 
-- `url`
-- `apikey`
-- `model`
+- open `~/.codex/settings.json`
+- add only the fields you need under `env`
+- common examples are `OPENAI_API_KEY` and `OPENAI_BASE_URL`
+- do not paste secrets into chat
 
-Those values should be filled into local host settings or local environment variables by the user, not pasted into chat.
+### Claude Code
 
-If those three values are not explicitly configured, the environment must not be described as online-ready.
+- open `~/.claude/settings.json`
+- add only the fields you need under `env`
+- common examples are:
+  - `VCO_AI_PROVIDER_URL`
+  - `VCO_AI_PROVIDER_API_KEY`
+  - `VCO_AI_PROVIDER_MODEL`
+- add `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` only when needed for the host connection
+- you may use `~/.claude/settings.vibe.preview.json` as a reference, but never overwrite the real file wholesale
+- do not paste secrets into chat
 
-## Short Prompt For Other Agents
+## Most Important Boundary
 
-You can place this in the target agent's system prompt or developer prompt:
-
-```text
-You are running with VibeSkills runtime-core.
-Before claiming the environment is ready, check whether the user has explicitly provided:
-- url
-- apikey
-- model
-If any of them is missing, clearly remind the user to configure all three in local host settings or local environment variables first.
-Do not ask the user to paste secrets into chat.
-Do not describe the environment as online-ready if they are missing.
-```
+- this path does not automatically finish online provider configuration
+- if `url` / `apikey` / `model` are not configured locally, the environment must not be described as online-ready
+- other agents are not part of the supported surface in the current version
 
 ## When Not To Use This Path
 
-Prefer prompt-based install instead when:
+Prefer prompt-based install when:
 
-- you are installing into `codex`
-- you are installing into `claude-code`
-- you want the script to run install + check for you
-- you want AI to select the correct lane first
+- you want AI to choose the correct supported host for you
+- you want the scripts to run install + check
+- you do not want to manually interpret local configuration instructions
 
 Main entry:
 

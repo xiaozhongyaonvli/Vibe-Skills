@@ -28,10 +28,8 @@ resolve_host_id() {
   case "${host_id}" in
     codex) printf '%s' 'codex' ;;
     claude|claude-code) printf '%s' 'claude-code' ;;
-    generic) printf '%s' 'generic' ;;
-    opencode) printf '%s' 'opencode' ;;
     *)
-      echo "[FAIL] Unsupported VCO host id: ${host_id}. Supported values: codex, claude-code, generic, opencode" >&2
+      echo "[FAIL] Unsupported VCO host id: ${host_id}. Supported values: codex, claude-code" >&2
       exit 1
       ;;
   esac
@@ -42,8 +40,6 @@ resolve_default_target_root() {
   case "${host_id}" in
     codex) printf '%s' "${CODEX_HOME:-${HOME}/.codex}" ;;
     claude-code) printf '%s' "${CLAUDE_HOME:-${HOME}/.claude}" ;;
-    generic) printf '%s' "${VIBESKILLS_HOME:-${HOME}/.vibe-skills/generic}" ;;
-    opencode) printf '%s' "${OPENCODE_HOME:-${HOME}/.vibe-skills/opencode}" ;;
     *)
       echo "[FAIL] Unsupported VCO host id for target-root resolution: ${host_id}" >&2
       exit 1
@@ -65,14 +61,6 @@ assert_target_root_matches_host_intent() {
   if [[ "${host_id}" == "claude-code" && "${leaf}" == ".codex" ]]; then
     echo "[FAIL] Target root '${target_root}' looks like a Codex home, but host='claude-code'." >&2
     echo "[FAIL] Use --host codex for the official closure lane or choose a Claude Code target root." >&2
-    exit 1
-  fi
-  if [[ "${host_id}" == "generic" && ( "${leaf}" == ".codex" || "${leaf}" == ".claude" ) ]]; then
-    echo "[FAIL] Target root '${target_root}' looks like a concrete host home, but host='generic'. Use the matching host adapter instead of the neutral runtime-core lane." >&2
-    exit 1
-  fi
-  if [[ "${host_id}" == "opencode" && ( "${leaf}" == ".codex" || "${leaf}" == ".claude" ) ]]; then
-    echo "[FAIL] Target root '${target_root}' conflicts with host='opencode'. Choose a neutral target root or use the matching concrete host adapter." >&2
     exit 1
   fi
 }

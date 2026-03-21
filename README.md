@@ -287,7 +287,7 @@ graph LR
 
 **安装与配置指南**
 * ⚡️ [提示词安装（默认推荐）](./docs/install/one-click-install-release-copy.md)
-* 📁 [手动复制安装（离线 / 无管理员权限 / 其他代理）](./docs/install/manual-copy-install.md)
+* 📁 [手动复制安装（离线 / 无管理员权限）](./docs/install/manual-copy-install.md)
 
 **高级参考**
 * 🛠 [高级 host / lane 参考](./docs/install/recommended-full-path.md)

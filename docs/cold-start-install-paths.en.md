@@ -1,269 +1,84 @@
 # Cold-Start Install Paths
 
-This document is for first-time users and teams evaluating `vco-skills-codex`.
+This document answers the only cold-start questions that matter right now: which hosts are supported, and which path you should use.
 
-The goal is not to force everyone into one install mode. The goal is to answer four practical questions first:
+## One-Line Conclusion
 
-- do you only want to get it running quickly, or do you want the closest thing to a full-featured setup
-- can you accept `manual_actions_pending`
-- are you able to provision host plugins, MCP services, and provider secrets
-- are you operating on a personal machine, a shared team environment, or an enterprise-governed surface
+At the moment, only two hosts are supported:
 
-If you only remember one thing:
+- `codex`
+- `claude-code`
 
-`minimum viable` is about getting the system running quickly.  
-`recommended full-featured` is about closing the repo-governed surface.  
-`enterprise-governed` is about repeatable, auditable, rollback-safe delivery.
+Within that scope:
 
-In the current rollout, the recommended path also separates three default lanes:
+- `codex`: recommended path
+- `claude-code`: preview path
 
-- `scrapling` as a default local runtime surface
-- `Cognee` as the default long-term enhancement lane
-- `Composio / Activepieces` as prewired but setup-required external action surfaces
+If you want another agent, the current version should be treated as unsupported rather than silently routed into a hidden lane.
 
-## Path 1: Minimum Viable
-
-### Best for
-
-- first-time users exploring VibeSkills
-- users who want to test VCO, routing, docs, and the shipped payload first
-- users who are not ready to provision every host plugin, MCP surface, or API key yet
-
-### Goal
-
-Install the minimum runtime surface owned by the repo and confirm the core scripts and local governance layer work.
-
-### Prerequisites
-
-- `git`
-- `python3` or `python`
-- Windows: `powershell` or `pwsh`
-- Linux / macOS: `bash`
-
-### Recommended commands
+## Path 1: Codex
 
 Windows:
 
 ```powershell
-pwsh -File .\scripts\bootstrap\one-shot-setup.ps1 -SkipExternalInstall
+pwsh -File .\scripts\bootstrap\one-shot-setup.ps1 -HostId codex
+pwsh -File .\check.ps1 -HostId codex -Profile full -Deep
 ```
 
 Linux / macOS:
 
 ```bash
-bash ./scripts/bootstrap/one-shot-setup.sh --skip-external-install
+bash ./scripts/bootstrap/one-shot-setup.sh --host codex
+bash ./check.sh --host codex --profile full --deep
 ```
 
-### What you get
+What you get:
 
-- the shipped runtime payload installed under the target Codex root
-- the active MCP profile materialized
-- the basic doctor flow executed
-- clarity on whether the remaining gap is repo-owned or host-owned
-
-Important boundary:
-
-- do not treat the Codex lane as support for Claude-style hook/plugin installation
-- for Codex, the supportable host-side surfaces are local `~/.codex` settings, official MCP registration, and optional CLI dependencies
-
-### What you should not expect
-
-- external CLIs are not guaranteed to be installed
-- plugin-backed MCP surfaces are not guaranteed to be ready
-- online provider execution is not guaranteed to be available
-
-### Acceptance criteria
-
-- install command exits `0`
-- `check.ps1` / `check.sh` can complete
-- `manual_actions_pending` is acceptable when host plugins, MCP, or secrets are still missing
-- `core_install_incomplete` is not acceptable
-
-### Stop rules
-
-If this is only an initial evaluation, you can stop here.
-
-Do not move to the next path until you confirm the repo-owned surface is healthy.
-
-## Path 2: Recommended Full-Featured (Standard Recommended Install)
-
-### Best for
-
-- heavy users who want the full shipped payload and governance surface installed in one pass
-- individual developers who want fuller doctor and gate coverage
-- team leads who want the closest thing to a real full-featured setup
-
-This is the **default recommendation for most users**.
-
-### Goal
-
-Install, sync, and verify everything the repo is responsible for, while explicitly surfacing the remaining host-side work.
-
-### Prerequisites
-
-- `git`
-- `node` and `npm`
-- `python3` or `python`
-- Windows: `powershell` or `pwsh`
-- Linux / macOS: `bash`
-- on Linux / macOS, `pwsh` is strongly recommended for authoritative PowerShell doctor parity
-
-### Recommended commands
-
-Windows:
-
-```powershell
-pwsh -File .\scripts\bootstrap\one-shot-setup.ps1
-pwsh -File .\check.ps1 -Profile full -Deep
-```
-
-Linux / macOS:
-
-```bash
-bash ./scripts/bootstrap/one-shot-setup.sh
-bash ./check.sh --profile full --deep
-```
-
-### Reality boundary
-
-Here, "full-featured" means full closure of the repo-governed surface. It does not mean the entire platform is magically fully ready.
-
-The repo will try to automate:
-
-- shipped payload installation
-- bundled mirror alignment
+- governed payload
+- optional provider seeding
 - MCP active profile materialization
-- deep doctor and runtime coherence verification
-- scriptable external CLI installation where supported
+- deep health check
 
-The repo will not fake:
-
-- host plugin provisioning
-- host registration and authorization for plugin-backed MCP surfaces
-- your provider secrets such as `OPENAI_API_KEY`
-
-### Acceptance criteria
-
-- install command exits `0`
-- deep doctor completes
-- repo-governed surfaces do not produce false warnings or misleading failures
-- if host-managed prerequisites are still missing, `manual_actions_pending` is acceptable
-- `fully_ready` should only be pursued after the host-side prerequisites are also complete
-
-### Common misreads
-
-- `npm install` for `claude-flow` can be slow without being broken
-- `npm` deprecation warnings can be noisy without meaning failure
-- on Linux / macOS, shell warnings caused by missing `pwsh` do not automatically mean the repo closure failed
-- reusing provider keys already present in `settings.json` is expected behavior, not lost configuration
-
-### What counts as complete for this path
-
-For the standard recommended install:
-
-- `fully_ready` is ideal
-- `manual_actions_pending` is still a valid and acceptable result
-- `core_install_incomplete` is the state that should block you
-
-Do not treat remaining manual actions as failure if the repo-owned surface is already closed.
-
-### How to enhance after this path
-
-Suggested order:
-
-1. add provider secrets
-2. add `github`, `context7`, and `serena` through official MCP registration where supported
-3. for Claude Code, open `~/.claude/settings.json` and add only the missing `env` fields
-4. only then add optional CLI enhancements if they solve a real gap
-
-See:
-
-- [`install/recommended-full-path.en.md`](./install/recommended-full-path.en.md)
-- [`install/host-plugin-policy.en.md`](./install/host-plugin-policy.en.md)
-
-## Path 3: Enterprise-Governed
-
-### Best for
-
-- team leads
-- platform engineering and DevOps owners
-- organizations that need installation, verification, upgrades, and rollback to become institutionalized processes
-
-### Goal
-
-Go beyond "it works" and require:
-
-- repeatable installation
-- explicit version boundaries
-- auditable manual follow-up
-- provable upgrade and rollback hygiene
-
-### Recommended practice
-
-1. Pin a release version instead of following `main` directly
-2. Run the one-shot bootstrap against a standard target root
-3. Run the deep doctor and keep the resulting artifacts
-4. Maintain a host-side provisioning checklist
-5. Mark the environment production-ready only after that checklist is complete
-
-### Minimum governance checklist
-
-- record the release version and commit
-- record the install target root
-- record the install and doctor commands used
-- record the missing host plugins, MCP surfaces, and provider secrets
-- record who completed each manual provisioning step and when
-
-### Recommended verification commands
+## Path 2: Claude Code
 
 Windows:
 
 ```powershell
-pwsh -File .\scripts\bootstrap\one-shot-setup.ps1
-pwsh -File .\check.ps1 -Profile full -Deep
-pwsh -File .\scripts\verify\vibe-version-consistency-gate.ps1
-pwsh -File .\scripts\verify\vibe-offline-skills-gate.ps1
-pwsh -File .\scripts\verify\vibe-version-packaging-gate.ps1
+pwsh -File .\scripts\bootstrap\one-shot-setup.ps1 -HostId claude-code
+pwsh -File .\check.ps1 -HostId claude-code -Profile full -Deep
 ```
 
 Linux / macOS:
 
 ```bash
-bash ./scripts/bootstrap/one-shot-setup.sh
-bash ./check.sh --profile full --deep
+bash ./scripts/bootstrap/one-shot-setup.sh --host claude-code
+bash ./check.sh --host claude-code --profile full --deep
 ```
 
-### Enterprise stop rules
+What you get:
 
-- if `core_install_incomplete`, stop rollout immediately
-- if version consistency, offline closure, or packaging governance gates fail, stop the upgrade
-- if host-side provisioning ownership is unclear, do not claim the team is ready
-- if no doctor artifacts were captured, do not treat the installation as a formal delivery
+- runtime payload
+- `settings.vibe.preview.json` example scaffold
+- preview health check
 
-## How to choose
+What you do not get:
 
-| Your goal | Recommended path | Decision rule |
-| --- | --- | --- |
-| I just want to see it run | Minimum viable | `manual_actions_pending` is acceptable |
-| I want full repo-owned closure | Recommended full-featured | you accept slower installs and deeper verification |
-| I need to deliver this to a team or org | Enterprise-governed | you need auditability, repeatability, and rollback safety |
+- automatic overwrite of the real `settings.json`
+- automatic plugin provisioning
+- automatic host MCP registration
+- automatic provider secret wiring
 
-## Shared interpretation after install
+## Correct Follow-Up For Claude Code
 
-After the install, do not only ask "did the command fail".
+- open `~/.claude/settings.json`
+- add only the fields you need under `env`
+- common fields are `VCO_AI_PROVIDER_URL`, `VCO_AI_PROVIDER_API_KEY`, and `VCO_AI_PROVIDER_MODEL`
+- add `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` only when needed for the host connection
+- use `~/.claude/settings.vibe.preview.json` as a reference, not as a full-file replacement
+- do not paste secrets into chat
 
-Ask instead:
+## Most Important Cold-Start Boundary
 
-- is the repo-governed surface now closed
-- did the deep doctor explicitly tell us what manual actions remain
-- should the state be `fully_ready`, `manual_actions_pending`, or `core_install_incomplete`
-
-That framing is more important than "it looked mostly fine".
-
-## Related entry points
-
-- [`../README.en.md`](../README.en.md)
-- [`one-shot-setup.md`](./one-shot-setup.md)
-- [`install/host-plugin-policy.en.md`](./install/host-plugin-policy.en.md)
-- [`runtime-freshness-install-sop.md`](./runtime-freshness-install-sop.md)
-- [`external-tooling/README.md`](./external-tooling/README.md)
+- `HostId` / `--host` decides host semantics, not the folder name alone
+- there is no public install entry for any other host in the current version
+- if `url` / `apikey` / `model` are not configured locally yet, the environment must not be described as online-ready

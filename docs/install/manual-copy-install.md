@@ -1,18 +1,15 @@
-# 手动复制安装（离线 / 无管理员权限 / 其他代理）
+# 手动复制安装（离线 / 无管理员权限）
 
-这是当前第二条主安装路径。
+这是第二条主路径，但当前也只面向两个支持宿主：
 
-适合这些情况：
+- `codex`
+- `claude-code`
 
-- 你不想让 AI 直接执行安装命令
-- 你的环境离线
-- 你没有管理员权限
-- 你的目标宿主不是 `codex` / `claude-code` / `opencode`
-- 你只想先把 runtime-core 放进去，再自己接宿主
+如果你的目标不是这两个宿主，当前版本不建议安装，也不要把手动复制描述成“已支持”。
 
 ## 你会得到什么
 
-手动复制安装得到的是 **runtime-core**，不是宿主闭环。
+手动复制安装得到的是仓库侧 runtime 载荷，不是完整宿主闭环。
 
 也就是说，你会得到：
 
@@ -27,7 +24,7 @@
 - 宿主插件 provision
 - MCP 注册
 - provider 凭据写入
-- 宿主级 settings 闭环
+- Claude Code 真实 `settings.json` 的自动合并
 
 ## 手动复制步骤
 
@@ -39,7 +36,7 @@
 mkdir -p <TARGET_ROOT>/skills <TARGET_ROOT>/commands <TARGET_ROOT>/config
 ```
 
-2. 复制 runtime-core 技能
+2. 复制 runtime skills
 
 ```bash
 cp -R ./bundled/skills/. <TARGET_ROOT>/skills/
@@ -60,41 +57,40 @@ cp ./config/skills-lock.json <TARGET_ROOT>/config/skills-lock.json
 
 如果 `skills-lock.json` 不存在，就跳过它。
 
-## 对其他代理最重要的一件事
+## 支持宿主的后续动作
 
-如果你不是装到 `codex`，而是装到其他代理里，你必须自己补这 3 个值：
+### Codex
 
-- `url`
-- `apikey`
-- `model`
+- 打开 `~/.codex/settings.json`
+- 只在 `env` 下补你需要的字段
+- 常见是 `OPENAI_API_KEY`、`OPENAI_BASE_URL`
+- 不要把密钥贴到聊天里
 
-但这些值应该由你自己填到目标代理的本地配置或本地环境变量里，不要在聊天里直接提供。
+### Claude Code
 
-如果这三项没有明确配置好，就不能把环境描述成“已完成 online readiness”。
+- 打开 `~/.claude/settings.json`
+- 只在 `env` 下补你需要的字段
+- 常见是：
+  - `VCO_AI_PROVIDER_URL`
+  - `VCO_AI_PROVIDER_API_KEY`
+  - `VCO_AI_PROVIDER_MODEL`
+- 如宿主连接需要，再补 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`
+- 可以参考 `~/.claude/settings.vibe.preview.json`，但不能整文件覆盖
+- 不要把密钥贴到聊天里
 
-## 给其他代理的最短提示词
+## 最重要的边界
 
-你可以把下面这段放到目标代理的 system prompt / developer prompt 里：
-
-```text
-You are running with VibeSkills runtime-core.
-Before claiming the environment is ready, check whether the user has explicitly provided:
-- url
-- apikey
-- model
-If any of them is missing, clearly remind the user to configure all three in local host settings or local environment variables first.
-Do not ask the user to paste secrets into chat.
-Do not describe the environment as online-ready if they are missing.
-```
+- 这条路不会自动帮你写好 online provider 配置
+- 如果 `url` / `apikey` / `model` 没有在本地配置好，就不能把环境描述成“已完成 online readiness”
+- 当前版本不把其他代理视为正式支持面
 
 ## 什么时候不要走这条路
 
 下面这些情况，优先走提示词安装：
 
-- 你装的是 `codex`
-- 你装的是 `claude-code`
+- 你希望 AI 帮你判断该走哪个宿主
 - 你希望脚本自动做 install + check
-- 你希望先由 AI 帮你判断 lane
+- 你不想自己处理本地配置说明
 
 对应主入口：
 

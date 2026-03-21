@@ -36,38 +36,6 @@
       "settings_map": "adapters/claude-code/settings-map.json",
       "closure": "adapters/claude-code/closure.json",
       "manifest": "dist/host-claude-code/manifest.json"
-    },
-    {
-      "id": "generic",
-      "status": "advisory-only",
-      "install_mode": "runtime-core",
-      "check_mode": "runtime-core",
-      "bootstrap_mode": "runtime-core",
-      "default_target_root": {
-        "env": "VIBESKILLS_HOME",
-        "rel": ".vibe-skills/generic",
-        "kind": "neutral-runtime-root"
-      },
-      "host_profile": "adapters/generic/host-profile.json",
-      "settings_map": "adapters/generic/settings-map.json",
-      "closure": "adapters/generic/closure.json",
-      "manifest": "dist/manifests/vibeskills-generic.json"
-    },
-    {
-      "id": "opencode",
-      "status": "not-yet-proven",
-      "install_mode": "runtime-core",
-      "check_mode": "runtime-core",
-      "bootstrap_mode": "runtime-core",
-      "default_target_root": {
-        "env": "OPENCODE_HOME",
-        "rel": ".vibe-skills/opencode",
-        "kind": "neutral-runtime-root"
-      },
-      "host_profile": "adapters/opencode/host-profile.json",
-      "settings_map": "adapters/opencode/settings-map.json",
-      "closure": "adapters/opencode/closure.json",
-      "manifest": "dist/host-opencode/manifest.json"
     }
   ]
 }
