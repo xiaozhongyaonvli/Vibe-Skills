@@ -5,13 +5,14 @@
   "runtime_role": "host-adapter-preview",
   "source_evidence": [
     "config/settings.template.claude.json",
-    "SKILL.md",
-    "protocols/team.md"
+    "scripts/bootstrap/scaffold-claude-preview.ps1",
+    "install.ps1",
+    "check.ps1"
   ],
   "settings_surface": {
     "path": "~/.claude/settings.json",
-    "managed_by_repo": false,
-    "notes": "The repository ships a template, but does not currently ship a fully governed Claude Code install flow equivalent to Codex."
+    "managed_by_repo": true,
+    "notes": "The repository now ships a truthful preview scaffold and preview health check, but still does not claim full Claude Code closure."
   },
   "host_managed_surfaces": [
     "plugin enablement",
@@ -24,12 +25,12 @@
     "fs.write": "expected",
     "shell.exec": "expected",
     "mcp.client": "supported-with-constraints",
-    "settings.materialize": "template-only",
+    "settings.materialize": "preview-scaffold",
     "plugin.provision": "manual-host-managed",
     "agent.spawn": "expected",
     "route.provider_call": "supported-with-constraints",
     "route.offline_fallback": "expected",
-    "release.verify": "not-yet-proven"
+    "release.verify": "preview-scaffold"
   },
   "degrade_contract": {
     "missing_plugins": "degraded-but-supported",

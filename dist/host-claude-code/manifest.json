@@ -8,16 +8,16 @@
     "version": "2.3.47",
     "updated": "2026-03-15"
   },
-  "summary": "Claude Code host adapter preview. Configuration intent exists, but no governed install/check closure is claimed by this lane yet.",
+  "summary": "Claude Code host adapter preview. The repo can now scaffold preview artifacts and run preview health checks, but still does not claim full governed closure.",
   "runtime_ownership": {
     "owner": "host_managed",
     "notes": "This lane must not claim official runtime closure. It only exposes configuration artifacts and truthful readiness boundaries."
   },
   "entrypoints": {
-    "install_primary": null,
-    "install_secondary": null,
-    "check_primary": null,
-    "check_secondary": null
+    "install_primary": "install.ps1 --host claude-code",
+    "install_secondary": "install.sh --host claude-code",
+    "check_primary": "check.ps1 --host claude-code",
+    "check_secondary": "check.sh --host claude-code"
   },
   "capability_promises": [
     {
@@ -33,6 +33,14 @@
       "evidence_paths": [
         "docs/universalization/router-model-neutrality.md",
         "scripts/router/resolve-pack-route.ps1"
+      ]
+    },
+    {
+      "id": "claude_preview_scaffold_exists",
+      "promise_level": "promised",
+      "evidence_paths": [
+        "scripts/bootstrap/scaffold-claude-preview.ps1",
+        "scripts/bootstrap/scaffold-claude-preview.sh"
       ]
     }
   ],

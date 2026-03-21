@@ -155,44 +155,167 @@ function Resolve-VgoHomeDirectory {
     throw 'Unable to resolve a platform-neutral user home directory.'
 }
 
+function Resolve-VgoHostId {
+    param(
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolved = $HostId
+    if ([string]::IsNullOrWhiteSpace($resolved)) {
+        $resolved = $env:VCO_HOST_ID
+    }
+    if ([string]::IsNullOrWhiteSpace($resolved)) {
+        $resolved = 'codex'
+    }
+
+    $normalized = $resolved.Trim().ToLowerInvariant()
+    switch ($normalized) {
+        'codex' { return 'codex' }
+        'claude' { return 'claude-code' }
+        'claude-code' { return 'claude-code' }
+        'generic' { return 'generic' }
+        'opencode' { return 'opencode' }
+        default {
+            throw "Unsupported VCO host id: $resolved. Supported values: codex, claude-code, generic, opencode"
+        }
+    }
+}
+
+function Resolve-VgoDefaultTargetRoot {
+    param(
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolvedHostId = Resolve-VgoHostId -HostId $HostId
+    $homeDir = Resolve-VgoHomeDirectory
+    switch ($resolvedHostId) {
+        'codex' {
+            if (-not [string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
+                return [System.IO.Path]::GetFullPath($env:CODEX_HOME)
+            }
+            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.codex'))
+        }
+        'claude-code' {
+            if (-not [string]::IsNullOrWhiteSpace($env:CLAUDE_HOME)) {
+                return [System.IO.Path]::GetFullPath($env:CLAUDE_HOME)
+            }
+            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.claude'))
+        }
+        'generic' {
+            if (-not [string]::IsNullOrWhiteSpace($env:VIBESKILLS_HOME)) {
+                return [System.IO.Path]::GetFullPath($env:VIBESKILLS_HOME)
+            }
+            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.vibe-skills\generic'))
+        }
+        'opencode' {
+            if (-not [string]::IsNullOrWhiteSpace($env:OPENCODE_HOME)) {
+                return [System.IO.Path]::GetFullPath($env:OPENCODE_HOME)
+            }
+            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.vibe-skills\opencode'))
+        }
+        default {
+            throw "Unsupported VCO host id: $resolvedHostId"
+        }
+    }
+}
+
 function Resolve-VgoTargetRoot {
     param(
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
     if (-not [string]::IsNullOrWhiteSpace($TargetRoot)) {
         return [System.IO.Path]::GetFullPath($TargetRoot)
     }
 
-    if (-not [string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
-        return [System.IO.Path]::GetFullPath($env:CODEX_HOME)
-    }
+    return Resolve-VgoDefaultTargetRoot -HostId $HostId
+}
 
-    $homeDir = Resolve-VgoHomeDirectory
-    return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.codex'))
+function Assert-VgoOfficialRuntimeHost {
+    param(
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolvedHostId = Resolve-VgoHostId -HostId $HostId
+    if ($resolvedHostId -ne 'codex') {
+        throw ([string]::Format(
+            "The governed install/check closure lane currently supports only host='codex'. For host='{0}', the repository is preview-only: use config/settings.template.claude.json, adapters/claude-code/*, and dist/host-claude-code/manifest.json as manual guidance instead of the official installer.",
+            $resolvedHostId
+        ))
+    }
+}
+
+function Assert-VgoTargetRootMatchesHostIntent {
+    param(
+        [Parameter(Mandatory)] [string]$TargetRoot,
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolvedHostId = Resolve-VgoHostId -HostId $HostId
+    $leaf = Split-Path -Leaf ([System.IO.Path]::GetFullPath($TargetRoot))
+    $normalizedLeaf = if ([string]::IsNullOrWhiteSpace($leaf)) { '' } else { $leaf.Trim().ToLowerInvariant() }
+
+    switch ($resolvedHostId) {
+        'codex' {
+            if ($normalizedLeaf -eq '.claude') {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a Claude Code home, but HostId resolved to 'codex'. Pass -HostId claude-code for preview guidance or use a Codex target root.",
+                    $TargetRoot
+                ))
+            }
+        }
+        'claude-code' {
+            if ($normalizedLeaf -eq '.codex') {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a Codex home, but HostId resolved to 'claude-code'. Use -HostId codex for the official closure lane or choose a Claude Code target root.",
+                    $TargetRoot
+                ))
+            }
+        }
+        'generic' {
+            if ($normalizedLeaf -in @('.codex', '.claude')) {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a concrete host home, but HostId resolved to 'generic'. Use the matching host adapter instead of the neutral runtime-core lane.",
+                    $TargetRoot
+                ))
+            }
+        }
+        'opencode' {
+            if ($normalizedLeaf -in @('.codex', '.claude')) {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' conflicts with HostId 'opencode'. Choose a neutral target root or use the matching concrete host adapter.",
+                    $TargetRoot
+                ))
+            }
+        }
+    }
 }
 
 function Resolve-VgoInstalledSkillsRoot {
     param(
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
-    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot) 'skills'))
+    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot -HostId $HostId) 'skills'))
 }
 
 function Resolve-VgoExternalRoot {
     param(
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
-    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot) '_external'))
+    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot -HostId $HostId) '_external'))
 }
 
 function Resolve-VgoPathSpec {
     param(
         [AllowEmptyString()] [string]$PathSpec = '',
         [AllowEmptyString()] [string]$RepoRoot = '',
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
     if ([string]::IsNullOrWhiteSpace($PathSpec)) {
@@ -200,9 +323,9 @@ function Resolve-VgoPathSpec {
     }
 
     $expanded = [string]$PathSpec
-    $codexRoot = Resolve-VgoTargetRoot -TargetRoot $TargetRoot
-    $skillsRoot = Resolve-VgoInstalledSkillsRoot -TargetRoot $TargetRoot
-    $externalRoot = Resolve-VgoExternalRoot -TargetRoot $TargetRoot
+    $codexRoot = Resolve-VgoTargetRoot -TargetRoot $TargetRoot -HostId $HostId
+    $skillsRoot = Resolve-VgoInstalledSkillsRoot -TargetRoot $TargetRoot -HostId $HostId
+    $externalRoot = Resolve-VgoExternalRoot -TargetRoot $TargetRoot -HostId $HostId
 
     $expanded = $expanded.Replace('${CODEX_HOME}', $codexRoot)
     $expanded = $expanded.Replace('${CODEX_SKILLS_ROOT}', $skillsRoot)

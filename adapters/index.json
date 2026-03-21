@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "default_adapter_id": "codex",
+  "aliases": {
+    "claude": "claude-code"
+  },
+  "adapters": [
+    {
+      "id": "codex",
+      "status": "supported-with-constraints",
+      "install_mode": "governed",
+      "check_mode": "governed",
+      "bootstrap_mode": "governed",
+      "default_target_root": {
+        "env": "CODEX_HOME",
+        "rel": ".codex",
+        "kind": "host-home"
+      },
+      "host_profile": "adapters/codex/host-profile.json",
+      "settings_map": "adapters/codex/settings-map.json",
+      "closure": "adapters/codex/closure.json",
+      "manifest": "dist/host-codex/manifest.json"
+    },
+    {
+      "id": "claude-code",
+      "status": "preview",
+      "install_mode": "preview-scaffold",
+      "check_mode": "preview-scaffold",
+      "bootstrap_mode": "preview-scaffold",
+      "default_target_root": {
+        "env": "CLAUDE_HOME",
+        "rel": ".claude",
+        "kind": "host-home"
+      },
+      "host_profile": "adapters/claude-code/host-profile.json",
+      "settings_map": "adapters/claude-code/settings-map.json",
+      "closure": "adapters/claude-code/closure.json",
+      "manifest": "dist/host-claude-code/manifest.json"
+    },
+    {
+      "id": "generic",
+      "status": "advisory-only",
+      "install_mode": "runtime-core",
+      "check_mode": "runtime-core",
+      "bootstrap_mode": "runtime-core",
+      "default_target_root": {
+        "env": "VIBESKILLS_HOME",
+        "rel": ".vibe-skills/generic",
+        "kind": "neutral-runtime-root"
+      },
+      "host_profile": "adapters/generic/host-profile.json",
+      "settings_map": "adapters/generic/settings-map.json",
+      "closure": "adapters/generic/closure.json",
+      "manifest": "dist/manifests/vibeskills-generic.json"
+    },
+    {
+      "id": "opencode",
+      "status": "not-yet-proven",
+      "install_mode": "runtime-core",
+      "check_mode": "runtime-core",
+      "bootstrap_mode": "runtime-core",
+      "default_target_root": {
+        "env": "OPENCODE_HOME",
+        "rel": ".vibe-skills/opencode",
+        "kind": "neutral-runtime-root"
+      },
+      "host_profile": "adapters/opencode/host-profile.json",
+      "settings_map": "adapters/opencode/settings-map.json",
+      "closure": "adapters/opencode/closure.json",
+      "manifest": "dist/host-opencode/manifest.json"
+    }
+  ]
+}

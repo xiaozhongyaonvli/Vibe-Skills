@@ -5,19 +5,22 @@
   "package_name": "VibeSkills Generic Host (Advisory-Only)",
   "status": "advisory-only",
   "runtime_role": "contract-consumer",
-  "summary": "Generic hosts may consume canonical contracts and documentation, but the repository makes no runtime closure claim and does not ship a governed install surface for them.",
+  "summary": "Generic hosts may consume canonical contracts and a repo-provided runtime-core payload in a neutral target root, but the repository still makes no host closure claim.",
   "truth_sources": [
     "docs/universalization/host-capability-matrix.md",
-    "docs/universalization/platform-parity-contract.md",
+    "docs/universalization/install-matrix.md",
     "adapters/generic/host-profile.json",
-    "docs/plans/2026-03-13-universal-vibeskills-execution-program.md"
+    "adapters/generic/closure.json",
+    "config/runtime-core-packaging.json"
   ],
   "host_adapter_ref": "adapters/generic/host-profile.json",
   "install_entrypoints": {
     "repo_provided": [
-      "docs/**",
-      "schemas/**",
-      "core/skill-contracts/**"
+      "install.ps1 --host generic",
+      "install.sh --host generic",
+      "check.ps1 --host generic",
+      "check.sh --host generic",
+      "config/runtime-core-packaging.json"
     ],
     "host_managed": [
       "all runtime install surfaces",
@@ -34,4 +37,3 @@
     "No platform parity is claimed without a host-specific proof lane."
   ]
 }
-

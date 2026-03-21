@@ -1,6 +1,8 @@
 param(
   [ValidateSet("minimal", "full")]
   [string]$Profile = "full",
+  [ValidateSet("codex", "claude-code", "generic", "opencode")]
+  [string]$HostId = "codex",
   [string]$TargetRoot = '',
   [switch]$SkipRuntimeFreshnessGate,
   [switch]$Deep
@@ -8,9 +10,11 @@ param(
 
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $RepoRoot 'scripts\common\vibe-governance-helpers.ps1')
-if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
-  $TargetRoot = Resolve-VgoTargetRoot
-}
+. (Join-Path $RepoRoot 'scripts\common\Resolve-VgoAdapter.ps1')
+$HostId = Resolve-VgoHostId -HostId $HostId
+$TargetRoot = Resolve-VgoTargetRoot -TargetRoot $TargetRoot -HostId $HostId
+Assert-VgoTargetRootMatchesHostIntent -TargetRoot $TargetRoot -HostId $HostId
+$Adapter = Resolve-VgoAdapterDescriptor -RepoRoot $RepoRoot -HostId $HostId
 
 function Test-CanonicalRepoExecution {
   param([string]$RepoRoot)
@@ -252,15 +256,26 @@ function Invoke-RuntimeFreshnessCheck {
   $runtimeConfig = Get-InstalledRuntimeConfig -Governance $governance
   Show-InstalledRuntimeUpgradeHint -Governance $governance -TargetRoot $TargetRoot -RuntimeConfig $runtimeConfig
   $receiptRel = [string]$runtimeConfig.receipt_relpath
-  if (-not [string]::IsNullOrWhiteSpace($receiptRel)) {
-    Check-Path -Label 'vibe runtime freshness receipt' -Path (Join-Path $TargetRoot $receiptRel)
-    Test-ReceiptTargetFreshness -TargetRoot $TargetRoot -RuntimeConfig $runtimeConfig
-  }
 
   if ($SkipGate) {
+    if (-not [string]::IsNullOrWhiteSpace($receiptRel)) {
+      $receiptPath = Join-Path $TargetRoot $receiptRel
+      if (Test-Path -LiteralPath $receiptPath) {
+        Check-Path -Label 'vibe runtime freshness receipt' -Path $receiptPath
+        Test-ReceiptTargetFreshness -TargetRoot $TargetRoot -RuntimeConfig $runtimeConfig
+      } else {
+        Write-Host '[WARN] vibe runtime freshness receipt unavailable because the gate was skipped by request.' -ForegroundColor Yellow
+        $script:warn++
+      }
+    }
     Write-Host '[WARN] runtime freshness gate skipped by request.' -ForegroundColor Yellow
     $script:warn++
     return
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($receiptRel)) {
+    Check-Path -Label 'vibe runtime freshness receipt' -Path (Join-Path $TargetRoot $receiptRel)
+    Test-ReceiptTargetFreshness -TargetRoot $TargetRoot -RuntimeConfig $runtimeConfig
   }
 
   if (-not (Test-CanonicalRepoExecution -RepoRoot $RepoRoot)) {
@@ -391,14 +406,88 @@ function Check-Path {
   }
 }
 
-Write-Host "=== VCO Codex Health Check ===" -ForegroundColor Cyan
+function Invoke-AdapterSpecificChecks {
+  param(
+    [psobject]$Adapter,
+    [string]$TargetRoot,
+    [string]$RuntimeSkillRoot,
+    [string]$RuntimeNestedSkillRoot,
+    [bool]$NestedBundledRequired,
+    [string]$NestedBundledPresencePolicy
+  )
+
+  if ([string]$Adapter.check_mode -in @('governed', 'preview-scaffold')) {
+    Check-Path -Label "settings.json" -Path (Join-Path $TargetRoot 'settings.json')
+  }
+  if ([string]$Adapter.check_mode -eq 'governed') {
+    Check-Path -Label "plugins manifest" -Path (Join-Path $TargetRoot 'config\plugins-manifest.codex.json')
+    Check-Path -Label "rules/common" -Path (Join-Path $TargetRoot 'rules\common\agents.md')
+    Check-Path -Label "hooks/write-guard.js" -Path (Join-Path $TargetRoot 'hooks\write-guard.js')
+    Check-Path -Label "mcp template" -Path (Join-Path $TargetRoot 'mcp\servers.template.json')
+  }
+  if ([string]$Adapter.check_mode -eq 'preview-scaffold') {
+    Check-Path -Label "hooks/write-guard.js" -Path (Join-Path $TargetRoot 'hooks\write-guard.js')
+  }
+
+  Check-Path -Label "upstream lock" -Path (Join-Path $TargetRoot 'config\upstream-lock.json')
+  Check-Path -Label "vibe version governance config" -Path (Join-Path $TargetRoot (Join-Path $startupRuntimeTargetRel 'config\version-governance.json'))
+  Check-Path -Label "vibe release ledger" -Path (Join-Path $RuntimeSkillRoot 'references\release-ledger.jsonl')
+
+  foreach ($name in $requiredSkills) {
+    Check-Path -Label "skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md")
+  }
+
+  Check-Path -Label "vibe router script" -Path (Join-Path $RuntimeSkillRoot 'scripts\router\resolve-pack-route.ps1')
+  Check-Path -Label "vibe memory governance config" -Path (Join-Path $RuntimeSkillRoot 'config\memory-governance.json')
+  Check-Path -Label "vibe data scale overlay config" -Path (Join-Path $RuntimeSkillRoot 'config\data-scale-overlay.json')
+  Check-Path -Label "vibe quality debt overlay config" -Path (Join-Path $RuntimeSkillRoot 'config\quality-debt-overlay.json')
+  Check-Path -Label "vibe framework interop overlay config" -Path (Join-Path $RuntimeSkillRoot 'config\framework-interop-overlay.json')
+  Check-Path -Label "vibe ml lifecycle overlay config" -Path (Join-Path $RuntimeSkillRoot 'config\ml-lifecycle-overlay.json')
+  Check-Path -Label "vibe python clean code overlay config" -Path (Join-Path $RuntimeSkillRoot 'config\python-clean-code-overlay.json')
+  Check-Path -Label "vibe system design overlay config" -Path (Join-Path $RuntimeSkillRoot 'config\system-design-overlay.json')
+  Check-Path -Label "vibe cuda kernel overlay config" -Path (Join-Path $RuntimeSkillRoot 'config\cuda-kernel-overlay.json')
+  Check-Path -Label "vibe observability policy config" -Path (Join-Path $RuntimeSkillRoot 'config\observability-policy.json')
+  Check-Path -Label "vibe heartbeat policy config" -Path (Join-Path $RuntimeSkillRoot 'config\heartbeat-policy.json')
+  Check-Path -Label "vibe deep discovery policy config" -Path (Join-Path $RuntimeSkillRoot 'config\deep-discovery-policy.json')
+  Check-Path -Label "vibe llm acceleration policy config" -Path (Join-Path $RuntimeSkillRoot 'config\llm-acceleration-policy.json')
+  Check-Path -Label "vibe capability catalog config" -Path (Join-Path $RuntimeSkillRoot 'config\capability-catalog.json')
+  Check-Path -Label "vibe retrieval policy config" -Path (Join-Path $RuntimeSkillRoot 'config\retrieval-policy.json')
+  Check-Path -Label "vibe retrieval intent profiles config" -Path (Join-Path $RuntimeSkillRoot 'config\retrieval-intent-profiles.json')
+  Check-Path -Label "vibe retrieval source registry config" -Path (Join-Path $RuntimeSkillRoot 'config\retrieval-source-registry.json')
+  Check-Path -Label "vibe retrieval rerank weights config" -Path (Join-Path $RuntimeSkillRoot 'config\retrieval-rerank-weights.json')
+  Check-Path -Label "vibe exploration policy config" -Path (Join-Path $RuntimeSkillRoot 'config\exploration-policy.json')
+  Check-Path -Label "vibe exploration intent profiles config" -Path (Join-Path $RuntimeSkillRoot 'config\exploration-intent-profiles.json')
+  Check-Path -Label "vibe exploration domain map config" -Path (Join-Path $RuntimeSkillRoot 'config\exploration-domain-map.json')
+  if ($NestedBundledRequired) {
+    Check-Path -Label "vibe bundled retrieval intent profiles config" -Path (Join-Path $RuntimeNestedSkillRoot 'config\retrieval-intent-profiles.json') -Required:$NestedBundledRequired
+    Check-Path -Label "vibe bundled retrieval source registry config" -Path (Join-Path $RuntimeNestedSkillRoot 'config\retrieval-source-registry.json') -Required:$NestedBundledRequired
+    Check-Path -Label "vibe bundled retrieval rerank weights config" -Path (Join-Path $RuntimeNestedSkillRoot 'config\retrieval-rerank-weights.json') -Required:$NestedBundledRequired
+    Check-Path -Label "vibe bundled exploration policy config" -Path (Join-Path $RuntimeNestedSkillRoot 'config\exploration-policy.json') -Required:$NestedBundledRequired
+    Check-Path -Label "vibe bundled exploration intent profiles config" -Path (Join-Path $RuntimeNestedSkillRoot 'config\exploration-intent-profiles.json') -Required:$NestedBundledRequired
+    Check-Path -Label "vibe bundled exploration domain map config" -Path (Join-Path $RuntimeNestedSkillRoot 'config\exploration-domain-map.json') -Required:$NestedBundledRequired
+    Check-Path -Label "vibe bundled llm acceleration policy config" -Path (Join-Path $RuntimeNestedSkillRoot 'config\llm-acceleration-policy.json') -Required:$NestedBundledRequired
+  } else {
+    Write-Host ("[OK] vibe nested bundled config checks skipped (target absent; policy={0})" -f $NestedBundledPresencePolicy)
+    $script:pass++
+  }
+
+  foreach ($name in $requiredWorkflow) {
+    Check-Path -Label "workflow skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md")
+  }
+
+  if ($Profile -eq 'full') {
+    foreach ($name in $optionalWorkflow) {
+      Check-Path -Label "optional workflow skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md") -Required:$false
+    }
+  }
+}
+
+Write-Host "=== VCO Adapter Health Check ===" -ForegroundColor Cyan
+Write-Host "Host: $HostId"
+Write-Host "Mode: $($Adapter.check_mode)"
 Write-Host "Target: $TargetRoot"
 Write-Host "SkipRuntimeFreshnessGate: $SkipRuntimeFreshnessGate"
 Write-Host "Deep: $Deep"
-
-Check-Path -Label "settings.json" -Path (Join-Path $TargetRoot 'settings.json')
-Check-Path -Label "plugins manifest" -Path (Join-Path $TargetRoot 'config\plugins-manifest.codex.json')
-Check-Path -Label "upstream lock" -Path (Join-Path $TargetRoot 'config\upstream-lock.json')
 $startupGovernance = Get-CheckGovernance -RepoRoot $RepoRoot
 $startupRuntimeConfig = Get-InstalledRuntimeConfig -Governance $startupGovernance
 $startupRuntimeTargetRel = [string]$startupRuntimeConfig.target_relpath
@@ -429,89 +518,44 @@ if ($null -ne $startupGovernance -and $startupGovernance.PSObject.Properties.Nam
   }
 }
 
-Check-Path -Label "vibe version governance config" -Path (Join-Path $TargetRoot (Join-Path $startupRuntimeTargetRel 'config\version-governance.json'))
-Check-Path -Label "vibe release ledger" -Path (Join-Path $runtimeSkillRoot 'references\release-ledger.jsonl')
-
-foreach ($name in $requiredSkills) {
-  Check-Path -Label "skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md")
-}
-
-Check-Path -Label "vibe router script" -Path (Join-Path $runtimeSkillRoot 'scripts\router\resolve-pack-route.ps1')
-Check-Path -Label "vibe memory governance config" -Path (Join-Path $runtimeSkillRoot 'config\memory-governance.json')
-Check-Path -Label "vibe data scale overlay config" -Path (Join-Path $runtimeSkillRoot 'config\data-scale-overlay.json')
-Check-Path -Label "vibe quality debt overlay config" -Path (Join-Path $runtimeSkillRoot 'config\quality-debt-overlay.json')
-Check-Path -Label "vibe framework interop overlay config" -Path (Join-Path $runtimeSkillRoot 'config\framework-interop-overlay.json')
-Check-Path -Label "vibe ml lifecycle overlay config" -Path (Join-Path $runtimeSkillRoot 'config\ml-lifecycle-overlay.json')
-Check-Path -Label "vibe python clean code overlay config" -Path (Join-Path $runtimeSkillRoot 'config\python-clean-code-overlay.json')
-Check-Path -Label "vibe system design overlay config" -Path (Join-Path $runtimeSkillRoot 'config\system-design-overlay.json')
-Check-Path -Label "vibe cuda kernel overlay config" -Path (Join-Path $runtimeSkillRoot 'config\cuda-kernel-overlay.json')
-Check-Path -Label "vibe observability policy config" -Path (Join-Path $runtimeSkillRoot 'config\observability-policy.json')
-Check-Path -Label "vibe heartbeat policy config" -Path (Join-Path $runtimeSkillRoot 'config\heartbeat-policy.json')
-Check-Path -Label "vibe deep discovery policy config" -Path (Join-Path $runtimeSkillRoot 'config\deep-discovery-policy.json')
-Check-Path -Label "vibe llm acceleration policy config" -Path (Join-Path $runtimeSkillRoot 'config\llm-acceleration-policy.json')
-Check-Path -Label "vibe capability catalog config" -Path (Join-Path $runtimeSkillRoot 'config\capability-catalog.json')
-Check-Path -Label "vibe retrieval policy config" -Path (Join-Path $runtimeSkillRoot 'config\retrieval-policy.json')
-Check-Path -Label "vibe retrieval intent profiles config" -Path (Join-Path $runtimeSkillRoot 'config\retrieval-intent-profiles.json')
-Check-Path -Label "vibe retrieval source registry config" -Path (Join-Path $runtimeSkillRoot 'config\retrieval-source-registry.json')
-Check-Path -Label "vibe retrieval rerank weights config" -Path (Join-Path $runtimeSkillRoot 'config\retrieval-rerank-weights.json')
-Check-Path -Label "vibe exploration policy config" -Path (Join-Path $runtimeSkillRoot 'config\exploration-policy.json')
-Check-Path -Label "vibe exploration intent profiles config" -Path (Join-Path $runtimeSkillRoot 'config\exploration-intent-profiles.json')
-Check-Path -Label "vibe exploration domain map config" -Path (Join-Path $runtimeSkillRoot 'config\exploration-domain-map.json')
-if ($nestedBundledRequired) {
-  Check-Path -Label "vibe bundled retrieval intent profiles config" -Path (Join-Path $runtimeNestedSkillRoot 'config\retrieval-intent-profiles.json') -Required:$nestedBundledRequired
-  Check-Path -Label "vibe bundled retrieval source registry config" -Path (Join-Path $runtimeNestedSkillRoot 'config\retrieval-source-registry.json') -Required:$nestedBundledRequired
-  Check-Path -Label "vibe bundled retrieval rerank weights config" -Path (Join-Path $runtimeNestedSkillRoot 'config\retrieval-rerank-weights.json') -Required:$nestedBundledRequired
-  Check-Path -Label "vibe bundled exploration policy config" -Path (Join-Path $runtimeNestedSkillRoot 'config\exploration-policy.json') -Required:$nestedBundledRequired
-  Check-Path -Label "vibe bundled exploration intent profiles config" -Path (Join-Path $runtimeNestedSkillRoot 'config\exploration-intent-profiles.json') -Required:$nestedBundledRequired
-  Check-Path -Label "vibe bundled exploration domain map config" -Path (Join-Path $runtimeNestedSkillRoot 'config\exploration-domain-map.json') -Required:$nestedBundledRequired
-  Check-Path -Label "vibe bundled llm acceleration policy config" -Path (Join-Path $runtimeNestedSkillRoot 'config\llm-acceleration-policy.json') -Required:$nestedBundledRequired
-} else {
-  Write-Host ("[OK] vibe nested bundled config checks skipped (target absent; policy={0})" -f $nestedBundledPresencePolicy)
-  $script:pass++
-}
-
-foreach ($name in $requiredWorkflow) {
-  Check-Path -Label "workflow skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md")
-}
-
-if ($Profile -eq 'full') {
-  foreach ($name in $optionalWorkflow) {
-    Check-Path -Label "optional workflow skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md") -Required:$false
-  }
-}
-
-Check-Path -Label "rules/common" -Path (Join-Path $TargetRoot 'rules\common\agents.md')
-Check-Path -Label "hooks/write-guard.js" -Path (Join-Path $TargetRoot 'hooks\write-guard.js')
-Check-Path -Label "mcp template" -Path (Join-Path $TargetRoot 'mcp\servers.template.json')
+Invoke-AdapterSpecificChecks -Adapter $Adapter -TargetRoot $TargetRoot -RuntimeSkillRoot $runtimeSkillRoot -RuntimeNestedSkillRoot $runtimeNestedSkillRoot -NestedBundledRequired:$nestedBundledRequired -NestedBundledPresencePolicy $nestedBundledPresencePolicy
 
 Invoke-RuntimeFreshnessCheck -RepoRoot $RepoRoot -TargetRoot $TargetRoot -SkipGate:$SkipRuntimeFreshnessGate
 Invoke-RuntimeFrontmatterCheck -RepoRoot $RepoRoot -TargetRoot $TargetRoot
 Invoke-RuntimeCoherenceCheck -RepoRoot $RepoRoot -TargetRoot $TargetRoot
 
-if (Get-Command npm -ErrorAction SilentlyContinue) {
+if ($Adapter.check_mode -eq 'governed' -and (Get-Command npm -ErrorAction SilentlyContinue)) {
   Write-Host "[OK] npm"
   $pass++
-} else {
+} elseif ($Adapter.check_mode -eq 'governed') {
   Write-Host "[WARN] npm not found (needed for claude-flow)" -ForegroundColor Yellow
   $warn++
+} else {
+  Write-Host "[OK] npm check skipped for non-governed adapter mode"
+  $pass++
 }
 
 if ($Deep) {
-  $doctorPath = Join-Path $RepoRoot 'scripts\verify\vibe-bootstrap-doctor-gate.ps1'
-  if (-not (Test-Path -LiteralPath $doctorPath)) {
-    Write-Host "[FAIL] vibe bootstrap doctor gate script -> $doctorPath" -ForegroundColor Red
-    $fail++
-  } else {
-    $global:LASTEXITCODE = 0
-    & $doctorPath -TargetRoot $TargetRoot -WriteArtifacts
-    $doctorExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
-    if ($doctorExitCode -eq 0) {
-      Write-Host '[OK] vibe bootstrap doctor gate'
-      $pass++
-    } else {
-      Write-Host '[FAIL] vibe bootstrap doctor gate' -ForegroundColor Red
+  if ($Adapter.check_mode -eq 'governed') {
+    $doctorPath = Join-Path $RepoRoot 'scripts\verify\vibe-bootstrap-doctor-gate.ps1'
+    if (-not (Test-Path -LiteralPath $doctorPath)) {
+      Write-Host "[FAIL] vibe bootstrap doctor gate script -> $doctorPath" -ForegroundColor Red
       $fail++
+    } else {
+      $global:LASTEXITCODE = 0
+      & $doctorPath -TargetRoot $TargetRoot -WriteArtifacts
+      $doctorExitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+      if ($doctorExitCode -eq 0) {
+        Write-Host '[OK] vibe bootstrap doctor gate'
+        $pass++
+      } else {
+        Write-Host '[FAIL] vibe bootstrap doctor gate' -ForegroundColor Red
+        $fail++
+      }
     }
+  } else {
+    Write-Host "[WARN] deep doctor skipped for adapter mode '$($Adapter.check_mode)'" -ForegroundColor Yellow
+    $warn++
   }
 }
 

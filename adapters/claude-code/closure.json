@@ -1,0 +1,29 @@
+{
+  "adapter_id": "claude-code",
+  "closure_level": "preview-scaffold",
+  "install_mode": "preview-scaffold",
+  "check_mode": "preview-scaffold",
+  "bootstrap_mode": "preview-scaffold",
+  "repo_managed_payload": [
+    "runtime core payload",
+    "hooks/** for local scaffold use",
+    "settings.json from config/settings.template.claude.json if absent",
+    "canonical vibe mirror under skills/vibe/**"
+  ],
+  "host_state_written": [
+    "settings.json preview scaffold",
+    "hooks/** preview scaffold"
+  ],
+  "host_managed_boundaries": [
+    "plugin provisioning",
+    "MCP registration",
+    "provider credentials",
+    "final hook enablement semantics"
+  ],
+  "verification_contract": [
+    "runtime freshness gate",
+    "runtime BOM/frontmatter gate",
+    "runtime coherence gate",
+    "preview scaffold presence check"
+  ]
+}
