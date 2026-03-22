@@ -18,7 +18,6 @@
       <img src="https://img.shields.io/github/last-commit/foryourhealth111-pixel/Vibe-Skills?style=for-the-badge&logo=git-lfs&color=32CD32&label=MOMENTUM" alt="last commit">
     </a>
   </p>
-  
 
 
   <p align="center">
@@ -297,10 +296,28 @@ We know that building in isolation cannot keep up with the speed of the AI era. 
 
 Those grades still exist, but they are **internal execution grades**. The runtime chooses them automatically after `deep_interview` and before `plan_execute`, based on task complexity, parallelism, and governance needs.
 
+By default, routing **automatically decides** whether a task should run as `M`, `L`, or `XL`.
+
+- if you do not specify anything, the system makes the internal grade decision from the task itself
+- as a rough operator mental model: `L` is usually more restrained and more token-efficient, while `XL` is closer to spending more tokens in exchange for parallelism and time
+
 That is why the README now shows one public `vibe` entry while still mentioning `M/L/XL`:
 
 - for users: explicitly invoke `$vibe` or `/vibe` to enter the same governed runtime
 - for the system: decide internally whether the task should run as `M`, `L`, or `XL`
+
+You can also **express a grade preference explicitly** in the request, for example:
+
+```text
+I want you to execute this task according to the plan and start an XL-grade workflow $vibe
+```
+
+```text
+I want you to execute this task according to the plan and start an L-grade workflow $vibe
+```
+
+That should be understood as a strong routing hint rather than a way to bypass governance and hard-force a grade.
+In other words, users can explicitly signal a preferred grade, but the final decision still belongs to the `vibe` runtime after considering task content and governance boundaries.
 
 ### 📣 Users can explicitly invoke `vibe`
 
@@ -320,7 +337,7 @@ I want you to clarify the requirements first, then make a plan and implement it 
 ```
 
 The point of an explicit invocation is to tell the host that this task should enter the unified `vibe` governed runtime.
-Even then, users still do not manually choose `M/L/XL`; the runtime decides that internally.
+After that, the runtime decides the grade by default; if the user explicitly signals an `L` or `XL` workflow preference in the task, the router can take that as an execution hint.
 
 ### 📚 Navigation and guides
 
