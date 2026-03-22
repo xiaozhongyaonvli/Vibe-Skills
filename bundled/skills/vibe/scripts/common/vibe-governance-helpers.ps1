@@ -155,44 +155,137 @@ function Resolve-VgoHomeDirectory {
     throw 'Unable to resolve a platform-neutral user home directory.'
 }
 
+function Resolve-VgoHostId {
+    param(
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolved = $HostId
+    if ([string]::IsNullOrWhiteSpace($resolved)) {
+        $resolved = $env:VCO_HOST_ID
+    }
+    if ([string]::IsNullOrWhiteSpace($resolved)) {
+        $resolved = 'codex'
+    }
+
+    $normalized = $resolved.Trim().ToLowerInvariant()
+    switch ($normalized) {
+        'codex' { return 'codex' }
+        'claude' { return 'claude-code' }
+        'claude-code' { return 'claude-code' }
+        default {
+            throw "Unsupported VCO host id: $resolved. Supported values: codex, claude-code"
+        }
+    }
+}
+
+function Resolve-VgoDefaultTargetRoot {
+    param(
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolvedHostId = Resolve-VgoHostId -HostId $HostId
+    $homeDir = Resolve-VgoHomeDirectory
+    switch ($resolvedHostId) {
+        'codex' {
+            if (-not [string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
+                return [System.IO.Path]::GetFullPath($env:CODEX_HOME)
+            }
+            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.codex'))
+        }
+        'claude-code' {
+            if (-not [string]::IsNullOrWhiteSpace($env:CLAUDE_HOME)) {
+                return [System.IO.Path]::GetFullPath($env:CLAUDE_HOME)
+            }
+            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.claude'))
+        }
+        default {
+            throw "Unsupported VCO host id: $resolvedHostId"
+        }
+    }
+}
+
 function Resolve-VgoTargetRoot {
     param(
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
     if (-not [string]::IsNullOrWhiteSpace($TargetRoot)) {
         return [System.IO.Path]::GetFullPath($TargetRoot)
     }
 
-    if (-not [string]::IsNullOrWhiteSpace($env:CODEX_HOME)) {
-        return [System.IO.Path]::GetFullPath($env:CODEX_HOME)
-    }
+    return Resolve-VgoDefaultTargetRoot -HostId $HostId
+}
 
-    $homeDir = Resolve-VgoHomeDirectory
-    return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.codex'))
+function Assert-VgoOfficialRuntimeHost {
+    param(
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolvedHostId = Resolve-VgoHostId -HostId $HostId
+    if ($resolvedHostId -ne 'codex') {
+        throw ([string]::Format(
+            "The governed install/check closure lane currently supports only host='codex'. For host='{0}', use the matching preview or runtime-core lane instead of claiming governed closure.",
+            $resolvedHostId
+        ))
+    }
+}
+
+function Assert-VgoTargetRootMatchesHostIntent {
+    param(
+        [Parameter(Mandatory)] [string]$TargetRoot,
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    $resolvedHostId = Resolve-VgoHostId -HostId $HostId
+    $leaf = Split-Path -Leaf ([System.IO.Path]::GetFullPath($TargetRoot))
+    $normalizedLeaf = if ([string]::IsNullOrWhiteSpace($leaf)) { '' } else { $leaf.Trim().ToLowerInvariant() }
+
+    switch ($resolvedHostId) {
+        'codex' {
+            if ($normalizedLeaf -eq '.claude') {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a Claude Code home, but HostId resolved to 'codex'. Pass -HostId claude-code for preview guidance or use a Codex target root.",
+                    $TargetRoot
+                ))
+            }
+        }
+        'claude-code' {
+            if ($normalizedLeaf -eq '.codex') {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a Codex home, but HostId resolved to 'claude-code'. Use -HostId codex for the official closure lane or choose a Claude Code target root.",
+                    $TargetRoot
+                ))
+            }
+        }
+    }
 }
 
 function Resolve-VgoInstalledSkillsRoot {
     param(
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
-    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot) 'skills'))
+    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot -HostId $HostId) 'skills'))
 }
 
 function Resolve-VgoExternalRoot {
     param(
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
-    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot) '_external'))
+    return [System.IO.Path]::GetFullPath((Join-Path (Resolve-VgoTargetRoot -TargetRoot $TargetRoot -HostId $HostId) '_external'))
 }
 
 function Resolve-VgoPathSpec {
     param(
         [AllowEmptyString()] [string]$PathSpec = '',
         [AllowEmptyString()] [string]$RepoRoot = '',
-        [AllowEmptyString()] [string]$TargetRoot = ''
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
     )
 
     if ([string]::IsNullOrWhiteSpace($PathSpec)) {
@@ -200,9 +293,9 @@ function Resolve-VgoPathSpec {
     }
 
     $expanded = [string]$PathSpec
-    $codexRoot = Resolve-VgoTargetRoot -TargetRoot $TargetRoot
-    $skillsRoot = Resolve-VgoInstalledSkillsRoot -TargetRoot $TargetRoot
-    $externalRoot = Resolve-VgoExternalRoot -TargetRoot $TargetRoot
+    $codexRoot = Resolve-VgoTargetRoot -TargetRoot $TargetRoot -HostId $HostId
+    $skillsRoot = Resolve-VgoInstalledSkillsRoot -TargetRoot $TargetRoot -HostId $HostId
+    $externalRoot = Resolve-VgoExternalRoot -TargetRoot $TargetRoot -HostId $HostId
 
     $expanded = $expanded.Replace('${CODEX_HOME}', $codexRoot)
     $expanded = $expanded.Replace('${CODEX_SKILLS_ROOT}', $skillsRoot)

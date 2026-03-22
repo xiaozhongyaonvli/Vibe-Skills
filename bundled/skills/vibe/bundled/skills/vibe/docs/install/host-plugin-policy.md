@@ -1,239 +1,180 @@
-# 宿主插件安装策略
+# 宿主插件与宿主配置策略
 
-这份文档回答一个很实际的问题：
+这份文档只回答当前版本最关键的几个问题：
 
-`vco-skills-codex` 到底哪些宿主插件应该默认安装，哪些不应该默认安装，哪些必须等到出现真实缺口再安装。
+- 现在支持哪些宿主
+- 仓库会自动处理哪些事情
+- 用户还需要在宿主侧自己处理哪些事情
+- 什么不应该再被描述成“标准安装要求”
 
-先说结论：
+## 当前支持边界
 
-- 仓库不会假装自己能一键安装所有 `manual-codex` 插件。
-- 第一次安装时，不建议把所有宿主插件一口气全装上。
-- 默认策略应该是：先把 repo-governed surfaces 装好并跑完 doctor，再按缺口逐项补宿主插件。
+当前公开支持面只包括：
 
-如果你只记一条：
+- `codex`
+- `claude-code`
 
-**标准推荐安装不要求第一天就装完这 5 个宿主插件。**
+除此之外的其他代理，当前版本都不应被描述成“已支持安装”。
 
-同时要把几类东西分开看：
+如果有人想把 VibeSkills 接到别的代理上，准确说法应该是：
 
-- `scrapling` 不是宿主插件，它是 `full` lane 里的默认本地 runtime 面
-- `Cognee` 也不是宿主插件，它是受治理的默认长程记忆增强面
-- `Composio / Activepieces` 更不是“缺失宿主插件”，它们是 setup-required 的外部操作集成面
-先把仓库负责的面闭环，再决定是否增强，才是默认策略。
+- 当前版本没有官方支持的安装闭环
+- 不应该伪装成已有可复用的宿主插件策略
+- 不应该把历史实验性 lane 当成社区可依赖的默认方案
 
-先看：
+## 先分清三类东西
 
-- [`recommended-full-path.md`](./recommended-full-path.md)
+社区阅读时最容易混淆的，不是命令本身，而是边界。
 
-## 先认清边界
+### 1. 仓库 payload
 
-当前 `config/plugins-manifest.codex.json` 里的以下插件都被标记为 `manual-codex`：
+这是仓库自己负责的部分，例如：
 
-- `superpowers`
-- `everything-claude-code`
-- `claude-code-settings`
-- `hookify`
-- `ralph-loop`
+- `skills/`
+- `commands/`
+- `skills/vibe/` runtime mirror
+- 安装脚本、检查脚本、doctor / verify 入口
 
-这表示：
+这些内容属于 repo-governed surface。
 
-- 仓库可以报告这些面是否仍然缺失。
-- 仓库可以为这些面准备兼容层、bundled mirror、fallback 技能或配置。
-- 仓库**不能**诚实地宣称自己已经通过统一 shell 命令把这些宿主插件自动装好。
+### 2. 宿主配置
 
-所以，这里给出的不是“伪自动安装方案”，而是一套**默认安装策略**。
+这是用户要在宿主本地完成的部分，例如：
 
-## 我建议的默认策略
+- `~/.codex/settings.json`
+- `~/.claude/settings.json`
+- 本地环境变量
+- 宿主侧 MCP 注册
 
-### 第一层：第一次安装默认不要求
+这些不属于“仓库已经自动完成”的范围。
 
-第一次安装 VibeSkills 时，**不要把这 5 个宿主插件都视为前置必装项**。
+### 3. 可选增强项
 
-先执行：
+有些 CLI、MCP、外部服务可以增强体验，但它们不是第一次安装的默认前置。
 
-Windows:
+准确做法是：
 
-```powershell
-pwsh -File .\scripts\bootstrap\one-shot-setup.ps1
-pwsh -File .\check.ps1 -Profile full -Deep
-```
+- 先把支持宿主的基础路径跑通
+- 再按真实需求补增强项
+- 不要为了“看起来更满”一次性全装
 
-Linux / macOS:
+## Codex 的默认策略
 
-```bash
-bash ./scripts/bootstrap/one-shot-setup.sh
-bash ./check.sh --profile full --deep
-```
+对 `codex`，当前标准安装策略应当非常克制。
 
-如果此时结果落在 `manual_actions_pending`，这是允许且诚实的。
+### 当前默认要求
 
-### 第二层：作者级 / 参考 Windows Codex 环境，优先安装
+只围绕这些可证明、可解释的面：
 
-如果你的目标不是“先跑起来”，而是“尽量接近作者参考环境”，我建议优先装：
+- 本地 `~/.codex/settings.json`
+- 官方支持的 MCP 注册
+- 可选 CLI 依赖
+- 不包含 hook 安装
 
-- `superpowers`
-- `hookify`
+### 不再作为默认要求的历史说法
 
-原因很简单：
+下面这些历史叙事，不应该继续出现在公开安装口径里：
 
-- `superpowers` 更接近工作流硬门禁与开发习惯入口。
-- `hookify` 更接近宿主侧 hook 执行与治理编排的承载面。
+- “先把一串宿主插件全部装上再说”
+- “Codex 默认要补一套 Claude Code 风格 hook/plugin 面”
+- “某些历史插件是 Codex 标准安装前置”
 
-这两个面比另外三个更值得优先补齐。
+如果某些历史能力未来有明确、可验证、可维护的官方接入方式，再单独更新文档。当前版本不这么描述。
 
-### 第三层：先不要默认装，出现真实缺口再装
+### 在线能力怎么处理
 
-以下三个插件，我不建议在第一次安装时默认装上：
+如果需要在线模型能力，应该提醒用户：
 
-- `everything-claude-code`
-- `claude-code-settings`
-- `ralph-loop`
+- 去 `~/.codex/settings.json` 的 `env` 下配置
+- 或者在本地环境变量里配置
+- 不要把密钥贴到聊天里
 
-原因不是它们“没价值”，而是：
+常见字段例如：
 
-- 仓库里已经吸收或兼容了一部分相关能力。
-- 它们更容易和现有 fallback、镜像、宿主已有配置产生重叠。
-- 如果没有明确缺口，先装上只会增加冲突面与排障成本。
+- `OPENAI_API_KEY`
+- `OPENAI_BASE_URL`
 
-## 分项决策表
+如果这些值没有在本地配置好，就不能把环境描述成“已完成 online readiness”。
 
-| 插件 | 默认策略 | 什么时候再装 | 为什么不建议第一次全装 |
-| --- | --- | --- | --- |
-| `superpowers` | 推荐安装 | 想进入作者级 / 参考 Codex 工作流时 | 价值高，冲突面相对可控 |
-| `hookify` | 推荐安装 | 需要宿主级 hook 编排和 hook 治理时 | 价值高，但要避免多套 hook 规则并存 |
-| `everything-claude-code` | 默认不装 | 明确缺失其上游插件原生能力时 | 容易和仓库已吸收能力重叠 |
-| `claude-code-settings` | 默认不装 | 明确要把其上游 settings 面作为宿主权威层时 | 容易和现有本地 settings / fallback 混叠 |
-| `ralph-loop` | 默认不装 | 明确需要上游 Ralph loop 原生工作流或后端时 | 仓库已有兼容 / fallback 面，先装收益不高 |
+## Claude Code 的默认策略
 
-## 2026-03-17 Wave B Re-Audit Notes
+对 `claude-code`，当前口径必须更明确。
 
-- `superpowers` 上游当前已到 `363923f74aa9cd7b470c0aaa73dee629a8bfdc90`（v5.0.2 release surface），新增重点是 subagent context isolation 与 owner-aware cleanup。这强化了它“推荐优先安装”的地位，但不改变 VCO 对 governed runtime / router 的主权。
-- `claude-code-settings` 当前 reviewed head 为 `d0c0d2759f8aadfba1b3361b5860024e4a7e68d4`，主要是 config/skills refinement，不足以让它重新获得 host settings authority，因此继续保持 deferred posture。
-- `spec-kit` 当前 reviewed head 为 `b1650f884d48eb57a9b76bfabb0b205b39099799`，虽然新增 `specify status` 等上游能力，但在 VCO 中仍只以 methodology/reference 与 `spec-kit-vibe-compat` bridge 的方式存在。
-- `ralph-claude-code` 当前 reviewed head 为 `f1298b8af985a401ed67249365c8f18a8b74ef12`，最新 drift 主要是 loop exit / quota exhaustion 修复。VCO 只吸收 optional backend guidance，不把默认基线从 `compat` engine 改成上游 open backend。
+### 当前真实状态
 
-## 推荐安装路径
+`claude-code` 现在是：
 
-### 路径 A：普通用户默认路径
+- preview guidance
+- 不是 full closure
+- hook 当前因兼容性问题被冻结
+- 安装器不再生成参考 settings scaffold
 
-适合：
+### 仓库会做什么
 
-- 第一次试用 VibeSkills
-- 先追求稳定、少冲突、好解释
-- 愿意接受 `manual_actions_pending`
+当前仓库只会做这些事：
 
-做法：
+- 安装 runtime payload
+- 运行对应的 preview 检查
 
-1. 不默认安装上述 5 个宿主插件。
-2. 先跑 one-shot + deep doctor。
-3. 只在 doctor 报出真实缺口，且你确实要用那项能力时，再补对应插件。
+### 仓库不会做什么
 
-### 路径 B：Windows / Codex 参考环境路径
+当前仓库不会自动完成：
 
-适合：
+- 覆盖真实 `~/.claude/settings.json`
+- 自动替用户写入正式 provider 凭据
+- 自动完成宿主 MCP 注册
+- 自动宣称“Claude Code 已完整接入”
 
-- 重度用户
-- 作者级环境复现
-- 希望尽量接近当前参考 lane
+### 用户应当怎么做
 
-做法：
+正确方式是：
 
-1. 先安装 `superpowers`
-2. 再安装 `hookify`
-3. 重跑 deep doctor
-4. 只有当缺口仍然明确指向它们时，再考虑 `everything-claude-code`、`claude-code-settings`、`ralph-loop`
+- 打开 `~/.claude/settings.json`
+- 只在 `env` 下补充你需要的字段
+- 保留你原有的宿主设置
 
-### 路径 C：问题驱动补装路径
+常见需要本地填写的字段包括：
 
-适合：
+- `VCO_AI_PROVIDER_URL`
+- `VCO_AI_PROVIDER_API_KEY`
+- `VCO_AI_PROVIDER_MODEL`
 
-- 已经能跑
-- 不想引入额外重叠面
-- 只对某个缺失能力补洞
+如果宿主连接确实需要，再补：
 
-做法：
+- `ANTHROPIC_BASE_URL`
+- `ANTHROPIC_AUTH_TOKEN`
 
-1. 记录 doctor 报出的缺项。
-2. 只补装与当前任务直接相关的插件。
-3. 每安装一个，就重跑一次 doctor。
-4. 不做“为了看起来完整”而一次性全装。
+同样，不要要求用户把这些值贴到聊天里。
 
-## 这些插件怎么安装
+如果本地还没配好这些值，也不能把环境描述成“已完成 online readiness”。
 
-这里必须实话实说：
+## 宿主插件的当前政策结论
 
-**当前仓库没有提供一条统一 shell 命令来安装这 5 个 `manual-codex` 插件。**
+如果只看当前版本，公开文档应该坚持下面这组结论：
 
-正确做法是：
+1. `codex` 没有额外的默认宿主插件前置要求。
+2. `claude-code` 也不是靠“补一堆宿主插件”来完成接入，而是靠 preview guidance + 用户本地配置补全。
+3. 历史上出现过的某些插件名，不等于当前社区文档还应该继续推荐它们。
+4. 只要某个能力没有被仓库稳定、公开、可验证地接入，就不该写成默认安装要求。
 
-1. 在你的 Codex 宿主环境中打开插件 / MCP / integration 管理入口。
-2. 按插件名逐项 provision 或 enable。
-3. 确认插件已在宿主侧启用，而不是只把文件拷到某个目录。
-4. 回到仓库，重跑 deep doctor。
+## 推荐的社区表述
 
-也就是说，安装说明的准确表述应当是：
+如果你要在 issue、README、讨论区或安装提示词里引用这份策略，推荐用下面这种说法：
 
-- `superpowers`、`everything-claude-code`、`claude-code-settings`、`hookify`、`ralph-loop`
-  通过 **Codex-native plugin / MCP tooling** 在宿主侧 provision。
-- 本仓库只负责：
-  - 暴露缺口
-  - 提供兼容与 fallback
-  - 在 doctor 报告里标出剩余人工动作
+- 当前版本只支持 `codex` 和 `claude-code`
+- `codex` 走本地 settings + MCP + 可选 CLI 的保守增强路线
+- `codex` / `claude-code` 当前都不安装 hook，因为兼容性问题尚未解决
+- `claude-code` 走 preview guidance 路线，不覆盖真实 `settings.json`
+- provider 的 `url` / `apikey` / `model` 由用户在本地配置，不在聊天里提供
+- 其他代理目前不在公开支持面内
 
-## 可脚本化安装的可选增强项
+## 什么时候再扩展这份文档
 
-下面这些不是上面的 5 个宿主插件，但如果你要增强体验，可以按需安装：
+只有在下面条件同时成立时，才值得重新扩大宿主插件策略：
 
-### `claude-flow`
+- 新宿主已经有可验证的安装闭环
+- 自动化边界足够清楚
+- 社区用户不需要依赖隐性历史知识才能装对
+- 我们能明确说明“仓库负责什么，宿主负责什么”
 
-```bash
-npm install -g claude-flow
-```
-
-### `xan`（Windows 推荐）
-
-```powershell
-scoop install xan
-```
-
-### `ivy`
-
-```bash
-pip install ivy
-```
-
-这些都属于**可选增强**，不是第一次安装的默认前置。
-
-## 如何避免冲突
-
-为了避免“装得越多越乱”，建议遵守下面几条：
-
-1. 一次只新增一个宿主插件，然后立刻重跑 doctor。
-2. 不要同时启用多套来源不清晰的 hook / settings / router 层。
-3. 不要把“本地某台机器手工组装成功过”误当成“仓库通用默认策略”。
-4. 如果某个能力仓库内已经有 bundled mirror 或 fallback，就先验证它是否已经够用，再决定要不要装上游宿主插件。
-
-## 最终推荐
-
-如果让我替一个新用户定默认策略，我会这样定：
-
-- 默认不要求第一次就安装全部 5 个宿主插件。
-- 推荐优先安装：`superpowers`、`hookify`
-- 默认延后：`everything-claude-code`、`claude-code-settings`、`ralph-loop`
-- 其余 MCP / CLI / provider secrets 全部按真实需求补齐
-
-如果你只想照一个稳定顺序增强，而不想自己重新设计策略，可以直接用这个顺序：
-
-1. `OPENAI_API_KEY` 等 provider secrets
-2. `superpowers`
-3. `hookify`
-4. `github` / `context7` / `serena`
-5. `everything-claude-code` / `claude-code-settings` / `ralph-loop`
-6. `claude-flow` / `xan` / `ivy`
-
-这套策略的目标不是“看起来最满”，而是：
-
-- 冲突最少
-- 解释最清楚
-- 排障最容易
-- 不夸大仓库实际自动化边界
+在那之前，保持简单、真实、可解释，比保留历史包袱更重要。

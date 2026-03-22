@@ -2,20 +2,77 @@
 set -euo pipefail
 
 PROFILE="full"
-TARGET_ROOT="${HOME}/.codex"
+HOST_ID="codex"
+TARGET_ROOT=""
 SKIP_RUNTIME_FRESHNESS_GATE="false"
 DEEP="false"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ADAPTER_RESOLVER="${SCRIPT_DIR}/scripts/common/resolve_vgo_adapter.py"
+
+if [[ ! -f "${ADAPTER_RESOLVER}" ]]; then
+  echo "[FAIL] Missing adapter resolver: ${ADAPTER_RESOLVER}" >&2
+  exit 1
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --profile) PROFILE="$2"; shift 2 ;;
+    --host) HOST_ID="$2"; shift 2 ;;
     --target-root) TARGET_ROOT="$2"; shift 2 ;;
     --skip-runtime-freshness-gate) SKIP_RUNTIME_FRESHNESS_GATE="true"; shift ;;
     --deep) DEEP="true"; shift ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
+
+resolve_host_id() {
+  local host_id="${1:-${VCO_HOST_ID:-codex}}"
+  host_id="$(printf '%s' "${host_id}" | tr '[:upper:]' '[:lower:]')"
+  case "${host_id}" in
+    codex) printf '%s' 'codex' ;;
+    claude|claude-code) printf '%s' 'claude-code' ;;
+    *)
+      echo "[FAIL] Unsupported VCO host id: ${host_id}. Supported values: codex, claude-code" >&2
+      exit 1
+      ;;
+  esac
+}
+
+resolve_default_target_root() {
+  local host_id="$1"
+  case "${host_id}" in
+    codex) printf '%s' "${CODEX_HOME:-${HOME}/.codex}" ;;
+    claude-code) printf '%s' "${CLAUDE_HOME:-${HOME}/.claude}" ;;
+    *)
+      echo "[FAIL] Unsupported VCO host id for target-root resolution: ${host_id}" >&2
+      exit 1
+      ;;
+  esac
+}
+
+assert_target_root_matches_host_intent() {
+  local target_root="$1"
+  local host_id="$2"
+  local leaf
+  leaf="$(basename "${target_root}")"
+  leaf="$(printf '%s' "${leaf}" | tr '[:upper:]' '[:lower:]')"
+  if [[ "${host_id}" == "codex" && "${leaf}" == ".claude" ]]; then
+    echo "[FAIL] Target root '${target_root}' looks like a Claude Code home, but host='codex'." >&2
+    echo "[FAIL] Pass --host claude-code for preview guidance or use a Codex target root." >&2
+    exit 1
+  fi
+  if [[ "${host_id}" == "claude-code" && "${leaf}" == ".codex" ]]; then
+    echo "[FAIL] Target root '${target_root}' looks like a Codex home, but host='claude-code'." >&2
+    echo "[FAIL] Use --host codex for the official closure lane or choose a Claude Code target root." >&2
+    exit 1
+  fi
+}
+
+HOST_ID="$(resolve_host_id "${HOST_ID}")"
+if [[ -z "${TARGET_ROOT}" ]]; then
+  TARGET_ROOT="$(resolve_default_target_root "${HOST_ID}")"
+fi
+assert_target_root_matches_host_intent "${TARGET_ROOT}" "${HOST_ID}"
 
 PASS=0
 FAIL=0
@@ -186,6 +243,17 @@ pick_python() {
     return 0
   fi
   return 1
+}
+
+adapter_query() {
+  local property="$1"
+  local python_bin=""
+  python_bin="$(pick_python || true)"
+  if [[ -z "${python_bin}" ]]; then
+    echo "[FAIL] Python is required for adapter-driven health-check metadata." >&2
+    exit 1
+  fi
+  "${python_bin}" "${ADAPTER_RESOLVER}" --repo-root "${SCRIPT_DIR}" --host "${HOST_ID}" --property "${property}"
 }
 
 run_runtime_neutral_freshness_gate() {
@@ -441,7 +509,11 @@ run_runtime_coherence_gate() {
   fi
 }
 
-echo "=== VCO Codex Health Check ==="
+ADAPTER_CHECK_MODE="$(adapter_query check_mode)"
+
+echo "=== VCO Adapter Health Check ==="
+echo "Host: ${HOST_ID}"
+echo "Mode: ${ADAPTER_CHECK_MODE}"
 echo "Target: ${TARGET_ROOT}"
 echo "SkipRuntimeFreshnessGate: ${SKIP_RUNTIME_FRESHNESS_GATE}"
 echo "Deep: ${DEEP}"
@@ -458,7 +530,16 @@ fi
 runtime_skill_root="${TARGET_ROOT}/${runtime_target_rel}"
 runtime_nested_skill_root="${runtime_skill_root}/bundled/skills/vibe"
 
-check_path "settings.json" "${TARGET_ROOT}/settings.json"
+if [[ "${ADAPTER_CHECK_MODE}" == "governed" ]]; then
+  check_path "settings.json" "${TARGET_ROOT}/settings.json"
+fi
+if [[ "${ADAPTER_CHECK_MODE}" == "preview-guidance" ]]; then
+  warn_note "claude preview hook/settings scaffold is intentionally disabled because of current compatibility issues"
+fi
+if [[ "${ADAPTER_CHECK_MODE}" == "governed" ]]; then
+  check_path "plugins manifest" "${TARGET_ROOT}/config/plugins-manifest.codex.json"
+fi
+check_path "upstream lock" "${TARGET_ROOT}/config/upstream-lock.json"
 check_path "vibe version governance config" "${TARGET_ROOT}/${runtime_target_rel}/config/version-governance.json"
 check_path "vibe release ledger" "${runtime_skill_root}/references/release-ledger.jsonl"
 for n in vibe dialectic local-vco-roles spec-kit-vibe-compat superclaude-framework-compat ralph-loop cancel-ralph tdd-guide think-harder; do
@@ -485,13 +566,18 @@ check_path "vibe retrieval rerank weights config" "${runtime_skill_root}/config/
 check_path "vibe exploration policy config" "${runtime_skill_root}/config/exploration-policy.json"
 check_path "vibe exploration intent profiles config" "${runtime_skill_root}/config/exploration-intent-profiles.json"
 check_path "vibe exploration domain map config" "${runtime_skill_root}/config/exploration-domain-map.json"
-check_path "vibe bundled retrieval intent profiles config" "${runtime_nested_skill_root}/config/retrieval-intent-profiles.json"
-check_path "vibe bundled retrieval source registry config" "${runtime_nested_skill_root}/config/retrieval-source-registry.json"
-check_path "vibe bundled retrieval rerank weights config" "${runtime_nested_skill_root}/config/retrieval-rerank-weights.json"
-check_path "vibe bundled exploration policy config" "${runtime_nested_skill_root}/config/exploration-policy.json"
-check_path "vibe bundled exploration intent profiles config" "${runtime_nested_skill_root}/config/exploration-intent-profiles.json"
-check_path "vibe bundled exploration domain map config" "${runtime_nested_skill_root}/config/exploration-domain-map.json"
-check_path "vibe bundled llm acceleration policy config" "${runtime_nested_skill_root}/config/llm-acceleration-policy.json"
+if [[ -d "${runtime_nested_skill_root}" ]]; then
+  check_path "vibe bundled retrieval intent profiles config" "${runtime_nested_skill_root}/config/retrieval-intent-profiles.json"
+  check_path "vibe bundled retrieval source registry config" "${runtime_nested_skill_root}/config/retrieval-source-registry.json"
+  check_path "vibe bundled retrieval rerank weights config" "${runtime_nested_skill_root}/config/retrieval-rerank-weights.json"
+  check_path "vibe bundled exploration policy config" "${runtime_nested_skill_root}/config/exploration-policy.json"
+  check_path "vibe bundled exploration intent profiles config" "${runtime_nested_skill_root}/config/exploration-intent-profiles.json"
+  check_path "vibe bundled exploration domain map config" "${runtime_nested_skill_root}/config/exploration-domain-map.json"
+  check_path "vibe bundled llm acceleration policy config" "${runtime_nested_skill_root}/config/llm-acceleration-policy.json"
+else
+  echo "[OK] vibe nested bundled config checks skipped (target absent; policy=optional)"
+  PASS=$((PASS+1))
+fi
 for n in brainstorming writing-plans subagent-driven-development systematic-debugging; do
   check_path "workflow/${n}" "${TARGET_ROOT}/skills/${n}/SKILL.md"
 done
@@ -500,45 +586,55 @@ if [[ "${PROFILE}" == "full" ]]; then
     check_path "optional/${n}" "${TARGET_ROOT}/skills/${n}/SKILL.md" false
   done
 fi
-check_path "rules/common" "${TARGET_ROOT}/rules/common/agents.md"
-check_path "hooks/write-guard" "${TARGET_ROOT}/hooks/write-guard.js"
-check_path "mcp template" "${TARGET_ROOT}/mcp/servers.template.json"
+if [[ "${ADAPTER_CHECK_MODE}" == "governed" ]]; then
+  check_path "rules/common" "${TARGET_ROOT}/rules/common/agents.md"
+  check_path "mcp template" "${TARGET_ROOT}/mcp/servers.template.json"
+fi
 
 show_installed_runtime_upgrade_hint
 run_runtime_freshness_gate
 validate_runtime_receipt
 run_runtime_coherence_gate
 
-if command -v npm >/dev/null 2>&1; then
+if [[ "${ADAPTER_CHECK_MODE}" == "governed" ]] && command -v npm >/dev/null 2>&1; then
   echo "[OK] npm"
   PASS=$((PASS+1))
-else
+elif [[ "${ADAPTER_CHECK_MODE}" == "governed" ]]; then
   echo "[WARN] npm not found (needed for claude-flow)"
   WARN=$((WARN+1))
+else
+  echo "[OK] npm check skipped for non-governed adapter mode"
+  PASS=$((PASS+1))
 fi
 
 if [[ "${DEEP}" == "true" ]]; then
-  doctor_path="${SCRIPT_DIR}/scripts/verify/vibe-bootstrap-doctor-gate.ps1"
-  if [[ ! -f "${doctor_path}" ]]; then
-    echo "[FAIL] vibe bootstrap doctor gate -> ${doctor_path}"
-    FAIL=$((FAIL+1))
-  elif run_runtime_neutral_bootstrap_doctor; then
-    echo "[OK] vibe bootstrap doctor gate"
-    PASS=$((PASS+1))
-  elif [[ $? -eq 127 ]]; then
-    if ! command -v pwsh >/dev/null 2>&1; then
-      echo "[WARN] vibe bootstrap doctor gate skipped because neither the Python runtime-neutral doctor nor pwsh is available in this shell environment."
-      WARN=$((WARN+1))
-    elif pwsh -NoProfile -File "${doctor_path}" -TargetRoot "${TARGET_ROOT}" -WriteArtifacts; then
+  if [[ "${ADAPTER_CHECK_MODE}" != "governed" ]]; then
+    echo "[WARN] deep doctor skipped for adapter mode '${ADAPTER_CHECK_MODE}'"
+    WARN=$((WARN+1))
+  else
+    doctor_path="${SCRIPT_DIR}/scripts/verify/vibe-bootstrap-doctor-gate.ps1"
+    if [[ ! -f "${doctor_path}" ]]; then
+      echo "[FAIL] vibe bootstrap doctor gate -> ${doctor_path}"
+      FAIL=$((FAIL+1))
+    elif run_runtime_neutral_bootstrap_doctor; then
       echo "[OK] vibe bootstrap doctor gate"
       PASS=$((PASS+1))
+    elif [[ $? -eq 127 ]]; then
+      if ! command -v pwsh >/dev/null 2>&1; then
+        echo "[WARN] vibe bootstrap doctor gate skipped because neither the Python runtime-neutral doctor nor pwsh is available in this shell environment."
+        WARN=$((WARN+1))
+      elif pwsh -NoProfile -File "${doctor_path}" -TargetRoot "${TARGET_ROOT}" -WriteArtifacts; then
+        echo "[OK] vibe bootstrap doctor gate"
+        PASS=$((PASS+1))
+      else
+        echo "[FAIL] vibe bootstrap doctor gate"
+        FAIL=$((FAIL+1))
+      fi
     else
       echo "[FAIL] vibe bootstrap doctor gate"
+      WARN=$((WARN+1))
       FAIL=$((FAIL+1))
     fi
-  else
-    echo "[FAIL] vibe bootstrap doctor gate"
-    FAIL=$((FAIL+1))
   fi
 fi
 

@@ -1,230 +1,180 @@
-# Host Plugin Install Policy
+# Host Plugin And Host Configuration Policy
 
-This document answers a practical question:
+This document answers only the questions that matter in the current version:
 
-which host plugins should be installed by default for `vco-skills-codex`, which should stay deferred, and which should only be added after a real gap is observed.
+- which hosts are supported today
+- what the repository handles automatically
+- what people still need to configure on the host side
+- what should no longer be described as a standard install requirement
 
-The short answer:
+## Current Support Boundary
 
-- the repo must not pretend it can auto-install every `manual-codex` plugin
-- first-time operators should not install all host plugins up front
-- the stable default is: close the repo-governed surfaces first, run doctor, then provision host plugins one by one based on real gaps
+The public support surface currently includes only:
 
-If you remember one line:
+- `codex`
+- `claude-code`
 
-**the standard recommended install does not require all five host plugins on day one.**
+Anything outside those two hosts must not be described as "supported installation" in the current version.
 
-Also keep a separate boundary in mind:
+If someone wants to wire VibeSkills into another agent, the accurate wording is:
 
-- `scrapling` is not a host plugin here; it is a default local runtime surface in the full lane
-- `Cognee` is not a host plugin either; it is the governed long-term memory enhancement lane
-- `Composio / Activepieces` are not "missing host plugins"; they are setup-required external action integrations
+- there is no officially supported install closure for that host yet
+- there is no reusable host-plugin policy that can honestly be treated as production guidance
+- old experimental lanes must not be presented as the community-default path
 
-Start here:
+## Separate Three Different Things First
 
-- [`recommended-full-path.en.md`](./recommended-full-path.en.md)
+The main source of confusion is not the commands themselves. It is the boundary between responsibilities.
 
-## Boundary First
+### 1. Repository payload
 
-The following plugins are currently marked as `manual-codex` in `config/plugins-manifest.codex.json`:
+This is the part the repository owns, for example:
 
-- `superpowers`
-- `everything-claude-code`
-- `claude-code-settings`
-- `hookify`
-- `ralph-loop`
+- `skills/`
+- `commands/`
+- the `skills/vibe/` runtime mirror
+- install scripts, check scripts, and doctor / verification entrypoints
 
-That means:
+This is the repo-governed surface.
 
-- the repo can report whether these surfaces are still missing
-- the repo can ship compatibility layers, mirrors, or fallbacks around them
-- the repo cannot honestly claim that one shell command has installed them for you
+### 2. Host configuration
 
-So this document is not a fake automation recipe.
-It is a default install policy.
+This is the part the user still finishes locally, for example:
 
-## Recommended Default Policy
+- `~/.codex/settings.json`
+- `~/.claude/settings.json`
+- local environment variables
+- host-side MCP registration
 
-### Layer 1: first-time install should not require all five
+These are not part of "already completed automatically by the repo".
 
-For a first install of VibeSkills, do **not** treat all five host plugins as mandatory up-front.
+### 3. Optional enhancements
 
-Run:
+Some CLIs, MCP servers, or external services may improve the experience, but they are not first-day requirements.
 
-Windows:
+The correct order is:
 
-```powershell
-pwsh -File .\scripts\bootstrap\one-shot-setup.ps1
-pwsh -File .\check.ps1 -Profile full -Deep
-```
+- first make the supported host path work
+- then add enhancements only when they solve a real need
+- do not install everything just to make the setup look fuller
 
-Linux / macOS:
+## Default Policy For Codex
 
-```bash
-bash ./scripts/bootstrap/one-shot-setup.sh
-bash ./check.sh --profile full --deep
-```
+For `codex`, the standard install policy should stay deliberately conservative.
 
-If the result lands in `manual_actions_pending`, that is acceptable and truthful.
+### What counts as the supported baseline
 
-### Layer 2: for the Windows / Codex reference lane, install these first
+Keep guidance limited to these supportable surfaces:
 
-If your goal is not just "make it run", but "get close to the author/reference environment", install these first:
+- local `~/.codex/settings.json`
+- officially supportable MCP registration
+- optional CLI dependencies
+- no hook installation
 
-- `superpowers`
-- `hookify`
+### Historical claims that should not remain in the public path
 
-Why:
+The public install story should no longer imply any of the following:
 
-- `superpowers` is closer to workflow gating and development entry behavior
-- `hookify` is closer to host-level hook execution and hook governance
+- "install a bundle of host plugins first, then everything else"
+- "Codex normally requires a Claude-style hook/plugin stack"
+- "certain historical plugins are standard prerequisites for Codex"
 
-These two give the highest value with the lowest ambiguity.
+If any historical capability ever becomes part of a clearly verifiable and maintainable official integration path, that should be documented separately at that time. The current version should not describe it that way.
 
-### Layer 3: keep these deferred unless a real gap remains
+### How to talk about online capability
 
-Do **not** install these by default on first setup:
+If online model access is needed, people should be told to:
 
-- `everything-claude-code`
-- `claude-code-settings`
-- `ralph-loop`
+- configure the values under `env` in `~/.codex/settings.json`
+- or configure them through local environment variables
+- never paste secrets into chat
 
-Not because they have no value, but because:
+Common examples include:
 
-- parts of their functional surface have already been absorbed, mirrored, or compatibility-wrapped by the repo
-- they are more likely to overlap with existing fallbacks or host-local configuration
-- without a concrete missing capability, they add more conflict surface than value
+- `OPENAI_API_KEY`
+- `OPENAI_BASE_URL`
 
-## Decision Table
+If those values are not configured locally, the environment must not be described as online-ready.
 
-| Plugin | Default policy | Install it when | Why not install it on day one |
-| --- | --- | --- | --- |
-| `superpowers` | recommended | when you want the reference Codex workflow | high value, manageable overlap |
-| `hookify` | recommended | when you need host-level hook orchestration | high value, but avoid multiple hook stacks |
-| `everything-claude-code` | deferred by default | when you still need its upstream-native behavior | easier to overlap with repo-absorbed capability |
-| `claude-code-settings` | deferred by default | when you explicitly want its settings layer as host authority | can overlap with existing settings and fallbacks |
-| `ralph-loop` | deferred by default | when you explicitly need upstream Ralph loop behavior/backend | baseline compatibility already exists in-repo |
+## Default Policy For Claude Code
 
-## 2026-03-17 Wave B Re-Audit Notes
+For `claude-code`, the boundary needs to be even more explicit.
 
-- `superpowers` is currently reviewed at `363923f74aa9cd7b470c0aaa73dee629a8bfdc90` (v5.0.2 release surface). The meaningful upstream drift is subagent context isolation plus owner-aware cleanup. That strengthens its recommend-first posture, but does not change VCO's ownership of the governed runtime or router.
-- `claude-code-settings` is currently reviewed at `d0c0d2759f8aadfba1b3361b5860024e4a7e68d4`, with drift concentrated in config/skill refinement. That is not enough to restore settings-layer host authority, so its posture stays deferred.
-- `spec-kit` is currently reviewed at `b1650f884d48eb57a9b76bfabb0b205b39099799`, including new upstream commands such as `specify status`. Inside VCO it remains methodology/reference input plus the `spec-kit-vibe-compat` bridge, not a second command authority.
-- `ralph-claude-code` is currently reviewed at `f1298b8af985a401ed67249365c8f18a8b74ef12`, where the latest drift is loop exit / quota exhaustion fixes. VCO only admits that as optional backend guidance and keeps the in-repo `compat` engine as the baseline.
+### Current real status
 
-## Suggested Install Paths
+`claude-code` is currently:
 
-### Path A: default path for ordinary users
+- preview guidance
+- not full closure
+- a host path where hook installation is frozen because of compatibility issues
+- a host path where the installer no longer writes preview settings material
 
-Use this when:
+### What the repository does
 
-- this is your first time with VibeSkills
-- you want the lowest-conflict, easiest-to-debug setup
-- you accept `manual_actions_pending`
+Right now the repository only does the following:
 
-Do this:
+- installs the runtime payload
+- runs the matching preview checks
 
-1. install none of the five host plugins by default
-2. run one-shot + deep doctor
-3. only provision a plugin when doctor reports a real missing surface and you actually need that capability
+### What the repository does not do
 
-### Path B: Windows / Codex reference path
+Right now the repository does not automatically:
 
-Use this when:
+- overwrite the real `~/.claude/settings.json`
+- write production provider credentials on behalf of the user
+- complete host-side MCP registration
+- claim that Claude Code is fully integrated
 
-- you are a heavy user
-- you want to get close to the current reference lane
+### What the user should do
 
-Do this:
+The correct host-side flow is:
 
-1. install `superpowers`
-2. install `hookify`
-3. rerun deep doctor
-4. only add `everything-claude-code`, `claude-code-settings`, or `ralph-loop` if the remaining gap clearly points to them
+- open `~/.claude/settings.json`
+- add only the fields needed under `env`
+- preserve the host's existing settings
 
-### Path C: gap-driven provisioning
+Common fields that may need to be configured locally include:
 
-Use this when:
+- `VCO_AI_PROVIDER_URL`
+- `VCO_AI_PROVIDER_API_KEY`
+- `VCO_AI_PROVIDER_MODEL`
 
-- the repo already runs
-- you do not want extra overlap
-- you only want to fill one specific missing capability
+If the host connection truly requires them, add:
 
-Do this:
+- `ANTHROPIC_BASE_URL`
+- `ANTHROPIC_AUTH_TOKEN`
 
-1. record the missing surface from doctor
-2. provision only the plugin directly tied to that gap
-3. rerun doctor after each plugin
-4. do not install everything "for completeness"
+Again, none of those values should be requested in chat.
 
-## How To Install These Plugins
+If they are not configured locally yet, the environment must not be described as online-ready.
 
-This needs to stay truthful:
+## Current Policy Conclusion For Host Plugins
 
-**the repo does not currently provide one unified shell command to install these five `manual-codex` plugins.**
+For the current version, the public policy should hold these lines clearly:
 
-The correct flow is:
+1. `codex` has no extra default host-plugin prerequisite.
+2. `claude-code` is not integrated by "adding a pile of host plugins". It is a preview guidance path plus local host configuration.
+3. Historical plugin names are not a reason to keep recommending them in current community docs.
+4. If a capability is not stably, publicly, and verifiably integrated by the repo, it should not be written as a standard install requirement.
 
-1. open your Codex host plugin / MCP / integration management surface
-2. provision or enable the plugin by name
-3. confirm it is actually enabled on the host, not just copied somewhere on disk
-4. rerun deep doctor from the repo
+## Recommended Community Wording
 
-So the accurate instruction is:
+If you need to reference this policy in issues, README text, discussions, or install prompts, use language like this:
 
-- `superpowers`, `everything-claude-code`, `claude-code-settings`, `hookify`, and `ralph-loop`
-  must be provisioned via **Codex-native plugin / MCP tooling**
-- this repo is responsible for:
-  - exposing the gap
-  - shipping compatibility/fallback surfaces
-  - reporting the remaining manual steps in doctor output
+- the current version supports only `codex` and `claude-code`
+- `codex` follows a conservative path centered on local settings, MCP, and optional CLI enhancements
+- the current version does not install hooks for `codex` or `claude-code` because compatibility issues remain unresolved
+- `claude-code` follows a preview guidance path and does not overwrite the real `settings.json`
+- provider `url` / `apikey` / `model` values are configured locally by the user, not pasted into chat
+- other agents are outside the current public support surface
 
-## Scriptable Optional Enhancements
+## When This Document Should Expand Again
 
-These are not part of the five host plugins above, but can be installed when needed:
+This policy should only grow again if all of the following are true:
 
-### `claude-flow`
+- a new host has a verifiable install closure
+- the automation boundary is clear
+- community users do not need hidden historical context to install it correctly
+- we can state exactly what the repo owns and what the host still owns
 
-```bash
-npm install -g claude-flow
-```
-
-### `xan` (recommended on Windows)
-
-```powershell
-scoop install xan
-```
-
-### `ivy`
-
-```bash
-pip install ivy
-```
-
-These are optional enhancements, not first-day prerequisites.
-
-## Conflict Avoidance Rules
-
-To avoid the "more installed, more chaos" trap:
-
-1. add one host plugin at a time, then rerun doctor immediately
-2. do not enable multiple overlapping hook, settings, or router stacks without a clear ownership model
-3. do not mistake a hand-assembled local machine for a portable default policy
-4. if the repo already ships a mirror or fallback for a capability, validate that first before adding the upstream host plugin
-
-## Final Recommendation
-
-If I had to set the default policy for a new operator, I would choose:
-
-- do not require all five host plugins on first install
-- recommend first: `superpowers`, `hookify`
-- defer by default: `everything-claude-code`, `claude-code-settings`, `ralph-loop`
-- keep the rest of MCP, CLI, and provider secrets strictly demand-driven
-
-The goal is not to look maximally full.
-The goal is:
-
-- fewer conflicts
-- clearer ownership
-- easier debugging
-- no dishonest claims about automation boundaries
+Until then, keeping the document simple, truthful, and easy to defend is better than carrying historical baggage forward.

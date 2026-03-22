@@ -104,7 +104,7 @@
 
 ```text
 请你把当前仓库按 Linux 推荐满血路径安装好，并先判断当前 Linux 是否具备 `pwsh`。
-仓库地址：https://github.com/foryourhealth111-pixel/Vibe-Skills 
+仓库地址：https://github.com/foryourhealth111-pixel/Vibe-Skills
 要求：
 
 1. 先检查 `pwsh` 是否可用。

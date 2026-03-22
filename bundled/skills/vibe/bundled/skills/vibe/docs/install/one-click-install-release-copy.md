@@ -1,118 +1,85 @@
-# 一键安装发布文案
+# 提示词安装（默认推荐）
 
-这份文档是给普通用户、围观用户、社区帖、README 首屏、发布帖直接复用的。
+这是当前默认安装方式。
 
-当前对外推荐版本：[`v2.3.47`](../releases/v2.3.47.md)
+暂时只支持两个目标宿主：
 
-它比 operator 文档更短、更适合传播，但不会夸大能力边界。
+- `codex`
+- `claude-code`
 
-适合人群：
-
-- 想先把 VibeSkills 用起来的普通重度大模型用户
-- 想低成本围观、评估、再决定是否推广给团队的负责人
-- 想发社区帖、发 README 首屏、发群公告的人
-
-## 一句话版本
-
-`VibeSkills v2.3.47` 是当前推荐的对外版本。它不是另一个 skills 列表，而是一套把 skills 路由、治理、组合、验证起来的通用基座，让通用大模型更稳定地完成任务。先来用，先来围观，觉得方向对就先 Star。
-
-## 社区短版文案
-
-VibeSkills `v2.3.47` 现在是当前推荐的公开版本。
-
-如果你是重度 AI 用户，这是现在最适合上手的一版：
-
-- 一条受治理的推荐安装路径
-- Windows / Linux 都有清晰入口
-- `scrapling` 已进入默认 full lane
-- `Cognee` 被明确定位为默认长期增强层
-- `Composio / Activepieces` 作为外部操作能力预留，但保持 setup-required
-
-它不是“什么都自动装好”的神话版本，而是当前最清晰、最诚实、最适合普通用户开始体验的 repo-governed 安装面。
-
-先来用，先来围观，觉得这套方向值得做大，就先 Star。
-
-## 发布长版文案
-
-VibeSkills `v2.3.47` 是当前对外推荐版本。
-
-这一版的重点不是再堆更多零散 skills，而是把“普通用户如何真正开始用”这件事讲清楚：
-
-- 当前推荐版本被明确标出来
-- 标准推荐安装路径更清楚
-- Windows 和 Linux 都有可见入口
-- 默认增强层和外部操作层的边界更清楚
-
-你应该期待的是：
-
-- 一次性 bootstrap repo 负责交付的内容
-- 一次 truth-first 的 doctor / readiness 结果
-- 清楚知道哪些部分已经闭环，哪些部分还属于宿主侧手工 provision
-
-你不应该期待的是：
-
-- 明明缺 host plugins / provider secrets，还被包装成 fully ready
-- 所有外部 MCP 和宿主插件都被静默自动装好
-
-如果你要的不是另一个 skills 仓库，而是一套更稳定、更可治理、更适合长期演进的 skills 基座，就从 `v2.3.47` 开始。
-
-## 复制给 AI 助手的一键安装提示词
+## 复制给 AI 的提示词
 
 ```text
-请按当前平台的最强推荐 VibeSkills 安装路径帮我完成安装。
+你现在是我的 VibeSkills 安装助手。
+仓库地址：https://github.com/foryourhealth111-pixel/Vibe-Skills
 
-要求：
-1. 先识别当前系统是 Windows 还是 Linux。
-2. 如果是 Windows，优先执行：
-   - `pwsh -File .\scripts\bootstrap\one-shot-setup.ps1`
-   - `pwsh -File .\check.ps1 -Profile full -Deep`
-   - 只有在 `pwsh` 不可用时才回退到 Windows PowerShell
-3. 如果是 Linux，执行：
-   - `bash ./scripts/bootstrap/one-shot-setup.sh`
-   - `bash ./check.sh --profile full --deep`
-   - 并明确告诉我当前 Linux 是否具备 `pwsh`，因为没有 `pwsh` 的 Linux 只应被视为 degraded-but-supported，而不是最强 full lane
-4. 如实报告最终 `readiness_state`。
-5. 不要把 host plugins、外部 MCP、provider secrets 伪装成已经自动安装完成。
-6. 如果结果是 `manual_actions_pending`，把剩余人工动作明确列出来。
-7. 默认先建议我补 `superpowers` 和 `hookify`，不要默认要求第一天就把 5 个宿主插件全部装满。
+在执行任何安装命令前，你必须先问我：
+“你要把 VibeSkills 安装到哪个宿主里？当前只支持：codex 或 claude-code。”
+
+规则：
+1. 在我明确回答目标宿主之前，不要开始安装。
+2. 如果我回答的不是 `codex` 或 `claude-code`，请直接告诉我：当前版本暂不支持该宿主安装，并停止继续伪装安装。
+3. 先判断当前系统是 Windows 还是 Linux / macOS，并使用对应命令格式。
+4. 如果我选择 `codex`：
+   - Linux / macOS 使用 `bash ./scripts/bootstrap/one-shot-setup.sh --host codex`
+   - 然后执行 `bash ./check.sh --host codex --profile full --deep`
+   - Windows 使用对应的 `pwsh` 命令。
+   - 明确告诉我：由于兼容性问题，当前版本暂不为 Codex 安装任何 hook 面。
+   - 只围绕 Codex 当前可公开证明的本地 settings、MCP 和 CLI 依赖给建议。
+   - 如果需要在线模型能力，告诉我去 `~/.codex/settings.json` 的 `env` 或本地环境变量里配置 `OPENAI_API_KEY`、`OPENAI_BASE_URL` 等值，不要让我把密钥发到聊天里。
+5. 如果我选择 `claude-code`：
+   - Linux / macOS 使用 `bash ./scripts/bootstrap/one-shot-setup.sh --host claude-code`
+   - 然后执行 `bash ./check.sh --host claude-code --profile full --deep`
+   - Windows 使用对应的 `pwsh` 命令。
+   - 明确告诉我：这只是 preview guidance，不是 full closure。
+   - 明确告诉我：由于兼容性问题，当前版本暂不为 Claude Code 安装 hook，也不再写 `settings.vibe.preview.json`。
+   - 不要要求我把 API key 直接发到聊天里。
+   - 应该告诉我打开 `~/.claude/settings.json`，只在 `env` 下补充需要的字段，并保留我原有的设置。
+   - 如果需要 AI 治理层在线能力，提醒我自己在本地配置这些字段：
+     - `VCO_AI_PROVIDER_URL`
+     - `VCO_AI_PROVIDER_API_KEY`
+     - `VCO_AI_PROVIDER_MODEL`
+6. 对 `codex` 和 `claude-code`，都不要要求我把密钥、URL 或 model 直接粘贴到聊天里；只告诉我去本地 settings 或本地环境变量里配置。
+7. 如果这些本地 provider 字段没有配置好，不能把环境描述成“已完成 online readiness”。
+8. 安装完成后，请用简洁中文告诉我：
+   - 目标宿主
+   - 实际执行的命令
+   - 已完成的部分
+   - 仍需我手动处理的部分
+9. 不要把宿主插件、MCP 注册、provider 凭据伪装成已经自动完成。
 ```
 
-## 直接命令版
+## 这条路径适合谁
 
-Windows：
+- 想让 AI 先判断该走 `codex` 还是 `claude-code`
+- 不想自己先研究安装脚本的人
+- 想先完成一轮真实安装，再看剩余手动项的人
 
-```powershell
-pwsh -File .\scripts\bootstrap\one-shot-setup.ps1
-pwsh -File .\check.ps1 -Profile full -Deep
-```
+## 这条路径会帮你做到什么
 
-Linux：
+- 先确认目标宿主，避免装错 lane
+- 运行对应的 bootstrap + check
+- 诚实告诉你哪些仍然是宿主侧工作
 
-```bash
-bash ./scripts/bootstrap/one-shot-setup.sh
-bash ./check.sh --profile full --deep
-```
+## 它不会假装替你完成什么
 
-## 必须说清楚的现实边界
+下面这些仍然可能是用户侧或宿主侧动作：
 
-对外传播时，最重要的一句边界说明是：
+- 本地宿主配置填写
+- MCP 注册与授权
+- hook 的后续兼容性等待
+- `url` / `apikey` / `model` 的本地填写
+- Claude Code 的真实 `settings.json` 人工补充
 
-- `v2.3.47` 是当前推荐的受治理安装面
-- 它尽可能闭环 repo 自己负责交付的安装链路
-- 它不会假装替你自动完成所有宿主插件、provider secrets、外部 MCP 集成
+## 第二条主路径
 
-因此，对普通用户来说，`manual_actions_pending` 是一个正常、诚实、可接受的结果，不应该被误读成安装失败。
+如果你不想让 AI 执行安装，或者当前环境离线、无管理员权限，请改看：
 
-## 如果用户想继续增强
+- [`manual-copy-install.md`](./manual-copy-install.md)
 
-- 先补 provider secrets，例如 `OPENAI_API_KEY`
-- 再补推荐的宿主插件，优先 `superpowers`、`hookify`
-- 再补 `github`、`context7`、`serena` 等 plugin-backed MCP surfaces
-- 把 `Composio / Activepieces` 视为外部操作能力扩展层，有需要再 setup，并保持治理与确认门禁
+## 高级参考
 
-## 相关文档
+如果你要看更细的宿主边界，再看：
 
 - [`recommended-full-path.md`](./recommended-full-path.md)
-- [`full-featured-install-prompts.md`](./full-featured-install-prompts.md)
 - [`../cold-start-install-paths.md`](../cold-start-install-paths.md)
-- [`../releases/v2.3.47.md`](../releases/v2.3.47.md)
