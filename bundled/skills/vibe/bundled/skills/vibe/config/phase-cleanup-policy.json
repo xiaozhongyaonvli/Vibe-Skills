@@ -4,9 +4,7 @@
   "enabled": true,
   "required_after_each_phase": true,
   "receipt_path": "outputs/runtime/vibe-sessions/{run_id}/cleanup-receipt.json",
-  "bounded_default_modes": [
-    "benchmark_autonomous"
-  ],
+  "bounded_default_modes": [],
   "cleanup_mode_taxonomy": [
     "receipt_only",
     "preview_only",

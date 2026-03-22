@@ -69,8 +69,10 @@ $executionManifest = Get-Content -LiteralPath $executionManifestPath -Raw -Encod
 $proofManifest = Get-Content -LiteralPath $proofManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $cleanupReceipt = Get-Content -LiteralPath $cleanupReceiptPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
-Add-Assertion -Results ([ref]$results) -Condition ($summary.mode -eq 'benchmark_autonomous') -Message 'benchmark proof summary preserves benchmark_autonomous mode'
+Add-Assertion -Results ([ref]$results) -Condition ($summary.mode -eq 'interactive_governed') -Message 'benchmark proof summary normalizes legacy benchmark mode to interactive_governed'
 Add-Assertion -Results ([ref]$results) -Condition ($runtimeInputPacket.stage -eq 'runtime_input_freeze') -Message 'runtime input packet is frozen before execution'
+Add-Assertion -Results ([ref]$results) -Condition ($runtimeInputPacket.runtime_mode -eq 'interactive_governed') -Message 'runtime input packet records interactive_governed as the effective mode'
+Add-Assertion -Results ([ref]$results) -Condition (-not [bool]$runtimeInputPacket.canonical_router.unattended) -Message 'legacy benchmark mode no longer drives unattended router execution'
 Add-Assertion -Results ([ref]$results) -Condition ($runtimeInputPacket.provenance.proof_class -eq 'structure') -Message 'runtime input packet carries structure proof class'
 Add-Assertion -Results ([ref]$results) -Condition ($executeReceipt.status -ne 'execution-contract-prepared') -Message 'execute receipt is no longer receipt-only'
 Add-Assertion -Results ([ref]$results) -Condition ($executionManifest.status -eq 'completed') -Message 'execution manifest status is completed' -Details $executionManifest.status
@@ -80,7 +82,8 @@ Add-Assertion -Results ([ref]$results) -Condition ($executionManifest.proof_clas
 Add-Assertion -Results ([ref]$results) -Condition (Test-Path -LiteralPath ([string]$executeReceipt.plan_shadow_path)) -Message 'plan-derived shadow manifest exists' -Details ([string]$executeReceipt.plan_shadow_path)
 Add-Assertion -Results ([ref]$results) -Condition ([bool]$proofManifest.proof_passed) -Message 'benchmark proof manifest marks proof_passed=true'
 Add-Assertion -Results ([ref]$results) -Condition ($proofManifest.proof_class -eq 'runtime') -Message 'benchmark proof manifest carries runtime proof class'
-Add-Assertion -Results ([ref]$results) -Condition ($cleanupReceipt.cleanup_mode -eq 'bounded_cleanup_executed') -Message 'benchmark cleanup is materially executed by default'
+Add-Assertion -Results ([ref]$results) -Condition ($cleanupReceipt.cleanup_mode -eq 'receipt_only') -Message 'legacy benchmark mode now uses interactive_governed cleanup defaults'
+Add-Assertion -Results ([ref]$results) -Condition (-not [bool]$cleanupReceipt.default_bounded_cleanup_applied) -Message 'legacy benchmark mode no longer applies bounded cleanup by default'
 Add-Assertion -Results ([ref]$results) -Condition ($cleanupReceipt.proof_class -eq 'runtime') -Message 'cleanup receipt carries runtime proof class'
 
 foreach ($resultPath in @($proofManifest.result_paths)) {

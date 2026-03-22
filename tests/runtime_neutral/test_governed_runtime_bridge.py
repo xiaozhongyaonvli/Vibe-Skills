@@ -174,7 +174,7 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 reconstructed_summary_path = artifact_root / summary_path_relative / "runtime-summary.json"
                 if reconstructed_summary_path.exists():
                     summary = json.loads(reconstructed_summary_path.read_text(encoding="utf-8"))
-            self.assertEqual("benchmark_autonomous", summary["mode"])
+            self.assertEqual("interactive_governed", summary["mode"])
             self.assertEqual(
                 EXPECTED_STAGE_IDS,
                 summary["stage_order"],
@@ -229,6 +229,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
             benchmark_proof = json.loads(benchmark_proof_path.read_text(encoding="utf-8"))
 
             self.assertEqual("runtime_input_freeze", runtime_input_packet["stage"])
+            self.assertEqual("interactive_governed", runtime_input_packet["runtime_mode"])
+            self.assertFalse(runtime_input_packet["canonical_router"]["unattended"])
             self.assertEqual("structure", runtime_input_packet["provenance"]["proof_class"])
             self.assertEqual("vibe", runtime_input_packet["authority_flags"]["explicit_runtime_skill"])
             self.assertNotEqual("execution-contract-prepared", execute_receipt["status"])
@@ -247,9 +249,9 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
             self.assertTrue(Path(benchmark_proof["plan_shadow_path"]).exists())
 
             cleanup_receipt = json.loads(resolve_artifact_path("cleanup_receipt").read_text(encoding="utf-8"))
-            self.assertEqual("bounded_cleanup_executed", cleanup_receipt["cleanup_mode"])
+            self.assertEqual("receipt_only", cleanup_receipt["cleanup_mode"])
             self.assertEqual("runtime", cleanup_receipt["proof_class"])
-            self.assertTrue(cleanup_receipt["default_bounded_cleanup_applied"])
+            self.assertFalse(cleanup_receipt["default_bounded_cleanup_applied"])
 
             for result_path in benchmark_proof["result_paths"]:
                 result = json.loads(Path(result_path).read_text(encoding="utf-8"))

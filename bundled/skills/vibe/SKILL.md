@@ -55,22 +55,20 @@ Do not use `vibe` for:
 These stages are mandatory.
 They may become lighter for simple work, but they are not skipped as a matter of policy.
 
-## Runtime Modes
+## Runtime Mode
 
 ### `interactive_governed`
 
-Default mode.
+Default and effective mode.
 
 Use this when the system should still ask the user high-value questions, confirm frozen requirements, and pause at plan approval boundaries.
 
 ### `benchmark_autonomous`
 
-Autonomous closed-loop mode.
+Legacy compatibility alias only.
 
-Use this when the user gives a full requirement up front and expects the system to continue without more questioning.
-
-This mode does not remove governance.
-It replaces live questioning with inferred intent capture, requirement freezing, plan generation, execution receipts, verification, and cleanup receipts.
+If older callers still pass `benchmark_autonomous`, the runtime silently normalizes it to `interactive_governed`.
+It is not a separate execution plane and it must not create a second unattended control path.
 
 ## Internal Execution Grades
 
@@ -114,7 +112,7 @@ Produce a structured intent contract containing:
 - inferred assumptions
 
 In `interactive_governed`, this stage may ask direct questions.
-In `benchmark_autonomous`, it must infer and record assumptions instead of asking more questions.
+Legacy `benchmark_autonomous` input is normalized before this stage runs, so intent capture stays on the same governed mode.
 
 ### 3. `requirement_doc`
 

@@ -100,7 +100,7 @@ $runId = "contract-gate-" + [System.Guid]::NewGuid().ToString('N').Substring(0, 
 $artifactRoot = Join-Path $repoRoot (".tmp\governed-runtime-contract-{0}" -f $runId)
 $summary = & (Join-Path $repoRoot 'scripts\runtime\invoke-vibe-runtime.ps1') -Task 'governed runtime contract smoke proof' -Mode benchmark_autonomous -RunId $runId -ArtifactRoot $artifactRoot
 
-Add-Assertion -Results ([ref]$results) -Condition ($summary.mode -eq 'benchmark_autonomous') -Message 'runtime smoke summary preserves benchmark_autonomous mode'
+Add-Assertion -Results ([ref]$results) -Condition ($summary.mode -eq 'interactive_governed') -Message 'runtime smoke summary normalizes legacy benchmark mode to interactive_governed'
 
 $artifactPaths = @(
     $summary.summary.artifacts.skeleton_receipt,

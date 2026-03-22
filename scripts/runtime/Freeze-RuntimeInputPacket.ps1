@@ -55,6 +55,7 @@ function New-VibeAdviceSnapshot {
 }
 
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath
+$Mode = Resolve-VibeRuntimeMode -Mode $Mode -DefaultMode ([string]$runtime.runtime_modes.default_mode)
 if ([string]::IsNullOrWhiteSpace($RunId)) {
     $RunId = New-VibeRunId
 }
@@ -65,7 +66,7 @@ $grade = Get-VibeInternalGrade -Task $Task
 $taskType = Get-VibeRouterTaskType -Task $Task
 $routerScriptPath = Join-Path $runtime.repo_root ([string]$policy.router_script_path)
 $requestedSkill = if ($policy.default_requested_skill) { [string]$policy.default_requested_skill } else { 'vibe' }
-$unattended = ($Mode -eq 'benchmark_autonomous')
+$unattended = $false
 
 $routeArgs = @(
     '-Prompt', $Task,

@@ -31,6 +31,24 @@ function New-VibeRunId {
     return "$timestamp-$suffix"
 }
 
+function Resolve-VibeRuntimeMode {
+    param(
+        [AllowEmptyString()] [string]$Mode,
+        [AllowEmptyString()] [string]$DefaultMode = 'interactive_governed'
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Mode)) {
+        return $DefaultMode
+    }
+
+    $normalized = $Mode.Trim().ToLowerInvariant()
+    if ($normalized -eq 'benchmark_autonomous') {
+        return 'interactive_governed'
+    }
+
+    return $normalized
+}
+
 function ConvertTo-VibeSlug {
     param(
         [AllowEmptyString()] [string]$Text
@@ -160,15 +178,12 @@ function New-VibeIntentContractObject {
         [Parameter(Mandatory)] [string]$Mode
     )
 
+    $Mode = Resolve-VibeRuntimeMode -Mode $Mode
     $title = Get-VibeTitleFromTask -Task $Task
     $grade = Get-VibeInternalGrade -Task $Task
     $assumptions = @()
-    if ($Mode -eq 'benchmark_autonomous') {
-        $assumptions += 'Proceed without additional user questioning unless a hard blocker or safety boundary is reached.'
-        $assumptions += 'Freeze inferred acceptance criteria into the requirement document before execution.'
-    } else {
-        $assumptions += 'Interactive clarification is allowed if unresolved ambiguity materially changes implementation.'
-    }
+    $assumptions += 'Interactive clarification is allowed if unresolved ambiguity materially changes implementation.'
+    $assumptions += 'Legacy benchmark_autonomous requests are normalized into interactive_governed before intent capture.'
 
     return [pscustomobject]@{
         generated_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
