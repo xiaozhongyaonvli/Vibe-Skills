@@ -289,9 +289,13 @@ We know that building in isolation cannot keep up with the speed of the AI era. 
 * 🛠 [Advanced host and lane reference](./docs/install/recommended-full-path.en.md)
 * 🧊 [Cold-start and other environment notes](./docs/cold-start-install-paths.en.md)
 
----
 Welcome everyone to try it out and experience it for yourselves! I'd love to hear your thoughts, so please feel free to start discussions and share your feedback or suggestions. I know I'm far from perfect, so if you spot any issues or areas for improvement, please don't hesitate to point them out—I'm all ears and will definitely make the necessary fixes.
 If you like the project, please consider giving it a star! I'll be continuously updating it. Your support is the enriched U-235 to this nuclear-powered donkey!
+
+Thanks to everyone on LinuxDo for their support! Welcome to join https://linux.do/ for all kinds of technical exchanges, cutting-edge AI information, and AI experience sharing!
+
+---
+
 <div align="center">
   <p><i>Turn the most failure-prone parts of real work into a system that is more callable, more governable, and more maintainable over the long term.</i></p>
 </div>
