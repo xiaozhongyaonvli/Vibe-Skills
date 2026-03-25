@@ -1,138 +1,110 @@
 # Installation Rules
 
-This document contains the core rules that must be followed during VibeSkills installation. These rules apply to all installation prompts.
+This document defines the truth-first rules that install and upgrade assistants must follow on the public install surface.
 
----
+## Rule 1: Confirm the host first
 
-## 📋 Core Rules List
+Do not start any install or upgrade command until the user explicitly confirms the target host.
 
-### Rules 1-2: Confirm Host and Version
+The current public host surface is limited to:
 
-**Rule 1**: Do not start installation until the target host is explicitly confirmed.
+- `codex`
+- `claude-code`
+- `cursor`
+- `windsurf`
 
-**Rule 2**: Do not start installation until the public version is explicitly confirmed.
+## Rule 2: Confirm the public version next
 
-**Explanation**: The installation assistant must first ask the user which host (codex or claude-code) and which version (full version or framework version) they want to install before executing any installation commands.
+Do not start execution until the user explicitly confirms the public version.
 
----
+The current public versions are:
 
-### Rules 3-4: Validate Host and Version
+- `Full Version + Customizable Governance`
+- `Framework Only + Customizable Governance`
 
-**Rule 3**: If the answered host is not `codex` or `claude-code`, tell the user directly: the current version does not support installation on that host yet, and stop pretending to install.
+## Rule 3: Reject unsupported hosts clearly
 
-**Rule 4**: If the answered public version is not "Full Version + Customizable Governance" or "Framework Only + Customizable Governance", tell the user directly: the current public installation guide does not support that version name yet, and stop pretending to install.
+If the user names a host outside the supported surface, say so directly and stop instead of pretending installation is complete.
 
-**Explanation**: Only explicit host and version options are supported. Unsupported options should be clearly rejected.
+## Rule 4: Reject unsupported version names clearly
 
----
+If the user names a version outside the public version surface, say so directly and stop.
 
-### Rule 5: System Detection
+## Rule 5: Detect the operating system before choosing commands
 
-**Rule 5**: First detect whether the current system is Windows or Linux / macOS, and use the corresponding command format.
+- Linux / macOS use `bash`
+- Windows use `pwsh`
 
-**Explanation**:
-- Linux / macOS use `bash` commands
-- Windows use `pwsh` commands
+## Rule 6: Map public version names to real script profiles
 
----
+- `Full Version + Customizable Governance` -> `full`
+- `Framework Only + Customizable Governance` -> `minimal`
 
-### Rule 6: Version Mapping
+Do not keep pretending the framework version is `framework-only`; the current scripts actually accept `minimal` / `full`.
 
-**Rule 6**: Map public version names to actual profiles:
-- "Full Version + Customizable Governance" → `full`
-- "Framework Only + Customizable Governance" → `framework-only`
+## Rule 7: Describe Codex as the governed path
 
-**Explanation**: Users see friendly version names, but actual installation requires mapping to technical profile names.
+If the user chooses `codex`:
 
----
+- run `--host codex`
+- describe it as the strongest governed path today
+- explain that hook installation is currently frozen because of compatibility issues; that is not an install failure
+- if base online provider access is needed, point the user to local `OPENAI_*` configuration
+- if the governance AI online layer is needed, point the user to local `VCO_AI_PROVIDER_*` configuration
+- never imply that `OPENAI_*` alone means governance-AI online readiness
 
-### Rules 7-8: Host-Specific Configuration
+## Rule 8: Describe Claude Code as preview guidance
 
-**Rule 7**: If `codex` is chosen:
-- Linux / macOS use `bash ./scripts/bootstrap/one-shot-setup.sh --host codex --profile [PROFILE]`
-- Then execute `bash ./check.sh --host codex --profile [PROFILE] --deep`
-- Windows use corresponding `pwsh` commands
-- Clearly tell the user: due to compatibility issues, the current version does not install any hooks for Codex
-- Only provide recommendations around Codex's currently publicly provable local settings, MCP, and CLI dependencies
+If the user chooses `claude-code`:
 
-**Rule 8**: If `claude-code` is chosen:
-- Linux / macOS use `bash ./scripts/bootstrap/one-shot-setup.sh --host claude-code --profile [PROFILE]`
-- Then execute `bash ./check.sh --host claude-code --profile [PROFILE] --deep`
-- Windows use corresponding `pwsh` commands
-- Clearly tell the user: this is preview guidance only, not full closure
-- Clearly tell the user: due to compatibility issues, the current version does not install hooks for Claude Code, and no longer writes `settings.vibe.preview.json`
+- run `--host claude-code`
+- state clearly that it is preview guidance, not full closure
+- explain that hooks remain frozen; this is not an install failure
+- do not claim the installer writes `settings.vibe.preview.json`
+- guide the user to maintain `~/.claude/settings.json` locally
 
----
+## Rule 9: Describe Cursor as preview guidance too
 
-### Rule 9: Key Security
+If the user chooses `cursor`:
 
-**Rule 9**: For both `codex` and `claude-code`, do not ask users to paste keys, URLs, or model names directly into chat; only tell them to configure in local settings or local environment variables.
+- run `--host cursor`
+- state clearly that it is preview guidance, not full closure
+- do not claim the repo takes over Cursor settings, provider wiring, MCP closure, or hook closure
+- guide the user to maintain `~/.cursor/settings.json` locally
 
-**Explanation**: Protect users' API key security and prevent sensitive information from appearing in chat history.
+## Rule 10: Describe Windsurf as preview runtime-core
 
----
+If the user chooses `windsurf`:
 
-### Rule 10: Online Readiness
+- run `--host windsurf`
+- state clearly that it is preview runtime-core, not full closure
+- the default host root is `~/.codeium/windsurf`
+- the repo currently owns only shared runtime payload plus optional materialization of `mcp_config.json` and `global_workflows/`
+- do not pretend login, account, provider, plugin, or workspace-native closure has been completed
 
-**Rule 10**: If local provider fields are not configured, do not describe the environment as "online readiness complete".
+## Rule 11: Never ask users to paste secrets into chat
 
-**Explanation**: Distinguish between "local installation complete" and "online capability ready", and do not mislead users.
+For all four supported hosts, do not ask users to paste keys, URLs, or model names into chat. Point them to local settings or local environment variables instead.
 
----
+## Rule 12: Distinguish local install from online readiness
 
-### Rule 11: Installation Result Report
+If local provider fields are not configured, the environment must not be described as online-ready.
 
-**Rule 11**: After installation completes, tell the user concisely:
-- Target host
-- Public version
-- Actual mapped profile
-- Commands actually executed
-- Completed parts
-- Parts still requiring manual handling
+## Rule 13: The result summary must stay explicit
 
-**Explanation**: Provide a clear installation result summary so users understand the current status.
+The install or upgrade summary should include at least:
 
----
+- target host
+- public version
+- actual mapped profile
+- commands actually executed
+- completed parts
+- manual follow-up still required
 
-### Rule 12: Truth-First Principle
+## Rule 14: The framework version is not the full out-of-box experience
 
-**Rule 12**: Do not pretend that host plugins, MCP registration, or provider credentials have been automatically completed; describe missing items as optional enhancements or recommended next steps first.
+If the user chooses `Framework Only + Customizable Governance` / `minimal`, explicitly remind them:
 
-**Explanation**: Follow the truth-first principle and do not exaggerate installation completeness.
-
----
-
-### Rule 13: Framework Version Special Note
-
-**Rule 13**: For the "Framework Only + Customizable Governance" version, additionally tell the user clearly: what you currently have is the governance framework foundation, which does not mean the default workflow core is already complete; if you want to integrate your own workflow later, guide the user to continue with custom workflow governed onboarding.
-
-**Explanation**: Framework version and full version deliverables are different and need to be clearly stated.
-
----
-
-## 📖 Usage
-
-In installation prompts, you can reference these rules like this:
-
-```text
-## Installation Rules
-For detailed rules, see: [Installation Rules Documentation](../installation-rules.en.md)
-
-Core rules summary:
-1. Must confirm host first (codex or claude-code)
-2. Must confirm version first (full or framework)
-3. Unsupported hosts/versions should be clearly rejected
-4. Detect system type, use corresponding commands
-5. Map version names to profiles
-6-8. Execute host-specific installation commands
-9. Don't let users paste keys in chat
-10. Distinguish "installation complete" from "online ready"
-11. Provide clear installation result report
-12. Follow truth-first principle
-13. Framework version needs additional explanation
-```
-
----
-
-**Document Version**: 1.0
-**Last Updated**: 2026-03-23
+- this installs the governance foundation first
+- it does not mean the default workflow core is already complete
+- if they want to add their own workflows later, continue with [`custom-workflow-onboarding.md`](./custom-workflow-onboarding.md)

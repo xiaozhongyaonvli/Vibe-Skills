@@ -340,7 +340,7 @@ VibeSkills follows a governed workflow of `Clarify ➔ Plan ➔ Execute ➔ Veri
 
 - Vibe has a built-in CRON function. Simply explicitly request that CRON be enabled (e.g., "I want to continuously advance task XXX based on cron, to complete: XXXX $vibe").
 
-  
+
 ---
 
 ## 📦 Gather the strengths of many projects: integration and full matrix
@@ -385,13 +385,13 @@ We know that building in isolation cannot keep up with the speed of the AI era. 
 * 🔄 If you need to update the version later: custom governance placed in `skills/custom/` and `config/custom-workflows.json` can usually be retained; but directly modifying official runtime/official skills/official mcp/rules content may be overwritten during updates.
 
 **Installation and configuration guide**
-* Current public support surface: **Claude Code and Codex only**
-* Current public versions: **Full version + customizable governance**, **Core framework only + customizable governance**
-* ⚡️ [Prompt-based install (recommended default)](./docs/install/one-click-install-release-copy.md)
-  This has been organized into an easier-to-scan installation entry: first see version differences, then copy the corresponding prompt, then continue to see custom integration. Now also includes "version update prompt".
+* Current public support surface: **`codex`, `claude-code`, `cursor` (`preview guidance`), and `windsurf` (`preview runtime-core`)**
+* Current public versions: **Full version + customizable governance**, **Framework version + customizable governance**
+* ⚡️ [Prompt-based install (recommended default)](./docs/install/one-click-install-release-copy.en.md)
+  Start there to confirm host and version first, then jump to the matching prompt file.
 * 🧩 [Custom workflow integration](./docs/install/custom-workflow-onboarding.md)
-  Used to subsequently integrate your own workflows/skills into the canonical router's governance scope, rather than forming a second routing system.
-* 📁 [Manual copy install (offline / no-admin)](./docs/install/manual-copy-install.md)
+  Use this to bring your own workflows/skills into the canonical router's governed surface rather than creating a second routing stack.
+* 📁 [Manual copy install (offline / no-admin)](./docs/install/manual-copy-install.en.md)
 
 **Advanced references**
 

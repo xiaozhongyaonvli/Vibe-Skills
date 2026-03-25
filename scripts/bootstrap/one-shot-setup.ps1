@@ -32,9 +32,10 @@ function Prompt-VgoHostId {
     while ($true) {
         Write-Host 'Select the install target before bootstrap:'
         Write-Host '  1) codex        - strongest governed lane'
-        Write-Host '  2) claude-code  - preview scaffold lane'
-        Write-Host '  3) cursor       - preview scaffold lane'
-        $choice = [string](Read-Host 'Install into which agent? [1-3]')
+        Write-Host '  2) claude-code  - preview guidance lane'
+        Write-Host '  3) cursor       - preview guidance lane'
+        Write-Host '  4) windsurf     - runtime-core preview lane'
+        $choice = [string](Read-Host 'Install into which agent? [1-4]')
         $normalized = $choice.Trim().ToLowerInvariant()
         switch ($normalized) {
             '1' { return 'codex' }
@@ -44,7 +45,9 @@ function Prompt-VgoHostId {
             'claude-code' { return 'claude-code' }
             '3' { return 'cursor' }
             'cursor' { return 'cursor' }
-            default { Write-Warning "Unsupported choice: $choice. Enter 1, 2, 3, or a supported host name." }
+            '4' { return 'windsurf' }
+            'windsurf' { return 'windsurf' }
+            default { Write-Warning "Unsupported choice: $choice. Enter 1, 2, 3, 4, or a supported host name." }
         }
     }
 }
@@ -57,7 +60,7 @@ if (-not (Test-NonEmptyString -Value $HostId)) {
     } elseif (Test-IsInteractiveBootstrap) {
         $HostId = Prompt-VgoHostId
     } else {
-        throw 'No host was provided for one-shot bootstrap. Pass -HostId codex|claude-code|cursor when running non-interactively.'
+        throw 'No host was provided for one-shot bootstrap. Pass -HostId codex|claude-code|cursor|windsurf when running non-interactively.'
     }
 }
 $HostId = Resolve-VgoHostId -HostId $HostId

@@ -1,95 +1,73 @@
 # Installation and Custom Integration Index
 
-This directory contains public installation and custom integration documentation.
+This directory contains the public install, upgrade, and custom-integration docs.
 
-## 🚀 Quick Navigation
+## Quick Navigation
 
-### New User Installation
+### Fresh Install
 
-**Recommended: Use streamlined prompts** (optimized and deduplicated):
+- [`prompts/full-version-install.en.md`](./prompts/full-version-install.en.md): full-version install prompt
+- [`prompts/framework-only-install.en.md`](./prompts/framework-only-install.en.md): framework-version install prompt
 
-- 📦 **[Full Version Install](./prompts/full-version-install.en.md)** - Ready to use with complete features
-- 🔧 **[Framework Only Install](./prompts/framework-only-install.en.md)** - Install governance framework only
+### Upgrade Existing Install
 
-### Existing User Updates
+- [`prompts/full-version-update.en.md`](./prompts/full-version-update.en.md): full-version upgrade prompt
+- [`prompts/framework-only-update.en.md`](./prompts/framework-only-update.en.md): framework-version upgrade prompt
 
-- 🔄 **[Full Version Update](./prompts/full-version-update.en.md)** - Update installed full version
-- 🔄 **[Framework Only Update](./prompts/framework-only-update.en.md)** - Update installed framework version
+### Reference Docs
 
-### Reference Documentation
+- [`one-click-install-release-copy.en.md`](./one-click-install-release-copy.en.md): default entrypoint with host/version selection and links to prompt files
+- [`recommended-full-path.en.md`](./recommended-full-path.en.md): advanced host, lane, and command reference
+- [`manual-copy-install.en.md`](./manual-copy-install.en.md): manual copy path for offline or no-admin environments
+- [`installation-rules.en.md`](./installation-rules.en.md): truth-first rules every install assistant must follow
+- [`configuration-guide.en.md`](./configuration-guide.en.md): local configuration guidance
 
-- 📋 **[Installation Rules](./installation-rules.en.md)** - 13 core installation rules
-- ⚙️ **[Configuration Guide](./configuration-guide.en.md)** - VCO configuration details
+## Public Versions
 
----
-
-## 📖 Version Description
-
-Current public versions are consolidated into two options:
+The public install surface still exposes two user-facing versions:
 
 - `Full Version + Customizable Governance`
 - `Framework Only + Customizable Governance`
 
-Current script implementation still retains three lanes:
+Their actual script-level profile mapping is:
 
-- `framework-only`
-- `workflow`
-- `full`
+- `Full Version + Customizable Governance` -> `full`
+- `Framework Only + Customizable Governance` -> `minimal`
 
-Among them:
+Keep the public wording user-friendly, then map to the real profile at execution time.
 
-- `full` corresponds to the public "Full Version + Customizable Governance"
-- `framework-only` corresponds to the public "Framework Only + Customizable Governance"
-- `workflow` is retained as a compatibility/transition lane, no longer the main choice for regular users
-
-## Start Here
-
-- [`one-click-install-release-copy.en.md`](./one-click-install-release-copy.en.md): Default recommended entry point, contains prompt installation templates for both public versions
-- [`full-path.en.md`](./full-path.en.md): Full version corresponding to underlying `full` lane reference
-- [`framework-only-path.en.md`](./framework-only-path.en.md): Framework version corresponding to underlying `framework-only` lane reference
-- [`workflow-path.en.md`](./workflow-path.en.md): Compatibility/transition lane reference, no longer the main entry for regular users
-
-## Custom Extensions
-
-- [`custom-workflow-onboarding.en.md`](./custom-workflow-onboarding.en.md): How to integrate new workflows into governance and routing
-- [`custom-skill-governance-rules.en.md`](./custom-skill-governance-rules.en.md): Governance rules and boundaries for custom skills/workflows
-
-## Host Boundaries (Must Confirm First)
-
-Currently supported hosts only include:
+## Publicly Supported Hosts
 
 - `codex`
 - `claude-code`
+- `cursor`
+- `windsurf`
 
-Among them:
+Within that scope:
 
-- `codex`: governed official path
-- `claude-code`: preview guidance (not full closure)
+- `codex`: governed and currently the strongest path
+- `claude-code`: preview guidance
+- `cursor`: preview guidance
+- `windsurf`: preview runtime-core
 
-Unsupported hosts cannot pretend installation success or online readiness completion.
-
-## Compatibility Notes
-
-During the phase when old parameters and old lanes still exist:
-
-- `minimal` is equivalent to `workflow`
-- `full` is still equivalent to `full`
-
-For public communication, prioritize using "public version names" without requiring regular users to understand lanes first:
-
-- `Full Version + Customizable Governance`
-- `Framework Only + Customizable Governance`
+Other hosts should not currently be described as supported installation targets.
 
 ## Recommended Reading Order
 
-If you are a regular user, recommended reading order:
+If you are a regular user:
 
 1. [`one-click-install-release-copy.en.md`](./one-click-install-release-copy.en.md)
-2. [`custom-workflow-onboarding.en.md`](./custom-workflow-onboarding.en.md)
-3. [`custom-skill-governance-rules.en.md`](./custom-skill-governance-rules.en.md)
+2. the matching prompt file
+3. [`custom-workflow-onboarding.md`](./custom-workflow-onboarding.md)
+4. [`custom-skill-governance-rules.md`](./custom-skill-governance-rules.md)
 
-If you are an advanced user wanting to see underlying profile/lane correspondence, then see:
+If you are an advanced user:
 
-1. [`full-path.en.md`](./full-path.en.md)
-2. [`framework-only-path.en.md`](./framework-only-path.en.md)
-3. [`workflow-path.en.md`](./workflow-path.en.md)
+1. [`recommended-full-path.en.md`](./recommended-full-path.en.md)
+2. [`manual-copy-install.en.md`](./manual-copy-install.en.md)
+3. [`host-plugin-policy.en.md`](./host-plugin-policy.en.md)
+
+## Custom Extension Docs
+
+- [`custom-workflow-onboarding.md`](./custom-workflow-onboarding.md): how to bring a new workflow into governance and routing
+- [`custom-skill-governance-rules.md`](./custom-skill-governance-rules.md): governance rules for custom skills and workflows

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "package_id": "vibeskills-windsurf",
+  "package_kind": "host-adapter",
+  "host_id": "windsurf",
+  "stability": "preview",
+  "entry_manifest": "dist/host-windsurf/manifest.json"
+}

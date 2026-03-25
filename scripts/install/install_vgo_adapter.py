@@ -125,6 +125,18 @@ def embedded_registry():
                 "closure": "adapters/cursor/closure.json",
                 "manifest": "dist/host-cursor/manifest.json",
             },
+            {
+                "id": "windsurf",
+                "status": "preview",
+                "install_mode": "runtime-core",
+                "check_mode": "runtime-core",
+                "bootstrap_mode": "runtime-core",
+                "default_target_root": {"env": "WINDSURF_HOME", "rel": ".codeium/windsurf", "kind": "host-home"},
+                "host_profile": "adapters/windsurf/host-profile.json",
+                "settings_map": "adapters/windsurf/settings-map.json",
+                "closure": "adapters/windsurf/closure.json",
+                "manifest": "dist/host-windsurf/manifest.json",
+            },
         ],
     }
 
@@ -270,6 +282,17 @@ def install_claude_guidance_payload(repo_root: Path, target_root: Path):
     return
 
 
+def install_windsurf_payload(repo_root: Path, target_root: Path):
+    commands_root = repo_root / "commands"
+    if commands_root.exists():
+        copy_tree(commands_root, target_root / "global_workflows")
+
+    mcp_template = repo_root / "mcp" / "servers.template.json"
+    mcp_config = target_root / "mcp_config.json"
+    if mcp_template.exists() and not mcp_config.exists():
+        copy_file(mcp_template, mcp_config)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", required=True)
@@ -289,7 +312,10 @@ def main():
         install_codex_payload(repo_root, target_root)
     elif mode == "preview-guidance":
         install_claude_guidance_payload(repo_root, target_root)
-    elif mode != "runtime-core":
+    elif mode == "runtime-core":
+        if adapter["id"] == "windsurf":
+            install_windsurf_payload(repo_root, target_root)
+    else:
         raise SystemExit(f"Unsupported adapter install mode: {mode}")
 
     write_json(

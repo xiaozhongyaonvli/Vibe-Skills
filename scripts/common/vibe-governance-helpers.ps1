@@ -227,8 +227,9 @@ function Resolve-VgoHostId {
         'claude' { return 'claude-code' }
         'claude-code' { return 'claude-code' }
         'cursor' { return 'cursor' }
+        'windsurf' { return 'windsurf' }
         default {
-            throw "Unsupported VCO host id: $resolved. Supported values: codex, claude-code, cursor"
+            throw "Unsupported VCO host id: $resolved. Supported values: codex, claude-code, cursor, windsurf"
         }
     }
 }
@@ -258,6 +259,12 @@ function Resolve-VgoDefaultTargetRoot {
                 return [System.IO.Path]::GetFullPath($env:CURSOR_HOME)
             }
             return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.cursor'))
+        }
+        'windsurf' {
+            if (-not [string]::IsNullOrWhiteSpace($env:WINDSURF_HOME)) {
+                return [System.IO.Path]::GetFullPath($env:WINDSURF_HOME)
+            }
+            return [System.IO.Path]::GetFullPath((Join-Path $homeDir '.codeium\windsurf'))
         }
         default {
             throw "Unsupported VCO host id: $resolvedHostId"
@@ -301,16 +308,21 @@ function Assert-VgoTargetRootMatchesHostIntent {
     $resolvedHostId = Resolve-VgoHostId -HostId $HostId
     $leaf = Split-Path -Leaf ([System.IO.Path]::GetFullPath($TargetRoot))
     $normalizedLeaf = if ([string]::IsNullOrWhiteSpace($leaf)) { '' } else { $leaf.Trim().ToLowerInvariant() }
+    $normalizedTargetPath = [System.IO.Path]::GetFullPath($TargetRoot).Replace('\', '/').TrimEnd('/').ToLowerInvariant()
+    $isClaudeRoot = ($normalizedLeaf -eq '.claude')
+    $isCodexRoot = ($normalizedLeaf -eq '.codex')
+    $isCursorRoot = ($normalizedLeaf -eq '.cursor')
+    $isWindsurfRoot = $normalizedTargetPath.EndsWith('/.codeium/windsurf')
 
     switch ($resolvedHostId) {
         'codex' {
-            if ($normalizedLeaf -eq '.claude') {
+            if ($isClaudeRoot -or $isWindsurfRoot) {
                 throw ([string]::Format(
-                    "TargetRoot '{0}' looks like a Claude Code home, but HostId resolved to 'codex'. Pass -HostId claude-code for preview guidance or use a Codex target root.",
+                    "TargetRoot '{0}' looks like a non-Codex host root, but HostId resolved to 'codex'. Pass the matching host id or use a Codex target root.",
                     $TargetRoot
                 ))
             }
-            if ($normalizedLeaf -eq '.cursor') {
+            if ($isCursorRoot) {
                 throw ([string]::Format(
                     "TargetRoot '{0}' looks like a Cursor home, but HostId resolved to 'codex'. Pass -HostId cursor for preview guidance or use a Codex target root.",
                     $TargetRoot
@@ -318,15 +330,29 @@ function Assert-VgoTargetRootMatchesHostIntent {
             }
         }
         'claude-code' {
-            if ($normalizedLeaf -eq '.codex') {
+            if ($isCodexRoot -or $isWindsurfRoot) {
                 throw ([string]::Format(
-                    "TargetRoot '{0}' looks like a Codex home, but HostId resolved to 'claude-code'. Use -HostId codex for the official closure lane or choose a Claude Code target root.",
+                    "TargetRoot '{0}' looks like a non-Claude host root, but HostId resolved to 'claude-code'. Pass the matching host id or use a Claude Code target root.",
                     $TargetRoot
                 ))
             }
-            if ($normalizedLeaf -eq '.cursor') {
+            if ($isCursorRoot) {
                 throw ([string]::Format(
-                    "TargetRoot '{0}' looks like a Cursor home, but HostId resolved to 'claude-code'. Pass -HostId cursor for preview guidance or choose a Claude Code target root.",
+                    "TargetRoot '{0}' looks like a Cursor home, but HostId resolved to 'claude-code'. Pass -HostId cursor for Cursor preview guidance or choose a Claude Code target root.",
+                    $TargetRoot
+                ))
+            }
+        }
+        'windsurf' {
+            if ($isCodexRoot -or $isClaudeRoot) {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a non-Windsurf host root, but HostId resolved to 'windsurf'. Pass the matching host id or use a Windsurf target root.",
+                    $TargetRoot
+                ))
+            }
+            if ($isCursorRoot) {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a Cursor home, but HostId resolved to 'windsurf'. Pass -HostId cursor for preview guidance or choose a Windsurf target root.",
                     $TargetRoot
                 ))
             }
@@ -341,6 +367,12 @@ function Assert-VgoTargetRootMatchesHostIntent {
             if ($normalizedLeaf -eq '.claude') {
                 throw ([string]::Format(
                     "TargetRoot '{0}' looks like a Claude Code home, but HostId resolved to 'cursor'. Use -HostId claude-code for Claude preview guidance or choose a Cursor target root.",
+                    $TargetRoot
+                ))
+            }
+            if ($isWindsurfRoot) {
+                throw ([string]::Format(
+                    "TargetRoot '{0}' looks like a Windsurf home, but HostId resolved to 'cursor'. Use -HostId windsurf for preview runtime-core or choose a Cursor target root.",
                     $TargetRoot
                 ))
             }
