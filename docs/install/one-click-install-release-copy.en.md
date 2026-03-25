@@ -36,8 +36,8 @@ The install assistant should:
 
 If you want to bring in your own workflows or skills afterward:
 
-- [`custom-workflow-onboarding.md`](./custom-workflow-onboarding.md)
-- [`custom-skill-governance-rules.md`](./custom-skill-governance-rules.md)
+- [`custom-workflow-onboarding.en.md`](./custom-workflow-onboarding.en.md)
+- [`custom-skill-governance-rules.en.md`](./custom-skill-governance-rules.en.md)
 
 If you want lower-level commands and boundary details:
 

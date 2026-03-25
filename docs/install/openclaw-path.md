@@ -1,4 +1,4 @@
-# OpenClaw 安装路径说明
+# OpenClaw 宿主说明
 
 本文档定义 OpenClaw 当前公开安装口径。
 

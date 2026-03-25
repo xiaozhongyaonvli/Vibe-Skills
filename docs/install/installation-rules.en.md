@@ -122,4 +122,4 @@ If the user chooses `Framework Only + Customizable Governance` / `minimal`, expl
 
 - this installs the governance foundation first
 - it does not mean the default workflow core is already complete
-- if they want to add their own workflows later, continue with [`custom-workflow-onboarding.md`](./custom-workflow-onboarding.md)
+- if they want to add their own workflows later, continue with [`custom-workflow-onboarding.en.md`](./custom-workflow-onboarding.en.md)

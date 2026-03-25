@@ -60,8 +60,8 @@ If you are a regular user:
 
 1. [`one-click-install-release-copy.en.md`](./one-click-install-release-copy.en.md)
 2. the matching prompt file
-3. [`custom-workflow-onboarding.md`](./custom-workflow-onboarding.md)
-4. [`custom-skill-governance-rules.md`](./custom-skill-governance-rules.md)
+3. [`custom-workflow-onboarding.en.md`](./custom-workflow-onboarding.en.md)
+4. [`custom-skill-governance-rules.en.md`](./custom-skill-governance-rules.en.md)
 
 If you are an advanced user:
 
@@ -71,5 +71,5 @@ If you are an advanced user:
 
 ## Custom Extension Docs
 
-- [`custom-workflow-onboarding.md`](./custom-workflow-onboarding.md): how to bring a new workflow into governance and routing
-- [`custom-skill-governance-rules.md`](./custom-skill-governance-rules.md): governance rules for custom skills and workflows
+- [`custom-workflow-onboarding.en.md`](./custom-workflow-onboarding.en.md): how to bring a new workflow into governance and routing
+- [`custom-skill-governance-rules.en.md`](./custom-skill-governance-rules.en.md): governance rules for custom skills and workflows
