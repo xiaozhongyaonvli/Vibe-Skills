@@ -19,14 +19,7 @@
 - [`prompts/full-version-update.md`](./prompts/full-version-update.md)
 - [`prompts/framework-only-update.md`](./prompts/framework-only-update.md)
 
-## 四个宿主的真实语义
 
-| 宿主 | 模式 | 默认根目录 | 仓库当前负责什么 | 不应伪装成什么 |
-| --- | --- | --- | --- | --- |
-| `codex` | governed | `~/.codex` | governed runtime、settings/MCP 建议、deep check | hook 已自动完成、治理 AI online readiness 已完成 |
-| `claude-code` | 支持的安装与使用路径 | `~/.claude` | 安装路径、使用说明、health check | 真实 settings 已被接管 |
-| `cursor` | 支持的安装与使用路径 | `~/.cursor` | 安装路径、使用说明、health check | Cursor 宿主原生设置与扩展面已被仓库接管 |
-| `windsurf` | 支持的安装与使用路径 + runtime adapter | `~/.codeium/windsurf` | shared runtime payload、按需物化 `mcp_config.json` / `global_workflows/`、health check | Windsurf 宿主原生设置已被仓库完全接管 |
 
 ## 你应该期待 AI 怎么做
 
@@ -40,12 +33,6 @@ AI 安装助手应当：
 - 区分“安装完成”和“在线能力就绪”
 - 安装后给出简洁结果摘要和手动后续动作
 
-## 常见 truth-first 口径
-
-- `codex`：最完整，但 hook 仍冻结；`OPENAI_*` 与 `VCO_AI_PROVIDER_*` 不是一回事
-- `claude-code`：提供支持的安装与使用路径，不覆盖真实 `~/.claude/settings.json`
-- `cursor`：提供支持的安装与使用路径，不接管真实 `~/.cursor/settings.json`
-- `windsurf`：提供支持的安装与使用路径，且已接入 runtime adapter；只落地 runtime payload 与必要物化文件
 
 ## 安装完之后再做什么
 
