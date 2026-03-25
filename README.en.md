@@ -18,7 +18,7 @@
 
 ### More than a skill collection — your **personal AI operating system**
 
-<sub>Industrial-grade runtime framework integrating hundreds of Skills, MCP integrations, and governance rules</sub>
+Industrial-grade runtime framework integrating hundreds of Skills, MCP integrations, and governance rules
 
 <br/>
 
@@ -45,7 +45,7 @@
 
 <br/><br/>
 
-<sub>🧠 Planning · 🛠️ Engineering · 🤖 AI · 🔬 Research · 🧬 Life Sciences · 🎨 Visualization · 🎬 Multimedia</sub>
+🧠 Planning · 🛠️ Engineering · 🤖 AI · 🔬 Research · 🧬 Life Sciences · 🎨 Visualization · 🎬 Multimedia
 
 <br/>
 
@@ -63,27 +63,21 @@
 
 <br/><br/>
 
-<sub>
-  <kbd>Install</kbd> &nbsp;→&nbsp;
-  <kbd>/vibe or $vibe</kbd> &nbsp;→&nbsp;
-  <kbd>Smart Routing</kbd> &nbsp;→&nbsp;
-  <kbd>M / L / XL Execution</kbd> &nbsp;→&nbsp;
-  <kbd>Governance Verification</kbd> &nbsp;→&nbsp;
-  <kbd>✅ Delivery</kbd>
-</sub>
+<kbd>Install</kbd> &nbsp;→&nbsp;
+<kbd>/vibe or $vibe</kbd> &nbsp;→&nbsp;
+<kbd>Smart Routing</kbd> &nbsp;→&nbsp;
+<kbd>M / L / XL Execution</kbd> &nbsp;→&nbsp;
+<kbd>Governance Verification</kbd> &nbsp;→&nbsp;
+<kbd>✅ Delivery</kbd>
 
 </div>
 
----
-
 ## 📋 Table of Contents
 
-- [Why is it powerful?](#-why-is-it-powerful)
-- [What makes it different?](#-what-makes-it-different)
+- [Core Advantages](#-what-makes-it-different)
 - [Intelligent Routing](#-intelligent-routing-how-340-skills-collaborate-without-conflict)
+- [Memory System](#-memory-system-ai-that-truly-remembers)
 - [Full Capability Map](#-full-capability-map-your-all-in-one-workbench)
-- [Who is it for?](#-who-is-it-for)
-- [Standing on the Shoulders of Giants](#-standing-on-the-shoulders-of-giants)
 - [Getting Started](#-getting-started)
 
 <br/>
@@ -272,6 +266,59 @@ The governance framework adds ~30k initial context overhead, but does not cause 
 
 ---
 
+## 🧠 Memory System: AI That Truly Remembers
+
+Sound familiar?
+
+<div align="center">
+
+| ❌ Pain Point | ✅ VibeSkills Solution | Component |
+|:---|:---|:---:|
+| Re-explaining project context every new session | Architecture decisions & conventions auto-loaded on startup | `Serena` |
+| AI hits the same bugs again; insights vanish with context | One sentence saves to Obsidian + GitHub permanently | `knowledge-steward` |
+| Long tasks — AI gradually "forgets" early context | In-session semantic vector cache, instant retrieval | `ruflo` |
+| Cross-project knowledge can't accumulate | Entity relationship graphs grow richer over time | `Cognee` |
+| Long task interrupted — hard to hand off to new agent | Auto-folds into working + tool + evidence memory | `deepagent-memory-fold` |
+
+</div>
+
+<br/>
+
+<details>
+<summary><b>📐 Expand: Four-Tier Architecture, Memory Skills & Governance Rules</b></summary>
+
+<br/>
+
+VibeSkills builds a **four-tier memory system** — one authoritative component per memory need:
+
+| Tier | Component | Scope | Core Purpose |
+|:---:|:---:|:---:|:---|
+| **L1 Session** | `state_store` | Current session | Execution progress, intermediate results, temp state — always-on "workbench" |
+| **L2 Project** | `Serena` | Current project | Architecture decisions, conventions — written only after explicit user confirmation |
+| **L3 Short-term Semantic** | `ruflo` | Intra-session | Vector cache for fast context retrieval within long-running tasks |
+| **L4 Long-term Graph** | `Cognee` | Cross-session | Entity linking, relationship graphs, long-horizon knowledge accumulation |
+
+> **Optional extensions**: `mem0` as a personal preference backend (opt-in); `Letta` provides memory block mapping vocabulary — neither replaces the four canonical tiers.
+
+<br/>
+
+**Three Dedicated Memory Skills**
+
+| Skill | Role | Trigger |
+|:---:|:---|:---|
+| `knowledge-steward` | **Knowledge Keeper**: Saves insights, bug fixes, and prompts to Obsidian + GitHub permanently | "save this prompt" / "log this bug" / "save this insight" |
+| `digital-brain` | **Second Brain**: Structured personal knowledge base — identity, content, network, retrospectives | Invoke directly; ideal for a personal knowledge OS |
+| `deepagent-memory-fold` | **Context Fold**: Compresses large context into structured working/tool/evidence memory for seamless handoff | Triggers at context limit or manually |
+
+<br/>
+
+**Governance**: Single source of truth (no dual-track) · Explicit write only (`Serena` requires confirmation) · `episodic-memory` permanently disabled · `mem0` limited to personal preferences · Kill switch on every external backend
+
+</details>
+
+
+---
+
 ## ✦ Full Capability Map: Your All-in-One Workbench
 
 Unrolled across a "real workflow", VibeSkills has laid out a complete **end-to-end capability chain**:
@@ -395,6 +442,11 @@ Unrolled across a "real workflow", VibeSkills has laid out a complete **end-to-e
 
 ## 👥 Who is it for?
 
+<details>
+<summary>Is this for you? Click to expand</summary>
+
+<br/>
+
 <div align="center">
 
 | Audience | Description |
@@ -407,6 +459,8 @@ Unrolled across a "real workflow", VibeSkills has laid out a complete **end-to-e
 </div>
 
 > _If you're looking for a single small script, this may be overkill. But if you want to use AI more reliably, smoothly, and sustainably — this is your indispensable foundation._
+
+</details>
 
 <br/>
 
@@ -454,20 +508,15 @@ We know that building in isolation can't keep pace with the rapidly evolving AI 
 
 ---
 
-### 📚 Navigation & Guides
-<div align="center">
-<div align="center">
-<table>
-<tr>
-<td width="50%">
+<details>
+<summary><b>📚 Documentation & Installation Guides (click to expand)</b></summary>
+
+<br/>
 
 **Understand the system**
 
 - 📖 [System architecture & philosophy](./docs/quick-start.en.md)
 - 📜 [VibeSkills Manifesto](./docs/manifesto.en.md)
-
-</td>
-<td width="50%">
 
 **Installation & Configuration**
 
@@ -477,16 +526,11 @@ We know that building in isolation can't keep pace with the rapidly evolving AI 
 - 🛠 [Advanced host / lane reference](./docs/install/recommended-full-path.en.md)
 - 🧊 [Cold start & other environments](./docs/cold-start-install-paths.en.md)
 
-</td>
-</tr>
-</table>
-</div>
+</details>
 
 <br/>
 
-
-
----
+<div align="center">
 
 ### 🤝 Join the Community · Build Together
 
@@ -498,6 +542,9 @@ Give it a try! If you have questions, ideas, or suggestions, feel free to open a
 
 Whether it's fixing bugs, improving performance, adding features, or improving documentation — every PR is deeply appreciated.
 
+```
+Fork → Modify → Pull Request → Merge ✅
+```
 
 <br/>
 
