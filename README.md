@@ -456,7 +456,7 @@ VibeSkills 的路由机制确保：
 ---
 
 ### 📚 导航与指引
-<div align="center">
+
 <table>
 <tr>
 <td width="50%">
@@ -481,8 +481,22 @@ VibeSkills 的路由机制确保：
 </tr>
 </table>
 
+<br/>
 
+> [!NOTE]
+> **本次更新亮点**
+>
+> - ✨ 安装入口收束为两个版本：`全量版本 + 可自定义治理` / `仅核心框架 + 可自定义治理`
+> - ⚡️ 安装方式改为**提示词优先**：AI 先确认宿主与版本，再映射到对应 profile 执行安装
+> - 🧭 旧 `workflow` lane 保留作为兼容/过渡，不再作为主版本展示
+> - 🧩 自定义 workflow/skill 统一走受治理接入路径，纳入 canonical router 管控
+> - 🔄 升级提示：`skills/custom/` 与 `config/custom-workflows.json` 的自定义内容通常可保留；直接修改官方 runtime/skill/mcp/rules 文件在更新时可能被覆盖
 
+<br/>
+
+---
+
+<div align="center">
 
 ---
 
@@ -496,6 +510,9 @@ VibeSkills 的路由机制确保：
 
 无论是修复 bug、提升性能、添加新功能还是完善文档，你的每一个 PR 都弥足珍贵。
 
+```
+Fork → 修改 → Pull Request → 合并 ✅
+```
 
 <br/>
 

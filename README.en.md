@@ -1,94 +1,155 @@
 <div align="right">
-  <b>🇬🇧 English</b> | <a href="./README.md">🇨🇳 中文</a>
+  <b>🇬🇧 English</b> &nbsp;|&nbsp; <a href="./README.md">🇨🇳 中文</a>
 </div>
 
+<br/>
+
 <div align="center">
-  <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills">
-    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=45&pause=1000&color=7B61FF&center=true&vCenter=true&width=600&height=100&lines=Vibe+Skills;Your+AI+OS" alt="VibeSkills Logo" />
-  </a>
 
-  <p align="center">
-    <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/stargazers">
-      <img src="https://img.shields.io/github/stars/foryourhealth111-pixel/Vibe-Skills?style=for-the-badge&logo=github&color=7B61FF&label=STARS" alt="stars">
-    </a>
-    <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/network/members">
-      <img src="https://img.shields.io/github/forks/foryourhealth111-pixel/Vibe-Skills?style=for-the-badge&logo=git&color=45a1ff&label=FORKS" alt="forks">
-    </a>
-    <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/pulse">
-      <img src="https://img.shields.io/github/last-commit/foryourhealth111-pixel/Vibe-Skills?style=for-the-badge&logo=git-lfs&color=32CD32&label=MOMENTUM" alt="last commit">
-    </a>
-    <a href="https://gitcgr.com/foryourhealth111-pixel/Vibe-Skills">
-      <img src="https://gitcgr.com/badge/foryourhealth111-pixel/Vibe-Skills.svg" alt="gitcgr" />
-    </a>
-  </p>
+<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=45&pause=1000&color=7B61FF&center=true&vCenter=true&width=600&height=100&lines=Vibe+Skills;Your+AI+OS" alt="VibeSkills Typing Logo" />
+</a>
 
+<br/>
 
+<img src="./logo.png" width="260px" alt="VibeSkills Logo"/>
 
-  <p align="center">
-    <img src="https://komarev.com/ghpvc/?username=vibe-skills-foryourhealth&label=NODES%20ACTIVE&color=0078d7&style=flat-square" alt="Visitors">
-    <img src="https://img.shields.io/badge/Architecture-VCO_Runtime-orange?style=flat-square" alt="Arch">
-    <img src="https://img.shields.io/badge/Skills-340%2B-blueviolet?style=flat-square" alt="Skills Count">
-  </p>
+<br/><br/>
 
-  <br/>
-<img src="./logo.png" width="300px" alt="VibeSkills Logo">
-  <h3 align="center"><b>More than a skill collection. It is your personal AI operating system.</b></h3>
-  <p align="center">
-    An industrial-grade runtime framework integrating hundreds of Skills, MCP entry points, and governance rules.
-  </p>
+### More than a skill collection — your **personal AI operating system**
 
-  <p align="center">
-    <sub>🧠 Planning · 🛠️ Engineering · 🤖 AI · 🔬 Research · 🧬 Life Sciences · 🎨 Visualization · 🎬 Multimedia</sub>
-  </p>
+<sub>Industrial-grade runtime framework integrating hundreds of Skills, MCP integrations, and governance rules</sub>
+
+<br/>
+
+<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/stargazers">
+  <img src="https://img.shields.io/github/stars/foryourhealth111-pixel/Vibe-Skills?style=for-the-badge&logo=github&color=7B61FF&label=STARS" alt="stars">
+</a>
+<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/network/members">
+  <img src="https://img.shields.io/github/forks/foryourhealth111-pixel/Vibe-Skills?style=for-the-badge&logo=git&color=45a1ff&label=FORKS" alt="forks">
+</a>
+<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/pulse">
+  <img src="https://img.shields.io/github/last-commit/foryourhealth111-pixel/Vibe-Skills?style=for-the-badge&logo=git-lfs&color=32CD32&label=MOMENTUM" alt="last commit">
+</a>
+<a href="https://gitcgr.com/foryourhealth111-pixel/Vibe-Skills">
+  <img src="https://gitcgr.com/badge/foryourhealth111-pixel/Vibe-Skills.svg" alt="gitcgr" />
+</a>
+
+<br/><br/>
+
+<img src="https://komarev.com/ghpvc/?username=vibe-skills-foryourhealth&label=NODES+ACTIVE&color=0078d7&style=for-the-badge" alt="Visitors">
+&nbsp;
+<img src="https://img.shields.io/badge/Architecture-VCO_Runtime-orange?style=for-the-badge" alt="Arch">
+&nbsp;
+<img src="https://img.shields.io/badge/Skills-340%2B-blueviolet?style=for-the-badge" alt="Skills Count">
+
+<br/><br/>
+
+<sub>🧠 Planning · 🛠️ Engineering · 🤖 AI · 🔬 Research · 🧬 Life Sciences · 🎨 Visualization · 🎬 Multimedia</sub>
+
+<br/>
+
+<a href="./docs/install/one-click-install-release-copy.en.md">
+  <img src="https://img.shields.io/badge/⚡_Get_Started-7B61FF?style=for-the-badge" alt="Install">
+</a>
+&nbsp;
+<a href="./docs/quick-start.en.md">
+  <img src="https://img.shields.io/badge/📖_Quick_Start-2d3748?style=for-the-badge" alt="Docs">
+</a>
+&nbsp;
+<a href="./README.md">
+  <img src="https://img.shields.io/badge/🇨🇳_中文-45a1ff?style=for-the-badge" alt="Chinese">
+</a>
+
+<br/><br/>
+
+<sub>
+  <kbd>Install</kbd> &nbsp;→&nbsp;
+  <kbd>/vibe or $vibe</kbd> &nbsp;→&nbsp;
+  <kbd>Smart Routing</kbd> &nbsp;→&nbsp;
+  <kbd>M / L / XL Execution</kbd> &nbsp;→&nbsp;
+  <kbd>Governance Verification</kbd> &nbsp;→&nbsp;
+  <kbd>✅ Delivery</kbd>
+</sub>
+
 </div>
 
 ---
+
+## 📋 Table of Contents
+
+- [Why is it powerful?](#-why-is-it-powerful)
+- [What makes it different?](#-what-makes-it-different)
+- [Intelligent Routing](#-intelligent-routing-how-340-skills-collaborate-without-conflict)
+- [Full Capability Map](#-full-capability-map-your-all-in-one-workbench)
+- [Who is it for?](#-who-is-it-for)
+- [Standing on the Shoulders of Giants](#-standing-on-the-shoulders-of-giants)
+- [Getting Started](#-getting-started)
 
 <br/>
 
 > [!IMPORTANT]
-> **🎯 Our core vision:**
-> Vibe Skills will evolve with the times, ensuring usability and efficiency while lowering the learning curve for the general public regarding cutting-edge Vibecoding technology, reducing cognitive anxiety and high learning costs associated with new technologies.
-> Here, regardless of your programming background, you can directly access a collection of today's most advanced AI technologies with a very low barrier to entry. **Enabling everyone to enjoy the productivity leap brought by AI.**
+> ### 🎯 Core Vision
+>
+> VibeSkills evolves with the times — ensuring it stays genuinely useful while **dramatically lowering the barrier to cutting-edge vibecoding technology**, eliminating the cognitive anxiety and steep learning curve that comes with new AI tools.
+>
+> **Whether or not you have a programming background, you can directly harness the most advanced AI capabilities with minimal effort.**
+> Productivity gains from AI should be available to everyone.
 
-### 📊 Why is it so powerful?
-
-**VibeSkills** runs on **VCO**. It is not a one-off utility or a script that only knows how to patch code. It is a highly integrated and governed **super-capability network**:
-
-|                                                                 🧩 Skill Modules                                                                 |                                                           🌍 Ecosystem Integration                                                           |                                                                     ⚖️ Governance Rules                                                                     |
-| :----------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| <h2 align="center">340+</h2><div align="center">Directly callable Skills, covering the full chain from requirement planning to Execution. </div> | <h2 align="center">19+</h2><div align="center">High-value upstream open-source projects and best-practice sources absorbed and adapted</div> | <h2 align="center">129</h2><div align="center">Configuration-based policies and contracts to keep execution stable, traceable, and resistant to drift</div> |
+<br/>
 
 ---
 
-## ✨ Why is it different?
+## 📊 Why is it powerful?
 
-Traditional Skills repositories answer: _"What tools do I have here?"_ VibeSkills goes straight after the core pain point of serious AI users: _"How do I finish work reliably?"_
+The runtime core behind **VibeSkills** is **VCO**. This is not a single-point tool or a "code completion" script — it is a **super-capability network** that has been deeply integrated and governed:
 
-| ❌ Traditional pain points you may have lived through                                                                                                                                                                                        | ✅ The VibeSkills answer we are building                                                                                                                                                                                                                                                                                    |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Sleeping skills**: hundreds of capabilities sit in the repo, but in real scenarios the AI does not remember to use them. Activation stays low.                                                                                             | **🧠 Intelligent routing**: the system figures out what to call based on context and logic, so you do not need to memorize a skill catalog.                                                                                                                                                                                 |
-| **Black-box sprinting**: the AI starts building before clarifying requirements. It looks fast, but the direction drifts, and the project slowly turns into a black box.                                                                      | **🧭 Governed workflow**: the sequence is constrained on purpose. Clarification, verification, and traceability are folded into one unified flow, and every step stays auditable.                                                                                                                                           |
-| **Conflicting components**: plugins and workflows fight each other, pollute the environment, or fall into loops because nobody is coordinating them.                                                                                         | **🧩 Global governance**: 129 contract rules define safety boundaries and rollback mechanisms, protecting the runtime's long-term stability.                                                                                                                                                                                |
-| Messy Workspaces: AI workspaces often lack standardization. Over time, repositories become cluttered, hindering the next agent from taking over. Re-evaluating the architecture for a new agent leads to missed details and broken handoffs. | Semantic Directory Governance: Employs a standardized file storage architecture. It ensures that any work processed through this system is strictly organized, allowing the AI in subsequent sessions to instantly understand what files belong in which directories 👆.                                                    |
-| AI Quirks & Illusions: Deleting primary files by mistake when clearing backups; a bad habit of writing silent fallback mechanisms, then confidently claiming early success while the primary functionality is actually quite poor.           | Built-in Guardrails: Includes strict rules, such as prohibiting bulk file deletion via commands (forcing one-by-one deletion to prevent accidents). Silent automated fallbacks are banned; any necessary fallback must trigger an explicit warning to the user 👆.                                                          |
-| High Cognitive Load: Users must rely on their own experience to regulate AI workflows, requiring steep learning curves and constant vigilance.                                                                                               | Guided Framework: The system actively guides the user through clarifying requirements, confirming execution plans, locking in workflow documents, and running concurrent multi-agents (allocating tasks and auto-invoking skills based on the plan), down to automated testing and iteration until the task is complete 👆. |
+<br/>
 
-### About Token Consumption
+<div align="center">
 
-**With so many skills available, will the sheer number of options lead to a token explosion?**
+|                              🧩 Skill Modules                               |                            🌍 Ecosystem                            |                               ⚖️ Governance Rules                                |
+| :---------------------------------------------------------------------: | :---------------------------------------------------------------: | :----------------------------------------------------------------------: |
+| <h2>340+</h2>Directly callable Skills<br/>covering the full chain from requirements to delivery | <h2>19+</h2>Absorbed high-value upstream<br/>open-source projects and best practices | <h2>129</h2>Policy rules and contracts<br/>ensuring stable, traceable, divergence-free execution |
 
-Under the governance framework, there will be additional token consumption (approximately 30k initial context), but it won't lead to a token explosion. This is because routing doesn't simply throw all options at the model, but uses an intelligent triggering mechanism: **user command → AI-assisted governance discovers intent keywords → keywords trigger skill routing**.
+</div>
+
+<br/>
 
 ---
 
-## 🔀 Intelligent Routing Mechanism: How 340+ Skills Coordinate Without Conflict
+## ✨ What makes it different?
 
-Facing 340+ skills, you might worry: _"With so many similar skills, will they fight each other? How does the system know which one to use?"_
+> Traditional skill repos answer: _"What tools do I have?"_
+> **VibeSkills tackles the core pain point of heavy AI users: _"How do I reliably get work done?"_**
 
-### How Routing Works
+<br/>
 
-VibeSkills uses the **Canonical Router** as the single routing decision center:
+<div align="center">
+
+| ❌ &nbsp;Traditional Pain Points (you've probably felt these) | ✅ &nbsp;VibeSkills Solutions (what we've built) |
+|:---|:---|
+| **Skills never activate**: Hundreds of capabilities in the repo, but AI rarely remembers to use them — activation rate is extremely low. | **🧠 Intelligent Routing**: The system automatically routes to the right skill based on context — no need to memorize a skill list. |
+| **Blind execution**: AI dives in without clarifying requirements — fast but off-target, projects gradually become black boxes. | **🧭 Governed Workflow**: Clarify → Verify → Trace is enforced in a unified process; every step is auditable. |
+| **Conflicting tools**: Lack of coordination between plugins and workflows leads to environment pollution or infinite loops. | **🧩 Global Governance**: 129 contract rules define safety boundaries and fallback mechanisms for long-term stability. |
+| **Messy workspace**: After extended use, repos become cluttered; new Agents miss project details when taking over, causing handoff gaps. | **📁 Semantic Directory Governance**: Fixed-architecture file storage so any new AI conversation instantly understands the project context. |
+| **AI bad habits**: Deletes main files while clearing backups; writes silent fallbacks then confidently claims "it's done". | **🛡️ Built-in Safety Rules**: Batch file deletion is prohibited (one file at a time only); fallback mechanisms must always show explicit warnings. |
+| **Manual workflow discipline**: Users must maintain their own AI collaboration process from experience — high learning cost. | **🚦 Framework-guided end-to-end**: Requirements → Plan → Multi-agent execution → Automated test iteration — fully managed. |
+| **Skill dispatch chaos in multi-agent runs**: Hard to assign the right skills to each agent for different tasks. | **🤖 Automatic Skill Dispatch**: Multi-agent workflows automatically assign the corresponding Skills to each Agent's task. |
+
+</div>
+
+<br/>
+
+---
+
+## 🔀 Intelligent Routing: How 340+ Skills Collaborate Without Conflict
+
+With 340+ skills, you might wonder: _"Won't similar skills conflict? How does the system know which one to use?"_
+
+### How routing works
+
+VibeSkills uses a **Canonical Router** as the single authoritative routing decision center:
 
 ```mermaid
 graph LR
@@ -97,7 +158,7 @@ graph LR
     C --> D[Keyword Extraction]
     D --> E[Skill Matching]
     E --> F[Conflict Detection]
-    F --> G[Priority Sorting]
+    F --> G[Priority Ranking]
     G --> H[Routing Decision]
     H --> I[Execute Skill]
 
@@ -105,324 +166,390 @@ graph LR
     style F fill:#FF9800,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
-### One Skill or Multiple?
+VibeSkills follows a `Clarify ➔ Plan ➔ Execute ➔ Verify` governed workflow to ensure every task goes through complete quality control:
 
-**Core Principle: A task typically routes to one primary skill, but that skill can call other skills as sub-processes.**
+- **Requirements Clarification**: Skills like `speckit-clarify` define clear boundaries and acceptance criteria
+- **Architecture Planning**: Skills like `aios-architect` design the implementation path
+- **Execution Layer**: 340+ skills called on demand to complete the actual work
+- **Quality Verification**: Skills like `tdd-guide` and `code-review` ensure delivery quality
 
-- **Single Primary Route**: For a user's clear task, the Canonical Router selects **one best-matching primary skill**
-- **Skill Composition**: The primary skill can call other skills as needed during execution (e.g., `vibe` can call `speckit-clarify`, `aios-architect`, etc.)
-- **Governed Coordination**: Multiple skills coordinate through governance rules, not random combinations
-
-### Handling Conflicts Between Similar Skills
-
-When multiple skills seem capable of completing a task, the router avoids conflicts through these mechanisms:
-
-#### 1. **Priority Rules**
-Each skill has clear priority and applicable scenarios:
-- `vibe`: Governed workflow, requires complete requirement clarification and planned execution
-- `autonomous-builder`: Autonomous building, suitable for clear development tasks
-- `speckit-implement`: Standardized implementation, suitable for scenarios with clear specs
-
-#### 2. **Context Matching**
-The router analyzes:
-- Task complexity (simple modification vs complex project)
-- Whether multi-stage execution is needed
-- Whether multi-agent coordination is needed
-- User's explicit preference (e.g., using `/vibe` explicitly)
-
-#### 3. **Mutual Exclusion Rules**
-The 129 governance rules include mutual exclusion rules, such as:
-- Cannot run multiple skills that modify the same file simultaneously
-- Cannot run conflicting workflow modes simultaneously
-- Certain skill combinations are explicitly prohibited
-
-#### 4. **Degradation and Fallback**
-If the preferred skill is unavailable or fails:
-- The router tries alternative skills by priority
-- Clear fallback strategies and error handling
-- Won't fall into infinite loops or retries
-
-### Real Example
-
-**Scenario: User says "Help me refactor this project"**
-
-1. **Intent Recognition**: This is a complex refactoring task
-2. **Keyword Extraction**: refactor, project, code quality
-3. **Skill Matching**:
-   - Candidate 1: `vibe` (governed workflow, suitable for complex tasks)
-   - Candidate 2: `autonomous-builder` (autonomous building)
-   - Candidate 3: `systematic-debugging` (systematic debugging)
-4. **Conflict Detection**: These skills don't conflict, but need to choose the most suitable
-5. **Priority Sorting**:
-   - If user used `/vibe`, directly choose `vibe`
-   - If task needs multi-stage execution, choose `vibe`
-   - If task boundaries are clear, might choose `autonomous-builder`
-6. **Routing Decision**: Choose `vibe`, because refactoring typically requires:
-   - Requirement clarification (which parts need refactoring)
-   - Plan formulation (refactoring steps)
-   - Phased execution
-   - Verification and testing
-
-### Why This Design?
-
-Traditional skill repositories let AI "freely choose", resulting in:
-- ❌ AI can't remember what skills exist
-- ❌ Similar skills conflict with each other
-- ❌ Execution path is unpredictable
-
-VibeSkills' routing mechanism ensures:
-- ✅ **Determinism**: Same task always follows same routing logic
-- ✅ **Traceability**: Every routing decision has clear reasoning
-- ✅ **Controllability**: Users can override default routing through explicit invocation (e.g., `/vibe`)
-- ✅ **Stability**: 129 governance rules prevent conflicts and divergence
-
-### M/L/XL Execution Grades
-
-After selecting the main skill, the router automatically determines the execution grade based on task complexity:
-
-- **M (Medium)**: Narrow execution, usually single-agent or tightly scoped work
-- **L (Large)**: Medium-complexity work that needs design, planning, review, and bounded subagent coordination
-- **XL (Extra Large)**: Larger work that benefits from parallelism, longer execution waves, and multi-agent orchestration
-
-These three grades are **internal execution grades**. The system chooses them automatically after requirement clarification and before plan execution, based on task complexity, parallelism, and governance needs. Users only need to invoke `/vibe` or `$vibe`, and the system will automatically determine which grade to use.
-
-**Grade Selection Logic**:
-- By default, routing automatically decides based on task content
-- `L` is usually more restrained and token-efficient
-- `XL` trades more tokens for parallelism and execution time
-
-**Explicit Preference**: You can also express a grade preference in your request, for example:
-```text
-I want you to execute this task according to the plan and start an XL-grade workflow /vibe
-```
-
-This should be understood as a strong routing hint rather than a way to bypass governance and hard-force a grade.
+> [!TIP]
+> **Built-in CRON support**: Explicitly enable it in your request to let vibe continuously advance tasks on a schedule.
+> ```
+> I want you to continuously push forward XXX task based on cron, completing: XXXX $vibe
+> ```
 
 ---
 
-## ✦ Panoramic Capability Map: Your all-in-one workspace
+### Why this design?
 
-If you unfold these 340 skills along real-world workflows, VibeSkills has already laid out an end-to-end capability chain for you.
+Traditional skill repos let AI "freely choose" — the result:
+
+- ❌ AI can't remember what skills exist
+- ❌ Similar skills conflict with each other
+- ❌ Execution paths are unpredictable
+
+VibeSkills routing guarantees:
+
+- ✅ **Determinism**: Same task always follows the same routing logic
+- ✅ **Traceability**: Every routing decision has a clear rationale
+- ✅ **Control**: Users can override default routing via explicit invocation (e.g. `/vibe`)
+- ✅ **Stability**: 129 governance rules prevent conflicts and divergence
+
+---
+
+### M / L / XL Execution Levels
+
+After selecting the primary skill, the router also automatically determines the execution level based on task complexity:
+
+<div align="center">
+
+| Level | Use Case | Characteristics |
+|:---:|:---|:---|
+| **M** | Narrow-scope work with clear boundaries | Single-agent, token-efficient, fast response |
+| **L** | Medium complexity requiring design, planning, and review | Multi-phase, restrained, controllable |
+| **XL** | Large tasks — parallelizable, long-running, multi-agent wave execution | Auto-dispatches corresponding Skills, high parallelism |
+
+</div>
+
+> The system automatically selects the level after requirements clarification, before plan execution. Users only need to invoke `/vibe` or `$vibe`.
+>
+> You can also express an explicit preference:
+> ```text
+> Please execute this task according to the plan, launching XL-level workflow /vibe
+> ```
+
+---
+
+<details>
+<summary><b>🔍 Routing FAQ (click to expand)</b></summary>
+
 <br/>
-| Capability Domain | Covered Work Surface | Representative Engines |
-| :--- | :--- | :--- |
-| **💡 Requirements and clarification** | Refuse black-box starts. Turn vague ideas into clear, testable problem definitions with boundaries. | `brainstorming`, `speckit-clarify` |
-| **📋 Planning and decomposition** | Break large goals into specs, plans, tasks, milestones, and execution flows. | `writing-plans`, `speckit-specify`, `aios-po` |
-| **🏗️ Architecture and selection** | Design frontend/backend boundaries, interfaces, data layers, deployment layers, and technical tradeoffs. | `aios-architect`, `architecture-patterns` |
-| **💻 Development and implementation** | Build new features, scaffold projects, integrate engineering systems, and land precise cross-file changes. | `autonomous-builder`, `speckit-implement` |
-| **🔧 Debugging and refactoring** | Go beyond surface patching. Locate failures, analyze root causes, and restore project-level maintainability. | `error-resolver`, `systematic-debugging` |
-| **🛡️ Testing and quality control** | Unit tests, regression validation, and quality gates so "verify before completion" is enforced in practice. | `tdd-guide`, `aios-qa`, `code-review` |
-| **🚀 Collaboration and release** | Handle issues, PRs, CI repairs, review feedback, and automated deployment. | `aios-devops`, `gh-fix-ci`, `vercel-deploy` |
-| **🤖 Composite workflows** | Freeze requirements, dispatch work, coordinate multiple agents, keep execution traces, and clean environments. | `vibe`, `swarm_*`, `hive-mind-advanced` |
-| **🔌 External ecosystem access** | Connect browsers, web extraction, design files, third-party services, and context memory. | `mcp-integration`, `playwright`, `scrapling` |
-| **📊 Data and AI engineering** | Covers EDA, cleaning, statistics, model training, RAG retrieval, and experiment tracking. | `senior-ml-engineer`, `statistical-analysis` |
-| **🔬 Research and life sciences** | **A standout domain**: literature review, bioinformatics, single-cell analysis, and drug discovery. | `literature-review`, `biopython`, `scanpy` |
-| **📐 Mathematics and professional computing** | Symbolic derivation, Bayesian modeling, multi-objective optimization, simulation, and even quantum computing. | `sympy`, `pymc-bayesian-modeling`, `qiskit` |
-| **🎨 Multimedia and presentation** | Interactive charts, scientific figures, image generation, speech synthesis, and video asset production. | `plotly`, `generate-image`, `video-studio` |
+
+**One route or multiple per task?**
+
+Core principle: A task typically routes to one primary skill, but that skill can invoke others as sub-processes.
+
+- **Single primary route**: The Canonical Router selects **the single best-matching primary skill**
+- **Skill composition**: The primary skill can invoke others as needed during execution (e.g. `vibe` can invoke `speckit-clarify`, `aios-architect`, etc.)
+- **Governed coordination**: Multi-skill collaboration is controlled by governance rules, not arbitrary combinations
+
+<br/>
+
+**How are conflicts between similar skills handled?**
+
+When multiple skills appear capable of completing a task, the router avoids conflicts through:
+
+1. **Priority rules**: Each skill has a clear priority and applicable scenario
+2. **Context matching**: Analyzes task complexity, multi-phase needs, and explicit user preferences
+3. **Mutual exclusion rules**: 129 rules include exclusion rules preventing conflicting combinations
+4. **Graceful degradation**: When the preferred skill is unavailable, fallback by priority — no infinite loops
+
+<br/>
+
+**Will too many options cause token explosion?**
+
+No. Routing doesn't dump all options into the model — it uses a smart trigger mechanism:
+
+```
+User command → AI-assisted governance extracts intent keywords → keywords trigger skill routing
+```
+
+The governance framework adds ~30k initial context overhead, but does not cause token explosion.
+
+<br/>
+
+**Real example: User says "Help me refactor this project"**
+
+1. Intent recognition → Complex refactoring task
+2. Keyword extraction → refactor, project, code quality
+3. Skill matching → `vibe` / `autonomous-builder` / `systematic-debugging`
+4. Routing decision → Choose `vibe` (refactoring needs multi-phase: clarify → plan → execute → verify)
+
+</details>
+
+<br/>
+
+---
+
+## ✦ Full Capability Map: Your All-in-One Workbench
+
+Unrolled across a "real workflow", VibeSkills has laid out a complete **end-to-end capability chain**:
+
+<br/>
+
+<div align="center">
+
+| Domain | Coverage | Representative Engines |
+|:---|:---|:---|
+| **💡 Requirements & Clarification** | No more black-box starts: turn vague ideas into clearly-bounded, verifiable problem definitions | `brainstorming`, `speckit-clarify` |
+| **📋 Planning & Breakdown** | Decompose ambitious goals into specs, plans, tasks, milestones, and execution flows | `writing-plans`, `speckit-specify`, `aios-po` |
+| **🏗️ Architecture & Tech Selection** | Design frontend/backend boundaries, APIs, data layers, deployment, and tech stack comparisons | `aios-architect`, `architecture-patterns` |
+| **💻 Development & Implementation** | New features, scaffolding, engineering integration, and precise cross-file implementation | `autonomous-builder`, `speckit-implement` |
+| **🔧 Debugging & Refactoring** | Beyond surface patches: locate errors, analyze root causes, restore project-level maintainability | `error-resolver`, `systematic-debugging` |
+| **🛡️ Testing & Quality Control** | Unit tests, regression verification, quality gates — mandatory verification before completion | `tdd-guide`, `aios-qa`, `code-review` |
+| **🚀 Collaboration & Release** | Handle Issues/PRs, fix CI, process reviews, and automated deployment | `aios-devops`, `gh-fix-ci`, `vercel-deploy` |
+| **🤖 Compound Workflows** | Freeze requirements, dispatch tasks, multi-Agent coordination, execution tracing, env cleanup | `vibe`, `swarm_*`, `hive-mind-advanced` |
+| **🔌 External Ecosystem** | Bridge browsers, web scraping, design files, third-party services, and context memory | `mcp-integration`, `playwright`, `scrapling` |
+| **📊 Data & AI Engineering** | EDA, cleaning & stats, to model training, RAG retrieval, and experiment tracking | `senior-ml-engineer`, `statistical-analysis` |
+| **🔬 Research & Life Sciences** | **Core strength**: literature review, bioinformatics, single-cell analysis, drug discovery | `literature-review`, `biopython`, `scanpy` |
+| **📐 Math & Scientific Computing** | Symbolic derivation, Bayesian modeling, multi-objective optimization, simulation, quantum computing | `sympy`, `pymc-bayesian-modeling`, `qiskit` |
+| **🎨 Multimedia & Presentation** | Interactive charts, publication-quality figures, slides, audio/video production | `plotly`, `generate-image`, `video-studio` |
+
+</div>
+
 <br/>
 
 <details>
-<summary><b>👉 Click to expand: Explore the full 340+ full-stack capability matrix of VibeSkills</b></summary>
+<summary><b>👉 Expand: Explore the complete 340+ full-stack capability matrix</b></summary>
+
 <br/>
-<blockquote>
-<i>💡 <b>Why governance matters</b>: this large skill library is not a stagnant pile of isolated scripts. It is an ecosystem managed by the VCO runtime. Through domain-matrix classification, the system can automatically wake up the right tool at the right context boundary, without making you manually traverse the catalog.</i>
-</blockquote>
 
-### 🧠 Requirements, planning, and product management
+> 💡 **Why governance matters**: The vast skill library below is not a collection of isolated scripts — it is an ecosystem governed by the VCO runtime. Through domain matrix classification, the system automatically invokes the right tool at the right context node, without requiring you to manually search through skills.
 
-> **🎯 Make big ideas executable**: cover requirement insight, problem definition, sprint planning, task decomposition, and constraint collection. The goal is to make sure the direction is clear, the boundaries are explicit, and milestones are testable before the first line of code is written.
+---
+
+### 🧠 Requirements, Planning & Product Management
+
+> **Turn big ideas into actionable plans**: requirement insights, problem definition, Sprint planning, task breakdown, and constraint collection. Ensure direction is clear, boundaries are defined, and milestones are verifiable before writing a single line of code.
 
 `.system`, `aios-pm`, `aios-po`, `aios-sm`, `aios-squad-creator`, `aios-ux-design-expert`, `brainstorming`, `create-plan`, `designing-experiments`, `planning-with-files`, `shared-templates`, `speckit-analyze`, `speckit-checklist`, `speckit-clarify`, `speckit-constitution`, `speckit-plan`, `speckit-specify`, `speckit-tasks`, `speckit-taskstoissues`, `subagent-driven-development`, `think-harder`, `treatment-plans`, `ux-researcher-designer`, `writing-plans`
 
 ---
 
-### 🛠️ Software engineering and architecture design
+### 🛠️ Software Engineering & Architecture
 
-> **🎯 A real engineering foundation**: from scaffolding, cross-file modification, and API design to microservice architecture evaluation. It does not just produce code. It also manages context memory, toolchain orchestration, and multi-stage collaboration among intelligent agents.
+> **The true engineering foundation**: from scaffolding, cross-file changes, API design to microservice architecture evaluation. Not just code output — also context memory, toolchain orchestration, and multi-phase intelligent Agent coordination.
 
-`aios-architect`, `aios-dev`, `aios-master`, `architecture-patterns`, `autonomous-builder`, `cancel-ralph`, `coding-tutor`, `context-fundamentals`, `context-hunter`, `cs-foundations`, `deepagent-memory-fold`, `deepagent-toolchain-plan`, `evaluating-code-models`, `get-available-resources`, `hive-mind-advanced`, `local-vco-roles`, `node-zombie-guardian`, `nowait-reasoning-optimizer`, `prompt-lookup`, `ralph-loop`, `skill-creator`, `skill-lookup`, `spec-kit-vibe-compat`, `speckit-implement`, `superclaude-framework-compat`, `theme-factory`, `vibe`, `webthinker-deep-research`
+`aios-architect`, `aios-dev`, `aios-master`, `architecture-patterns`, `autonomous-builder`, `cancel-ralph`, `coding-tutor`, `context-fundamentals`, `context-hunter`, `cs-foundations`, `deepagent-memory-fold`, `deepagent-toolchain-plan`, `evaluating-code-models`, `get-available-resources`, `hive-mind-advanced`, `local-vco-roles`, `nowait-reasoning-optimizer`, `prompt-lookup`, `ralph-loop`, `skill-creator`, `skill-lookup`, `spec-kit-vibe-compat`, `speckit-implement`, `superclaude-framework-compat`, `theme-factory`, `vibe`, `webthinker-deep-research`
 
 ---
 
-### 🔧 Debugging, testing, and quality assurance
+### 🔧 Debugging, Testing & Quality Assurance
 
-> **🎯 Protect the lifeline of code and systems**: covers unit testing, root-cause analysis, dependency conflict resolution, security review, and a full TDD-style testing workflow so the system can get out of the "change it and it breaks" black-box state.
+> **Guarding the lifeline of code and systems**: unit tests, root cause analysis, dependency conflict resolution, security vulnerability reviews, and a complete TDD guide — ensuring systems never enter a "breaks after every change" black-box state.
 
 `aios-qa`, `build-error-resolver`, `code-review`, `code-review-excellence`, `code-reviewer`, `data-quality-checker`, `data-quality-frameworks`, `debugging-strategies`, `deslop`, `detecting-performance-regressions`, `error-resolver`, `evals-context`, `experiment-failure-analysis`, `generating-test-reports`, `ml-data-leakage-guard`, `performance-testing`, `property-based-testing`, `providing-performance-optimization-advice`, `receiving-code-review`, `requesting-code-review`, `reviewing-code`, `security-best-practices`, `security-ownership-map`, `security-reviewer`, `security-threat-model`, `systematic-debugging`, `tdd-guide`, `verification-before-completion`, `verification-quality-assurance`, `windows-hook-debugging`
 
 ---
 
-### 📊 Data analysis and statistical modeling
+### 📊 Data Analysis & Statistical Modeling
 
-> **🎯 Let data tell the facts**: provides a one-stop data-processing engine covering cleaning, missing-value handling, exploratory data analysis, advanced statistical testing, regression models, and time-series forecasting.
+> **Let data tell the truth**: a one-stop data processing engine from data cleaning, missing value handling, and exploratory analysis (EDA) to advanced statistical testing, regression models, and time series forecasting.
 
 `aios-data-engineer`, `anomaly-detector`, `correlation-analyzer`, `dask`, `data-artist`, `data-exploration-visualization`, `data-normalization-tool`, `detecting-data-anomalies`, `excel-analysis`, `exploratory-data-analysis`, `feature-importance-analyzer`, `geopandas`, `hypothesis-testing`, `metric-calculator`, `networkx`, `performing-causal-analysis`, `performing-regression-analysis`, `polars`, `preprocessing-data-with-automated-pipelines`, `regression-analysis-helper`, `running-clustering-algorithms`, `scientific-data-preprocessing`, `splitting-datasets`, `spreadsheet`, `statistical-analysis`, `statistics-math`, `statsmodels`, `usfiscaldata`, `vaex`, `xlsx`
 
 ---
 
-### 🤖 Machine learning and AI engineering
+### 🤖 Machine Learning & AI Engineering
 
-> **🎯 A full-stack AI model development stack**: goes far beyond calling APIs. It reaches into feature engineering, model training, fine-tuning, interpretability analysis, LLM evaluation, and reinforcement learning workflows.
+> **Full-stack AI model development**: beyond just calling APIs — feature engineering, model training, fine-tuning, interpretability (SHAP), large model evaluation (Evals), and reinforcement learning workflows.
 
 `LQF_Machine_Learning_Expert_Guide`, `aeon`, `datamol`, `deepchem`, `embedding-strategies`, `engineering-features-for-machine-learning`, `evaluating-llms-harness`, `evaluating-machine-learning-models`, `explaining-machine-learning-models`, `geniml`, `ml-pipeline-workflow`, `openai-knowledge`, `pufferlib`, `pytorch-lightning`, `scikit-learn`, `scikit-survival`, `senior-computer-vision`, `senior-data-scientist`, `senior-ml-engineer`, `senior-prompt-engineer`, `shap`, `similarity-search-patterns`, `sparse-autoencoder-training`, `stable-baselines3`, `tensorboard`, `timesfm-forecasting`, `torch-geometric`, `torch_geometric`, `torchdrug`, `training-machine-learning-models`, `transformer-lens-interpretability`, `transformers`, `umap-learn`, `unsloth`, `weights-and-biases`
 
 ---
 
-### 🧬 Life sciences and bioinformatics computing
+### 🧬 Life Sciences & Bioinformatics
 
-> **🎯 A seriously powerful interdisciplinary toolset**: deeply integrates single-cell sequencing analysis, protein structure folding, drug molecule discovery, and genomics alignment, while connecting cleanly to many kinds of cloud biology lab systems.
+> **A formidable interdisciplinary powerhouse**: single-cell sequencing analysis, protein structure folding, drug molecule discovery, genomics alignment — seamlessly integrated with cloud-based biology lab systems.
 
 `adaptyv`, `alphafold-database`, `anndata`, `arboreto`, `benchling-integration`, `biopython`, `bioservices`, `cellxgene-census`, `cobrapy`, `deeptools`, `diffdock`, `dnanexus-integration`, `esm`, `etetoolkit`, `flowio`, `gene-database`, `gget`, `ginkgo-cloud-lab`, `gtars`, `histolab`, `imaging-data-commons`, `labarchive-integration`, `lamindb`, `latchbio-integration`, `matchms`, `medchem`, `molfeat`, `neurokit2`, `neuropixels-analysis`, `omero-integration`, `opentrons-integration`, `pathml`, `protocolsio-integration`, `pydeseq2`, `pydicom`, `pyhealth`, `pylabrobot`, `pyopenms`, `pysam`, `pytdc`, `rdkit`, `scanpy`, `scikit-bio`, `scvi-tools`, `tiledbvcf`
 
 ---
 
-### 🔬 Scientific computing and mathematical logic
+### 🔬 Scientific Computing & Mathematical Logic
 
-> **🎯 Precise derivation and complex-system simulation**: provides symbolic mathematics, Bayesian probabilistic programming, quantum-computing simulation, multi-objective optimization, and rigorous propositional-logic and mathematical-proof assistance.
+> **Precise derivation and complex system simulation**: symbolic math, Bayesian probabilistic programming, quantum computing simulation, multi-objective optimization, and rigorous propositional logic and mathematical proof assistance.
 
 `astropy`, `cirq`, `dialectic`, `fluidsim`, `gradient-methods`, `math`, `math-model-selector`, `math-tools`, `mathematical-logic-expert`, `matlab`, `pennylane`, `pymatgen`, `pymc`, `pymc-bayesian-modeling`, `pymoo`, `propositional-logic`, `qiskit`, `qutip`, `rowan`, `simpy`, `sympy`, `xan`
 
 ---
 
-### 📚 Research literature and academic writing
+### 📚 Scientific Literature & Academic Writing
 
-> **🎯 A high-speed lane for academic productivity**: spans precise search across dozens of scientific databases such as PubMed and arXiv, review-matrix organization, citation management, and a full publication workflow from drafting and revision to peer review.
+> **The expressway for academic productivity**: precise search across dozens of databases (PubMed, arXiv, etc.), systematic review matrix organization, citation management, and the complete publication pipeline from drafting to peer review.
 
 `bgpt-paper-search`, `biorxiv-database`, `brenda-database`, `chembl-database`, `citation-management`, `clinical-decision-support`, `clinical-reports`, `clinicaltrials-database`, `clinpgx-database`, `clinvar-database`, `comprehensive-research-agent`, `content-research-writer`, `cosmic-database`, `datacommons-client`, `documentation-lookup`, `drugbank-database`, `ena-database`, `ensembl-database`, `fda-database`, `geo-database`, `gwas-database`, `hmdb-database`, `hypothesis-generation`, `kegg-database`, `literature-matrix`, `literature-review`, `manuscript-as-code`, `market-research-reports`, `metabolomics-workbench-database`, `open-notebook`, `openalex-database`, `opentargets-database`, `paper-2-web`, `pdb-database`, `peer-review`, `pubchem-database`, `pubmed-database`, `pyzotero`, `reactome-database`, `research-grants`, `research-lookup`, `scholar-evaluation`, `scholarly-publishing`, `scientific-brainstorming`, `scientific-critical-thinking`, `scientific-reporting`, `scientific-writing`, `string-database`, `submission-checklist`, `uniprot-database`, `uspto-database`, `zinc-database`
 
 ---
 
-### 🎨 Multimedia, visualization, and documents
+### 🎨 Multimedia, Visualization & Documentation
 
-> **🎯 Make knowledge and data visible**: covers interactive chart generation, publication-grade scientific figures, slide creation, audio/video production, and deep read/write and parsing support for office documents such as Word and PDF.
+> **Making knowledge and data visible**: interactive chart generation, publication-quality scientific figures, slide creation, audio/video production, and deep read/write parsing of Word, PDF, and other office documents.
 
 `algorithmic-art`, `creating-data-visualizations`, `data-storytelling`, `datavis`, `doc`, `docs-review`, `docs-write`, `document-skills`, `docx`, `docx-comment-reply`, `figma`, `figma-implement-design`, `file-organizer`, `g2-legend-expert`, `generate-image`, `imagegen`, `infographics`, `latex-posters`, `latex-submission-pipeline`, `markdown-mermaid-writing`, `markitdown`, `matplotlib`, `pdf`, `plotly`, `pptx-posters`, `report-generator`, `scientific-schematics`, `scientific-slides`, `scientific-visualization`, `screenshot`, `seaborn`, `slides-as-code`, `smart-file-writer`, `speech`, `structured-content-storage`, `transcribe`, `venue-templates`, `video-studio`, `visualization-best-practices`, `vscode-release-notes-writer`, `writing-docs`
 
 ---
 
-### 🔌 External integrations, automation, and deployment
+### 🔌 External Integrations, Automation & Deployment
 
-> **🎯 Break through runtime boundaries**: connect to external browsers, design platforms, and cloud services through MCP and Playwright-style automation, while supporting CI/CD pipelines and one-click deployment.
+> **Breaking the limits of the runtime**: seamlessly connect external browsers, design platforms, and cloud services via MCP protocol and Playwright automation — plus CI/CD pipeline support and one-click automated deployment.
 
 `aios-devops`, `alpha-vantage`, `claude-skills`, `commit-with-reflection`, `denario`, `digital-brain`, `edgartools`, `flashrag-evidence`, `fred-economic-data`, `geomaster`, `gh-address-comments`, `gh-fix-ci`, `hedgefundmonitor`, `hypogenic`, `iso-13485-certification`, `jupyter-notebook`, `knowledge-steward`, `mcp-integration`, `modal`, `modal-labs`, `netlify-deploy`, `openai-docs`, `perplexity-search`, `playwright`, `prowler-docs`, `scrapling`, `sentry`, `skypilot-multi-cloud-orchestration`, `vercel-deploy`
 
 </details>
 
+<br/>
+
 ---
 
 ## 👥 Who is it for?
 
-- 🎯 **Everyday people who want stable delivery**: you want AI to be a reliable partner, not a runaway horse.
-- ⚡ **Advanced power users who rely heavily on AI and agents**: you need a unified foundation that can carry large workflows.
-- 🏢 **Small teams with stronger process requirements**: you want AI workflows that are easier to maintain and easier to pass on.
-- 😩 **Practitioners tired of "skill pileups"**: you are done hunting for tools and just want a solution that works out of the box.
+<div align="center">
 
-_If all you want is one tiny script, this may be too much. But if you want to use AI more steadily, more smoothly, and for the long run, this becomes hard to replace._
+| Audience | Description |
+|:---:|:---|
+| 🎯 **Users who need reliable delivery** | Want AI to be a dependable partner, not a runaway horse |
+| ⚡ **Power users heavily relying on AI/Agents** | Need a unified foundation to support large-scale workflows |
+| 🏢 **Small teams with high standardization needs** | Want AI workflows to be more maintainable and transferable |
+| 😩 **Practitioners exhausted by skill sprawl** | Already tired of tool hunting — just want a ready-to-use solution |
 
----
+</div>
 
-## 🎯 Workflow: From Requirements to Delivery
+> _If you're looking for a single small script, this may be overkill. But if you want to use AI more reliably, smoothly, and sustainably — this is your indispensable foundation._
 
-VibeSkills follows a governed workflow of `Clarify ➔ Plan ➔ Execute ➔ Verify`, ensuring every task goes through complete quality control:
-
-- **Requirement Clarification**: Use skills like `speckit-clarify` to define boundaries and acceptance criteria
-- **Architecture Planning**: Use skills like `aios-architect` to design implementation paths
-- **Execution Layer**: 340+ skills invoked as needed to complete specific work
-- **Quality Verification**: Use skills like `tdd-guide`, `code-review` to ensure delivery quality
-
-**Typical Scenario Examples**:
-
-- 🛠️ **"Refactor project and fix CI"** → Clarify scope → Map modules → Modify & verify → Deliver reviewable code and verification results
-- 📈 **"Competitor research"** → Define scope → Gather info → Structured comparison → Deliver research report and analysis framework
-- 🔬 **"Literature review"** → Define focus → Search & organize → Citation management → Deliver review framework and research entry points
-
-**Minor Feature Introduction**
-
-- Vibe has a built-in CRON function. Simply explicitly request that CRON be enabled (e.g., "I want to continuously advance task XXX based on cron, to complete: XXXX $vibe").
-
+<br/>
 
 ---
 
-## 📦 Gather the strengths of many projects: integration and full matrix
+## 📦 Standing on the Shoulders of Giants
 
-We know that building in isolation cannot keep up with the speed of the AI era. The core confidence behind VibeSkills comes from continuously absorbing the most mature methods and architectures from the open-source community, then bringing them into one unified governance and orchestration system.
+We know that building in isolation can't keep pace with the rapidly evolving AI landscape. The core strength of VibeSkills comes from continuously absorbing the most mature methods and architectures from the open-source community, and bringing them under a single unified governance and orchestration system.
 
-> 🙏 **Special thanks and credit**
-> This project continuously integrates, absorbs, and governs the core strengths of the following outstanding open-source projects:
+> 🙏 **Special Thanks & Acknowledgements**
+>
+> This project continuously integrates, absorbs, and governs the core strengths of the following excellent open-source projects:
 >
 > `superpower` · `claude-scientific-skills` · `get-shit-done` · `aios-core` · `OpenSpec` · `ralph-claude-code` · `SuperClaude_Framework` · `spec-kit` · `Agent-S` · `mem0` · `scrapling` · `claude-flow` · `serena` · `everything-claude-code` · `DeepAgent` and more
 >
-> _Thank you to all of these authors for their generous work. Without those bright sources of inspiration, VibeSkills would not exist. While integrating strengths from many repositories, we have tried hard to handle attribution and redistribution responsibly. If anything has been missed, please raise it in an Issue and we will correct and supplement it as quickly as possible._
+> _Thank you to all authors for your generous contributions — without these brilliant stars, VibeSkills would not exist. We have done our best to properly attribute and credit all absorbed repositories. If anything was missed, please open an Issue and we will correct it promptly._
+
+<br/>
 
 ---
 
-## 🚀 Start your Vibe experience
+## 🚀 Getting Started
 
-⚠️ **Invocation note**: to stay compatible with general-purpose agents, this project uses a **Skills-format architecture**. Please activate it through your host environment's Skills invocation flow. **Do not** run it directly as a standalone CLI program.
+> ⚠️ **Invocation note**: This project uses a **Skills format architecture**. Please invoke it through your host environment's Skills invocation method — **do not** run it as a standalone CLI program.
 
-- In **Claude Code**, type: `/vibe`
-- In **Codex**, type: `$vibe`
-- The usage is the same as calling skills, such as in Codex: "I want you to design a XXXX $vibe". In Claude Code, it would be: "I want you to design a XXX /vibe".
-- **Recommended practice**: if you want every follow-up turn to clearly remain inside the VibeSkills governed workflow, keep explicitly appending `$vibe` or `/vibe` in each turn. If a turn does not explicitly include the invocation syntax, it should not be advertised as "still explicitly locked into the vibe runtime" for that turn.
+<br/>
 
+<div align="center">
 
+| Host Environment | Invocation | Example |
+|:---:|:---:|:---|
+| **Claude Code** | `/vibe` | `I want you to design a XXX /vibe` |
+| **Codex** | `$vibe` | `I want you to design a XXXX $vibe` |
+| **Cursor / Windsurf** | Skills entry | Refer to each platform's Skills docs |
 
-### 📚 Navigation and guides
+</div>
 
-**Get familiar with the system quickly**
+<br/>
 
-- 📖 [Understand the system architecture and philosophy](./docs/quick-start.md)
-- 📜 [VibeSkills manifesto](./docs/manifesto.md)
+> 💡 **Recommended practice**: If you want every subsequent turn to be explicitly governed by the VibeSkills runtime, keep appending `$vibe` or `/vibe` in each turn. If you don't include the invocation syntax in a turn, that turn should not be treated as "explicitly locked in vibe runtime".
 
-**This update**
-* ✨ External installation entry points have been consolidated into two public versions:
-  `Full version + customizable governance`
-  `Core framework only + customizable governance`
-* ⚡️ Installation method changed to "prompt-first".
-  Users first send the installation prompt to AI, which confirms the host, then the version, then maps to the actual profile for installation.
-* 🧭 The old `workflow` lane is still retained, but now mainly serves as a compatibility/transition implementation detail, no longer the main version on the homepage for regular users.
-* 🧩 Custom workflows/skills are no longer recommended to be connected loosely, but should go through the governed integration path, falling under the canonical router's governance scope.
-* 🔄 If you need to update the version later: custom governance placed in `skills/custom/` and `config/custom-workflows.json` can usually be retained; but directly modifying official runtime/official skills/official mcp/rules content may be overwritten during updates.
+**Currently supported platforms**: `codex` (most complete governed path) · `claude-code` · `cursor` · `windsurf` (runtime adapter integrated)
 
-**Installation and configuration guide**
-* Current public support surface: **`codex`, `claude-code`, `cursor`, and `windsurf`**
-  Within that scope, `codex` is the strongest governed path today, `claude-code` and `cursor` have a supported install-and-use path, and `windsurf` has a supported install-and-use path with runtime-adapter integration.
-* Current public versions: **Full version + customizable governance**, **Framework version + customizable governance**
-* ⚡️ [Prompt-based install (recommended default)](./docs/install/one-click-install-release-copy.en.md)
-  Start there to confirm host and version first, then jump to the matching prompt file.
-* 🧩 [Custom workflow integration](./docs/install/custom-workflow-onboarding.md)
-  Use this to bring your own workflows/skills into the canonical router's governed surface rather than creating a second routing stack.
-* 📁 [Manual copy install (offline / no-admin)](./docs/install/manual-copy-install.en.md)
+<br/>
 
-**Advanced references**
+---
 
-- 🛠 [Advanced host / lane reference](./docs/install/recommended-full-path.md)
-- 🧊 [Cold-start and other environment notes](./docs/cold-start-install-paths.md)
+### 📚 Navigation & Guides
 
-Welcome everyone to try it out and experience it for yourselves! I'd love to hear your thoughts, so please feel free to start discussions and share your feedback or suggestions. I know I'm far from perfect, so if you spot any issues or areas for improvement, please don't hesitate to point them out—I'm all ears and will definitely make the necessary fixes.
+<div align="center">
+<table>
+<tr>
+<td width="50%">
 
-This project is open source, and contributions from everyone are welcome! Whether you want to fix bugs, improve performance, add new features, or enhance documentation, your feedback is invaluable. Simply fork this repository, make your changes, and submit a pull request. We appreciate contributions at all levels; your efforts will help improve this tool and benefit everyone.
+**Understand the system**
 
-If you like the project, please consider giving it a star! I'll be continuously updating it. Your support is the enriched U-235 to this nuclear-powered donkey!
+- 📖 [System architecture & philosophy](./docs/quick-start.en.md)
+- 📜 [VibeSkills Manifesto](./docs/manifesto.en.md)
 
-Thank you for watching!
+</td>
+<td width="50%">
 
-Thanks to everyone on LinuxDo for their support! Welcome to join https://linux.do/ for all kinds of technical exchanges, cutting-edge AI information, and AI experience sharing!
+**Installation & Configuration**
+
+- ⚡️ [Prompt-based install (recommended)](./docs/install/one-click-install-release-copy.en.md)
+- 🧩 [Custom workflow onboarding](./docs/install/custom-workflow-onboarding.md)
+- 📁 [Manual copy install (offline)](./docs/install/manual-copy-install.en.md)
+- 🛠 [Advanced host / lane reference](./docs/install/recommended-full-path.en.md)
+- 🧊 [Cold start & other environments](./docs/cold-start-install-paths.en.md)
+
+</td>
+</tr>
+</table>
+</div>
+
+<br/>
+
+> [!NOTE]
+> **What's new in this release**
+>
+> - ✨ Public install entry points consolidated into two versions: `Full version + customizable governance` / `Core framework only + customizable governance`
+> - ⚡️ Installation is now **prompt-first**: send the install prompt to AI, AI confirms host and version, then maps to the real profile for installation
+> - 🧭 The old `workflow` lane is retained for compatibility/transition, no longer featured as the main user-facing version
+> - 🧩 Custom workflows/skills should no longer be grafted in freely — use the governed onboarding path under canonical router control
+> - 🔄 Upgrade note: customizations in `skills/custom/` and `config/custom-workflows.json` are generally preserved; directly modifying official runtime/skill/mcp/rules files may be overwritten on updates
+
+<br/>
+
+---
+
+<div align="center">
+
+---
+
+### 🤝 Join the Community · Build Together
+
+Give it a try! If you have questions, ideas, or suggestions, feel free to open an issue — I'll take every piece of feedback seriously and make improvements.
+
+<br/>
+
+**This project is fully open source. All contributions are welcome!**
+
+Whether it's fixing bugs, improving performance, adding features, or improving documentation — every PR is deeply appreciated.
+
+```
+Fork → Modify → Pull Request → Merge ✅
+```
+
+<br/>
+
+> ⭐ If this project helps you, a **Star** is the greatest support you can give!
+> Your support is the enriched uranium that fuels this nuclear-powered donkey 🫏
+
+<br/>
+
+Thank you to the **LinuxDo** community for your support!
+
+[![LinuxDo](https://img.shields.io/badge/Community-LinuxDo-blue?style=for-the-badge)](https://linux.do/)
+
+Tech discussions, AI frontiers, AI experience sharing — all at Linuxdo!
+
+</div>
+
+<br/>
 
 ---
 
 ## Star History
 
 <a href="https://www.star-history.com/?repos=foryourhealth111-pixel%2FVibe-Skills&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=foryourhealth111-pixel/Vibe-Skills&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=foryourhealth111-pixel/Vibe-Skills&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=foryourhealth111-pixel/Vibe-Skills&type=date&legend=top-left" />
- </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=foryourhealth111-pixel/Vibe-Skills&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=foryourhealth111-pixel/Vibe-Skills&type=date&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/image?repos=foryourhealth111-pixel/Vibe-Skills&type=date&legend=top-left" />
+  </picture>
 </a>
+
+<br/>
 
 ---
 
 <div align="center">
-  <p><i>Turn the most failure-prone parts of real work into a system that is more callable, more governable, and more maintainable over the long term.</i></p>
+  <p><i>Transform the parts of real work most prone to going off the rails into a system that is more callable, more governable, and more maintainable over time.</i></p>
+  <br/>
+  <sub>Made with ❤️ &nbsp;·&nbsp; <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills">GitHub</a> &nbsp;·&nbsp; <a href="./README.md">中文</a></sub>
 </div>
