@@ -18,7 +18,7 @@
 
 ### More than a skill collection — your **personal AI operating system**
 
-Industrial-grade runtime framework integrating hundreds of Skills, MCP integrations, and governance rules
+If your AI supports skills, VibeSkills works. 340+ skills spanning coding, research, data science, life sciences & creative work.
 
 <br/>
 
@@ -79,6 +79,7 @@ Industrial-grade runtime framework integrating hundreds of Skills, MCP integrati
 - [Intelligent Routing](#-intelligent-routing-how-340-skills-collaborate-without-conflict)
 - [Memory System](#-memory-system-ai-that-truly-remembers)
 - [Full Capability Map](#-full-capability-map-your-all-in-one-workbench)
+- [Installation & Management](#️-installation--skills-management)
 - [Getting Started](#-getting-started)
 
 > [!IMPORTANT]
@@ -481,6 +482,37 @@ The runtime core behind **VibeSkills** is **VCO**. This is not a single-point to
 
 ---
 
+
+## ⚙️ Installation & Skills Management
+
+_Skills keep growing — but you don't need to manage them individually._
+
+### Install: Two options, two needs
+
+<div align="center">
+
+| | Full Version | Framework Only |
+|:---:|:---|:---|
+| **You get** | vibe runtime + full governance + all 340+ skills | vibe runtime + governance skeleton (no pre-loaded skills) |
+| **Best for** | Out-of-the-box use, extend as needed | Framework only, add skills selectively |
+| **Install** | [⚡ Prompt-based install (recommended)](./docs/install/one-click-install-release-copy.en.md) | [🔧 Framework-only install](./docs/install/framework-only-path.md) |
+
+</div>
+
+### Usage: No need to remember any skill names
+
+Just describe your task — the router automatically selects the right skill from 340+:
+
+```
+Help me build a genomics analysis pipeline /vibe
+→ Router identifies intent → auto-dispatches biopython · scanpy · pysam · etc.
+```
+
+**Skill conflicts, alias overlaps** — handled by the routing layer. No manual intervention needed.
+
+### Customize: Add your own skills
+
+→ [Custom workflow & skill onboarding guide](./docs/install/custom-workflow-onboarding.md)
 
 ## 📦 Standing on the Shoulders of Giants
 
