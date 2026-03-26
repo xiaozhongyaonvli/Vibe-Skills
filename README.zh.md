@@ -488,7 +488,7 @@ _Skills 越积越多——但你不需要逐个管理它们。_
 |:---:|:---|:---|
 | **你会得到** | vibe runtime + 完整治理框架 + 340+ 技能全集 | vibe runtime + 治理骨架（无预装技能）|
 | **适合** | 直接开箱，后续持续扩展 | 只要框架，自己选择性接入技能 |
-| **安装入口** | [⚡ 提示词安装（推荐）](./docs/install/one-click-install-release-copy.md) | [🔧 仅框架安装](./docs/install/framework-only-path.md) |
+| **安装入口** | [⚡ 提示词安装（推荐）](./docs/install/one-click-install-release-copy.md) | [🔧 仅框架安装](./docs/install/prompts/framework-only-install.md) |
 
 </div>
 
