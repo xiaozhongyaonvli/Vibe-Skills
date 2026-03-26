@@ -22,5 +22,9 @@
 5. 宿主支持边界、默认根目录和 truth-first 口径，统一遵循 `docs/install/minimal-path.md` 与 `docs/install/installation-rules.md`，不要在这里重复发明另一套说法。
 6. 不要要求我把密钥、URL 或 model 粘贴到聊天里。
 7. 安装完成后，必须额外提醒我：当前拿到的是治理框架底座，不等于默认 workflow core 已齐备。
-8. 结果报告仍需包含：目标宿主、公开版本、实际 profile、实际命令、已完成部分、仍需手动处理的部分。
+8. 安装完成后，主动给我一条“AI 治理是否配置好”的快速检查命令：
+   - Windows：`pwsh -NoProfile -File .\\scripts\\verify\\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<本次宿主根目录>" -WriteArtifacts`
+   - Linux / macOS：`python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<本次宿主根目录>" --write-artifacts`
+   - 并说明：这个检查只看 AI 治理 advice 连通性，不等于整个平台总健康检查。
+9. 结果报告仍需包含：目标宿主、公开版本、实际 profile、实际命令、已完成部分、仍需手动处理的部分。
 ```

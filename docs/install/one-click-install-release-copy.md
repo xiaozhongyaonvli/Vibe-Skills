@@ -49,3 +49,27 @@
 - 基础安装完成后即可直接使用
 - 如果你还想补在线 provider、MCP、宿主本地 settings 或插件联动，这些都属于增强建议，不是基础安装的前置门槛
 - 各宿主哪些内容仍由宿主侧本地维护，会在对应提示词和参考文档中如实说明
+
+## 安装后快速检查 AI 治理是否已配置好
+
+如果你想快速确认“路由里的 AI 治理 advice 是否已经配通”，可以在仓库根目录运行：
+
+- Windows：
+  - `pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<目标宿主根目录>" -WriteArtifacts`
+- Linux / macOS：
+  - `python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<目标宿主根目录>" --write-artifacts`
+
+常见默认根目录：
+
+- `codex` -> `~/.codex`
+- `claude-code` -> `~/.claude`
+- `cursor` -> `~/.cursor`
+- `windsurf` -> `~/.codeium/windsurf`
+- `openclaw` -> `~/.openclaw`
+- `opencode` -> `~/.config/opencode`
+
+结果说明：
+
+- `ok`：AI 治理 advice 已连通
+- `missing_credentials` / `missing_model`：本地配置还不完整
+- `provider_rejected_request` / `provider_unreachable`：已经尝试在线调用，但当前没有成功

@@ -22,5 +22,9 @@ Rules:
 5. For host wording, default roots, and truth-first boundaries, follow `docs/install/minimal-path.en.md` and `docs/install/installation-rules.en.md` instead of restating a second version here.
 6. Never ask me to paste secrets, URLs, or model names into chat.
 7. Remind me that this gives me the governance foundation first, not the full default workflow-core experience.
-8. End with a concise report covering host, public version, real profile, commands executed, completed parts, and manual follow-up.
+8. After installation, proactively give me one quick check command for “is AI governance configured?”:
+   - Windows: `pwsh -NoProfile -File .\\scripts\\verify\\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<resolved host root>" -WriteArtifacts`
+   - Linux / macOS: `python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<resolved host root>" --write-artifacts`
+   - explain that this probe checks only AI governance advice connectivity, not full platform health.
+9. End with a concise report covering host, public version, real profile, commands executed, completed parts, and manual follow-up.
 ```
