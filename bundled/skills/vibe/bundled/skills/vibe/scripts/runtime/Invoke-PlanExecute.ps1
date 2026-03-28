@@ -999,10 +999,22 @@ $effectiveUnitExecution = if ($parallelUnitsExecutedCount -gt 0 -and ($executedU
 }
 
 $baseStatus = if ($failedUnitCount -eq 0 -and $executedUnitCount -ge [int]$profile.expected_minimum_units) { 'completed' } elseif ($executedUnitCount -eq 0) { 'failed' } else { 'completed_with_failures' }
-$liveSpecialistUnits = @($executedSpecialistUnits | Where-Object { [bool]$_.live_native_execution })
+$liveAttemptedSpecialistUnits = @($executedSpecialistUnits | Where-Object { [bool]$_.live_native_execution })
+$liveSpecialistUnits = @($liveAttemptedSpecialistUnits | Where-Object { [bool]$_.verification_passed })
+$failedLiveSpecialistUnits = @($liveAttemptedSpecialistUnits | Where-Object { -not [bool]$_.verification_passed })
 $degradedSpecialistUnits = @($executedSpecialistUnits | Where-Object { [bool]$_.degraded })
 $totalSpecialistDispatchOutcomeCount = @($executedSpecialistUnits).Count
-$effectiveSpecialistExecutionStatus = if (@($liveSpecialistUnits).Count -gt 0) { 'live_native_executed' } elseif (@($degradedSpecialistUnits).Count -gt 0) { 'explicitly_degraded' } else { 'none' }
+$effectiveSpecialistExecutionStatus = if (@($liveSpecialistUnits).Count -gt 0 -and @($failedLiveSpecialistUnits).Count -eq 0) {
+    'live_native_executed'
+} elseif (@($liveSpecialistUnits).Count -gt 0 -and @($failedLiveSpecialistUnits).Count -gt 0) {
+    'live_native_partial_failures'
+} elseif (@($failedLiveSpecialistUnits).Count -gt 0) {
+    'live_native_failed'
+} elseif (@($degradedSpecialistUnits).Count -gt 0) {
+    'explicitly_degraded'
+} else {
+    'none'
+}
 $specialistDispatchUnitCount = @($approvedDispatch).Count
 $executionManifest = [pscustomobject]@{
     stage = 'plan_execute'
@@ -1104,8 +1116,11 @@ $executionManifest = [pscustomobject]@{
             verification = @($approvedDispatch | Where-Object { [string]$_.dispatch_phase -eq 'verification' }).Count
         }
         parallelizable_dispatch_count = @($approvedDispatch | Where-Object { [bool]$_.parallelizable_in_root_xl }).Count
+        attempted_specialist_unit_count = @($liveAttemptedSpecialistUnits).Count
         executed_specialist_unit_count = @($liveSpecialistUnits).Count
+        failed_specialist_unit_count = @($failedLiveSpecialistUnits).Count
         executed_specialist_units = @($liveSpecialistUnits)
+        failed_specialist_units = @($failedLiveSpecialistUnits)
         degraded_specialist_unit_count = @($degradedSpecialistUnits).Count
         degraded_specialist_units = @($degradedSpecialistUnits)
         specialist_dispatch_outcomes = @($executedSpecialistUnits)
@@ -1143,7 +1158,9 @@ $proofManifest = [pscustomobject]@{
     promotion_suitable = [string]$proofRegistry.promotion_suitability.runtime
     specialist_recommendation_count = @($specialistRecommendations).Count
     specialist_dispatch_unit_count = [int]$specialistDispatchUnitCount
+    attempted_specialist_unit_count = @($liveAttemptedSpecialistUnits).Count
     executed_specialist_unit_count = @($liveSpecialistUnits).Count
+    failed_specialist_unit_count = @($failedLiveSpecialistUnits).Count
     degraded_specialist_unit_count = @($degradedSpecialistUnits).Count
     specialist_dispatch_outcome_count = $totalSpecialistDispatchOutcomeCount
     specialist_execution_status = $effectiveSpecialistExecutionStatus
@@ -1173,7 +1190,9 @@ $proofLines = @(
     ('- review_receipt_count: `{0}`' -f $reviewReceiptCount),
     ('- specialist_recommendation_count: `{0}`' -f @($specialistRecommendations).Count),
     ('- specialist_dispatch_unit_count: `{0}`' -f [int]$specialistDispatchUnitCount),
+    ('- attempted_specialist_unit_count: `{0}`' -f @($liveAttemptedSpecialistUnits).Count),
     ('- executed_specialist_unit_count: `{0}`' -f @($liveSpecialistUnits).Count),
+    ('- failed_specialist_unit_count: `{0}`' -f @($failedLiveSpecialistUnits).Count),
     ('- degraded_specialist_unit_count: `{0}`' -f @($degradedSpecialistUnits).Count),
     ('- auto_approved_specialist_unit_count: `{0}`' -f @($autoApprovedDispatch).Count),
     ('- residual_local_specialist_suggestion_count: `{0}`' -f @($localSuggestions).Count),
@@ -1218,7 +1237,9 @@ $receipt = [pscustomobject]@{
     review_receipt_count = [int]$reviewReceiptCount
     specialist_recommendation_count = @($specialistRecommendations).Count
     specialist_dispatch_unit_count = [int]$specialistDispatchUnitCount
+    attempted_specialist_unit_count = @($liveAttemptedSpecialistUnits).Count
     executed_specialist_unit_count = @($liveSpecialistUnits).Count
+    failed_specialist_unit_count = @($failedLiveSpecialistUnits).Count
     degraded_specialist_unit_count = @($degradedSpecialistUnits).Count
     specialist_dispatch_outcome_count = $totalSpecialistDispatchOutcomeCount
     specialist_execution_status = $effectiveSpecialistExecutionStatus

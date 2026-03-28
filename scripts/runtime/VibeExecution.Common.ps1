@@ -393,6 +393,86 @@ function New-VibeSpecialistResultSchema {
     }
 }
 
+function Test-VibeSpecialistResponseAgainstSchema {
+    param(
+        [AllowNull()] [object]$Response,
+        [Parameter(Mandatory)] [object]$Schema
+    )
+
+    $errors = @()
+    if ($null -eq $Response) {
+        return [pscustomobject]@{
+            passed = $false
+            errors = @('response_missing')
+        }
+    }
+
+    $responseProperties = @($Response.PSObject.Properties.Name | ForEach-Object { [string]$_ })
+    $schemaProperties = if ($Schema.PSObject.Properties.Name -contains 'properties' -and $Schema.properties) {
+        @($Schema.properties.PSObject.Properties.Name | ForEach-Object { [string]$_ })
+    } else {
+        @()
+    }
+
+    foreach ($requiredField in @($Schema.required)) {
+        $fieldName = [string]$requiredField
+        if (-not ($responseProperties -contains $fieldName)) {
+            $errors += ("missing_required_field:{0}" -f $fieldName)
+        }
+    }
+
+    if ($Schema.PSObject.Properties.Name -contains 'additionalProperties' -and -not [bool]$Schema.additionalProperties) {
+        foreach ($responseField in @($responseProperties)) {
+            if (-not ($schemaProperties -contains [string]$responseField)) {
+                $errors += ("unexpected_field:{0}" -f [string]$responseField)
+            }
+        }
+    }
+
+    foreach ($schemaField in @($schemaProperties)) {
+        if (-not ($responseProperties -contains [string]$schemaField)) {
+            continue
+        }
+
+        $fieldSchema = $Schema.properties.$schemaField
+        $fieldValue = $Response.$schemaField
+        $expectedType = if ($fieldSchema.PSObject.Properties.Name -contains 'type') { [string]$fieldSchema.type } else { '' }
+
+        switch ($expectedType) {
+            'string' {
+                if ($fieldValue -isnot [string]) {
+                    $errors += ("invalid_type:{0}:expected_string" -f [string]$schemaField)
+                    continue
+                }
+                if ($fieldSchema.PSObject.Properties.Name -contains 'enum' -and @($fieldSchema.enum).Count -gt 0) {
+                    $allowedValues = @($fieldSchema.enum | ForEach-Object { [string]$_ })
+                    if (-not ($allowedValues -contains [string]$fieldValue)) {
+                        $errors += ("invalid_enum:{0}:{1}" -f [string]$schemaField, [string]$fieldValue)
+                    }
+                }
+            }
+            'array' {
+                if ($fieldValue -is [string]) {
+                    $errors += ("invalid_type:{0}:expected_array" -f [string]$schemaField)
+                    continue
+                }
+                $items = @($fieldValue)
+                foreach ($item in @($items)) {
+                    if ($item -isnot [string]) {
+                        $errors += ("invalid_array_item_type:{0}:expected_string" -f [string]$schemaField)
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        passed = [bool]($errors.Count -eq 0)
+        errors = @($errors)
+    }
+}
+
 function Get-VibeGitStatusSnapshot {
     param(
         [Parameter(Mandatory)] [string]$RepoRoot
@@ -720,13 +800,14 @@ function Invoke-VibeSpecialistDispatchUnit {
         @()
     }
 
-    $verificationPassed = (-not $processResult.timed_out) -and ([int]$processResult.exit_code -eq 0) -and ($null -ne $parsedResponse) -and (@('completed', 'completed_with_notes') -contains $responseStatus)
+    $schemaValidation = Test-VibeSpecialistResponseAgainstSchema -Response $parsedResponse -Schema $schema
+    $verificationPassed = (-not $processResult.timed_out) -and ([int]$processResult.exit_code -eq 0) -and ($null -ne $parsedResponse) -and [bool]$schemaValidation.passed -and (@('completed', 'completed_with_notes') -contains $responseStatus)
     $effectiveStatus = if ($verificationPassed) {
         'completed'
     } elseif ($processResult.timed_out) {
         'timed_out'
-    } elseif (-not [string]::IsNullOrWhiteSpace($responseStatus)) {
-        $responseStatus
+    } elseif ($responseStatus -eq 'blocked' -and [int]$processResult.exit_code -eq 0 -and [string]::IsNullOrWhiteSpace($responseParseError) -and [bool]$schemaValidation.passed) {
+        'blocked'
     } else {
         'failed'
     }
@@ -780,6 +861,7 @@ function Invoke-VibeSpecialistDispatchUnit {
         bounded_output_notes = @($boundedOutputNotes)
         summary = $responseSummary
         response_parse_error = $responseParseError
+        response_schema_errors = @($schemaValidation.errors)
     }
 
     $resultPath = Join-Path $resultsRoot ("{0}.json" -f $UnitId)
