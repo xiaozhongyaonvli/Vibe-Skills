@@ -20,7 +20,8 @@ This protocol only activates after the requirement and plan are already frozen.
 
 ## Scope
 Activated for XL grade tasks that require:
-- Multiple agents working in parallel
+- Multi-agent coordination with dependency-aware waves
+- Step-level bounded parallelism for independent units (not blanket always-on concurrency)
 - Workflow-based execution with phases
 - Swarm or hive-mind coordination
 - Long-running iterative tasks
@@ -47,6 +48,13 @@ Child-governed lanes must not:
 - create a second canonical execution-plan surface
 - emit final completion claims for the full root task
 - self-approve new global specialist dispatch
+
+## Execution Topology Truth
+
+- `L` execution is handled in `do.md` as serial native execution; this protocol is not the default L executor.
+- `XL` execution is wave-sequential by dependency.
+- Parallel work in `XL` is step-scoped and bounded to independent units only.
+- Specialist dispatch can be executable as bounded units only when root-approved in the frozen plan.
 
 ### Role Division
 
@@ -311,7 +319,7 @@ Contract output:
   - `verify_commands`
 
 Execution semantics:
-1. Independent units run in parallel within a wave.
+1. Independent units may run in bounded parallel within a wave.
 2. Waves run sequentially by dependency.
 3. Verification gates must pass before advancing to next wave.
 4. This contract does not alter grade/task assignment.

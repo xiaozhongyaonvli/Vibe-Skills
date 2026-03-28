@@ -25,6 +25,7 @@ These are syntax variants for the same governed runtime, not separate entrypoint
 5. Cleanup is mandatory before a phase is considered complete.
 6. Silent fallback and silent degradation are forbidden.
 7. Fallback success is non-authoritative unless a requirement explicitly approves otherwise.
+8. `L` runs serial native units; `XL` runs wave-sequential with step-level bounded parallel units only when dependency-safe.
 
 ## Official Runtime Modes
 
@@ -114,10 +115,13 @@ Purpose:
 Rules:
 
 - internal grade controls topology
+- `L`: execute planned units serially by default; no blanket fan-out
+- `XL`: execute waves sequentially; allow bounded parallelism only for independent units inside a step
 - XL prefers Codex-native orchestration
 - spawned subagent prompts must end with `$vibe`
 - milestone evidence must be written before phase completion
 - if the canonical router surfaces specialist skills, record them as bounded native specialist recommendations under `vibe` governance
+- root-approved specialist dispatch may execute as bounded native units; non-approved specialist ideas remain advisory escalation requests
 - runtime-selected skill stays `vibe` for governed entry even when route truth points at a specialist
 - specialist use must preserve native workflow, required inputs, expected outputs, and validation style
 - child-governed lanes inherit root-frozen requirement/plan context and must not open second canonical requirement or plan truth surfaces

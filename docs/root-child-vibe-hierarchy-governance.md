@@ -25,6 +25,12 @@ Short form:
 
 `root vibe governs, child vibe executes, specialists assist`
 
+## Grade Execution Alignment
+
+- `L`: serial native execution from the frozen plan (sequence-first, no blanket fan-out).
+- `XL`: wave-sequential execution, with step-level bounded parallelism only for independent units.
+- Specialist dispatch: executable as bounded native units only when root-approved in the frozen plan.
+
 ## Authority Layers
 
 ### Root-Governed Lane
@@ -133,7 +139,7 @@ When a root `vibe` task spawns children:
 
 - every child still behaves with `vibe` discipline
 - no child behaves like a second top-level governor
-- specialists can be used naturally
+- approved specialists can execute as bounded native units
 - root evidence remains the single source of completion truth
 
 ## Operator Rule Of Thumb

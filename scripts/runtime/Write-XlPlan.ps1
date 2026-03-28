@@ -17,6 +17,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'VibeRuntime.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeExecution.Common.ps1')
 . (Join-Path $PSScriptRoot '..\common\AntiProxyGoalDrift.ps1')
 
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath
@@ -51,6 +52,17 @@ $runtimeInputPacket = if (-not [string]::IsNullOrWhiteSpace($RuntimeInputPacketP
 } else {
     $null
 }
+$approvedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.approved_dispatch) } else { @() }
+$localSuggestions = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.local_specialist_suggestions) } else { @() }
+$executionTopology = New-VibeExecutionTopology `
+    -RunId $RunId `
+    -Grade $grade `
+    -GovernanceScope ([string]$hierarchyState.governance_scope) `
+    -BenchmarkPolicy $runtime.benchmark_execution_policy `
+    -TopologyPolicy $runtime.execution_topology_policy `
+    -ApprovedDispatch @($approvedDispatch)
+$executionTopologyPath = Get-VibeExecutionTopologyPath -RepoRoot $runtime.repo_root -RunId $RunId -ArtifactRoot $ArtifactRoot
+Write-VibeJsonArtifact -Path $executionTopologyPath -Value $executionTopology
 
 $waveLines = switch ($grade) {
     'XL' {
@@ -97,6 +109,9 @@ if ($runtimeInputPacket) {
         "- Router/runtime skill mismatch: $([bool]$runtimeInputPacket.divergence_shadow.skill_mismatch)"
     )
 }
+$lines += @(
+    "- Execution topology companion: $executionTopologyPath"
+)
 $lines += @(Get-VgoAntiProxyGoalDriftPlanLines -Packet $antiDriftDraft)
 $lines += @(
     '',
@@ -108,8 +123,20 @@ $lines += @(
     '## Wave Plan'
 )
 $lines += $waveLines
-$approvedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.approved_dispatch) } else { @() }
-$localSuggestions = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.local_specialist_suggestions) } else { @() }
+$lines += @(
+    '',
+    '## Execution Topology Snapshot',
+    "- Delegation mode: $([string]$executionTopology.delegation_mode)",
+    "- Review mode: $([string]$executionTopology.review_mode)",
+    "- Specialist execution mode: $([string]$executionTopology.specialist_execution_mode)",
+    "- Max parallel units: $([int]$executionTopology.max_parallel_units)"
+)
+foreach ($topologyWave in @($executionTopology.waves)) {
+    $lines += ('- Wave `{0}` has {1} executable step(s).' -f [string]$topologyWave.wave_id, @($topologyWave.steps).Count)
+    foreach ($step in @($topologyWave.steps)) {
+        $lines += ('  Step `{0}` -> mode `{1}`, units `{2}`.' -f [string]$step.step_id, [string]$step.execution_mode, @($step.units).Count)
+    }
+}
 if (@($approvedDispatch).Count -gt 0 -or @($localSuggestions).Count -gt 0) {
     $lines += @(
         '',
@@ -203,6 +230,7 @@ $receipt = [pscustomobject]@{
     canonical_write_allowed = -not $isChildScope
     inherited_execution_plan_path = if ($isChildScope) { $planPath } else { $null }
     runtime_input_packet_path = $RuntimeInputPacketPath
+    execution_topology_path = $executionTopologyPath
     generated_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 }
 $receiptPath = Join-Path $sessionRoot 'execution-plan-receipt.json'

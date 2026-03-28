@@ -90,17 +90,19 @@ If VCO router output includes:
 
 ### L Grade
 1. Ensure design exists (from vibe-think protocol)
-2. Invoke Superpowers subagent-driven-development
-   - Fresh subagent per task
-   - Two-stage review: spec compliance + code quality
-   - Sequential execution to avoid conflicts
-3. Use runtime-neutral state_store to track progress across tasks
-4. Final review with Superpowers verification-before-completion
+2. Execute planned units in native serial order
+   - Sequence-first execution from the frozen plan
+   - No blanket multi-agent fan-out
+3. Optional delegated units must remain bounded and explicitly planned
+   - If subagents are spawned, prompts must end with `$vibe`
+   - Child lane specialist ideas stay advisory until root approval
+4. Use runtime-neutral state_store to track progress across tasks
+5. Final review with Superpowers verification-before-completion
 
 If subagents are spawned under the governed runtime, their prompts must end with `$vibe`.
 
 ### XL Grade
-Defer to vibe-team protocol (Codex native team orchestration + optional ruflo collaboration).
+Defer to vibe-team protocol (wave-sequential orchestration + step-level bounded parallel units + optional ruflo collaboration).
 
 ## Debug Mode
 

@@ -17,7 +17,7 @@
 - [`install/one-click-install-release-copy.md`](./install/one-click-install-release-copy.md)：面向普通用户的一键安装发布文案与 AI 助手复制提示词
 - [`install/one-click-install-release-copy.en.md`](./install/one-click-install-release-copy.en.md)：ordinary-user public release copy and copy-paste onboarding prompt
 - Governed runtime canonical surfaces live in [`../SKILL.md`](../SKILL.md), [`../protocols/runtime.md`](../protocols/runtime.md), and [`../protocols/team.md`](../protocols/team.md). Do not create a second runtime-governance truth document.
-- [`root-child-vibe-hierarchy-governance.md`](./root-child-vibe-hierarchy-governance.md)：稳定说明 root/child `vibe` 分层治理、批准式 specialist dispatch 与 child escalation 规则，避免递归顶层治理。
+- [`root-child-vibe-hierarchy-governance.md`](./root-child-vibe-hierarchy-governance.md)：稳定说明 root/child `vibe` 分层治理，以及 `L` 串行原生执行、`XL` 分波顺序+步骤级有界并行、批准式 specialist 可执行 bounded units 与 child escalation 规则。
 
 - [`status/README.md`](./status/README.md)：当前运行态、proof 入口与阶段回执总索引。
 - [`status/current-state.md`](./status/current-state.md)：当前 closure batch 的 runtime summary。

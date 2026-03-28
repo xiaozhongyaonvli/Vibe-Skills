@@ -218,12 +218,14 @@ After selecting the primary skill, the router also automatically determines the 
 | Level | Use Case | Characteristics |
 |:---:|:---|:---|
 | **M** | Narrow-scope work with clear boundaries | Single-agent, token-efficient, fast response |
-| **L** | Medium complexity requiring design, planning, and review | Multi-phase, restrained, controllable |
-| **XL** | Large tasks — parallelizable, long-running, multi-agent wave execution | Auto-dispatches corresponding Skills, high parallelism |
+| **L** | Medium complexity requiring design, planning, and review | Native serial execution by planned steps; bounded delegated units only when explicitly planned |
+| **XL** | Large tasks — parallelizable, long-running, multi-agent wave execution | Wave-sequential orchestration with step-level bounded parallelism for independent units only |
 
 </div>
 
 > The system automatically selects the level after requirements clarification, before plan execution. Users only need to invoke `/vibe` or `$vibe`.
+>
+> Specialist skills are executed as bounded native units only when approved in the frozen plan. Child-lane specialist suggestions stay advisory until root approval.
 >
 > You can also express an explicit preference:
 > ```text

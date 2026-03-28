@@ -169,6 +169,7 @@ $artifactReadiness = Wait-VibeArtifactSet -Paths @(
     [string]$plan.receipt_path,
     [string]$execute.receipt_path,
     [string]$execute.execution_manifest_path,
+    [string]$execute.execution_topology_path,
     [string]$execute.benchmark_proof_manifest_path,
     [string]$cleanup.receipt_path
 )
@@ -187,6 +188,7 @@ $relativeArtifacts = [ordered]@{
     execution_plan_receipt = Get-VibeRelativePathCompat -BasePath $artifactBaseRoot -TargetPath ([string]$plan.receipt_path)
     execute_receipt = Get-VibeRelativePathCompat -BasePath $artifactBaseRoot -TargetPath ([string]$execute.receipt_path)
     execution_manifest = Get-VibeRelativePathCompat -BasePath $artifactBaseRoot -TargetPath ([string]$execute.execution_manifest_path)
+    execution_topology = Get-VibeRelativePathCompat -BasePath $artifactBaseRoot -TargetPath ([string]$execute.execution_topology_path)
     benchmark_proof_manifest = Get-VibeRelativePathCompat -BasePath $artifactBaseRoot -TargetPath ([string]$execute.benchmark_proof_manifest_path)
     cleanup_receipt = Get-VibeRelativePathCompat -BasePath $artifactBaseRoot -TargetPath ([string]$cleanup.receipt_path)
 }
@@ -225,6 +227,7 @@ $summary = [pscustomobject]@{
         execution_plan_receipt = $plan.receipt_path
         execute_receipt = $execute.receipt_path
         execution_manifest = $execute.execution_manifest_path
+        execution_topology = $execute.execution_topology_path
         benchmark_proof_manifest = $execute.benchmark_proof_manifest_path
         cleanup_receipt = $cleanup.receipt_path
     }

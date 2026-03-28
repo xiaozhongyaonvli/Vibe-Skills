@@ -111,8 +111,8 @@ Specialist dispatch under hierarchy:
 `M`, `L`, and `XL` remain active, but only as internal orchestration grades.
 
 - `M`: narrow execution, single-agent or tightly scoped work
-- `L`: design or coordination work that needs staged planning and review
-- `XL`: parallelizable or long-running work that benefits from agent teams and wave control
+- `L`: native serial execution lane for staged work; delegated units stay bounded and sequence-first
+- `XL`: wave-sequential execution with step-level bounded parallelism for independent units only
 
 The governed runtime selects the internal grade after `deep_interview` and before `plan_execute`.
 
@@ -126,7 +126,8 @@ User-facing behavior stays the same regardless of host syntax:
 Compatibility notes for downstream verification and host adapters:
 
 - `M=single-agent`
-- `L grade always follows: design → plan → user approval → subagent execution → two-stage review.`
+- `L=serial native execution from frozen plan (no blanket fan-out).`
+- `XL=wave-sequential execution; bounded parallelism only inside eligible steps.`
 - XL native lifecycle APIs remain `spawn_agent`/`send_input`/`wait`/`close_agent`
 
 ## Stage Contract
@@ -173,9 +174,10 @@ The plan must contain:
 
 Execute the approved plan.
 
-If the work is parallelizable, prefer Codex-native XL orchestration.
+L grade executes planned units serially in the native governed lane.
+XL grade executes waves sequentially and may run only independent units in bounded parallel within a step.
 If subagents are spawned, their prompts must end with `$vibe`.
-If specialist skills are used, record them as bounded native dispatch under `vibe` governance rather than as a runtime handoff.
+If specialist skills are used, execute them as bounded native dispatch units only when root-approved in the frozen plan; otherwise keep them as advisory `local_suggestion` until escalation approval.
 If subagents run in child-governed lanes, they must inherit root-frozen context and must not reopen canonical requirement or plan truth surfaces.
 
 ### 6. `phase_cleanup`
