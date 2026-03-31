@@ -114,6 +114,7 @@ $bundleReadmePath = Join-Path $repoRoot 'references\proof-bundles\official-runti
 $manifestPath = Join-Path $repoRoot 'references\proof-bundles\official-runtime-baseline\baseline-manifest.json'
 
 $installPs1 = Join-Path $repoRoot 'install.ps1'
+$installAdapterPs1 = Join-Path $repoRoot 'scripts\install\Install-VgoAdapter.ps1'
 $checkPs1 = Join-Path $repoRoot 'check.ps1'
 $installSh = Join-Path $repoRoot 'install.sh'
 $checkSh = Join-Path $repoRoot 'check.sh'
@@ -146,6 +147,7 @@ $results = [ordered]@{
         packaging = [ordered]@{
             mirror_files = @($packaging.mirror.files)
             mirror_directories = @($packaging.mirror.directories)
+            manifests = @($packaging.manifests)
         }
     }
     assertions = @()
@@ -230,9 +232,25 @@ foreach ($file in $expectedMirrorFiles) {
     Add-Assertion -Collection $assertions -Condition (@($packaging.mirror.files) -contains [string]$file) -Message ("[packaging] mirror.files includes {0}" -f $file)
 }
 
-$expectedMirrorDirs = @('config', 'protocols', 'references', 'docs', 'scripts', 'mcp')
+$expectedMirrorDirs = @('templates', 'mcp')
 foreach ($dir in $expectedMirrorDirs) {
     Add-Assertion -Collection $assertions -Condition (@($packaging.mirror.directories) -contains [string]$dir) -Message ("[packaging] mirror.directories includes {0}" -f $dir)
+}
+
+$forbiddenMirrorDirs = @('config', 'scripts', 'docs', 'references', 'protocols')
+foreach ($dir in $forbiddenMirrorDirs) {
+    Add-Assertion -Collection $assertions -Condition (-not (@($packaging.mirror.directories) -contains [string]$dir)) -Message ("[packaging] mirror.directories excludes broad root {0}" -f $dir)
+}
+
+$expectedManifestFiles = @('config/runtime-script-manifest.json', 'config/runtime-config-manifest.json')
+foreach ($file in $expectedManifestFiles) {
+    Add-Assertion -Collection $assertions -Condition (@($packaging.mirror.files) -contains [string]$file) -Message ("[packaging] mirror.files includes manifest {0}" -f $file)
+    Add-Assertion -Collection $assertions -Condition (Test-Path -LiteralPath (Join-Path $repoRoot $file)) -Message ("[repo] manifest exists: {0}" -f $file)
+}
+
+$manifestPaths = @($packaging.manifests | ForEach-Object { [string]$_.path })
+foreach ($manifestPath in $expectedManifestFiles) {
+    Add-Assertion -Collection $assertions -Condition ($manifestPaths -contains $manifestPath) -Message ("[packaging] manifests declares {0}" -f $manifestPath)
 }
 
 Add-Assertion -Collection $assertions -Condition (-not [string]::IsNullOrWhiteSpace([string]$runtimeConfig.target_relpath)) -Message '[runtime] target_relpath is present'
@@ -289,7 +307,7 @@ if (-not [string]::IsNullOrWhiteSpace([string]$runtimeConfig.coherence_gate)) {
 Add-Assertion -Collection $assertions -Condition (Test-Path -LiteralPath $installPs1) -Message '[install.ps1] exists'
 Add-Assertion -Collection $assertions -Condition (Test-ContentPattern -Path $installPs1 -Pattern 'Invoke-InstalledRuntimeFreshnessGate') -Message '[install.ps1] references Invoke-InstalledRuntimeFreshnessGate'
 Add-Assertion -Collection $assertions -Condition (Test-ContentPattern -Path $installPs1 -Pattern 'plugins-manifest.codex.json') -Message '[install.ps1] references plugins-manifest.codex.json'
-Add-Assertion -Collection $assertions -Condition (Test-ContentPattern -Path $installPs1 -Pattern 'settings.template.codex.json') -Message '[install.ps1] references settings template'
+Add-Assertion -Collection $assertions -Condition ((Test-ContentPattern -Path $installPs1 -Pattern 'settings.template.codex.json') -or (Test-ContentPattern -Path $installAdapterPs1 -Pattern 'settings.template.codex.json')) -Message '[install flow] references settings template'
 
 Add-Assertion -Collection $assertions -Condition (Test-Path -LiteralPath $checkPs1) -Message '[check.ps1] exists'
 Add-Assertion -Collection $assertions -Condition (Test-ContentPattern -Path $checkPs1 -Pattern 'Invoke-RuntimeFreshnessCheck') -Message '[check.ps1] references runtime freshness check'

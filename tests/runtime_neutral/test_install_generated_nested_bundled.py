@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 INSTALL_SCRIPT = REPO_ROOT / "install.sh"
 ADAPTER_INSTALLER = REPO_ROOT / "scripts" / "install" / "install_vgo_adapter.py"
 ADAPTER_RESOLVER = REPO_ROOT / "scripts" / "common" / "resolve_vgo_adapter.py"
+RUNTIME_CONTRACTS = REPO_ROOT / "scripts" / "common" / "runtime_contracts.py"
 
 REQUIRED_CORE = [
     "dialectic",
@@ -29,6 +30,7 @@ REQUIRED_WORKFLOW = [
     "subagent-driven-development",
     "systematic-debugging",
 ]
+MIRROR_DIRECTORIES = ["config", "templates", "scripts", "mcp"]
 
 
 class InstallGeneratedNestedBundledTests(unittest.TestCase):
@@ -64,6 +66,7 @@ class InstallGeneratedNestedBundledTests(unittest.TestCase):
         shutil.copy2(INSTALL_SCRIPT, self.repo_root / "install.sh")
         shutil.copy2(ADAPTER_INSTALLER, self.repo_root / "scripts" / "install" / "install_vgo_adapter.py")
         shutil.copy2(ADAPTER_RESOLVER, self.repo_root / "scripts" / "common" / "resolve_vgo_adapter.py")
+        shutil.copy2(RUNTIME_CONTRACTS, self.repo_root / "scripts" / "common" / "runtime_contracts.py")
 
         self._write("SKILL.md", "---\nname: vibe\ndescription: fixture canonical\n---\n")
         self._write("check.sh", "#!/usr/bin/env bash\nexit 0\n")
@@ -113,7 +116,7 @@ class InstallGeneratedNestedBundledTests(unittest.TestCase):
                     "packaging": {
                         "mirror": {
                             "files": ["SKILL.md", "check.sh"],
-                            "directories": ["config", "protocols", "references", "docs", "templates", "scripts", "mcp"],
+                            "directories": MIRROR_DIRECTORIES,
                         }
                     },
                     "runtime": {
@@ -130,9 +133,21 @@ class InstallGeneratedNestedBundledTests(unittest.TestCase):
         )
 
         bundled_skills_root = self.repo_root / "bundled" / "skills"
+        vibe_root = bundled_skills_root / "vibe"
         self._write_skill(bundled_skills_root, "vibe")
         for name in REQUIRED_CORE + REQUIRED_WORKFLOW:
             self._write_skill(bundled_skills_root, name)
+
+        for rel in ("SKILL.md", "check.sh"):
+            source = self.repo_root / rel
+            target = vibe_root / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+        for rel in MIRROR_DIRECTORIES:
+            source = self.repo_root / rel
+            target = vibe_root / rel
+            if source.is_dir():
+                shutil.copytree(source, target)
 
         nested_baseline = bundled_skills_root / "vibe" / "bundled" / "skills" / "vibe"
         self.assertFalse(nested_baseline.exists())
@@ -164,6 +179,9 @@ class InstallGeneratedNestedBundledTests(unittest.TestCase):
         self.assertTrue(nested_root.exists())
         self.assertFalse((nested_root / "SKILL.md").exists())
         self.assertTrue((nested_root / "SKILL.runtime-mirror.md").exists())
+        self.assertFalse((installed_root / "docs").exists())
+        self.assertFalse((installed_root / "references").exists())
+        self.assertFalse((installed_root / "protocols").exists())
         self.assertEqual(
             (installed_root / "config" / "version-governance.json").read_text(encoding="utf-8"),
             (nested_root / "config" / "version-governance.json").read_text(encoding="utf-8"),

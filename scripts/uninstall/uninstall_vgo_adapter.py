@@ -5,8 +5,15 @@ import argparse
 import json
 import os
 import shutil
+import sys
 import uuid
 from pathlib import Path
+
+COMMON_DIR = Path(__file__).resolve().parents[1] / "common"
+if str(COMMON_DIR) not in sys.path:
+    sys.path.insert(0, str(COMMON_DIR))
+
+from runtime_contracts import uses_skill_only_activation
 
 
 def load_json(path: Path):
@@ -191,6 +198,9 @@ def host_inventory(repo_root: Path, host_id: str) -> set[str]:
         inventory.add("opencode.json.example")
     elif host_id in {"windsurf", "openclaw"}:
         inventory.update(collect_file_inventory(repo_root / "commands", "global_workflows"))
+    if uses_skill_only_activation(host_id):
+        inventory.add(".vibeskills/host-settings.json")
+        inventory.add(".vibeskills/host-closure.json")
     return {entry for entry in inventory if entry}
 
 

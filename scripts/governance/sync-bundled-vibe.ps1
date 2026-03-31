@@ -79,11 +79,256 @@ function Get-PreviewReceiptPath {
     return Join-Path $CanonicalRoot (Join-Path $root 'sync-bundled-vibe.json')
 }
 
+function Get-TopLevelMirrorSegment {
+    param(
+        [Parameter(Mandatory)] [string]$RelativePath
+    )
+
+    $normalized = ([string]$RelativePath).Replace('\', '/').Trim('/')
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return ''
+    }
+    return ($normalized -split '/', 2)[0]
+}
+
+function Remove-MirrorPath {
+    param(
+        [Parameter(Mandatory)] [string]$TargetId,
+        [Parameter(Mandatory)] [string]$RelativePath,
+        [Parameter(Mandatory)] [string]$TargetPath,
+        [Parameter(Mandatory)] [string]$Reason
+    )
+
+    if ($Preview) {
+        Add-PreviewAction -Collection $previewActions -Type 'prune-legacy' -TargetId $TargetId -RelativePath $RelativePath -Message ('would prune legacy mirror path ' + $TargetPath + ' (' + $Reason + ')')
+        return
+    }
+
+    if (-not (Test-Path -LiteralPath $TargetPath)) {
+        return
+    }
+
+    Remove-Item -LiteralPath $TargetPath -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host ("[PRUNE] {0} {1} ({2})" -f $TargetId, $RelativePath, $Reason)
+}
+
+function Remove-ObsoleteMirrorRoots {
+    param(
+        [Parameter(Mandatory)] [psobject]$Target,
+        [string[]]$MirrorFiles = @(),
+        [string[]]$MirrorDirs = @(),
+        [string[]]$AllowBundledOnly = @(),
+        [object[]]$MirrorTargets = @()
+    )
+
+    $targetRoot = [string]$Target.fullPath
+    if (-not (Test-Path -LiteralPath $targetRoot)) {
+        return
+    }
+
+    $expectedRoots = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($rel in @($MirrorFiles + $MirrorDirs)) {
+        $segment = Get-TopLevelMirrorSegment -RelativePath $rel
+        if (-not [string]::IsNullOrWhiteSpace($segment)) {
+            $expectedRoots.Add($segment) | Out-Null
+        }
+    }
+
+    $preservedRoots = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($otherTarget in $MirrorTargets) {
+        if ($null -eq $otherTarget -or [string]::IsNullOrWhiteSpace([string]$otherTarget.fullPath)) {
+            continue
+        }
+        if ([string]$otherTarget.id -eq [string]$Target.id) {
+            continue
+        }
+
+        $otherFullPath = [string]$otherTarget.fullPath
+        try {
+            $relativeToTarget = Get-VgoRelativePathPortable -BasePath $targetRoot -TargetPath $otherFullPath
+        } catch {
+            continue
+        }
+
+        if ([string]::IsNullOrWhiteSpace($relativeToTarget) -or $relativeToTarget.StartsWith('..')) {
+            continue
+        }
+
+        $segment = Get-TopLevelMirrorSegment -RelativePath $relativeToTarget
+        if (-not [string]::IsNullOrWhiteSpace($segment)) {
+            $preservedRoots.Add($segment) | Out-Null
+        }
+    }
+
+    $topLevelEntries = @(Get-ChildItem -LiteralPath $targetRoot -Force)
+    foreach ($entry in $topLevelEntries) {
+        $relativePath = [string]$entry.Name
+        if ($expectedRoots.Contains($relativePath) -or $preservedRoots.Contains($relativePath)) {
+            continue
+        }
+
+        $allowlistedPaths = @(
+            $AllowBundledOnly | Where-Object {
+                $_ -eq $relativePath -or $_.StartsWith(($relativePath + '/'))
+            }
+        )
+        if ($allowlistedPaths.Count -eq 0) {
+            Remove-MirrorPath -TargetId ([string]$Target.id) -RelativePath $relativePath -TargetPath $entry.FullName -Reason 'dropped-from-mirror-contract'
+            continue
+        }
+
+        if (-not $entry.PSIsContainer) {
+            continue
+        }
+
+        $files = @(
+            Get-ChildItem -LiteralPath $entry.FullName -Recurse -File -Force | Sort-Object FullName
+        )
+        foreach ($file in $files) {
+            $childRelative = Get-VgoRelativePathPortable -BasePath $entry.FullName -TargetPath $file.FullName
+            $allowRelative = ('{0}/{1}' -f $relativePath, $childRelative).Replace('\', '/')
+            if ($AllowBundledOnly -contains $allowRelative) {
+                continue
+            }
+            Remove-MirrorPath -TargetId ([string]$Target.id) -RelativePath $allowRelative -TargetPath $file.FullName -Reason 'dropped-from-mirror-contract'
+        }
+
+        $directories = @(
+            Get-ChildItem -LiteralPath $entry.FullName -Recurse -Directory -Force | Sort-Object FullName -Descending
+        )
+        foreach ($directory in $directories) {
+            if (@(Get-ChildItem -LiteralPath $directory.FullName -Force).Count -eq 0) {
+                Remove-MirrorPath -TargetId ([string]$Target.id) -RelativePath (Get-VgoRelativePathPortable -BasePath $targetRoot -TargetPath $directory.FullName) -TargetPath $directory.FullName -Reason 'empty-after-prune'
+            }
+        }
+
+        if (@(Get-ChildItem -LiteralPath $entry.FullName -Force).Count -eq 0) {
+            Remove-MirrorPath -TargetId ([string]$Target.id) -RelativePath $relativePath -TargetPath $entry.FullName -Reason 'empty-after-prune'
+        }
+    }
+}
+
+function Get-AllowedMirrorRelativeFiles {
+    param(
+        [Parameter(Mandatory)] [string]$CanonicalRoot,
+        [string[]]$MirrorFiles = @(),
+        [string[]]$MirrorDirs = @()
+    )
+
+    $allowed = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($rel in $MirrorFiles) {
+        $sourcePath = Join-Path $CanonicalRoot $rel
+        if (Test-Path -LiteralPath $sourcePath -PathType Leaf) {
+            $null = $allowed.Add(([string]$rel).Replace('\', '/'))
+        }
+    }
+
+    foreach ($dir in $MirrorDirs) {
+        $sourceDir = Join-Path $CanonicalRoot $dir
+        if (-not (Test-Path -LiteralPath $sourceDir -PathType Container)) {
+            continue
+        }
+
+        $files = @(Get-ChildItem -LiteralPath $sourceDir -Recurse -File | Sort-Object FullName)
+        foreach ($file in $files) {
+            $relativeFile = Get-VgoRelativePathPortable -BasePath $CanonicalRoot -TargetPath $file.FullName
+            $null = $allowed.Add($relativeFile.Replace('\', '/'))
+        }
+    }
+
+    return @($allowed)
+}
+
+function Remove-ObsoleteMirrorFiles {
+    param(
+        [Parameter(Mandatory)] [psobject]$Target,
+        [string[]]$AllowedRelativeFiles = @(),
+        [string[]]$AllowBundledOnly = @(),
+        [object[]]$MirrorTargets = @()
+    )
+
+    $targetRoot = [string]$Target.fullPath
+    if (-not (Test-Path -LiteralPath $targetRoot -PathType Container)) {
+        return
+    }
+
+    $allowed = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($item in $AllowedRelativeFiles) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$item)) {
+            $null = $allowed.Add(([string]$item).Replace('\', '/'))
+        }
+    }
+
+    $preservedRoots = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($otherTarget in $MirrorTargets) {
+        if ($null -eq $otherTarget -or [string]::IsNullOrWhiteSpace([string]$otherTarget.fullPath)) {
+            continue
+        }
+        if ([string]$otherTarget.id -eq [string]$Target.id) {
+            continue
+        }
+
+        try {
+            $relativeToTarget = Get-VgoRelativePathPortable -BasePath $targetRoot -TargetPath ([string]$otherTarget.fullPath)
+        } catch {
+            continue
+        }
+
+        if ([string]::IsNullOrWhiteSpace($relativeToTarget) -or $relativeToTarget.StartsWith('..')) {
+            continue
+        }
+
+        $segment = Get-TopLevelMirrorSegment -RelativePath $relativeToTarget
+        if (-not [string]::IsNullOrWhiteSpace($segment)) {
+            $null = $preservedRoots.Add($segment)
+        }
+    }
+
+    $targetFiles = @(Get-ChildItem -LiteralPath $targetRoot -Recurse -File -Force | Sort-Object FullName)
+    foreach ($file in $targetFiles) {
+        $relativePath = (Get-VgoRelativePathPortable -BasePath $targetRoot -TargetPath $file.FullName).Replace('\', '/')
+        $topSegment = Get-TopLevelMirrorSegment -RelativePath $relativePath
+        if ($preservedRoots.Contains($topSegment)) {
+            continue
+        }
+        if ($allowed.Contains($relativePath)) {
+            continue
+        }
+        if ($AllowBundledOnly -contains $relativePath) {
+            continue
+        }
+
+        if ($Preview) {
+            Add-PreviewAction -Collection $previewActions -Type 'prune-file' -TargetId ([string]$Target.id) -RelativePath $relativePath -Message ('would prune extra bundled file ' + $file.FullName)
+        } else {
+            Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
+            Write-Host ("[PRUNE] {0} {1}" -f $Target.id, $relativePath)
+        }
+    }
+
+    $directories = @(Get-ChildItem -LiteralPath $targetRoot -Recurse -Directory -Force | Sort-Object FullName -Descending)
+    foreach ($directory in $directories) {
+        $relativePath = (Get-VgoRelativePathPortable -BasePath $targetRoot -TargetPath $directory.FullName).Replace('\', '/')
+        $topSegment = Get-TopLevelMirrorSegment -RelativePath $relativePath
+        if ($preservedRoots.Contains($topSegment)) {
+            continue
+        }
+        if (@(Get-ChildItem -LiteralPath $directory.FullName -Force).Count -gt 0) {
+            continue
+        }
+
+        if ($Preview) {
+            Add-PreviewAction -Collection $previewActions -Type 'prune-empty-dir' -TargetId ([string]$Target.id) -RelativePath $relativePath -Message ('would prune empty mirror directory ' + $directory.FullName)
+        } else {
+            Remove-Item -LiteralPath $directory.FullName -Force -Recurse -ErrorAction SilentlyContinue
+            Write-Host ("[PRUNE] {0} {1} (empty-after-prune)" -f $Target.id, $relativePath)
+        }
+    }
+}
+
 $context = Get-VgoGovernanceContext -ScriptPath $PSCommandPath -EnforceExecutionContext
 $canonicalRoot = $context.canonicalRoot
 $packaging = $context.packaging
-$mirrorFiles = @($packaging.mirror.files)
-$mirrorDirs = @($packaging.mirror.directories)
 $allowBundledOnly = @($packaging.allow_bundled_only)
 $syncTargets = @(
     $context.mirrorTargets | Where-Object {
@@ -112,6 +357,7 @@ function Sync-ToMirrorTarget {
     )
 
     $targetRoot = [string]$Target.fullPath
+    $allowedRelativeFiles = Get-AllowedMirrorRelativeFiles -CanonicalRoot $canonicalRoot -MirrorFiles $mirrorFiles -MirrorDirs $mirrorDirs
     $shouldCreate = [bool]$Target.required -or ([string]$Target.presence_policy -eq 'required') -or (
         $IncludeGeneratedCompatibilityTargets -and
         $Target.PSObject.Properties.Name -contains 'materialization_mode' -and
@@ -205,6 +451,11 @@ function Sync-ToMirrorTarget {
             }
         }
     }
+
+    if ($PruneBundledExtras) {
+        Remove-ObsoleteMirrorFiles -Target $Target -AllowedRelativeFiles $allowedRelativeFiles -AllowBundledOnly $allowBundledOnly -MirrorTargets $context.mirrorTargets
+        Remove-ObsoleteMirrorRoots -Target $Target -MirrorFiles $mirrorFiles -MirrorDirs $mirrorDirs -AllowBundledOnly $allowBundledOnly -MirrorTargets $context.mirrorTargets
+    }
 }
 
 Write-Host '=== Sync Bundled Vibe ===' -ForegroundColor Cyan
@@ -216,6 +467,9 @@ foreach ($target in $syncTargets) {
 Write-Host ''
 
 foreach ($target in $syncTargets) {
+    $effectivePackaging = Get-VgoEffectiveTargetPackaging -Packaging $packaging -TargetId ([string]$target.id)
+    $script:mirrorFiles = @($effectivePackaging.files)
+    $script:mirrorDirs = @($effectivePackaging.directories)
     Sync-ToMirrorTarget -Target $target
 }
 

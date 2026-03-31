@@ -67,17 +67,39 @@
         "check.ps1",
         "check.sh",
         "install.ps1",
-        "install.sh"
+        "install.sh",
+        "config/runtime-script-manifest.json",
+        "config/runtime-config-manifest.json"
       ],
       "directories": [
-        "config",
-        "protocols",
-        "references",
-        "docs",
         "templates",
-        "scripts",
         "mcp"
       ]
+    },
+    "manifests": [
+      {
+        "id": "runtime_scripts",
+        "path": "config/runtime-script-manifest.json"
+      },
+      {
+        "id": "runtime_configs",
+        "path": "config/runtime-config-manifest.json"
+      }
+    ],
+    "target_overrides": {
+      "bundled": {
+        "files": [
+          "README.md",
+          "README.zh.md",
+          "LICENSE",
+          "NOTICE",
+          "THIRD_PARTY_LICENSES.md"
+        ],
+        "directories": [
+          ".internal",
+          "agents"
+        ]
+      }
     },
     "allow_bundled_only": [
       "docs/CODEX_ECOSYSTEM_MAINTENANCE_PRINCIPLES.md"
@@ -99,6 +121,8 @@
       "required_runtime_markers": [
         "SKILL.md",
         "config/version-governance.json",
+        "config/runtime-script-manifest.json",
+        "config/runtime-config-manifest.json",
         "install.ps1",
         "check.ps1",
         "scripts/common/vibe-governance-helpers.ps1",

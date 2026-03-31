@@ -923,7 +923,20 @@ fi
 check_codex_duplicate_skill_surface
 check_path "upstream lock" "${TARGET_ROOT}/config/upstream-lock.json"
 check_path "vibe version governance config" "${TARGET_ROOT}/${runtime_target_rel}/config/version-governance.json"
-check_path "vibe release ledger" "${runtime_skill_root}/references/release-ledger.jsonl"
+installed_runtime_governance="${runtime_skill_root}/config/version-governance.json"
+runtime_release_ledger_required="true"
+if [[ -f "${installed_runtime_governance}" ]]; then
+  if ! json_query_lines_from_file "${installed_runtime_governance}" 'packaging.mirror.directories' 2>/dev/null | grep -Fxq 'references' && \
+     ! json_query_lines_from_file "${installed_runtime_governance}" 'packaging.allow_bundled_only' 2>/dev/null | grep -Fxq 'references/release-ledger.jsonl'; then
+    runtime_release_ledger_required="false"
+  fi
+fi
+if [[ "${runtime_release_ledger_required}" == "true" ]]; then
+  check_path "vibe release ledger" "${runtime_skill_root}/references/release-ledger.jsonl"
+else
+  echo "[OK] vibe release ledger skipped (not packaged into installed runtime contract)"
+  PASS=$((PASS+1))
+fi
 for n in vibe dialectic local-vco-roles spec-kit-vibe-compat superclaude-framework-compat ralph-loop cancel-ralph tdd-guide think-harder; do
   check_path "skill/${n}" "${TARGET_ROOT}/skills/${n}/SKILL.md"
 done

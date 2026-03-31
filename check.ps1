@@ -540,8 +540,26 @@ function Invoke-AdapterSpecificChecks {
   }
 
   Check-Path -Label "upstream lock" -Path (Join-Path $TargetRoot 'config\upstream-lock.json')
-  Check-Path -Label "vibe version governance config" -Path (Join-Path $TargetRoot (Join-Path $startupRuntimeTargetRel 'config\version-governance.json'))
-  Check-Path -Label "vibe release ledger" -Path (Join-Path $RuntimeSkillRoot 'references\release-ledger.jsonl')
+  $installedRuntimeGovernancePath = Join-Path $TargetRoot (Join-Path $startupRuntimeTargetRel 'config\version-governance.json')
+  Check-Path -Label "vibe version governance config" -Path $installedRuntimeGovernancePath
+  $runtimeReleaseLedgerRequired = $true
+  if (Test-Path -LiteralPath $installedRuntimeGovernancePath) {
+    $installedRuntimeGovernance = Get-JsonObject -Path $installedRuntimeGovernancePath -Label 'installed vibe governance'
+    if ($null -ne $installedRuntimeGovernance -and $installedRuntimeGovernance.PSObject.Properties.Name -contains 'packaging' -and $null -ne $installedRuntimeGovernance.packaging) {
+      $packaging = $installedRuntimeGovernance.packaging
+      $mirror = if ($packaging.PSObject.Properties.Name -contains 'mirror' -and $null -ne $packaging.mirror) { $packaging.mirror } else { $null }
+      $mirrorDirs = if ($null -ne $mirror -and $mirror.PSObject.Properties.Name -contains 'directories') { @($mirror.directories | ForEach-Object { [string]$_ }) } else { @() }
+      $allowBundledOnly = if ($packaging.PSObject.Properties.Name -contains 'allow_bundled_only') { @($packaging.allow_bundled_only | ForEach-Object { [string]$_ }) } else { @() }
+      if ('references' -notin $mirrorDirs -and 'references/release-ledger.jsonl' -notin $allowBundledOnly) {
+        $runtimeReleaseLedgerRequired = $false
+      }
+    }
+  }
+  if ($runtimeReleaseLedgerRequired) {
+    Check-Path -Label "vibe release ledger" -Path (Join-Path $RuntimeSkillRoot 'references\release-ledger.jsonl')
+  } else {
+    Check-Condition -Label "vibe release ledger skipped (not packaged into installed runtime contract)" -Condition $true
+  }
 
   foreach ($name in $requiredSkills) {
     Check-Path -Label "skill/$name" -Path (Join-Path $TargetRoot "skills\$name\SKILL.md")

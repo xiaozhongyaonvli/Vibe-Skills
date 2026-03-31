@@ -67,6 +67,34 @@ function Copy-DirContent {
     Add-VgoCreatedPath -Path $Destination
 }
 
+function Copy-SkillRootsWithoutSelfShadow {
+    param(
+        [string]$Source,
+        [string]$Destination,
+        [string]$RepoRoot
+    )
+
+    if (-not (Test-Path -LiteralPath $Source)) { return }
+
+    $repoRootFull = [System.IO.Path]::GetFullPath($RepoRoot)
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    Add-VgoCreatedPath -Path $Destination
+
+    foreach ($child in @(Get-ChildItem -LiteralPath $Source -Force -ErrorAction SilentlyContinue | Sort-Object Name)) {
+        $target = Join-Path $Destination $child.Name
+        if ([System.IO.Path]::GetFullPath($target) -eq $repoRootFull) {
+            continue
+        }
+        if ($child.PSIsContainer) {
+            Copy-DirContent -Source $child.FullName -Destination $target
+        } else {
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+            Copy-Item -LiteralPath $child.FullName -Destination $target -Force
+            Add-VgoCreatedPath -Path $target
+        }
+    }
+}
+
 function Restore-SkillEntryPointIfNeeded {
     param([string]$SkillRoot)
 
@@ -77,6 +105,23 @@ function Restore-SkillEntryPointIfNeeded {
     }
 
     Move-Item -LiteralPath $mirrorPath -Destination $skillMd -Force
+}
+
+function Convert-SkillEntryPointToRuntimeMirror {
+    param([string]$SkillRoot)
+
+    $skillMd = Join-Path $SkillRoot 'SKILL.md'
+    $mirrorPath = Join-Path $SkillRoot 'SKILL.runtime-mirror.md'
+    if (Test-Path -LiteralPath $mirrorPath -PathType Leaf) {
+        if (Test-Path -LiteralPath $skillMd -PathType Leaf) {
+            Remove-Item -LiteralPath $skillMd -Force
+        }
+        return
+    }
+
+    if (Test-Path -LiteralPath $skillMd -PathType Leaf) {
+        Move-Item -LiteralPath $skillMd -Destination $mirrorPath -Force
+    }
 }
 
 function Get-VgoPlatformTag {
@@ -635,10 +680,19 @@ function Sync-VibeCanonicalToTarget {
         throw "version-governance config not found: $governancePath"
     }
     $governance = Get-Content -LiteralPath $governancePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $packaging = Get-VgoPackagingContract -Governance $governance -RepoRoot $RepoRoot
     $canonicalRoot = Join-Path $RepoRoot ([string]$governance.source_of_truth.canonical_root)
-    $mirrorFiles = @($governance.packaging.mirror.files)
-    $mirrorDirs = @($governance.packaging.mirror.directories)
+    $mirrorFiles = @($packaging.mirror.files)
+    $mirrorDirs = @($packaging.mirror.directories)
     $targetVibeRoot = Join-Path $TargetRoot $TargetRel
+
+    if ([System.IO.Path]::GetFullPath($canonicalRoot) -eq [System.IO.Path]::GetFullPath($targetVibeRoot)) {
+        return
+    }
+
+    if (Test-Path -LiteralPath $targetVibeRoot) {
+        Remove-Item -LiteralPath $targetVibeRoot -Recurse -Force
+    }
 
     foreach ($rel in $mirrorFiles) {
         $src = Join-Path $canonicalRoot $rel
@@ -728,12 +782,24 @@ function Sync-InstalledGeneratedNestedCompatibilityRoot {
         return
     }
 
-    if (Test-Path -LiteralPath $nestedRoot) {
-        Remove-Item -LiteralPath $nestedRoot -Recurse -Force
+    $nestedSkillsRoot = Split-Path -Parent $nestedRoot
+    $sourceSkillsRoot = Split-Path -Parent $targetVibeRoot
+    if (Test-Path -LiteralPath $nestedSkillsRoot) {
+        Remove-Item -LiteralPath $nestedSkillsRoot -Recurse -Force
     }
 
-    $mirrorFiles = @($Governance.packaging.mirror.files)
-    $mirrorDirs = @($Governance.packaging.mirror.directories)
+    foreach ($skillDir in @(Get-ChildItem -LiteralPath $sourceSkillsRoot -Directory -ErrorAction SilentlyContinue | Sort-Object Name)) {
+        if ($skillDir.Name -eq (Split-Path -Leaf $targetVibeRoot)) {
+            continue
+        }
+        $destination = Join-Path $nestedSkillsRoot $skillDir.Name
+        Copy-DirContent -Source $skillDir.FullName -Destination $destination
+        Convert-SkillEntryPointToRuntimeMirror -SkillRoot $destination
+    }
+
+    $packaging = Get-VgoPackagingContract -Governance $Governance -RepoRoot $targetVibeRoot
+    $mirrorFiles = @($packaging.mirror.files)
+    $mirrorDirs = @($packaging.mirror.directories)
     foreach ($rel in $mirrorFiles) {
         $src = Join-Path $targetVibeRoot $rel
         $dst = Join-Path $nestedRoot $rel
@@ -747,6 +813,7 @@ function Sync-InstalledGeneratedNestedCompatibilityRoot {
         if (-not (Test-Path -LiteralPath $srcDir)) { continue }
         Copy-DirContent -Source $srcDir -Destination $dstDir
     }
+    Convert-SkillEntryPointToRuntimeMirror -SkillRoot $nestedRoot
 }
 
 function Install-RuntimeCorePayload {
@@ -767,7 +834,11 @@ function Install-RuntimeCorePayload {
     foreach ($entry in $copyDirectories) {
         $src = Join-Path $RepoRoot ([string]$entry.source)
         $dst = Join-Path $TargetRoot ([string]$entry.target)
-        Copy-DirContent -Source $src -Destination $dst
+        if ([string]$entry.target -eq 'skills') {
+            Copy-SkillRootsWithoutSelfShadow -Source $src -Destination $dst -RepoRoot $RepoRoot
+        } else {
+            Copy-DirContent -Source $src -Destination $dst
+        }
         if ([string]$entry.target -eq 'skills' -and (Test-Path -LiteralPath $dst -PathType Container)) {
             foreach ($skillDir in @(Get-ChildItem -LiteralPath $dst -Directory -ErrorAction SilentlyContinue)) {
                 Restore-SkillEntryPointIfNeeded -SkillRoot $skillDir.FullName

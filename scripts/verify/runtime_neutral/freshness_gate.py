@@ -11,6 +11,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+COMMON_DIR = Path(__file__).resolve().parents[2] / "common"
+if str(COMMON_DIR) not in sys.path:
+    sys.path.insert(0, str(COMMON_DIR))
+
+from runtime_contracts import is_ignored_runtime_artifact, resolve_packaging_contract
+
 
 DEFAULT_MIRROR_FILES = [
     "SKILL.md",
@@ -22,10 +28,9 @@ DEFAULT_MIRROR_FILES = [
 
 DEFAULT_MIRROR_DIRECTORIES = [
     "config",
-    "protocols",
-    "references",
-    "docs",
+    "templates",
     "scripts",
+    "mcp",
 ]
 
 DEFAULT_IGNORE_JSON_KEYS = ["updated", "generated_at"]
@@ -114,7 +119,7 @@ def relative_file_list(root: Path) -> list[str]:
     return sorted(
         to_posix(path.relative_to(root))
         for path in root.rglob("*")
-        if path.is_file()
+        if path.is_file() and not is_ignored_runtime_artifact(path.relative_to(root))
     )
 
 
@@ -183,19 +188,8 @@ def mirror_topology_targets(governance: dict[str, Any], repo_root: Path) -> list
     return normalized
 
 
-def packaging_contract(governance: dict[str, Any]) -> dict[str, Any]:
-    packaging = governance.get("packaging") or {}
-    mirror = packaging.get("mirror") or {}
-    return {
-        "mirror": {
-            "files": list(mirror.get("files") or DEFAULT_MIRROR_FILES),
-            "directories": list(mirror.get("directories") or DEFAULT_MIRROR_DIRECTORIES),
-        },
-        "allow_bundled_only": list(packaging.get("allow_bundled_only") or []),
-        "normalized_json_ignore_keys": list(
-            packaging.get("normalized_json_ignore_keys") or DEFAULT_IGNORE_JSON_KEYS
-        ),
-    }
+def packaging_contract(governance: dict[str, Any], repo_root: Path) -> dict[str, Any]:
+    return resolve_packaging_contract(governance, repo_root)
 
 
 def runtime_config(governance: dict[str, Any]) -> dict[str, Any]:
@@ -264,7 +258,7 @@ def load_governance_context(script_path: Path, enforce_context: bool = True) -> 
         governance_path=governance_path,
         governance=governance,
         canonical_root=Path(canonical["full_path"]),
-        packaging=packaging_contract(governance),
+        packaging=packaging_contract(governance, repo_root),
         runtime_config=runtime_config(governance),
         mirror_targets=targets,
     )
@@ -287,7 +281,7 @@ def evaluate_freshness(
         governance_path=repo_root / "config" / "version-governance.json",
         governance=governance,
         canonical_root=canonical_root,
-        packaging=packaging_contract(governance),
+        packaging=packaging_contract(governance, repo_root),
         runtime_config=runtime_config(governance),
         mirror_targets=mirror_topology_targets(governance, repo_root),
     )

@@ -812,9 +812,68 @@ function Get-VgoLatestJsonlRecord {
     return $null
 }
 
+function Get-VgoPackagingManifestSpecs {
+    param(
+        [Parameter(Mandatory)] [psobject]$Packaging
+    )
+
+    $manifestInput = if ($Packaging.PSObject.Properties.Name -contains 'manifests') { $Packaging.manifests } else { $null }
+    $specs = @()
+    if ($null -eq $manifestInput) {
+        return @()
+    }
+
+    if ($manifestInput -is [System.Collections.IEnumerable] -and -not ($manifestInput -is [string])) {
+        foreach ($item in @($manifestInput)) {
+            if ($null -eq $item) {
+                continue
+            }
+
+            $manifestId = if ($item.PSObject.Properties.Name -contains 'id') { [string]$item.id } else { '' }
+            $manifestPath = if ($item.PSObject.Properties.Name -contains 'path') { [string]$item.path } else { '' }
+            if ([string]::IsNullOrWhiteSpace($manifestPath)) {
+                continue
+            }
+
+            $specs += [pscustomobject]@{
+                id = $manifestId
+                path = $manifestPath.Replace('\', '/')
+            }
+        }
+        return @($specs)
+    }
+
+    $names = @()
+    if ($manifestInput -is [System.Collections.IDictionary]) {
+        $names = @($manifestInput.Keys)
+    } else {
+        $names = @($manifestInput.PSObject.Properties.Name)
+    }
+
+    foreach ($name in $names) {
+        $value = if ($manifestInput -is [System.Collections.IDictionary]) { $manifestInput[$name] } else { $manifestInput.$name }
+        if ($null -eq $value) {
+            continue
+        }
+
+        $manifestPath = if ($value.PSObject.Properties.Name -contains 'path') { [string]$value.path } else { [string]$value }
+        if ([string]::IsNullOrWhiteSpace($manifestPath)) {
+            continue
+        }
+
+        $specs += [pscustomobject]@{
+            id = [string]$name
+            path = $manifestPath.Replace('\', '/')
+        }
+    }
+
+    return @($specs)
+}
+
 function Get-VgoPackagingContract {
     param(
-        [Parameter(Mandatory)] [psobject]$Governance
+        [Parameter(Mandatory)] [psobject]$Governance,
+        [AllowEmptyString()] [string]$RepoRoot = ''
     )
 
     $defaults = [ordered]@{
@@ -822,6 +881,7 @@ function Get-VgoPackagingContract {
             files = @('SKILL.md', 'check.ps1', 'check.sh', 'install.ps1', 'install.sh')
             directories = @('config', 'protocols', 'references', 'docs', 'scripts')
         }
+        target_overrides = [ordered]@{}
         allow_bundled_only = @()
         normalized_json_ignore_keys = @('updated', 'generated_at')
     }
@@ -834,17 +894,121 @@ function Get-VgoPackagingContract {
     $mirror = if ($packaging.PSObject.Properties.Name -contains 'mirror' -and $null -ne $packaging.mirror) { $packaging.mirror } else { $null }
     $mirrorFiles = if ($null -ne $mirror -and $mirror.PSObject.Properties.Name -contains 'files') { @($mirror.files) } else { @($defaults.mirror.files) }
     $mirrorDirs = if ($null -ne $mirror -and $mirror.PSObject.Properties.Name -contains 'directories') { @($mirror.directories) } else { @($defaults.mirror.directories) }
+    $targetOverridesInput = if ($packaging.PSObject.Properties.Name -contains 'target_overrides' -and $null -ne $packaging.target_overrides) { $packaging.target_overrides } else { $null }
+    $manifestSpecs = Get-VgoPackagingManifestSpecs -Packaging $packaging
     $allowBundledOnly = if ($packaging.PSObject.Properties.Name -contains 'allow_bundled_only') { @($packaging.allow_bundled_only) } else { @($defaults.allow_bundled_only) }
     $ignoreKeys = if ($packaging.PSObject.Properties.Name -contains 'normalized_json_ignore_keys') { @($packaging.normalized_json_ignore_keys) } else { @($defaults.normalized_json_ignore_keys) }
 
+    if (-not [string]::IsNullOrWhiteSpace($RepoRoot)) {
+        foreach ($manifestSpec in $manifestSpecs) {
+            $manifestPath = Join-Path $RepoRoot $manifestSpec.path
+            if (-not (Test-Path -LiteralPath $manifestPath)) {
+                throw "packaging manifest not found: $manifestPath"
+            }
+
+            $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($manifest.PSObject.Properties.Name -contains 'files' -and $null -ne $manifest.files) {
+                $mirrorFiles += @($manifest.files)
+            }
+            if ($manifest.PSObject.Properties.Name -contains 'directories' -and $null -ne $manifest.directories) {
+                $mirrorDirs += @($manifest.directories)
+            }
+        }
+    }
+
+    $targetOverrides = [ordered]@{}
+    if ($null -ne $targetOverridesInput) {
+        $targetNames = @()
+        if ($targetOverridesInput -is [System.Collections.IDictionary]) {
+            $targetNames = @($targetOverridesInput.Keys)
+        } else {
+            $targetNames = @($targetOverridesInput.PSObject.Properties.Name)
+        }
+
+        foreach ($targetName in $targetNames) {
+            $targetValue = if ($targetOverridesInput -is [System.Collections.IDictionary]) { $targetOverridesInput[$targetName] } else { $targetOverridesInput.$targetName }
+            if ($null -eq $targetValue) {
+                continue
+            }
+
+            $targetFiles = if ($targetValue.PSObject.Properties.Name -contains 'files') { @($targetValue.files) } else { @() }
+            $targetDirs = if ($targetValue.PSObject.Properties.Name -contains 'directories') { @($targetValue.directories) } else { @() }
+            $targetOverrides[[string]$targetName] = [pscustomobject]@{
+                files = @($targetFiles)
+                directories = @($targetDirs)
+            }
+        }
+    }
+
     return [pscustomobject]@{
         mirror = [pscustomobject]@{
-            files = @($mirrorFiles)
-            directories = @($mirrorDirs)
+            files = @($mirrorFiles | ForEach-Object { ([string]$_).Replace('\', '/') } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+            directories = @($mirrorDirs | ForEach-Object { ([string]$_).Replace('\', '/') } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
         }
+        manifests = @($manifestSpecs)
+        target_overrides = [pscustomobject]$targetOverrides
         allow_bundled_only = @($allowBundledOnly)
         normalized_json_ignore_keys = @($ignoreKeys)
     }
+}
+
+function Get-VgoEffectiveTargetPackaging {
+    param(
+        [Parameter(Mandatory)] [psobject]$Packaging,
+        [AllowEmptyString()] [string]$TargetId = ''
+    )
+
+    $baseFiles = @($Packaging.mirror.files)
+    $baseDirs = @($Packaging.mirror.directories)
+    $targetOnlyFiles = @()
+    $targetOnlyDirs = @()
+
+    if (-not [string]::IsNullOrWhiteSpace($TargetId) -and $Packaging.PSObject.Properties.Name -contains 'target_overrides' -and $null -ne $Packaging.target_overrides) {
+        $targetOverrides = $Packaging.target_overrides
+        $override = $null
+        if ($targetOverrides -is [System.Collections.IDictionary]) {
+            if ($targetOverrides.Contains($TargetId)) {
+                $override = $targetOverrides[$TargetId]
+            }
+        } elseif ($targetOverrides.PSObject.Properties.Name -contains $TargetId) {
+            $override = $targetOverrides.$TargetId
+        }
+
+        if ($null -ne $override) {
+            $targetOnlyFiles = if ($override.PSObject.Properties.Name -contains 'files') { @($override.files) } else { @() }
+            $targetOnlyDirs = if ($override.PSObject.Properties.Name -contains 'directories') { @($override.directories) } else { @() }
+        }
+    }
+
+    return [pscustomobject]@{
+        files = @($baseFiles + $targetOnlyFiles | Select-Object -Unique)
+        directories = @($baseDirs + $targetOnlyDirs | Select-Object -Unique)
+        target_only_files = @($targetOnlyFiles)
+        target_only_directories = @($targetOnlyDirs)
+    }
+}
+
+function Test-VgoGovernedMirrorRelativePath {
+    param(
+        [Parameter(Mandatory)] [string]$RelativePath,
+        [Parameter(Mandatory)] [psobject]$Packaging,
+        [AllowEmptyString()] [string]$TargetId = ''
+    )
+
+    $rel = $RelativePath.Replace('\', '/')
+    $effective = Get-VgoEffectiveTargetPackaging -Packaging $Packaging -TargetId $TargetId
+    if (@($effective.files) -contains $rel) {
+        return $true
+    }
+
+    foreach ($dir in @($effective.directories)) {
+        $prefix = ('{0}/' -f $dir).Replace('\', '/')
+        if ($rel.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 function Get-VgoInstalledRuntimeConfig {
@@ -1127,7 +1291,7 @@ function Get-VgoGovernanceContext {
     }
 
     $governance = Get-Content -LiteralPath $governancePath -Raw -Encoding UTF8 | ConvertFrom-Json
-    $packaging = Get-VgoPackagingContract -Governance $governance
+    $packaging = Get-VgoPackagingContract -Governance $governance -RepoRoot $repoRoot
     $runtimeConfig = Get-VgoInstalledRuntimeConfig -Governance $governance
     $mirrorTargets = Get-VgoMirrorTopologyTargets -Governance $governance -RepoRoot $repoRoot
 

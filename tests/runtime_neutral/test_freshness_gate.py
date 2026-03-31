@@ -86,6 +86,73 @@ class FreshnessGateTests(unittest.TestCase):
             },
         }
 
+    def switch_to_manifest_packaging(self) -> None:
+        self.governance["packaging"]["mirror"]["files"] = [
+            "SKILL.md",
+            "check.ps1",
+            "check.sh",
+            "install.ps1",
+            "install.sh",
+            "config/runtime-script-manifest.json",
+            "config/runtime-config-manifest.json",
+        ]
+        self.governance["packaging"]["mirror"]["directories"] = []
+        self.governance["packaging"]["manifests"] = [
+            {"id": "runtime_scripts", "path": "config/runtime-script-manifest.json"},
+            {"id": "runtime_configs", "path": "config/runtime-config-manifest.json"},
+        ]
+        self.governance["runtime"]["installed_runtime"]["required_runtime_markers"] = [
+            "SKILL.md",
+            "config/version-governance.json",
+            "config/runtime-script-manifest.json",
+            "config/runtime-config-manifest.json",
+            "scripts/router/resolve-pack-route.ps1",
+            "scripts/common/vibe-governance-helpers.ps1",
+        ]
+        self.write_governance()
+        (self.canonical_root / "config" / "runtime-script-manifest.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "manifest_id": "runtime-scripts",
+                    "files": [
+                        "scripts/router/resolve-pack-route.ps1",
+                        "scripts/common/vibe-governance-helpers.ps1",
+                    ],
+                    "directories": [],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.canonical_root / "config" / "runtime-config-manifest.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "manifest_id": "runtime-config",
+                    "files": [
+                        "config/version-governance.json",
+                        "config/runtime-script-manifest.json",
+                        "config/runtime-config-manifest.json",
+                    ],
+                    "directories": [],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.installed_root / "config" / "runtime-script-manifest.json").write_text(
+            (self.canonical_root / "config" / "runtime-script-manifest.json").read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        (self.installed_root / "config" / "runtime-config-manifest.json").write_text(
+            (self.canonical_root / "config" / "runtime-config-manifest.json").read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        self.sync_runtime_governance_copies()
+
     def write_governance(self) -> None:
         path = self.root / "config" / "version-governance.json"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -182,6 +249,65 @@ class FreshnessGateTests(unittest.TestCase):
         self.assertFalse(gate_pass)
         docs_entry = next(item for item in artifact["results"]["directories"] if item["path"] == "docs")
         self.assertEqual(["unexpected.md"], docs_entry["only_in_installed"])
+
+    def test_python_cache_artifacts_are_ignored_during_directory_parity(self) -> None:
+        canonical_cache = self.canonical_root / "scripts" / "common" / "__pycache__" / "helper.cpython-310.pyc"
+        canonical_cache.parent.mkdir(parents=True, exist_ok=True)
+        canonical_cache.write_bytes(b"canonical-pyc")
+
+        installed_cache = self.installed_root / "scripts" / "common" / "__pycache__" / "helper.cpython-310.pyc"
+        installed_cache.parent.mkdir(parents=True, exist_ok=True)
+        installed_cache.write_bytes(b"installed-pyc")
+
+        gate_pass, artifact = self.evaluate()
+        self.assertTrue(gate_pass)
+        scripts_entry = next(item for item in artifact["results"]["directories"] if item["path"] == "scripts")
+        self.assertEqual([], scripts_entry["only_in_canonical"])
+        self.assertEqual([], scripts_entry["only_in_installed"])
+        self.assertEqual([], scripts_entry["diff_files"])
+
+    def test_runtime_cache_directories_are_ignored_during_directory_parity(self) -> None:
+        canonical_cache = self.canonical_root / "scripts" / ".pytest_cache" / "v" / "cache"
+        canonical_cache.parent.mkdir(parents=True, exist_ok=True)
+        canonical_cache.write_text("canonical-cache\n", encoding="utf-8")
+
+        installed_cache = self.installed_root / "scripts" / ".pytest_cache" / "v" / "cache"
+        installed_cache.parent.mkdir(parents=True, exist_ok=True)
+        installed_cache.write_text("installed-cache\n", encoding="utf-8")
+
+        gate_pass, artifact = self.evaluate()
+        self.assertTrue(gate_pass)
+        scripts_entry = next(item for item in artifact["results"]["directories"] if item["path"] == "scripts")
+        self.assertEqual([], scripts_entry["only_in_canonical"])
+        self.assertEqual([], scripts_entry["only_in_installed"])
+        self.assertEqual([], scripts_entry["diff_files"])
+
+    def test_runtime_coverage_artifacts_are_ignored_during_directory_parity(self) -> None:
+        canonical_coverage = self.canonical_root / "scripts" / ".coverage"
+        canonical_coverage.parent.mkdir(parents=True, exist_ok=True)
+        canonical_coverage.write_text("canonical-coverage\n", encoding="utf-8")
+
+        installed_coverage = self.installed_root / "scripts" / ".coverage"
+        installed_coverage.parent.mkdir(parents=True, exist_ok=True)
+        installed_coverage.write_text("installed-coverage\n", encoding="utf-8")
+
+        gate_pass, artifact = self.evaluate()
+        self.assertTrue(gate_pass)
+        scripts_entry = next(item for item in artifact["results"]["directories"] if item["path"] == "scripts")
+        self.assertEqual([], scripts_entry["only_in_canonical"])
+        self.assertEqual([], scripts_entry["only_in_installed"])
+        self.assertEqual([], scripts_entry["diff_files"])
+
+    def test_manifest_driven_packaging_contract_passes_without_broad_script_directory(self) -> None:
+        self.switch_to_manifest_packaging()
+        scripts_extra = self.installed_root / "scripts" / "runtime" / "extra.ps1"
+        scripts_extra.parent.mkdir(parents=True, exist_ok=True)
+        scripts_extra.write_text("Write-Host 'extra'\n", encoding="utf-8")
+
+        gate_pass, artifact = self.evaluate()
+        self.assertFalse(gate_pass)
+        scripts_entry = next(item for item in artifact["results"]["directories"] if item["path"] == "scripts")
+        self.assertEqual(["runtime/extra.ps1"], scripts_entry["only_in_installed"])
 
     def test_execution_context_allows_installed_runtime_without_outer_git_root(self) -> None:
         with tempfile.TemporaryDirectory() as isolated_dir:

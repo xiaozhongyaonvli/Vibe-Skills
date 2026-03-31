@@ -131,8 +131,9 @@ $canonicalRoot = $context.canonicalRoot
 $bundledRoot = $context.bundledRoot
 $nestedBundledRoot = $context.nestedBundledRoot
 Write-Host "=== VCO Version Packaging Gate ==="
-$mirrorFiles = @($governance.packaging.mirror.files)
-$mirrorDirs = @($governance.packaging.mirror.directories)
+$effectivePackaging = Get-VgoEffectiveTargetPackaging -Packaging $context.packaging -TargetId 'bundled'
+$mirrorFiles = @($effectivePackaging.files)
+$mirrorDirs = @($effectivePackaging.directories)
 $allowBundledOnly = @($governance.packaging.allow_bundled_only)
 $ignoreJsonKeys = @($governance.packaging.normalized_json_ignore_keys)
 

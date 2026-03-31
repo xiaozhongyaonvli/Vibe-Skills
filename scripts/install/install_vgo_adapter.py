@@ -4,9 +4,20 @@ import json
 import os
 import stat
 import shutil
+import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
+
+COMMON_DIR = Path(__file__).resolve().parents[1] / "common"
+if str(COMMON_DIR) not in sys.path:
+    sys.path.insert(0, str(COMMON_DIR))
+
+from runtime_contracts import (
+    SKILL_ONLY_ACTIVATION_HOSTS,
+    resolve_packaging_contract,
+    uses_skill_only_activation,
+)
 
 REQUIRED_CORE = [
     "dialectic",
@@ -29,13 +40,6 @@ OPTIONAL_WORKFLOW = [
     "receiving-code-review",
     "verification-before-completion",
 ]
-SKILL_ONLY_ACTIVATION_HOSTS = {
-    "claude-code",
-    "cursor",
-    "windsurf",
-    "openclaw",
-    "opencode",
-}
 HOST_BRIDGE_COMMAND_CANDIDATES = {
     "claude-code": ["claude", "claude-code"],
     "cursor": ["cursor-agent", "cursor"],
@@ -137,12 +141,6 @@ def write_json(data):
 def write_json_file(path: Path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def uses_skill_only_activation(host_id: str) -> bool:
-    return (host_id or "").strip().lower() in SKILL_ONLY_ACTIVATION_HOSTS
-
-
 def is_relative_to(path: Path, base: Path) -> bool:
     try:
         path.relative_to(base)
@@ -201,6 +199,21 @@ def copy_tree(src: Path, dst: Path):
             track_created_path(target)
 
 
+def copy_skill_roots_without_self_shadow(src: Path, dst: Path, repo_root: Path):
+    if not src.exists():
+        return
+    dst.mkdir(parents=True, exist_ok=True)
+    track_created_path(dst)
+    for child in sorted(src.iterdir(), key=lambda item: item.name):
+        target = dst / child.name
+        if same_path(target, repo_root):
+            continue
+        if child.is_dir():
+            copy_dir_replace(child, target)
+        else:
+            copy_file(child, target)
+
+
 def copy_file(src: Path, dst: Path):
     if src.exists() and dst.exists() and same_path(src, dst):
         return
@@ -220,6 +233,17 @@ def restore_skill_entrypoint_if_needed(skill_root: Path):
     if skill_md.exists() or not mirror_md.exists():
         return
     mirror_md.rename(skill_md)
+
+
+def sanitize_skill_entrypoint_for_runtime_mirror(skill_root: Path):
+    skill_md = skill_root / "SKILL.md"
+    mirror_md = skill_root / "SKILL.runtime-mirror.md"
+    if mirror_md.exists():
+        if skill_md.exists():
+            skill_md.unlink()
+        return
+    if skill_md.exists():
+        skill_md.rename(mirror_md)
 
 
 def parent_dir(path: Path | None) -> Path | None:
@@ -748,13 +772,18 @@ def is_closed_ready_required(adapter: dict) -> bool:
 
 def sync_vibe_canonical(repo_root: Path, target_root: Path, target_rel: str):
     governance = load_json(repo_root / "config" / "version-governance.json")
+    packaging = resolve_packaging_contract(governance, repo_root)
     canonical_root = (repo_root / governance["source_of_truth"]["canonical_root"]).resolve()
     target_vibe_root = target_root / target_rel
-    for rel in governance["packaging"]["mirror"]["files"]:
+    if same_path(canonical_root, target_vibe_root):
+        return
+    if target_vibe_root.exists():
+        shutil.rmtree(target_vibe_root)
+    for rel in packaging["mirror"]["files"]:
         src = canonical_root / rel
         if src.exists():
             copy_file(src, target_vibe_root / rel)
-    for rel in governance["packaging"]["mirror"]["directories"]:
+    for rel in packaging["mirror"]["directories"]:
         src = canonical_root / rel
         dst = target_vibe_root / rel
         if src.exists():
@@ -809,19 +838,29 @@ def materialize_generated_nested_compatibility(governance: dict, installed_root:
     if same_path(installed_root, nested_root):
         return
 
-    if nested_root.exists():
-        shutil.rmtree(nested_root)
+    nested_skills_root = nested_root.parent
+    source_skills_root = installed_root.parent
 
-    packaging = governance.get("packaging") or {}
-    mirror = packaging.get("mirror") or {}
-    for rel in mirror.get("files") or []:
+    if nested_skills_root.exists():
+        shutil.rmtree(nested_skills_root)
+
+    for skill_dir in sorted(source_skills_root.iterdir()):
+        if not skill_dir.is_dir() or skill_dir.name == installed_root.name:
+            continue
+        destination = nested_skills_root / skill_dir.name
+        copy_dir_replace(skill_dir, destination)
+        sanitize_skill_entrypoint_for_runtime_mirror(destination)
+
+    packaging = resolve_packaging_contract(governance, installed_root)
+    for rel in packaging["mirror"]["files"]:
         src = installed_root / rel
         if src.exists():
             copy_file(src, nested_root / rel)
-    for rel in mirror.get("directories") or []:
+    for rel in packaging["mirror"]["directories"]:
         src = installed_root / rel
         if src.exists():
             copy_dir_replace(src, nested_root / rel)
+    sanitize_skill_entrypoint_for_runtime_mirror(nested_root)
 
 
 def runtime_core_vibe_relpath(repo_root: Path) -> str:
@@ -897,7 +936,12 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
         if include_command_surfaces or entry["target"] != "commands"
     ]
     for entry in copy_directories:
-        copy_tree(repo_root / entry["source"], target_root / entry["target"])
+        src_root = repo_root / entry["source"]
+        dst_root = target_root / entry["target"]
+        if entry["target"] == "skills":
+            copy_skill_roots_without_self_shadow(src_root, dst_root, repo_root)
+        else:
+            copy_tree(src_root, dst_root)
         if entry["target"] == "skills":
             for skill_dir in (target_root / "skills").iterdir():
                 if skill_dir.is_dir():

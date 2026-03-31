@@ -188,9 +188,10 @@ $context = Get-VgoGovernanceContext -ScriptPath $PSCommandPath -EnforceExecution
 $repoRoot = $context.repoRoot
 $governance = $context.governance
 $canonicalRoot = $context.canonicalRoot
-$ignoreJsonKeys = @($governance.packaging.normalized_json_ignore_keys)
-$mirrorFiles = @($governance.packaging.mirror.files)
-$mirrorDirs = @($governance.packaging.mirror.directories)
+$packaging = $context.packaging
+$ignoreJsonKeys = @($packaging.normalized_json_ignore_keys)
+$mirrorFiles = @($packaging.mirror.files)
+$mirrorDirs = @($packaging.mirror.directories)
 $runtimeConfig = Get-InstalledRuntimeConfig -Governance $governance
 $installedRel = [string]$runtimeConfig.target_relpath
 if ([string]::IsNullOrWhiteSpace($installedRel)) {

@@ -50,27 +50,6 @@ function Get-GitStatusEntries {
     return @($entries)
 }
 
-function Test-GovernedMirrorRelativePath {
-    param(
-        [Parameter(Mandatory)] [string]$RelativePath,
-        [Parameter(Mandatory)] [psobject]$Packaging
-    )
-
-    $rel = $RelativePath.Replace('\\', '/')
-    if (@($Packaging.mirror.files) -contains $rel) {
-        return $true
-    }
-
-    foreach ($dir in @($Packaging.mirror.directories)) {
-        $prefix = ('{0}/' -f $dir).Replace('\\', '/')
-        if ($rel.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-            return $true
-        }
-    }
-
-    return $false
-}
-
 function Test-MirrorMatchesCanonical {
     param(
         [Parameter(Mandatory)] [string]$RepoRoot,
@@ -93,6 +72,15 @@ function Test-MirrorMatchesCanonical {
     $canonicalHash = (Get-FileHash -LiteralPath $canonicalPath -Algorithm SHA256).Hash
     $mirrorHash = (Get-FileHash -LiteralPath $resolvedMirrorPath -Algorithm SHA256).Hash
     return ($canonicalHash -eq $mirrorHash)
+}
+
+function Test-CanonicalCounterpartExists {
+    param(
+        [Parameter(Mandatory)] [string]$RepoRoot,
+        [Parameter(Mandatory)] [string]$CanonicalRelativePath
+    )
+
+    return (Test-Path -LiteralPath (Join-Path $RepoRoot $CanonicalRelativePath))
 }
 
 function Write-Artifacts {
@@ -249,7 +237,15 @@ foreach ($entry in $gitEntries) {
         continue
     }
 
-    if (-not (Test-GovernedMirrorRelativePath -RelativePath $canonicalCounterpart -Packaging $packaging)) {
+    if (-not (Test-VgoGovernedMirrorRelativePath -RelativePath $canonicalCounterpart -Packaging $packaging -TargetId ([string]$matchedMirror.id))) {
+        $legacyContractDrop = (
+            $entry.status -eq 'D' -and
+            (Test-CanonicalCounterpartExists -RepoRoot $context.repoRoot -CanonicalRelativePath $canonicalCounterpart)
+        )
+        if ($legacyContractDrop) {
+            $results.reconciled_mirror_edits += [pscustomobject]$classification
+            continue
+        }
         $results.mirror_only_edits += [pscustomobject]$classification
         continue
     }

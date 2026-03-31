@@ -120,8 +120,10 @@ $context = Get-VgoGovernanceContext -ScriptPath $PSCommandPath -EnforceExecution
 $packaging = $context.packaging
 $ignoreJsonKeys = @($packaging.normalized_json_ignore_keys)
 $allowBundledOnly = @($packaging.allow_bundled_only)
-$mirrorFiles = @($packaging.mirror.files)
-$mirrorDirs = @($packaging.mirror.directories)
+$bundledEffectivePackaging = Get-VgoEffectiveTargetPackaging -Packaging $packaging -TargetId 'bundled'
+$nestedEffectivePackaging = Get-VgoEffectiveTargetPackaging -Packaging $packaging -TargetId 'nested_bundled'
+$mirrorFiles = @($nestedEffectivePackaging.files)
+$mirrorDirs = @($nestedEffectivePackaging.directories)
 $bundledTarget = $context.bundledTarget
 $nestedTarget = $context.nestedTarget
 $canonicalRoot = $context.canonicalRoot
@@ -301,11 +303,13 @@ if (-not $nestedTarget.exists) {
 
     $skillPath = 'SKILL.md'
     $versionMarkers = @(
-        [pscustomobject]@{ id = 'skill'; canonical = (Join-Path $canonicalRoot $skillPath); bundled = (Join-Path $bundledTarget.fullPath $skillPath); nested = (Join-Path $nestedTarget.fullPath $skillPath) },
-        [pscustomobject]@{ id = 'changelog'; canonical = (Join-Path $canonicalRoot $context.governance.version_markers.changelog_path); bundled = (Join-Path $bundledTarget.fullPath $context.governance.version_markers.changelog_path); nested = (Join-Path $nestedTarget.fullPath $context.governance.version_markers.changelog_path) }
+        [pscustomobject]@{ id = 'skill'; relpath = $skillPath; canonical = (Join-Path $canonicalRoot $skillPath); bundled = (Join-Path $bundledTarget.fullPath $skillPath); nested = (Join-Path $nestedTarget.fullPath $skillPath) },
+        [pscustomobject]@{ id = 'changelog'; relpath = [string]$context.governance.version_markers.changelog_path; canonical = (Join-Path $canonicalRoot $context.governance.version_markers.changelog_path); bundled = (Join-Path $bundledTarget.fullPath $context.governance.version_markers.changelog_path); nested = (Join-Path $nestedTarget.fullPath $context.governance.version_markers.changelog_path) }
     )
 
     foreach ($marker in $versionMarkers) {
+        $bundledGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath ([string]$marker.relpath) -Packaging $packaging -TargetId 'bundled'
+        $nestedGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath ([string]$marker.relpath) -Packaging $packaging -TargetId 'nested_bundled'
         $canonicalExists = Test-Path -LiteralPath $marker.canonical
         $bundledExists = Test-Path -LiteralPath $marker.bundled
         $nestedExists = Test-Path -LiteralPath $marker.nested
@@ -319,12 +323,16 @@ if (-not $nestedTarget.exists) {
         }
 
         $assertions += Assert-True -Condition $canonicalExists -Message ("[marker:{0}] canonical exists" -f $marker.id)
-        $assertions += Assert-True -Condition $bundledExists -Message ("[marker:{0}] bundled exists" -f $marker.id)
-        $assertions += Assert-True -Condition $nestedExists -Message ("[marker:{0}] nested exists" -f $marker.id)
-        if ($canonicalExists -and $bundledExists) {
+        if ($bundledGoverned) {
+            $assertions += Assert-True -Condition $bundledExists -Message ("[marker:{0}] bundled exists" -f $marker.id)
+        }
+        if ($nestedGoverned) {
+            $assertions += Assert-True -Condition $nestedExists -Message ("[marker:{0}] nested exists" -f $marker.id)
+        }
+        if ($bundledGoverned -and $canonicalExists -and $bundledExists) {
             $assertions += Assert-True -Condition $bundledMatchesCanonical -Message ("[marker:{0}] bundled matches canonical" -f $marker.id)
         }
-        if ($canonicalExists -and $nestedExists) {
+        if ($nestedGoverned -and $canonicalExists -and $nestedExists) {
             $assertions += Assert-True -Condition $nestedMatchesCanonical -Message ("[marker:{0}] nested matches canonical" -f $marker.id)
         }
 
@@ -339,6 +347,8 @@ if (-not $nestedTarget.exists) {
     }
 
     $ledgerRel = [string]$context.governance.logs.release_ledger_jsonl
+    $bundledLedgerGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath $ledgerRel -Packaging $packaging -TargetId 'bundled'
+    $nestedLedgerGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath $ledgerRel -Packaging $packaging -TargetId 'nested_bundled'
     $canonicalLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $canonicalRoot $ledgerRel)
     $bundledLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $bundledTarget.fullPath $ledgerRel)
     $nestedLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $nestedTarget.fullPath $ledgerRel)
@@ -346,12 +356,16 @@ if (-not $nestedTarget.exists) {
     $nestedLedgerMatch = Compare-LatestReleaseRecord -ReferenceRecord $canonicalLedger -CandidateRecord $nestedLedger
 
     $assertions += Assert-True -Condition ($null -ne $canonicalLedger) -Message '[marker:release-ledger] canonical latest record exists'
-    $assertions += Assert-True -Condition ($null -ne $bundledLedger) -Message '[marker:release-ledger] bundled latest record exists'
-    $assertions += Assert-True -Condition ($null -ne $nestedLedger) -Message '[marker:release-ledger] nested latest record exists'
-    if ($null -ne $canonicalLedger -and $null -ne $bundledLedger) {
+    if ($bundledLedgerGoverned) {
+        $assertions += Assert-True -Condition ($null -ne $bundledLedger) -Message '[marker:release-ledger] bundled latest record exists'
+    }
+    if ($nestedLedgerGoverned) {
+        $assertions += Assert-True -Condition ($null -ne $nestedLedger) -Message '[marker:release-ledger] nested latest record exists'
+    }
+    if ($bundledLedgerGoverned -and $null -ne $canonicalLedger -and $null -ne $bundledLedger) {
         $assertions += Assert-True -Condition $bundledLedgerMatch -Message '[marker:release-ledger] bundled latest release matches canonical'
     }
-    if ($null -ne $canonicalLedger -and $null -ne $nestedLedger) {
+    if ($nestedLedgerGoverned -and $null -ne $canonicalLedger -and $null -ne $nestedLedger) {
         $assertions += Assert-True -Condition $nestedLedgerMatch -Message '[marker:release-ledger] nested latest release matches canonical'
     }
 
