@@ -45,14 +45,14 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.tempdir.cleanup()
 
-    def install_shell_runtime(self, host: str = "codex") -> None:
+    def install_shell_runtime(self, host: str = "codex", profile: str = "full") -> None:
         cmd = [
             "bash",
             str(REPO_ROOT / "install.sh"),
             "--host",
             host,
             "--profile",
-            "full",
+            profile,
             "--target-root",
             str(self.target_root),
         ]
@@ -144,10 +144,15 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
             env[env_name] = bridge_path
         return env
 
-    def assert_nested_runtime_skill_entrypoints_sanitized(self, target_root: Path) -> None:
+    def assert_nested_runtime_skill_entrypoints_sanitized(self, target_root: Path, *, require_nested: bool = True) -> None:
         nested_skills_root = target_root / "skills" / "vibe" / "bundled" / "skills"
-        self.assertTrue(nested_skills_root.exists())
+        if require_nested:
+            self.assertTrue(nested_skills_root.exists())
+        elif not nested_skills_root.exists():
+            return
         self.assertEqual([], sorted(nested_skills_root.glob("*/SKILL.md")))
+        if not require_nested:
+            return
         for name in ("vibe", "ralph-loop", "cancel-ralph", "xan"):
             self.assertTrue((nested_skills_root / name / "SKILL.runtime-mirror.md").exists())
 
@@ -277,24 +282,31 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
             self.assertTrue(Path(wrapper_path).exists(), f"wrapper missing: {wrapper_path}")
 
     def test_installed_shell_scripts_work_without_repo_level_adapter_registry(self) -> None:
-        self.install_shell_runtime()
-        self.assert_nested_runtime_skill_entrypoints_sanitized(self.target_root)
+        for profile in ("minimal", "full"):
+            with self.subTest(profile=profile):
+                shutil.rmtree(self.target_root)
+                self.target_root.mkdir(parents=True, exist_ok=True)
+                self.install_shell_runtime(profile=profile)
+                self.assert_nested_runtime_skill_entrypoints_sanitized(
+                    self.target_root,
+                    require_nested=(profile == "full"),
+                )
 
-        installed_root = self.target_root / "skills" / "vibe"
-        check_cmd = [
-            "bash",
-            str(installed_root / "check.sh"),
-            "--host",
-            "codex",
-            "--profile",
-            "full",
-            "--target-root",
-            str(self.target_root),
-        ]
-        check_result = subprocess.run(check_cmd, capture_output=True, text=True, check=True)
-        self.assertIn("=== VCO Adapter Health Check ===", check_result.stdout)
-        self.assertNotIn("VGO adapter registry not found", check_result.stdout)
-        self.assertNotIn("VGO adapter registry not found", check_result.stderr)
+                installed_root = self.target_root / "skills" / "vibe"
+                check_cmd = [
+                    "bash",
+                    str(installed_root / "check.sh"),
+                    "--host",
+                    "codex",
+                    "--profile",
+                    profile,
+                    "--target-root",
+                    str(self.target_root),
+                ]
+                check_result = subprocess.run(check_cmd, capture_output=True, text=True, check=True)
+                self.assertIn("=== VCO Adapter Health Check ===", check_result.stdout)
+                self.assertNotIn("VGO adapter registry not found", check_result.stdout)
+                self.assertNotIn("VGO adapter registry not found", check_result.stderr)
 
     def test_installed_runtime_bootstrap_supports_openclaw_without_self_deleting_source(self) -> None:
         self.install_shell_runtime(host="openclaw")

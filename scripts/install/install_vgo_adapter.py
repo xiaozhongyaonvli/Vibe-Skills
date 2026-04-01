@@ -864,8 +864,69 @@ def materialize_generated_nested_compatibility(governance: dict, installed_root:
 
 
 def runtime_core_vibe_relpath(repo_root: Path) -> str:
-    packaging = load_json(repo_root / "config" / "runtime-core-packaging.json")
+    packaging = load_runtime_core_packaging(repo_root, "full")
     return packaging.get("canonical_vibe_mirror", {}).get("target_relpath", "skills/vibe")
+
+
+def load_runtime_core_packaging(repo_root: Path, profile: str) -> dict:
+    packaging_path = repo_root / "config" / "runtime-core-packaging.json"
+    packaging = load_json(packaging_path)
+    manifest_map = packaging.get("profile_manifests") or {}
+    manifest_rel = manifest_map.get(profile)
+    if manifest_rel:
+        manifest_path = repo_root / manifest_rel
+        if not manifest_path.exists():
+            raise SystemExit(f"Runtime-core packaging manifest missing for profile '{profile}': {manifest_path}")
+        packaging = load_json(manifest_path)
+
+    packaging.setdefault("profile", profile)
+    packaging.setdefault("bundled_skills_source", "bundled/skills")
+    packaging.setdefault("skills_allowlist", [])
+    packaging.setdefault(
+        "copy_bundled_skills",
+        any(entry.get("target") == "skills" for entry in packaging.get("copy_directories") or []),
+    )
+    return packaging
+
+
+def materialize_allowlisted_skills(repo_root: Path, target_root: Path, packaging: dict) -> None:
+    skills_allowlist = list(packaging.get("skills_allowlist") or [])
+    if not skills_allowlist:
+        return
+
+    bundled_root = repo_root / str(packaging.get("bundled_skills_source") or "bundled/skills")
+    if not bundled_root.exists():
+        raise SystemExit(f"Bundled skills source missing for allowlisted packaging: {bundled_root}")
+
+    canonical_vibe_rel = str(packaging.get("canonical_vibe_mirror", {}).get("target_relpath") or "skills/vibe")
+    canonical_vibe_name = Path(canonical_vibe_rel).name
+    for name in sorted({str(value).strip() for value in skills_allowlist if str(value).strip()}):
+        if name == canonical_vibe_name:
+            continue
+        source = bundled_root / name
+        if not source.exists():
+            raise SystemExit(f"Allowlisted skill packaging source missing: {source}")
+        destination = target_root / "skills" / name
+        copy_dir_replace(source, destination)
+        restore_skill_entrypoint_if_needed(destination)
+
+
+def build_payload_summary(target_root: Path) -> dict:
+    skills_root = target_root / "skills"
+    installed_skill_names = []
+    if skills_root.exists():
+        installed_skill_names = sorted(
+            candidate.name
+            for candidate in skills_root.iterdir()
+            if candidate.is_dir() and not candidate.name.startswith(".")
+        )
+
+    installed_file_count = sum(1 for candidate in target_root.rglob("*") if candidate.is_file())
+    return {
+        "installed_skill_count": len(installed_skill_names),
+        "installed_skill_names": installed_skill_names,
+        "installed_file_count": installed_file_count,
+    }
 
 
 def write_install_ledger(
@@ -876,6 +937,7 @@ def write_install_ledger(
     profile: str,
     canonical_vibe_rel: str,
     external_fallback_used: list[str],
+    packaging: dict,
 ):
     ledger_path = target_root / ".vibeskills" / "install-ledger.json"
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
@@ -896,11 +958,32 @@ def write_install_ledger(
         "generated_from_template_if_absent": sorted(ledger_state["template_generated"]),
         "specialist_wrapper_paths": ledger_state["specialist_wrapper_paths"],
         "external_fallback_used": external_fallback_used,
+        "packaging_manifest": {
+            "profile": packaging.get("profile", profile),
+            "package_id": packaging.get("package_id"),
+            "copy_bundled_skills": bool(packaging.get("copy_bundled_skills")),
+        },
         "timestamp": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
         "ownership_source": "install-ledger",
     }
     write_json_file(ledger_path, ledger)
+    ledger["payload_summary"] = build_payload_summary(target_root)
+    write_json_file(ledger_path, ledger)
     track_created_path(ledger_path)
+
+
+def refresh_install_ledger(target_root: Path) -> dict:
+    ledger_path = target_root / ".vibeskills" / "install-ledger.json"
+    if not ledger_path.exists():
+        raise SystemExit(f"Install ledger missing for refresh: {ledger_path}")
+
+    ledger = load_json(ledger_path)
+    ledger["payload_summary"] = build_payload_summary(target_root)
+    write_json_file(ledger_path, ledger)
+    return {
+        "ledger_path": str(ledger_path.resolve()),
+        "payload_summary": ledger["payload_summary"],
+    }
 
 
 def ensure_skill_present(target_root: Path, name: str, required: bool, allow_fallback: bool, fallback_sources, external_used, missing):
@@ -921,7 +1004,7 @@ def ensure_skill_present(target_root: Path, name: str, required: bool, allow_fal
 
 
 def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow_fallback: bool, adapter: dict):
-    packaging = load_json(repo_root / "config" / "runtime-core-packaging.json")
+    packaging = load_runtime_core_packaging(repo_root, profile)
     governance = load_json(repo_root / "config" / "version-governance.json")
     include_command_surfaces = not uses_skill_only_activation(adapter["id"])
     runtime_directories = [
@@ -956,6 +1039,7 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
 
     target_rel = packaging.get("canonical_vibe_mirror", {}).get("target_relpath", "skills/vibe")
     sync_vibe_canonical(repo_root, target_root, target_rel)
+    materialize_allowlisted_skills(repo_root, target_root, packaging)
     materialize_generated_nested_compatibility(governance, target_root / target_rel)
 
     roots = skill_source_roots(repo_root)
@@ -1004,7 +1088,7 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
     if missing:
         raise SystemExit("Missing required vendored skills: " + ", ".join(sorted(missing)))
 
-    return sorted(external_used)
+    return packaging, sorted(external_used)
 
 
 def install_codex_payload(repo_root: Path, target_root: Path):
@@ -1053,13 +1137,31 @@ def install_runtime_core_mode_payload(repo_root: Path, target_root: Path, adapte
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--repo-root", required=True)
-    parser.add_argument("--target-root", required=True)
-    parser.add_argument("--host", required=True)
+    parser.add_argument("--repo-root")
+    parser.add_argument("--target-root")
+    parser.add_argument("--host")
     parser.add_argument("--profile", choices=("minimal", "full"), default="full")
     parser.add_argument("--allow-external-skill-fallback", action="store_true")
     parser.add_argument("--require-closed-ready", action="store_true")
+    parser.add_argument("--refresh-install-ledger", action="store_true")
     args = parser.parse_args()
+
+    if args.refresh_install_ledger:
+        if not args.target_root:
+            parser.error("--target-root is required with --refresh-install-ledger")
+        write_json(refresh_install_ledger(Path(args.target_root).resolve()))
+        return
+
+    missing_required = [
+        name
+        for name in ("repo_root", "target_root", "host")
+        if not getattr(args, name)
+    ]
+    if missing_required:
+        parser.error(
+            "missing required arguments for install mode: "
+            + ", ".join(f"--{name.replace('_', '-')}" for name in missing_required)
+        )
 
     reset_ledger_state()
 
@@ -1068,7 +1170,7 @@ def main():
     target_root.mkdir(parents=True, exist_ok=True)
     track_created_path(target_root)
     adapter = resolve_adapter(repo_root, args.host)
-    external_used = install_runtime_core(repo_root, target_root, args.profile, args.allow_external_skill_fallback, adapter)
+    packaging, external_used = install_runtime_core(repo_root, target_root, args.profile, args.allow_external_skill_fallback, adapter)
     mode = adapter["install_mode"]
     legacy_opencode_config_cleanup = None
     if mode == "governed":
@@ -1106,6 +1208,7 @@ def main():
         args.profile,
         canonical_vibe_rel,
         external_used,
+        packaging,
     )
 
     write_json(

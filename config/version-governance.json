@@ -68,6 +68,9 @@
         "check.sh",
         "install.ps1",
         "install.sh",
+        "config/runtime-core-packaging.json",
+        "config/runtime-core-packaging.minimal.json",
+        "config/runtime-core-packaging.full.json",
         "config/runtime-script-manifest.json",
         "config/runtime-config-manifest.json"
       ],

@@ -122,6 +122,38 @@ function Invoke-InstalledRuntimeFreshnessGate {
     }
   }
 }
+
+function Update-InstallLedgerPayloadSummary {
+  param(
+    [string]$RepoRoot,
+    [string]$TargetRoot
+  )
+
+  $pythonCommand = Get-PreferredPythonCommand
+  if (-not $pythonCommand) {
+    throw "Post-install ledger refresh requires Python 3.10+."
+  }
+
+  $pythonInstaller = Join-Path $RepoRoot 'scripts\install\install_vgo_adapter.py'
+  if (-not (Test-Path -LiteralPath $pythonInstaller)) {
+    throw "Adapter installer script missing for ledger refresh: $pythonInstaller"
+  }
+
+  $cmd = @($pythonCommand)
+  if ([System.IO.Path]::GetFileName($pythonCommand).ToLowerInvariant() -eq 'py') {
+    $cmd += '-3'
+  }
+  $cmd += @(
+    $pythonInstaller,
+    '--target-root', $TargetRoot,
+    '--refresh-install-ledger'
+  )
+
+  & $cmd[0] @($cmd[1..($cmd.Count - 1)]) | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw ("Install ledger refresh failed with exit code {0}." -f $LASTEXITCODE)
+  }
+}
 function Copy-DirContent {
   param(
     [string]$Source,
@@ -492,6 +524,7 @@ if ($StrictOffline) {
 }
 Invoke-CodexDuplicateSkillQuarantine -TargetRoot $TargetRoot -HostId $HostId
 Invoke-InstalledRuntimeFreshnessGate -RepoRoot $RepoRoot -TargetRoot $TargetRoot -SkipGate:$SkipRuntimeFreshnessGate
+Update-InstallLedgerPayloadSummary -RepoRoot $RepoRoot -TargetRoot $TargetRoot
 Write-Host ""
 Write-Host "Installation complete." -ForegroundColor Green
 $checkShellPath = Get-VgoPowerShellCommand

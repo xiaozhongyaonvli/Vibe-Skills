@@ -557,6 +557,18 @@ run_runtime_freshness_gate() {
   fi
 }
 
+refresh_install_ledger_payload_summary() {
+  local python_bin=""
+  if ! python_bin="$(pick_python)"; then
+    echo "[FAIL] Post-install ledger refresh requires Python ${PYTHON_MIN_MAJOR}.${PYTHON_MIN_MINOR}+."
+    return 1
+  fi
+
+  "${python_bin}" "${ADAPTER_INSTALLER}" \
+    --target-root "${TARGET_ROOT}" \
+    --refresh-install-ledger >/dev/null
+}
+
 copy_dir_content() {
   local src="$1"
   local dst="$2"
@@ -842,5 +854,6 @@ fi
 
 quarantine_codex_duplicate_skill_surface
 run_runtime_freshness_gate
+refresh_install_ledger_payload_summary
 
 echo "Install done. Run: bash check.sh --profile ${PROFILE} --target-root ${TARGET_ROOT}"
