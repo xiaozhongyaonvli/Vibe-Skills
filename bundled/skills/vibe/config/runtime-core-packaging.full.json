@@ -1,11 +1,8 @@
 {
-  "schema_version": 2,
-  "package_id": "runtime-core",
-  "summary": "Host-neutral runtime-core payload that can be installed without writing Codex-shaped host state.",
-  "profile_manifests": {
-    "minimal": "config/runtime-core-packaging.minimal.json",
-    "full": "config/runtime-core-packaging.full.json"
-  },
+  "schema_version": 1,
+  "package_id": "runtime-core-full",
+  "profile": "full",
+  "summary": "Broad bundled runtime payload with the governed runtime foundation plus the full bundled skills surface.",
   "directories": [
     "skills",
     "commands",
@@ -33,6 +30,9 @@
       "optional": true
     }
   ],
+  "copy_bundled_skills": true,
+  "bundled_skills_source": "bundled/skills",
+  "skills_allowlist": [],
   "canonical_vibe_mirror": {
     "enabled": true,
     "target_relpath": "skills/vibe"

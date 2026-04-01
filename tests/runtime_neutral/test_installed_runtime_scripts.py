@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+BUNDLED_VIBE_ROOT = REPO_ROOT / "bundled" / "skills" / "vibe"
 STRICT_READY_HOSTS = [
     ("claude-code", "VGO_CLAUDE_CODE_SPECIALIST_BRIDGE_COMMAND"),
     ("cursor", "VGO_CURSOR_SPECIALIST_BRIDGE_COMMAND"),
@@ -18,6 +19,21 @@ STRICT_READY_HOSTS = [
     ("openclaw", "VGO_OPENCLAW_SPECIALIST_BRIDGE_COMMAND"),
     ("opencode", "VGO_OPENCODE_SPECIALIST_BRIDGE_COMMAND"),
 ]
+MINIMAL_REQUIRED_SKILLS = {
+    "vibe",
+    "dialectic",
+    "local-vco-roles",
+    "spec-kit-vibe-compat",
+    "superclaude-framework-compat",
+    "ralph-loop",
+    "cancel-ralph",
+    "tdd-guide",
+    "think-harder",
+    "brainstorming",
+    "writing-plans",
+    "subagent-driven-development",
+    "systematic-debugging",
+}
 
 
 def resolve_powershell() -> str | None:
@@ -45,14 +61,14 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.tempdir.cleanup()
 
-    def install_shell_runtime(self, host: str = "codex") -> None:
+    def install_shell_runtime(self, host: str = "codex", profile: str = "full") -> None:
         cmd = [
             "bash",
             str(REPO_ROOT / "install.sh"),
             "--host",
             host,
             "--profile",
-            "full",
+            profile,
             "--target-root",
             str(self.target_root),
         ]
@@ -144,10 +160,15 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
             env[env_name] = bridge_path
         return env
 
-    def assert_nested_runtime_skill_entrypoints_sanitized(self, target_root: Path) -> None:
+    def assert_nested_runtime_skill_entrypoints_sanitized(self, target_root: Path, *, require_nested: bool = True) -> None:
         nested_skills_root = target_root / "skills" / "vibe" / "bundled" / "skills"
-        self.assertTrue(nested_skills_root.exists())
+        if require_nested:
+            self.assertTrue(nested_skills_root.exists())
+        elif not nested_skills_root.exists():
+            return
         self.assertEqual([], sorted(nested_skills_root.glob("*/SKILL.md")))
+        if not require_nested:
+            return
         for name in ("vibe", "ralph-loop", "cancel-ralph", "xan"):
             self.assertTrue((nested_skills_root / name / "SKILL.runtime-mirror.md").exists())
 
@@ -276,25 +297,62 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
         for wrapper_path in ledger["specialist_wrapper_paths"]:
             self.assertTrue(Path(wrapper_path).exists(), f"wrapper missing: {wrapper_path}")
 
-    def test_installed_shell_scripts_work_without_repo_level_adapter_registry(self) -> None:
-        self.install_shell_runtime()
-        self.assert_nested_runtime_skill_entrypoints_sanitized(self.target_root)
+    def test_bundled_shell_install_supports_minimal_profile(self) -> None:
+        target_root = self.root / "bundled-minimal-target"
+        target_root.mkdir(parents=True, exist_ok=True)
 
-        installed_root = self.target_root / "skills" / "vibe"
-        check_cmd = [
-            "bash",
-            str(installed_root / "check.sh"),
-            "--host",
-            "codex",
-            "--profile",
-            "full",
-            "--target-root",
-            str(self.target_root),
-        ]
-        check_result = subprocess.run(check_cmd, capture_output=True, text=True, check=True)
-        self.assertIn("=== VCO Adapter Health Check ===", check_result.stdout)
-        self.assertNotIn("VGO adapter registry not found", check_result.stdout)
-        self.assertNotIn("VGO adapter registry not found", check_result.stderr)
+        result = subprocess.run(
+            [
+                "bash",
+                str(BUNDLED_VIBE_ROOT / "install.sh"),
+                "--host",
+                "codex",
+                "--profile",
+                "minimal",
+                "--target-root",
+                str(target_root),
+            ],
+            cwd=BUNDLED_VIBE_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        installed_skills = {
+            candidate.name
+            for candidate in (target_root / "skills").iterdir()
+            if candidate.is_dir()
+        }
+        self.assertEqual(MINIMAL_REQUIRED_SKILLS, installed_skills)
+        self.assertIn("Install done.", result.stdout)
+        self.assertNotIn("Runtime freshness gate requires the canonical repo root", result.stdout)
+
+    def test_installed_shell_scripts_work_without_repo_level_adapter_registry(self) -> None:
+        for profile in ("minimal", "full"):
+            with self.subTest(profile=profile):
+                shutil.rmtree(self.target_root)
+                self.target_root.mkdir(parents=True, exist_ok=True)
+                self.install_shell_runtime(profile=profile)
+                self.assert_nested_runtime_skill_entrypoints_sanitized(
+                    self.target_root,
+                    require_nested=(profile == "full"),
+                )
+
+                installed_root = self.target_root / "skills" / "vibe"
+                check_cmd = [
+                    "bash",
+                    str(installed_root / "check.sh"),
+                    "--host",
+                    "codex",
+                    "--profile",
+                    profile,
+                    "--target-root",
+                    str(self.target_root),
+                ]
+                check_result = subprocess.run(check_cmd, capture_output=True, text=True, check=True)
+                self.assertIn("=== VCO Adapter Health Check ===", check_result.stdout)
+                self.assertNotIn("VGO adapter registry not found", check_result.stdout)
+                self.assertNotIn("VGO adapter registry not found", check_result.stderr)
 
     def test_installed_runtime_bootstrap_supports_openclaw_without_self_deleting_source(self) -> None:
         self.install_shell_runtime(host="openclaw")
@@ -438,6 +496,104 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
         self.assertIn(str(host_settings_path.resolve()), ledger["managed_json_paths"])
         self.assertNotIn(str((target_root / "mcp_config.json").resolve()), ledger["managed_json_paths"])
         self.assertTrue(ledger["specialist_wrapper_paths"])
+
+    def test_powershell_install_succeeds_without_python_on_path(self) -> None:
+        powershell = resolve_powershell()
+        if powershell is None:
+            self.skipTest("PowerShell executable not available in PATH")
+
+        target_root = self.root / "pwsh-no-python-target"
+        target_root.mkdir(parents=True, exist_ok=True)
+        empty_bin = self.root / "empty-bin"
+        empty_bin.mkdir(parents=True, exist_ok=True)
+        env = os.environ.copy()
+        env["PATH"] = str(empty_bin)
+
+        result = subprocess.run(
+            [
+                powershell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(REPO_ROOT / "install.ps1"),
+                "-HostId",
+                "codex",
+                "-Profile",
+                "full",
+                "-TargetRoot",
+                str(target_root),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+        )
+
+        ledger_path = target_root / ".vibeskills" / "install-ledger.json"
+        self.assertIn("Installation complete.", result.stdout)
+        self.assertTrue(ledger_path.exists())
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        self.assertIn("payload_summary", ledger)
+        self.assertGreater(ledger["payload_summary"]["installed_file_count"], 0)
+
+    def test_powershell_install_payload_summary_ignores_preexisting_foreign_host_content(self) -> None:
+        powershell = resolve_powershell()
+        if powershell is None:
+            self.skipTest("PowerShell executable not available in PATH")
+
+        target_root = self.root / "pwsh-foreign-content-target"
+        foreign_skill_root = target_root / "skills" / "foreign-user-skill"
+        foreign_file = target_root / "host-notes.txt"
+        target_root.mkdir(parents=True, exist_ok=True)
+        foreign_skill_root.mkdir(parents=True, exist_ok=True)
+        (foreign_skill_root / "SKILL.md").write_text("---\nname: foreign-user-skill\n---\n", encoding="utf-8")
+        foreign_file.write_text("user content\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [
+                powershell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(REPO_ROOT / "install.ps1"),
+                "-HostId",
+                "codex",
+                "-Profile",
+                "minimal",
+                "-TargetRoot",
+                str(target_root),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        ledger_path = target_root / ".vibeskills" / "install-ledger.json"
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        installed_skills = {
+            candidate.name
+            for candidate in (target_root / "skills").iterdir()
+            if candidate.is_dir()
+        }
+
+        self.assertIn("Installation complete.", result.stdout)
+        self.assertIn("foreign-user-skill", installed_skills)
+        self.assertNotIn("foreign-user-skill", ledger["payload_summary"]["installed_skill_names"])
+        self.assertLess(
+            ledger["payload_summary"]["installed_file_count"],
+            sum(1 for candidate in target_root.rglob("*") if candidate.is_file()),
+        )
+
+    def test_install_powershell_entrypoints_do_not_require_as_hashtable_json_parsing(self) -> None:
+        for path in (
+            REPO_ROOT / "install.ps1",
+            BUNDLED_VIBE_ROOT / "install.ps1",
+            BUNDLED_VIBE_ROOT / "bundled" / "skills" / "vibe" / "install.ps1",
+        ):
+            with self.subTest(path=path):
+                self.assertNotIn("ConvertFrom-Json -AsHashtable", path.read_text(encoding="utf-8"))
 
     def test_powershell_fallback_install_preserves_existing_opencode_config_without_mutation(self) -> None:
         powershell = resolve_powershell()
