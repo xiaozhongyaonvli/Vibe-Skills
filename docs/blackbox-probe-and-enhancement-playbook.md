@@ -7,7 +7,7 @@ This document organizes the VCO blackbox inspection and enhancement scripts into
 - Make route/overlay behavior observable (no more blackbox guesswork).
 - Mine user-style task language from route records and convert it into safe overlay vocabulary expansion.
 - Keep probe-and-enhancement guidance honest to the current canonical tool surface, so historical utilities are clearly marked instead of treated as active scripts.
-- Keep main and bundled configs consistent after updates.
+- Keep canonical config truth and generated-compatibility assumptions consistent after updates.
 
 ## 2. Module Map
 
@@ -19,7 +19,7 @@ This document organizes the VCO blackbox inspection and enhancement scripts into
 | Deep Discovery Scenarios | `scripts/verify/vibe-deep-discovery-scenarios.ps1` | Scenario-based study for Deep Discovery trigger/interview/contract/filter behavior | `outputs/verify/deep-discovery-scenarios/*` |
 | User Semantic Mining | `scripts/research/mine-user-semantic-overlay-signals.ps1` | Mine local route probe history and propose/apply overlay phrase additions | `outputs/user-semantic/user-overlay-lexicon.{json,md}` |
 | Threshold Sensitivity Scan | _historical utility (not shipped in current canonical tree)_ | Keep as changelog/reference context only; do not use as an active runbook command | historical references only |
-| Regression and Consistency Gates | `scripts/verify/vibe-config-parity-gate.ps1`, `scripts/verify/vibe-pack-routing-smoke.ps1`, `scripts/verify/vibe-routing-smoke.ps1` | Prevent config drift and routing regressions | `outputs/verify/*` |
+| Regression and Consistency Gates | `scripts/verify/vibe-config-parity-gate.ps1`, `scripts/verify/vibe-pack-routing-smoke.ps1`, `scripts/verify/vibe-routing-smoke.ps1` | Prevent canonical config drift and routing regressions | `outputs/verify/*` |
 
 ## 3. Runtime Injection Chain (How Data Actually Flows)
 
@@ -100,7 +100,7 @@ The prior fixed-step threshold scan utility is referenced in changelog history, 
 | User semantic mining result | `outputs/user-semantic/user-overlay-lexicon.md` |
 | Applied overlay phrase additions | `outputs/user-semantic/user-overlay-lexicon.json` (`accepted_additions`) |
 | Threshold recommendation table | `outputs/verify/overlay-threshold-scan/overlay-threshold-scan.md` |
-| Main vs bundled config parity | `outputs/verify/vibe-config-parity-gate.md` |
+| Canonical config / compatibility topology check | `outputs/verify/vibe-config-parity-gate.md` |
 
 ## 6. Reuse Notes
 

@@ -40,10 +40,12 @@
     "systematic-debugging",
     "tdd-guide",
     "think-harder",
-    "vibe",
     "writing-plans"
   ],
-  "canonical_vibe_mirror": {
+  "exclude_bundled_skill_names": [
+    "vibe"
+  ],
+  "canonical_vibe_payload": {
     "enabled": true,
     "target_relpath": "skills/vibe"
   }

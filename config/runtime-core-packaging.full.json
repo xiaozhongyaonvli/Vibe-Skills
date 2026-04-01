@@ -33,7 +33,10 @@
   "copy_bundled_skills": true,
   "bundled_skills_source": "bundled/skills",
   "skills_allowlist": [],
-  "canonical_vibe_mirror": {
+  "exclude_bundled_skill_names": [
+    "vibe"
+  ],
+  "canonical_vibe_payload": {
     "enabled": true,
     "target_relpath": "skills/vibe"
   }

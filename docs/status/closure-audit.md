@@ -10,7 +10,7 @@ Primary objective:
 
 - make the active repo state simpler and more navigable
 - standardize phase-end hygiene
-- keep routing, packaging, mirror topology, outputs boundary, and installed runtime behavior non-regressed
+- keep routing, packaging, generated compatibility topology, outputs boundary, and installed runtime behavior non-regressed
 
 ## Anti-Drift Closure Contract
 
@@ -32,8 +32,8 @@ For closure reporting:
 - refreshed `docs/status/*` to describe the current green proof state rather than earlier failure state
 - reclassified `docs/status` supporting baselines into guardrail / proof contract / transitional blocker / dated baseline roles
 - removed stale cleanliness-dashboard wording by separating frozen inventory baseline from current gate-backed cleanliness truth
-- re-synced canonical changes to the bundled mirror and verified that `nested_bundled` can remain absent under the current topology contract
-- re-greened mirror-aware packaging parity after the docs and script updates
+- retired mirror-first wording in active docs and verified that `nested_bundled` can remain absent under the current topology contract
+- re-greened compatibility-aware packaging proof after the docs and script updates
 - refreshed routing and installed-runtime proof artifacts
 
 ## Verified Green Contracts

@@ -201,7 +201,7 @@ $installedRoot = Join-Path $TargetRoot $installedRel
 $receiptRel = [string]$runtimeConfig.receipt_relpath
 $receiptPath = if ([string]::IsNullOrWhiteSpace($receiptRel)) { $null } else { Join-Path $TargetRoot $receiptRel }
 $requiredRuntimeMarkers = @($runtimeConfig.required_runtime_markers)
-$allowInstalledOnly = @($governance.packaging.allow_bundled_only)
+$allowInstalledOnly = if ($packaging.PSObject.Properties.Name -contains 'allow_installed_only' -and $null -ne $packaging.allow_installed_only) { @($packaging.allow_installed_only) } else { @($packaging.allow_bundled_only) }
 if ($runtimeConfig.PSObject.Properties.Name -contains 'allow_installed_only' -and $null -ne $runtimeConfig.allow_installed_only) {
     $allowInstalledOnly += @($runtimeConfig.allow_installed_only)
 }
@@ -210,7 +210,10 @@ $requireNestedBundledRoot = $false
 if ($runtimeConfig.PSObject.Properties.Name -contains 'require_nested_bundled_root') {
     $requireNestedBundledRoot = [bool]$runtimeConfig.require_nested_bundled_root
 }
-$installedNestedRoot = Join-Path $installedRoot 'bundled\skills\vibe'
+$generatedCompatibility = if ($governance.packaging.PSObject.Properties.Name -contains 'generated_compatibility') { $governance.packaging.generated_compatibility } else { $null }
+$nestedRuntimeRoot = if ($null -ne $generatedCompatibility -and $generatedCompatibility.PSObject.Properties.Name -contains 'nested_runtime_root') { $generatedCompatibility.nested_runtime_root } else { $null }
+$nestedRelativePath = if ($null -ne $nestedRuntimeRoot -and $nestedRuntimeRoot.PSObject.Properties.Name -contains 'relative_path' -and -not [string]::IsNullOrWhiteSpace([string]$nestedRuntimeRoot.relative_path)) { [string]$nestedRuntimeRoot.relative_path } else { 'bundled\skills\vibe' }
+$installedNestedRoot = Join-Path $installedRoot $nestedRelativePath
 $results = [ordered]@{
     target_root = [System.IO.Path]::GetFullPath($TargetRoot)
     installed_root = [System.IO.Path]::GetFullPath($installedRoot)

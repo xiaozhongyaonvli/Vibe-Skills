@@ -181,6 +181,8 @@ $governance = $context.governance
 $canonicalRoot = $context.canonicalRoot
 $bundledRoot = $context.bundledRoot
 $nestedBundledRoot = $context.nestedBundledRoot
+$bundledTarget = $context.bundledTarget
+$trackedMirrorRetired = ($null -eq $bundledTarget)
 $pairs = @(
     [pscustomobject]@{ id = "pack-manifest"; main = "config/pack-manifest.json"; bundled = "bundled/skills/vibe/config/pack-manifest.json" },
     [pscustomobject]@{ id = "router-thresholds"; main = "config/router-thresholds.json"; bundled = "bundled/skills/vibe/config/router-thresholds.json" },
@@ -234,6 +236,7 @@ $assertions = @()
 
 Write-Host "=== VCO Config Parity Gate ==="
 Write-Host ("Ignore keys: {0}" -f ($IgnoreKeys -join ", "))
+Write-Host ("Mode: {0}" -f $(if ($trackedMirrorRetired) { 'canonical_only_retired_tracked_mirror' } else { 'legacy_bundled_parity' }))
 Write-Host ""
 
 foreach ($pair in $pairs) {
@@ -243,6 +246,24 @@ foreach ($pair in $pairs) {
     $existsBundled = Test-Path -LiteralPath $bundledPath
 
     $assertions += Assert-True -Condition $existsMain -Message "[$($pair.id)] main config exists"
+    if ($trackedMirrorRetired) {
+        $assertions += Assert-True -Condition (-not $existsBundled) -Message "[$($pair.id)] retired bundled config copy is absent"
+        $results += [pscustomobject]@{
+            id = $pair.id
+            main_path = $mainPath
+            bundled_path = $bundledPath
+            main_exists = $existsMain
+            bundled_exists = $existsBundled
+            main_hash = $null
+            bundled_hash = $null
+            hash_match = (-not $existsBundled)
+            diff_paths_count = if ($existsBundled) { 1 } else { 0 }
+            diff_paths = if ($existsBundled) { @("retired_bundled_copy_present") } else { @() }
+            parse_error = $null
+        }
+        continue
+    }
+
     $assertions += Assert-True -Condition $existsBundled -Message "[$($pair.id)] bundled config exists"
 
     if (-not ($existsMain -and $existsBundled)) {
@@ -323,6 +344,7 @@ Write-Host ("Gate Result: {0}" -f $(if ($gatePassed) { "PASS" } else { "FAIL" })
 
 $report = [pscustomobject]@{
     generated_at = (Get-Date).ToString("s")
+    mode = if ($trackedMirrorRetired) { 'canonical_only_retired_tracked_mirror' } else { 'legacy_bundled_parity' }
     ignore_keys = $IgnoreKeys
     metrics = [pscustomobject]@{
         pairs_total = $pairsTotal

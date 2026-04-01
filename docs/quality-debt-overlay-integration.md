@@ -21,8 +21,9 @@ This overlay is designed to:
 Primary policy file:
 - `config/quality-debt-overlay.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/quality-debt-overlay.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/quality-debt-overlay.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -66,7 +67,7 @@ Run dedicated gate:
 pwsh -File .\scripts\verify\vibe-quality-debt-overlay-gate.ps1
 ```
 
-Run parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

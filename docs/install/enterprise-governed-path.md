@@ -62,6 +62,8 @@ pwsh -File .\scripts\verify\vibe-offline-skills-gate.ps1
 pwsh -File .\scripts\verify\vibe-version-packaging-gate.ps1
 ```
 
+其中 `vibe-version-packaging-gate.ps1` 虽然保留 legacy 名称，但当前验证的是 canonical-only 打包治理与生成式兼容链路，而不是 repo-tracked mirror parity。
+
 ## Host-managed surfaces（必须纳入企业 checklist）
 
 根据 `docs/universalization/host-capability-matrix.md` 与 `adapters/*/host-profile.json` 的口径，至少要把以下条目纳入你的内部 checklist，并明确 owner：

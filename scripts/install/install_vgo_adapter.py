@@ -210,12 +210,19 @@ def copy_tree(src: Path, dst: Path):
             track_created_path(target)
 
 
-def copy_skill_roots_without_self_shadow(src: Path, dst: Path, repo_root: Path):
+def copy_skill_roots_without_self_shadow(
+    src: Path,
+    dst: Path,
+    repo_root: Path,
+    excluded_skill_names: set[str] | None = None,
+):
     if not src.exists():
         return
     dst.mkdir(parents=True, exist_ok=True)
     track_created_path(dst)
     for child in sorted(src.iterdir(), key=lambda item: item.name):
+        if excluded_skill_names and child.name in excluded_skill_names:
+            continue
         target = dst / child.name
         if same_path(target, repo_root):
             continue
@@ -802,6 +809,18 @@ def sync_vibe_canonical(repo_root: Path, target_root: Path, target_rel: str):
             copy_dir_replace(src, dst)
 
 def generated_nested_compatibility_suffix(governance: dict) -> Path | None:
+    packaging = governance.get("packaging") or {}
+    generated = packaging.get("generated_compatibility") or {}
+    nested_runtime = generated.get("nested_runtime_root") or {}
+    relative_path = str(nested_runtime.get("relative_path") or "").strip()
+    materialization_mode = str(nested_runtime.get("materialization_mode") or "").strip()
+    if relative_path:
+        if not materialization_mode:
+            materialization_mode = "install_only"
+        if materialization_mode not in {"install_only", "release_install_only"}:
+            return None
+        return Path(*relative_path.replace("\\", "/").strip("/").split("/"))
+
     topology = governance.get("mirror_topology") or {}
     targets = topology.get("targets") or []
     bundled_path = None
@@ -882,7 +901,21 @@ def materialize_generated_nested_compatibility(
 
 
 def canonical_vibe_target_relpath(packaging: dict) -> str:
-    return str(packaging.get("canonical_vibe_mirror", {}).get("target_relpath") or "skills/vibe")
+    return str(
+        packaging.get("canonical_vibe_payload", {}).get("target_relpath")
+        or packaging.get("canonical_vibe_mirror", {}).get("target_relpath")
+        or "skills/vibe"
+    )
+
+
+def excluded_bundled_skill_names(packaging: dict) -> set[str]:
+    configured = {
+        str(name).strip()
+        for name in packaging.get("exclude_bundled_skill_names") or []
+        if str(name).strip()
+    }
+    configured.add(Path(canonical_vibe_target_relpath(packaging)).name)
+    return configured
 
 
 def load_runtime_core_packaging(repo_root: Path, profile: str) -> dict:
@@ -903,6 +936,7 @@ def load_runtime_core_packaging(repo_root: Path, profile: str) -> dict:
         "copy_bundled_skills",
         any(entry.get("target") == "skills" for entry in packaging.get("copy_directories") or []),
     )
+    packaging.setdefault("exclude_bundled_skill_names", [Path(canonical_vibe_target_relpath(packaging)).name])
     return packaging
 
 
@@ -962,13 +996,14 @@ def desired_managed_skill_names(repo_root: Path, packaging: dict, profile: str) 
         for name in packaging.get("skills_allowlist") or []
         if str(name).strip()
     }
+    excluded_names = excluded_bundled_skill_names(packaging)
 
     bundled_root = resolve_bundled_skills_root(repo_root, packaging)
     if bool(packaging.get("copy_bundled_skills")) and bundled_root.exists():
         managed.update(
             candidate.name
             for candidate in bundled_root.iterdir()
-            if candidate.is_dir()
+            if candidate.is_dir() and candidate.name not in excluded_names
         )
 
     managed.add(Path(canonical_vibe_target_relpath(packaging)).name)
@@ -1003,7 +1038,7 @@ def materialize_allowlisted_skills(repo_root: Path, target_root: Path, packaging
     if not bundled_root.exists():
         raise SystemExit(f"Bundled skills source missing for allowlisted packaging: {bundled_root}")
 
-    canonical_vibe_rel = str(packaging.get("canonical_vibe_mirror", {}).get("target_relpath") or "skills/vibe")
+    canonical_vibe_rel = canonical_vibe_target_relpath(packaging)
     canonical_vibe_name = Path(canonical_vibe_rel).name
     for name in sorted({str(value).strip() for value in skills_allowlist if str(value).strip()}):
         if name == canonical_vibe_name:
@@ -1167,6 +1202,7 @@ def ensure_skill_present(target_root: Path, name: str, required: bool, allow_fal
 def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow_fallback: bool, adapter: dict):
     packaging = load_runtime_core_packaging(repo_root, profile)
     governance = load_json(repo_root / "config" / "version-governance.json")
+    excluded_skill_names = excluded_bundled_skill_names(packaging)
     previous_ledger = load_existing_install_ledger(target_root)
     current_managed_skill_names = desired_managed_skill_names(repo_root, packaging, profile)
     include_command_surfaces = not uses_skill_only_activation(adapter["id"])
@@ -1187,7 +1223,7 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
             src_root = resolve_bundled_skills_root(repo_root, packaging)
         dst_root = target_root / entry["target"]
         if entry["target"] == "skills":
-            copy_skill_roots_without_self_shadow(src_root, dst_root, repo_root)
+            copy_skill_roots_without_self_shadow(src_root, dst_root, repo_root, excluded_skill_names)
         else:
             copy_tree(src_root, dst_root)
         if entry["target"] == "skills":

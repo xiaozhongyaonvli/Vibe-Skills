@@ -36,9 +36,7 @@ Full chain:
 
 - `config/deep-discovery-policy.json`
 - `config/capability-catalog.json`
-- bundled mirrors:
-  - `bundled/skills/vibe/config/deep-discovery-policy.json`
-  - `bundled/skills/vibe/config/capability-catalog.json`
+- tracked repo bundled config copies are retired; the canonical `config/*` paths above are authoritative
 
 ### Router entry integration
 
@@ -121,4 +119,3 @@ Recommended regression chain:
 & ".\scripts\verify\vibe-routing-smoke.ps1"
 & ".\scripts\verify\vibe-routing-probe-research.ps1" -DefaultIncludePrompt
 ```
-

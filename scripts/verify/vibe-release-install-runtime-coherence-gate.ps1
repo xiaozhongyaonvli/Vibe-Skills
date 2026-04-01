@@ -128,7 +128,6 @@ $checkSh = Join-Path $context.repoRoot 'check.sh'
 $runtimeGatePath = Join-Path $context.repoRoot ([string]$runtimeConfig.post_install_gate)
 $coherenceGatePath = Join-Path $context.repoRoot ([string]$runtimeConfig.coherence_gate)
 $frontmatterGatePath = Join-Path $context.repoRoot 'scripts\verify\vibe-bom-frontmatter-gate.ps1'
-$syncBundledPath = Join-Path $context.repoRoot 'scripts\governance\sync-bundled-vibe.ps1'
 $receiptPath = Join-Path $TargetRoot ([string]$runtimeConfig.receipt_relpath)
 
 $results = [ordered]@{
@@ -165,7 +164,6 @@ Add-Assertion -Collection $assertions -Condition ([string]$runtimeConfig.receipt
 Add-Assertion -Collection $assertions -Condition (Test-Path -LiteralPath $runtimeGatePath) -Message '[runtime] post-install freshness gate script exists'
 Add-Assertion -Collection $assertions -Condition (Test-Path -LiteralPath $coherenceGatePath) -Message '[runtime] coherence gate script exists'
 Add-Assertion -Collection $assertions -Condition (Test-Path -LiteralPath $frontmatterGatePath) -Message '[runtime] BOM/frontmatter gate script exists'
-Add-Assertion -Collection $assertions -Condition (Test-Path -LiteralPath $syncBundledPath) -Message '[runtime] sync-bundled-vibe script exists for mirror closure'
 Add-Assertion -Collection $assertions -Condition (@($runtimeConfig.required_runtime_markers) -contains [string]$runtimeConfig.post_install_gate) -Message '[runtime] required_runtime_markers includes post-install freshness gate'
 Add-Assertion -Collection $assertions -Condition (@($runtimeConfig.required_runtime_markers) -contains [string]$runtimeConfig.coherence_gate) -Message '[runtime] required_runtime_markers includes coherence gate'
 Add-Assertion -Collection $assertions -Condition ([int]$runtimeConfig.receipt_contract_version -ge 1) -Message '[runtime] receipt_contract_version is declared and >= 1'

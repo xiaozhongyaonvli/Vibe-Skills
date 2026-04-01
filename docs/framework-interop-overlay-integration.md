@@ -22,8 +22,9 @@ This overlay is designed to:
 Primary policy file:
 - `config/framework-interop-overlay.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/framework-interop-overlay.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/framework-interop-overlay.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -76,7 +77,7 @@ Run dedicated gate:
 pwsh -File .\scripts\verify\vibe-framework-interop-gate.ps1
 ```
 
-Run parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

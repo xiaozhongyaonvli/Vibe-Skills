@@ -8,7 +8,7 @@ This SOP is the operator-facing playbook for the VCO install path after Wave33.
 - install copies the governed payload into `${TARGET_ROOT}/skills/vibe`
 - runtime freshness authoritatively validates the installed copy against canonical source
 - routine checks call the freshness and coherence gates only from the canonical repo root
-- repo-level `nested_bundled` is now treated as an optional compatibility mirror, not as a mandatory installed-runtime root
+- tracked repo-level bundled/nested mirrors are retired; only install/runtime-time generated compatibility remains
 - host install state lives under `<target-root>/.vibeskills/*`, while governed workspace runtime artifacts default to `<workspace-root>/.vibeskills/*`
 
 ## Canonical Operator Flow
@@ -91,8 +91,7 @@ Governance commands must run from the canonical repo root.
 
 Do not run these scripts from:
 
-- `bundled/skills/vibe`
-- `bundled/skills/vibe/bundled/skills/vibe`
+- historical/locally re-created compatibility paths such as `bundled/skills/vibe`
 - installed runtime copies under `${TARGET_ROOT}/skills/vibe`
 
 Why:
@@ -127,10 +126,9 @@ Pulling the repo alone does not refresh the installed runtime copy.
 
 ### Fresh install failed
 
-1. re-run `sync-bundled-vibe.ps1 -PruneBundledExtras`
-2. verify repo parity gates
-3. re-run install
-4. re-run freshness gate with `-WriteReceipt`
+1. verify canonical packaging gates from the repo root
+2. re-run install
+3. re-run freshness gate with `-WriteReceipt`
 
 ### Check warns in shell mode
 

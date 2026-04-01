@@ -27,7 +27,7 @@ Authoritative receipts for the current closure batch:
 
 ## Mission
 
-当前仓库仍处于 `non-regression-first cleanup` 收口期。目标已经从“继续扩展治理面”切换为“压缩入口、收敛叙事、保持 proof 绿色”，也就是把已修复的 routing、packaging、mirror、runtime、cleanliness 结果稳定固化下来。
+当前仓库仍处于 `non-regression-first cleanup` 收口期。目标已经从“继续扩展治理面”切换为“压缩入口、收敛叙事、保持 proof 绿色”，也就是把已修复的 routing、canonical-only packaging、generated compatibility、runtime、cleanliness 结果稳定固化下来。
 
 ## Runtime Handoff
 
@@ -40,7 +40,7 @@ Authoritative receipts for the current closure batch:
 ## Canonical Background Contracts
 
 - repo cleanliness: [`../repo-cleanliness-governance.md`](../repo-cleanliness-governance.md)
-- version / packaging / mirror topology: [`../version-packaging-governance.md`](../version-packaging-governance.md)
+- version / packaging / generated compatibility topology: [`../version-packaging-governance.md`](../version-packaging-governance.md)
 - outputs boundary: [`../output-artifact-boundary-governance.md`](../output-artifact-boundary-governance.md)
 - docs IA: [`../docs-information-architecture.md`](../docs-information-architecture.md)
 
@@ -108,6 +108,6 @@ Current rule:
 
 1. 压缩 `docs/`、`status/`、`plans/`、`releases/`、`references/` 的入口面，不改变治理合同与运行时行为。
 2. 让 `current-state`、README、索引页统一回指 authoritative artifacts，停止手工复制快照数字。
-3. 每完成一个批次都执行 canonical -> bundled 同步、proof bundle 复验，以及 phase-end hygiene。
+3. 每完成一个批次都执行 proof bundle 复验、compatibility topology 相关 gate 复验，以及 phase-end hygiene。
 
 Compatibility-layer stabilization、larger prune windows、以及更大范围的 archive/move/delete 仍然是后续显式波次，不在本页隐式推进。

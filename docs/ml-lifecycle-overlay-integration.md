@@ -25,8 +25,9 @@ This overlay focuses on lifecycle governance signals:
 Primary policy:
 - `config/ml-lifecycle-overlay.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/ml-lifecycle-overlay.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/ml-lifecycle-overlay.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -79,7 +80,7 @@ Run dedicated gate:
 pwsh -File .\scripts\verify\vibe-ml-lifecycle-overlay-gate.ps1
 ```
 
-Run config parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

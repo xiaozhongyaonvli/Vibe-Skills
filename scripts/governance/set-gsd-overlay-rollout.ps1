@@ -104,14 +104,6 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $targets = @(
     (Join-Path $repoRoot "config/gsd-overlay.json")
 )
-if (-not $MainOnly) {
-    $bundledPath = Join-Path $repoRoot "bundled/skills/vibe/config/gsd-overlay.json"
-    if (Test-Path -LiteralPath $bundledPath) {
-        $targets += $bundledPath
-    } else {
-        Write-Warning "Bundled mirror not found, applying stage to main config only: $bundledPath"
-    }
-}
 
 $results = @()
 foreach ($path in $targets) {

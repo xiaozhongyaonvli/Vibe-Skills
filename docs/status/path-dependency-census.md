@@ -14,7 +14,7 @@ Which dependency clusters still make blanket delete / move / archive operations 
 
 The repository still contains four dependency clusters that block safe cleanup:
 
-1. nested mirror compatibility
+1. generated nested compatibility topology
 2. tracked output to fixture parity
 3. third-party local source roots
 4. multi-index docs and script navigation
@@ -32,7 +32,7 @@ The repository still contains four dependency clusters that block safe cleanup:
 
 ## Notable Hard References
 
-### Nested Mirror
+### Generated Nested Compatibility
 
 Observed hard references include:
 
@@ -76,7 +76,7 @@ The order below is a current recommendation for safe sequencing. It is not a sta
 
 1. docs and status spine completion
 2. operator dry run + closure audit
-3. nested compatibility contract stabilization
+3. generated compatibility contract stabilization
 4. third-party source-root parameterization
 5. outputs strict-mode decision
 6. archive / prune window

@@ -32,8 +32,9 @@ This overlay focuses on CUDA/GPU kernel optimization quality for `coding/debug/r
 Primary policy:
 - `config/cuda-kernel-overlay.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/cuda-kernel-overlay.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/cuda-kernel-overlay.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -79,7 +80,7 @@ Run dedicated gate:
 pwsh -File .\scripts\verify\vibe-cuda-kernel-overlay-gate.ps1
 ```
 
-Run config parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

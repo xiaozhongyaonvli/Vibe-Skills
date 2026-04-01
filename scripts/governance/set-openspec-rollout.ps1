@@ -83,9 +83,6 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $targets = @(
     (Join-Path $repoRoot "config/openspec-policy.json")
 )
-if (-not $MainOnly) {
-    $targets += (Join-Path $repoRoot "bundled/skills/vibe/config/openspec-policy.json")
-}
 
 $results = @()
 foreach ($path in $targets) {

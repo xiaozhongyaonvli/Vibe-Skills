@@ -99,7 +99,7 @@ VCO 是唯一控制面。
 
 任何新融合必须遵守：
 
-`intake -> mapping -> shadow -> soft -> strict -> promote -> mirror`
+`intake -> mapping -> shadow -> soft -> strict -> promote -> compatibility_materialize_if_needed`
 
 默认不能直接 promote。
 
@@ -110,14 +110,14 @@ VCO 是唯一控制面。
 - 关闭开关
 - 手动回退路径
 - 产物级门禁
-- bundled 镜像同步策略
+- 生成式兼容落地策略
 
 ## 5. VCO 融合分层模型
 
 | 平面 | 作用 | VCO 当前 canonical owner | 可吸收外部资源形态 | 禁止事项 |
 |---|---|---|---|---|
 | 控制平面 | 任务分级、路由、协议选择 | `SKILL.md` + `scripts/router/resolve-pack-route.ps1` + `protocols/*` | 路由信号、路由建议、阈值参考 | 第二 orchestrator、第二命令面 |
-| 能力平面 | 具体执行技能与 packs | `config/pack-manifest.json` + `bundled/skills/*` | 技能包、角色包、能力 pack | 直接覆盖已有 pack 默认职责 |
+| 能力平面 | 具体执行技能与 packs | `config/pack-manifest.json` + canonical skill trees | 技能包、角色包、能力 pack | 直接覆盖已有 pack 默认职责 |
 | 治理平面 | 后置检查、分阶段约束、风险提示 | OpenSpec / GSD / memory governance / observability | overlay、policy、checklist、gate | 绕过 pack router 直接改路由 |
 | Prompt 平面 | prompt 模板、结构模式、风险卡片 | prompts.chat overlay / prompt asset boost | pattern cards、prompt DSL、checklist、prompt contracts | 第二 prompt workflow surface |
 | Memory 平面 | session / decision / vector / graph 记忆分工 | `state_store` / Serena / ruflo / Cognee | backend adapter、memory policy、tier router | 第二 canonical memory truth source |
@@ -462,7 +462,7 @@ VCO 当前已经形成的总体策略可以概括为 4 句话：
 - 验证脚本：`scripts/verify/*.ps1`
 - 参考卡片：`references/*.md`
 - 运行产物：`outputs/verify/*`、`outputs/telemetry/*`
-- 镜像同步：`bundled/skills/vibe/*`
+- 兼容落地产物：install/runtime 边界按需生成的 `skills/vibe/bundled/skills/vibe/*`
 
 任何新增融合如果只停留在口头规划，没有进入以上产物层，则视为“未真正吸收”。
 

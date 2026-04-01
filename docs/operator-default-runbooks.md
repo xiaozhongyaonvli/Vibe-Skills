@@ -34,6 +34,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-ve
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-repo-cleanliness-gate.ps1
 ```
 
+`vibe-version-packaging-gate.ps1` keeps its legacy name, but in the current canonical-only contract it validates generated compatibility wiring rather than repo-tracked mirror parity.
+
 ### Mode C: Governance-Family Convergence (Entry Compression Only)
 
 This is documentation-first. Do not delete gates in this phase.
@@ -48,4 +50,3 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-wa
 - Do not invent a second “docs/governance/*” tree while the repo already uses `scripts/verify/gate-family-index.md` as the family index.
 - Treat verify gates as the evidence-running surface; docs are the contract and interpretation.
 - When in doubt: prefer additive docs and new gates over mass refactors.
-

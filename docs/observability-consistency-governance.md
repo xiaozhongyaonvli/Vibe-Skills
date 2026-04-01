@@ -97,6 +97,10 @@ Automatic rollback execution is disabled by governance policy.
 5. `scripts/verify/vibe-promotion-board-gate.ps1`
 6. `scripts/verify/vibe-pilot-scenarios.ps1`
 
+`vibe-config-parity-gate.ps1` keeps its historical name. In the current
+canonical-only contract it validates config closure and compatibility-topology
+assumptions, not repo-tracked bundled sync.
+
 Only after all required gates pass should rollout stage be advanced.
 
 ## Wave27-30 Promotion Evidence Layer

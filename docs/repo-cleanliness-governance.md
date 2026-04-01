@@ -5,8 +5,8 @@
 当前仓库不是一个普通的单根代码仓库；它同时包含：
 
 - canonical root；
-- `bundled/skills/vibe` 镜像；
-- `bundled/skills/vibe/bundled/skills/vibe` 可选 compatibility mirror；
+- install/runtime 期间按需生成的 `skills/vibe` 兼容面；
+- install-only generated compatibility target `bundled/skills/vibe`（不再作为 repo-tracked mirror 存在）；
 - 本地操作者 scratch / agent state；
 - 运行期 `outputs/*` 证据产物。
 
@@ -27,7 +27,7 @@
 | Temporary scratch | `.tmp/` | 默认不入库；一次性补丁/调查文件及时删除 |
 | Runtime outputs | `outputs/**` | 视为可再生证据，不作为 canonical 资产 |
 | Governed workset | `config/`, `docs/`, `references/`, `scripts/`, `protocols/` | 保留为后续分批审阅/提交对象，不要用 ignore 掩盖 |
-| High-risk mirror workset | `bundled/skills/vibe/**`, optional `nested_bundled` when materialized | 只能走 canonical -> sync，禁止 mirror-first 修改 |
+| High-risk packaging workset | `config/version-governance.json`, runtime packaging configs, install/uninstall/verify scripts | 只能走 canonical truth + generated compatibility，禁止重新引入 tracked mirror |
 
 ## Repo Policy
 
@@ -90,7 +90,7 @@ pwsh -NoProfile -File .\scripts\governance\install-local-worktree-excludes.ps1
 2. 运行 `export-repo-cleanliness-inventory.ps1 -WriteArtifacts`，冻结当前 dirty snapshot。
 3. 运行 `vibe-repo-cleanliness-gate.ps1 -WriteArtifacts`，确认本地噪声已收口。
 4. 运行 `vibe-output-artifact-boundary-gate.ps1 -WriteArtifacts`，确认 `outputs/**` 没有越界。
-5. 如涉及 mirror 资产，先 `sync-bundled-vibe.ps1 -Preview -PruneBundledExtras`，再正式 sync，然后复跑：
+5. 如涉及 runtime packaging / compatibility 资产，复跑：
    - `vibe-mirror-edit-hygiene-gate.ps1`
    - `vibe-nested-bundled-parity-gate.ps1`
    - `vibe-version-packaging-gate.ps1`
@@ -121,7 +121,7 @@ What it does:
 - runs `Invoke-NodeProcessAudit.ps1`
 - runs `Invoke-NodeZombieCleanup.ps1` in report-only mode
 
-For batches that changed mirror / packaging surfaces, use:
+For batches that changed packaging / compatibility surfaces, use:
 
 ```powershell
 pwsh -NoProfile -File .\scripts\governance\phase-end-cleanup.ps1 -WriteArtifacts -IncludeMirrorGates
@@ -132,6 +132,6 @@ pwsh -NoProfile -File .\scripts\governance\phase-end-cleanup.ps1 -WriteArtifacts
 ## Guardrails
 
 - 不要用 `.gitignore` 去隐藏真实 canonical 工作集。
-- 不要直接在 bundled mirror 中做“只改副本不改 canonical”的修补；`nested_bundled` 若被 materialize，同样遵守这条规则。
+- 不要重新把 `bundled/skills/vibe/**` 当成 repo-tracked 真实源；该路径只允许作为生成兼容面存在于 install/runtime 边界。
 - 不要因为 `.tmp/` 被忽略，就默认删除 `.tmp/vco-runtime-backups/*`；如果 manifest 仍引用它们，必须先审计引用关系。
 - planning scratch 可以存在，但它们不应再污染仓库视图。

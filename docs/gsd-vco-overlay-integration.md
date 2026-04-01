@@ -21,8 +21,9 @@ This overlay is explicitly designed to:
 Primary policy file:
 - `config/gsd-overlay.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/gsd-overlay.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/gsd-overlay.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -83,7 +84,7 @@ pwsh -File .\scripts\governance\set-gsd-overlay-rollout.ps1 -Stage strict-lxl-pl
 
 ## Verification
 
-Use config parity gate to guarantee main/bundled consistency:
+Use legacy-named packaging gate to guarantee retired bundled copies stay absent:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

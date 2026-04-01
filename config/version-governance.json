@@ -7,9 +7,7 @@
     "notes": "owned-only uninstall and skill-only host alignment / OpenCode startup safety / explicit intent-vs-vector AI config split / macOS bootstrap compatibility"
   },
   "source_of_truth": {
-    "canonical_root": ".",
-    "bundled_root": "bundled/skills/vibe",
-    "nested_bundled_root": "bundled/skills/vibe/bundled/skills/vibe"
+    "canonical_root": "."
   },
   "mirror_topology": {
     "canonical_target_id": "canonical",
@@ -23,25 +21,6 @@
         "presence_policy": "required",
         "sync_enabled": false,
         "parity_policy": "authoritative"
-      },
-      {
-        "id": "bundled",
-        "path": "bundled/skills/vibe",
-        "role": "mirror",
-        "required": true,
-        "presence_policy": "required",
-        "sync_enabled": true,
-        "parity_policy": "full"
-      },
-      {
-        "id": "nested_bundled",
-        "path": "bundled/skills/vibe/bundled/skills/vibe",
-        "role": "mirror",
-        "required": false,
-        "presence_policy": "if_present_must_match",
-        "sync_enabled": false,
-        "parity_policy": "full",
-        "materialization_mode": "release_install_only"
       }
     ]
   },
@@ -51,8 +30,7 @@
   },
   "version_markers": {
     "maintenance_files": [
-      "SKILL.md",
-      "bundled/skills/vibe/SKILL.md"
+      "SKILL.md"
     ],
     "changelog_path": "references/changelog.md"
   },
@@ -61,7 +39,7 @@
     "release_notes_dir": "docs/releases"
   },
   "packaging": {
-    "mirror": {
+    "runtime_payload": {
       "files": [
         "SKILL.md",
         "check.ps1",
@@ -79,6 +57,12 @@
         "mcp"
       ]
     },
+    "generated_compatibility": {
+      "nested_runtime_root": {
+        "relative_path": "bundled/skills/vibe",
+        "materialization_mode": "install_only"
+      }
+    },
     "manifests": [
       {
         "id": "runtime_scripts",
@@ -90,21 +74,8 @@
       }
     ],
     "target_overrides": {
-      "bundled": {
-        "files": [
-          "README.md",
-          "README.zh.md",
-          "LICENSE",
-          "NOTICE",
-          "THIRD_PARTY_LICENSES.md"
-        ],
-        "directories": [
-          ".internal",
-          "agents"
-        ]
-      }
     },
-    "allow_bundled_only": [
+    "allow_installed_only": [
       "docs/CODEX_ECOSYSTEM_MAINTENANCE_PRINCIPLES.md"
     ],
     "normalized_json_ignore_keys": [
@@ -159,7 +130,7 @@
     }
   },
   "metrics": {
-    "governed_mirror_coverage_target": 1,
+    "governed_mirror_coverage_target": 0,
     "runtime_only_artifact_count_target": 0,
     "upstream_manifest_coverage_target": 15,
     "productization_ratio_target": 0.8

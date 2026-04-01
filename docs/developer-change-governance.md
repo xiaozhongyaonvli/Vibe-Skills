@@ -165,7 +165,7 @@ Minimum proof:
 - relevant gate reruns when behavior changes
 - `Command -> Output -> Claim` evidence for guarded changes
 
-### Mirror, Fixture, Output Boundary, or Provenance
+### Compatibility, Fixture, Output Boundary, or Provenance
 
 Typical paths:
 
@@ -178,7 +178,7 @@ Typical paths:
 Minimum proof:
 
 - canonical source identified
-- sync path identified
+- compatibility materialization path identified when applicable
 - parity, boundary, cleanliness, and provenance proof as applicable
 
 ### Runtime-affecting
@@ -227,6 +227,10 @@ subset of:
 
 If the change also affects provenance, disclosure, or retained upstream closure,
 expect the corresponding upstream and provenance gates as well.
+
+For legacy-named packaging gates, read them through the current canonical-only
+contract rather than assuming repo-tracked mirror sync is still an active
+maintenance step.
 
 ## Explicitly Forbidden Shortcuts
 

@@ -12,7 +12,7 @@ It defines which commands must be rerun before a structure-changing cleanup batc
 
 Every cleanup batch must name the proof it depends on before it modifies structure.
 
-If a batch touches routing, mirror topology, install/runtime behavior, output boundary, or cleanliness policy, it must rerun the affected commands and verify the resulting receipts before claiming success.
+If a batch touches routing, compatibility topology, install/runtime behavior, output boundary, or cleanliness policy, it must rerun the affected commands and verify the resulting receipts before claiming success.
 
 Protected official-runtime main-chain edits remain frozen by default.
 If a batch needs to touch those surfaces, it must also be covered by:
@@ -51,9 +51,9 @@ powershell -NoProfile -File scripts/governance/phase-end-cleanup.ps1 -WriteArtif
 2. `vibe-router-contract-gate.ps1`
    - validates routing contract details
 3. `vibe-version-packaging-gate.ps1`
-   - validates canonical -> bundled packaging parity
+   - validates canonical-only packaging governance and generated-compatibility wiring
 4. `vibe-mirror-edit-hygiene-gate.ps1`
-   - rejects mirror-only drift
+   - rejects accidental reintroduction of repo-tracked mirror drift
 5. `vibe-output-artifact-boundary-gate.ps1`
    - validates output -> fixture boundary
 6. `vibe-installed-runtime-freshness-gate.ps1`
@@ -71,7 +71,7 @@ powershell -NoProfile -File scripts/governance/phase-end-cleanup.ps1 -WriteArtif
 | --- | --- |
 | docs spine only | manual link/readability review, then full bundle before closure |
 | routing / router config | routing smoke + router contract |
-| mirror topology / sync / packaging | version packaging + mirror hygiene |
+| compatibility topology / packaging | version packaging + mirror hygiene |
 | install / check / runtime | installed runtime freshness + release/install/runtime coherence |
 | fallback / degraded truth / release wording | release truth consistency gate |
 | outputs / fixtures | output artifact boundary |

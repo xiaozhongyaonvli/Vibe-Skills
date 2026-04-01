@@ -153,6 +153,42 @@ class MirrorEditHygieneGateTests(unittest.TestCase):
         paired_paths = {item["path"] for item in artifact["paired_mirror_edits"]}
         self.assertIn("bundled/skills/vibe/README.md", paired_paths)
 
+    def test_gate_allows_retiring_tracked_mirror_in_canonical_only_mode(self) -> None:
+        governance_path = self.root / "config" / "version-governance.json"
+        governance = json.loads(governance_path.read_text(encoding="utf-8"))
+        governance["source_of_truth"] = {"canonical_root": "."}
+        governance["mirror_topology"] = {
+            "canonical_target_id": "canonical",
+            "sync_source_target_id": "canonical",
+            "targets": [
+                {"id": "canonical", "path": ".", "role": "canonical", "required": True, "presence_policy": "required", "sync_enabled": False, "parity_policy": "authoritative"}
+            ],
+        }
+        governance["packaging"] = {
+            "runtime_payload": {"files": ["SKILL.md"], "directories": ["config", "scripts"]},
+            "generated_compatibility": {
+                "nested_runtime_root": {
+                    "relative_path": "bundled/skills/vibe",
+                    "materialization_mode": "install_only",
+                }
+            },
+            "allow_installed_only": [],
+        }
+        governance_path.write_text(json.dumps(governance, indent=2) + "\n", encoding="utf-8")
+
+        shutil.rmtree(self.root / "bundled" / "skills" / "vibe")
+
+        result = self._run_gate()
+        self.assertIn("[PASS] [hygiene] no mirror-only edits detected", result.stdout)
+
+        artifact = json.loads(
+            (self.root / "outputs" / "verify" / "vibe-mirror-edit-hygiene-gate.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual("PASS", artifact["gate_result"])
+        self.assertEqual("canonical_only_retired_tracked_mirror", artifact["mode"])
+        reconciled_paths = {item["path"] for item in artifact["reconciled_mirror_edits"]}
+        self.assertIn("bundled/skills/vibe/SKILL.md", reconciled_paths)
+
 
 if __name__ == "__main__":
     unittest.main()

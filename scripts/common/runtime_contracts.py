@@ -113,9 +113,9 @@ def _iter_packaging_manifests(raw_manifests: Any) -> list[dict[str, str]]:
 
 def resolve_packaging_contract(governance: dict[str, Any], repo_root: Path) -> dict[str, Any]:
     packaging = governance.get("packaging") or {}
-    mirror = packaging.get("mirror") or {}
-    files = list(mirror.get("files") or DEFAULT_PACKAGING_FILES)
-    directories = list(mirror.get("directories") or DEFAULT_PACKAGING_DIRECTORIES)
+    runtime_payload = packaging.get("runtime_payload") or packaging.get("mirror") or {}
+    files = list(runtime_payload.get("files") or DEFAULT_PACKAGING_FILES)
+    directories = list(runtime_payload.get("directories") or DEFAULT_PACKAGING_DIRECTORIES)
     manifests = _iter_packaging_manifests(packaging.get("manifests") or [])
 
     for manifest in manifests:
@@ -126,13 +126,19 @@ def resolve_packaging_contract(governance: dict[str, Any], repo_root: Path) -> d
         files.extend(str(item) for item in (payload.get("files") or []))
         directories.extend(str(item) for item in (payload.get("directories") or []))
 
+    allow_installed_only = list(packaging.get("allow_installed_only") or packaging.get("allow_bundled_only") or [])
     return {
+        "runtime_payload": {
+            "files": _dedupe_ordered(files),
+            "directories": _dedupe_ordered(directories),
+        },
         "mirror": {
             "files": _dedupe_ordered(files),
             "directories": _dedupe_ordered(directories),
         },
         "manifests": manifests,
         "target_overrides": packaging.get("target_overrides") or {},
-        "allow_bundled_only": list(packaging.get("allow_bundled_only") or []),
+        "allow_installed_only": allow_installed_only,
+        "allow_bundled_only": allow_installed_only,
         "normalized_json_ignore_keys": list(packaging.get("normalized_json_ignore_keys") or DEFAULT_IGNORE_JSON_KEYS),
     }

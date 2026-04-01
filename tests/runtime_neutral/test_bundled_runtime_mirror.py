@@ -6,27 +6,12 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MIRROR_ROOTS = [
-    REPO_ROOT / "bundled" / "skills" / "vibe",
-    REPO_ROOT / "bundled" / "skills" / "vibe" / "bundled" / "skills" / "vibe",
-]
-MIRROR_PATHS = [
-    Path("check.sh"),
-    Path("install.sh"),
-    Path("scripts/bootstrap/one-shot-setup.sh"),
-    Path("scripts/common/runtime_contracts.py"),
-    Path("scripts/common/vibe-governance-helpers.ps1"),
-    Path("scripts/common/resolve_vgo_adapter.py"),
-    Path("scripts/install/install_vgo_adapter.py"),
-    Path("scripts/uninstall/uninstall_vgo_adapter.py"),
-    Path("scripts/verify/runtime_neutral/freshness_gate.py"),
-]
 
 
-class BundledRuntimeMirrorTests(unittest.TestCase):
-    def test_runtime_governance_excludes_narrative_surfaces_from_mirror_contract(self) -> None:
+class BundledRuntimePayloadTests(unittest.TestCase):
+    def test_runtime_governance_excludes_narrative_surfaces_from_runtime_payload_contract(self) -> None:
         governance = json.loads((REPO_ROOT / "config" / "version-governance.json").read_text(encoding="utf-8"))
-        directories = set(governance["packaging"]["mirror"]["directories"])
+        directories = set(governance["packaging"]["runtime_payload"]["directories"])
 
         self.assertNotIn("docs", directories)
         self.assertNotIn("references", directories)
@@ -36,8 +21,8 @@ class BundledRuntimeMirrorTests(unittest.TestCase):
     def test_runtime_governance_declares_explicit_script_and_config_manifests(self) -> None:
         governance = json.loads((REPO_ROOT / "config" / "version-governance.json").read_text(encoding="utf-8"))
         packaging = governance["packaging"]
-        directories = set(packaging["mirror"]["directories"])
-        files = set(packaging["mirror"]["files"])
+        directories = set(packaging["runtime_payload"]["directories"])
+        files = set(packaging["runtime_payload"]["files"])
 
         self.assertNotIn("scripts", directories)
         self.assertNotIn("config", directories)
@@ -50,32 +35,17 @@ class BundledRuntimeMirrorTests(unittest.TestCase):
         self.assertTrue((REPO_ROOT / "config" / "runtime-script-manifest.json").exists())
         self.assertTrue((REPO_ROOT / "config" / "runtime-config-manifest.json").exists())
 
-    def test_selected_runtime_entrypoints_match_canonical(self) -> None:
-        for relative_path in MIRROR_PATHS:
-            canonical = (REPO_ROOT / relative_path).read_bytes()
-            for mirror_root in MIRROR_ROOTS:
-                mirror_path = mirror_root / relative_path
-                if not mirror_path.exists():
-                    continue
-                self.assertEqual(
-                    canonical,
-                    mirror_path.read_bytes(),
-                    f"Mirror drift detected for {relative_path} under {mirror_root.relative_to(REPO_ROOT)}",
-                )
+    def test_runtime_core_packaging_excludes_tracked_vibe_from_bundled_skill_copy(self) -> None:
+        full_packaging = json.loads((REPO_ROOT / "config" / "runtime-core-packaging.full.json").read_text(encoding="utf-8"))
+        minimal_packaging = json.loads((REPO_ROOT / "config" / "runtime-core-packaging.minimal.json").read_text(encoding="utf-8"))
 
-    def test_bundled_release_docs_do_not_reference_removed_local_doc_surfaces(self) -> None:
-        bundled_root = REPO_ROOT / "bundled" / "skills" / "vibe"
-        readme = (bundled_root / "README.md").read_text(encoding="utf-8")
-        readme_zh = (bundled_root / "README.zh.md").read_text(encoding="utf-8")
-        licenses = (bundled_root / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
-        notice = (bundled_root / "NOTICE").read_text(encoding="utf-8")
+        self.assertIn("vibe", full_packaging["exclude_bundled_skill_names"])
+        self.assertIn("vibe", minimal_packaging["exclude_bundled_skill_names"])
+        self.assertEqual("skills/vibe", full_packaging["canonical_vibe_payload"]["target_relpath"])
+        self.assertEqual("skills/vibe", minimal_packaging["canonical_vibe_payload"]["target_relpath"])
 
-        for content in (readme, readme_zh, licenses):
-            self.assertNotIn("](./docs/", content)
-        self.assertNotIn("](./third_party/", licenses)
-        self.assertIn("[NOTICE](./NOTICE)", licenses)
-        self.assertIn("config/upstream-lock.json", notice)
-        self.assertNotIn("third_party/NOTICE.md", notice)
+    def test_repo_no_longer_tracks_bundled_vibe_mirror(self) -> None:
+        self.assertFalse((REPO_ROOT / "bundled" / "skills" / "vibe").exists())
 
 
 if __name__ == "__main__":

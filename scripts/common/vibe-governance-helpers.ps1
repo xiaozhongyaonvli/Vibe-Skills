@@ -877,12 +877,12 @@ function Get-VgoPackagingContract {
     )
 
     $defaults = [ordered]@{
-        mirror = [ordered]@{
+        runtime_payload = [ordered]@{
             files = @('SKILL.md', 'check.ps1', 'check.sh', 'install.ps1', 'install.sh')
             directories = @('config', 'protocols', 'references', 'docs', 'scripts')
         }
         target_overrides = [ordered]@{}
-        allow_bundled_only = @()
+        allow_installed_only = @()
         normalized_json_ignore_keys = @('updated', 'generated_at')
     }
 
@@ -891,12 +891,23 @@ function Get-VgoPackagingContract {
         return [pscustomobject]$defaults
     }
 
-    $mirror = if ($packaging.PSObject.Properties.Name -contains 'mirror' -and $null -ne $packaging.mirror) { $packaging.mirror } else { $null }
-    $mirrorFiles = if ($null -ne $mirror -and $mirror.PSObject.Properties.Name -contains 'files') { @($mirror.files) } else { @($defaults.mirror.files) }
-    $mirrorDirs = if ($null -ne $mirror -and $mirror.PSObject.Properties.Name -contains 'directories') { @($mirror.directories) } else { @($defaults.mirror.directories) }
+    $runtimePayload = $null
+    if ($packaging.PSObject.Properties.Name -contains 'runtime_payload' -and $null -ne $packaging.runtime_payload) {
+        $runtimePayload = $packaging.runtime_payload
+    } elseif ($packaging.PSObject.Properties.Name -contains 'mirror' -and $null -ne $packaging.mirror) {
+        $runtimePayload = $packaging.mirror
+    }
+    $mirrorFiles = if ($null -ne $runtimePayload -and $runtimePayload.PSObject.Properties.Name -contains 'files') { @($runtimePayload.files) } else { @($defaults.runtime_payload.files) }
+    $mirrorDirs = if ($null -ne $runtimePayload -and $runtimePayload.PSObject.Properties.Name -contains 'directories') { @($runtimePayload.directories) } else { @($defaults.runtime_payload.directories) }
     $targetOverridesInput = if ($packaging.PSObject.Properties.Name -contains 'target_overrides' -and $null -ne $packaging.target_overrides) { $packaging.target_overrides } else { $null }
     $manifestSpecs = Get-VgoPackagingManifestSpecs -Packaging $packaging
-    $allowBundledOnly = if ($packaging.PSObject.Properties.Name -contains 'allow_bundled_only') { @($packaging.allow_bundled_only) } else { @($defaults.allow_bundled_only) }
+    $allowBundledOnly = if ($packaging.PSObject.Properties.Name -contains 'allow_installed_only') {
+        @($packaging.allow_installed_only)
+    } elseif ($packaging.PSObject.Properties.Name -contains 'allow_bundled_only') {
+        @($packaging.allow_bundled_only)
+    } else {
+        @($defaults.allow_installed_only)
+    }
     $ignoreKeys = if ($packaging.PSObject.Properties.Name -contains 'normalized_json_ignore_keys') { @($packaging.normalized_json_ignore_keys) } else { @($defaults.normalized_json_ignore_keys) }
 
     if (-not [string]::IsNullOrWhiteSpace($RepoRoot)) {
@@ -922,7 +933,9 @@ function Get-VgoPackagingContract {
         if ($targetOverridesInput -is [System.Collections.IDictionary]) {
             $targetNames = @($targetOverridesInput.Keys)
         } else {
-            $targetNames = @($targetOverridesInput.PSObject.Properties.Name)
+            if ($null -ne $targetOverridesInput.PSObject -and $null -ne $targetOverridesInput.PSObject.Properties) {
+                $targetNames = @($targetOverridesInput.PSObject.Properties | ForEach-Object { $_.Name })
+            }
         }
 
         foreach ($targetName in $targetNames) {
@@ -941,12 +954,17 @@ function Get-VgoPackagingContract {
     }
 
     return [pscustomobject]@{
+        runtime_payload = [pscustomobject]@{
+            files = @($mirrorFiles | ForEach-Object { ([string]$_).Replace('\', '/') } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+            directories = @($mirrorDirs | ForEach-Object { ([string]$_).Replace('\', '/') } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+        }
         mirror = [pscustomobject]@{
             files = @($mirrorFiles | ForEach-Object { ([string]$_).Replace('\', '/') } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
             directories = @($mirrorDirs | ForEach-Object { ([string]$_).Replace('\', '/') } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
         }
         manifests = @($manifestSpecs)
         target_overrides = [pscustomobject]$targetOverrides
+        allow_installed_only = @($allowBundledOnly)
         allow_bundled_only = @($allowBundledOnly)
         normalized_json_ignore_keys = @($ignoreKeys)
     }
@@ -970,8 +988,14 @@ function Get-VgoEffectiveTargetPackaging {
             if ($targetOverrides.Contains($TargetId)) {
                 $override = $targetOverrides[$TargetId]
             }
-        } elseif ($targetOverrides.PSObject.Properties.Name -contains $TargetId) {
-            $override = $targetOverrides.$TargetId
+        } else {
+            $overrideNames = @()
+            if ($null -ne $targetOverrides.PSObject -and $null -ne $targetOverrides.PSObject.Properties) {
+                $overrideNames = @($targetOverrides.PSObject.Properties | ForEach-Object { $_.Name })
+            }
+            if ($overrideNames -contains $TargetId) {
+                $override = $targetOverrides.$TargetId
+            }
         }
 
         if ($null -ne $override) {
@@ -1086,20 +1110,17 @@ function Get-VgoMirrorTopologyTargets {
         if ([string]::IsNullOrWhiteSpace($canonicalRel)) {
             $canonicalRel = '.'
         }
-        $bundledRel = if ($null -ne $legacy -and $legacy.PSObject.Properties.Name -contains 'bundled_root') { [string]$legacy.bundled_root } else { 'bundled/skills/vibe' }
-        if ([string]::IsNullOrWhiteSpace($bundledRel)) {
-            $bundledRel = 'bundled/skills/vibe'
+        $targets = @(
+            [pscustomobject]@{ id = 'canonical'; path = $canonicalRel; role = 'canonical'; required = $true; presence_policy = 'required'; sync_enabled = $false; parity_policy = 'authoritative' }
+        )
+        $bundledRel = if ($null -ne $legacy -and $legacy.PSObject.Properties.Name -contains 'bundled_root') { [string]$legacy.bundled_root } else { $null }
+        if (-not [string]::IsNullOrWhiteSpace($bundledRel)) {
+            $targets += [pscustomobject]@{ id = 'bundled'; path = $bundledRel; role = 'mirror'; required = $true; presence_policy = 'required'; sync_enabled = $true; parity_policy = 'full' }
         }
         $nestedRel = if ($null -ne $legacy -and $legacy.PSObject.Properties.Name -contains 'nested_bundled_root') { [string]$legacy.nested_bundled_root } else { $null }
-        if ([string]::IsNullOrWhiteSpace($nestedRel)) {
-            $nestedRel = Join-Path $bundledRel $bundledRel
+        if (-not [string]::IsNullOrWhiteSpace($nestedRel)) {
+            $targets += [pscustomobject]@{ id = 'nested_bundled'; path = $nestedRel; role = 'mirror'; required = $false; presence_policy = 'if_present_must_match'; sync_enabled = $false; parity_policy = 'full'; materialization_mode = 'release_install_only' }
         }
-
-        $targets = @(
-            [pscustomobject]@{ id = 'canonical'; path = $canonicalRel; role = 'canonical'; required = $true; presence_policy = 'required'; sync_enabled = $false; parity_policy = 'authoritative' },
-            [pscustomobject]@{ id = 'bundled'; path = $bundledRel; role = 'mirror'; required = $true; presence_policy = 'required'; sync_enabled = $true; parity_policy = 'full' },
-            [pscustomobject]@{ id = 'nested_bundled'; path = $nestedRel; role = 'mirror'; required = $false; presence_policy = 'if_present_must_match'; sync_enabled = $false; parity_policy = 'full'; materialization_mode = 'release_install_only' }
-        )
     }
 
     $topologyTargets = @()
@@ -1152,7 +1173,12 @@ function Get-VgoMirrorTarget {
         [Parameter(Mandatory)] [string]$Id
     )
 
-    return @($Targets | Where-Object { $_.id -eq $Id } | Select-Object -First 1)[0]
+    $match = @($Targets | Where-Object { $_.id -eq $Id } | Select-Object -First 1)
+    if ($match.Count -eq 0) {
+        return $null
+    }
+
+    return $match[0]
 }
 
 function Get-VgoLegacySourceOfTruthCompatibility {

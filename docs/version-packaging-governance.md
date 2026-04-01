@@ -1,43 +1,37 @@
 # VCO Version / Packaging Governance
 
-This document defines the canonical governance contract for Wave31-33:
+This document defines the canonical governance contract after tracked `bundled/skills/vibe` retirement:
 
-- explicit mirror topology
-- topology-driven mirror sync
-- nested parity + mirror edit hygiene gates
+- canonical-only repo topology for `vibe`
+- generated runtime payload + generated compatibility surface
 - release / install / runtime freshness boundaries
 - execution-context lock for governance scripts
 
 ## Mirror Topology Contract
 
-The canonical repo root is the only source of truth. `mirror_topology.targets` now carries the machine-readable contract, while `source_of_truth.*` stays in place for backward compatibility.
+The canonical repo root is the only repo truth surface for `vibe`. `mirror_topology.targets` remains machine-readable, but it now describes only the repo-resident canonical target.
 
 | Target ID | Path | Role | Required | Presence Policy | Sync Rule |
 | --- | --- | --- | --- | --- | --- |
 | `canonical` | `.` | canonical | yes | `required` | never synced from any mirror |
-| `bundled` | `bundled/skills/vibe` | release mirror | yes | `required` | synced directly from canonical |
-| `nested_bundled` | `bundled/skills/vibe/bundled/skills/vibe` | compatibility mirror | no | `if_present_must_match` | optional generated compatibility target; parity enforced when materialized |
 
 Core rules:
 
 1. `canonical` is the only authoritative target.
-2. All sync operations copy from canonical to mirrors.
-3. `nested_bundled` is optional to exist, but if it exists it must match canonical and bundled.
-4. Repo topology no longer treats `nested_bundled` as an installed-runtime hard requirement; it is a compatibility mirror, not an always-required runtime root.
-5. Repo-level sync only targets mirrors with `sync_enabled = true`; `nested_bundled` may therefore remain absent in the repo and be materialized later by release/install compatibility flows.
-6. `allow_bundled_only` remains the only approved exception set for packaged mirror-only files.
-7. Installed runtime stays outside repo parity, but it must obey the runtime freshness contract.
-8. Install-time compatibility materialization must derive `nested_bundled` from the installed canonical payload, not from a repo-resident nested mirror copy.
+2. `bundled/skills/vibe` is no longer a tracked repo mirror.
+3. Install-time compatibility surfaces are generated from the installed canonical payload, not copied from a repo mirror.
+4. `allow_installed_only` remains the only approved exception set for installed-runtime-only files.
+5. Installed runtime stays outside repo parity, but it must obey the runtime freshness contract.
 
 ## Execution-Context Lock
 
-The execution-context lock protects governance and verify scripts from running inside mirror roots and producing false passes.
+The execution-context lock protects governance and verify scripts from running inside derived or compatibility roots and producing false passes.
 
 Lock behavior:
 
 - the resolved repo root must be the outer git root
-- the executing script path must not live under any non-canonical mirror target
-- topology resolution must land on the outer canonical root, not on a bundled ↔ nested closed loop
+- the executing script path must not live under any non-canonical derived target
+- topology resolution must land on the outer canonical root
 
 Shared entrypoint:
 
@@ -46,43 +40,21 @@ Shared entrypoint:
 
 ## Packaging Scope
 
-Repo parity and mirror parity continue to use the packaging contract from `config/version-governance.json`:
+Repo parity and installed-runtime parity use the packaging contract from `config/version-governance.json`:
 
-- mirror files: `SKILL.md`, `check.ps1`, `check.sh`, `install.ps1`, `install.sh`
-- mirror directories: `config`, `protocols`, `references`, `docs`, `scripts`, `mcp`
+- runtime payload files: `SKILL.md`, `check.ps1`, `check.sh`, `install.ps1`, `install.sh`
+- runtime payload directories: `config`, `protocols`, `references`, `docs`, `scripts`, `mcp`
 - normalized JSON ignore keys: `updated`, `generated_at`
-- bundled-only allowlist: `docs/CODEX_ECOSYSTEM_MAINTENANCE_PRINCIPLES.md`
+- installed-only allowlist: `docs/CODEX_ECOSYSTEM_MAINTENANCE_PRINCIPLES.md`
 
 `mcp` is part of the governed payload because the install scripts copy `mcp/` into the target runtime and `check.ps1` / `check.sh` validate `mcp/servers.template.json`.
 
-## Topology-Driven Sync
-
-Use `scripts/governance/sync-bundled-vibe.ps1` to sync mirrors.
-
-Sync guarantees:
-
-- the script enumerates `mirror_topology.targets`
-- only targets with `sync_enabled = true` are considered
-- optional targets with `presence_policy = if_present_must_match` are skipped when absent
-- `nested_bundled` is no longer a default repo-sync target once `sync_enabled = false`
-- `-PruneBundledExtras` applies to every synced mirror target
-- mirror-to-mirror cascading is forbidden
-
-Recommended command:
-
-```powershell
-powershell -NoProfile -File .\scripts\governance\sync-bundled-vibe.ps1 -PruneBundledExtras
-```
-
 ## Gate Stack
 
-### Repo / Mirror Gates
+### Repo / Packaging Gates
 
 - `scripts/verify/vibe-version-packaging-gate.ps1`
 - `scripts/verify/vibe-version-consistency-gate.ps1`
-- `scripts/verify/vibe-config-parity-gate.ps1`
-- `scripts/verify/vibe-nested-bundled-parity-gate.ps1`
-- `scripts/verify/vibe-mirror-edit-hygiene-gate.ps1`
 
 ### Runtime / Coherence Gates
 
@@ -95,9 +67,9 @@ release only governs repo parity.
 
 That means:
 
-- release metadata and release-cut gates validate canonical + bundled + nested repo state
+- release metadata and release-cut gates validate canonical repo state
 - install copies the governed payload into `${TARGET_ROOT}/skills/vibe` and writes a freshness receipt on success
-- install-time compatibility flows may generate `${TARGET_ROOT}/skills/vibe/bundled/skills/vibe` even when the repo-level nested mirror is absent
+- install-time compatibility flows may generate `${TARGET_ROOT}/skills/vibe/bundled/skills/vibe` even though no repo-level mirror exists
 - runtime freshness authoritatively validates the installed copy against canonical source
 - routine `check.ps1` / `check.sh` may execute the runtime freshness gate only when the canonical repo context is available
 
@@ -115,7 +87,7 @@ That means:
 
 The installed runtime freshness gate remains the receipt authority. The coherence gate validates that release/install/runtime documentation, scripts, and receipt expectations stay aligned.
 
-`require_nested_bundled_root = false` means installed-runtime freshness does not fail only because a nested compatibility mirror is absent. If a nested layout is materialized for compatibility, install-time generation must keep it derived from the installed canonical payload and governed by the same parity and hygiene rules.
+`require_nested_bundled_root = false` means installed-runtime freshness does not fail only because a nested compatibility surface is absent. If a nested layout is materialized for compatibility, install-time generation must keep it derived from the installed canonical payload and governed by the same parity and hygiene rules.
 
 ## Shell Degraded Behavior
 
@@ -134,19 +106,15 @@ Operational meaning:
 ## Recommended Operational Flow
 
 1. Edit canonical files only.
-2. Run topology-driven sync.
-3. Run repo parity gates, including nested parity and mirror hygiene.
-4. Cut or verify release metadata.
-5. Install into the target runtime.
-6. Run runtime freshness and coherence checks.
+2. Cut or verify release metadata.
+3. Install into the target runtime.
+4. Run runtime freshness and coherence checks.
+5. Use compatibility-only mirror tooling only for legacy fixture maintenance, not for repo truth.
 
 Example sequence:
 
 ```powershell
-powershell -NoProfile -File .\scripts\governance\sync-bundled-vibe.ps1 -PruneBundledExtras
 pwsh -NoProfile -File .\scripts\verify\vibe-version-packaging-gate.ps1 -WriteArtifacts
-pwsh -NoProfile -File .\scripts\verify\vibe-nested-bundled-parity-gate.ps1 -WriteArtifacts
-pwsh -NoProfile -File .\scripts\verify\vibe-mirror-edit-hygiene-gate.ps1 -WriteArtifacts
 pwsh -NoProfile -File .\scripts\verify\vibe-installed-runtime-freshness-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteReceipt
 pwsh -NoProfile -File .\scripts\verify\vibe-release-install-runtime-coherence-gate.ps1 -TargetRoot "$env:USERPROFILE\.codex" -WriteArtifacts
 ```

@@ -71,7 +71,8 @@ function Copy-SkillRootsWithoutSelfShadow {
     param(
         [string]$Source,
         [string]$Destination,
-        [string]$RepoRoot
+        [string]$RepoRoot,
+        [string[]]$ExcludeSkillNames = @()
     )
 
     if (-not (Test-Path -LiteralPath $Source)) { return }
@@ -81,6 +82,9 @@ function Copy-SkillRootsWithoutSelfShadow {
     Add-VgoCreatedPath -Path $Destination
 
     foreach ($child in @(Get-ChildItem -LiteralPath $Source -Force -ErrorAction SilentlyContinue | Sort-Object Name)) {
+        if ($ExcludeSkillNames -contains [string]$child.Name) {
+            continue
+        }
         $target = Join-Path $Destination $child.Name
         if ([System.IO.Path]::GetFullPath($target) -eq $repoRootFull) {
             continue
@@ -715,6 +719,21 @@ function Sync-VibeCanonicalToTarget {
 function Get-GeneratedNestedCompatibilitySuffix {
     param([psobject]$Governance)
 
+    $packaging = if ($Governance.PSObject.Properties.Name -contains 'packaging') { $Governance.packaging } else { $null }
+    $generated = if ($null -ne $packaging -and $packaging.PSObject.Properties.Name -contains 'generated_compatibility') { $packaging.generated_compatibility } else { $null }
+    $nestedRuntime = if ($null -ne $generated -and $generated.PSObject.Properties.Name -contains 'nested_runtime_root') { $generated.nested_runtime_root } else { $null }
+    $generatedRelativePath = if ($null -ne $nestedRuntime -and $nestedRuntime.PSObject.Properties.Name -contains 'relative_path') { [string]$nestedRuntime.relative_path } else { $null }
+    $generatedMode = if ($null -ne $nestedRuntime -and $nestedRuntime.PSObject.Properties.Name -contains 'materialization_mode') { [string]$nestedRuntime.materialization_mode } else { $null }
+    if (-not [string]::IsNullOrWhiteSpace($generatedRelativePath)) {
+        if ([string]::IsNullOrWhiteSpace($generatedMode)) {
+            $generatedMode = 'install_only'
+        }
+        if ($generatedMode -notin @('install_only', 'release_install_only')) {
+            return $null
+        }
+        return $generatedRelativePath.Replace('\', '/').Trim('/').Replace('/', '\')
+    }
+
     $topology = if ($Governance.PSObject.Properties.Name -contains 'mirror_topology') { $Governance.mirror_topology } else { $null }
     $targets = if ($null -ne $topology -and $topology.PSObject.Properties.Name -contains 'targets' -and $null -ne $topology.targets) { @($topology.targets) } else { @() }
     $bundledPath = $null
@@ -831,11 +850,33 @@ function Install-RuntimeCorePayload {
     }
 
     $copyDirectories = @($packaging.copy_directories | Where-Object { $includeCommandSurfaces -or [string]$_.target -ne 'commands' })
+    $targetVibeRel = 'skills\vibe'
+    if ($packaging.PSObject.Properties.Name -contains 'canonical_vibe_payload' -and $null -ne $packaging.canonical_vibe_payload) {
+        if ($packaging.canonical_vibe_payload.PSObject.Properties.Name -contains 'target_relpath' -and -not [string]::IsNullOrWhiteSpace([string]$packaging.canonical_vibe_payload.target_relpath)) {
+            $targetVibeRel = [string]$packaging.canonical_vibe_payload.target_relpath
+        }
+    } elseif ($packaging.PSObject.Properties.Name -contains 'canonical_vibe_mirror' -and $null -ne $packaging.canonical_vibe_mirror) {
+        if ($packaging.canonical_vibe_mirror.PSObject.Properties.Name -contains 'target_relpath' -and -not [string]::IsNullOrWhiteSpace([string]$packaging.canonical_vibe_mirror.target_relpath)) {
+            $targetVibeRel = [string]$packaging.canonical_vibe_mirror.target_relpath
+        }
+    }
+    $excludeBundledSkillNames = New-Object System.Collections.Generic.List[string]
+    if ($packaging.PSObject.Properties.Name -contains 'exclude_bundled_skill_names' -and $null -ne $packaging.exclude_bundled_skill_names) {
+        foreach ($name in @($packaging.exclude_bundled_skill_names)) {
+            if (-not [string]::IsNullOrWhiteSpace([string]$name)) {
+                $excludeBundledSkillNames.Add([string]$name) | Out-Null
+            }
+        }
+    }
+    $canonicalVibeName = Split-Path -Leaf $targetVibeRel
+    if ($excludeBundledSkillNames -notcontains $canonicalVibeName) {
+        $excludeBundledSkillNames.Add($canonicalVibeName) | Out-Null
+    }
     foreach ($entry in $copyDirectories) {
         $src = Join-Path $RepoRoot ([string]$entry.source)
         $dst = Join-Path $TargetRoot ([string]$entry.target)
         if ([string]$entry.target -eq 'skills') {
-            Copy-SkillRootsWithoutSelfShadow -Source $src -Destination $dst -RepoRoot $RepoRoot
+            Copy-SkillRootsWithoutSelfShadow -Source $src -Destination $dst -RepoRoot $RepoRoot -ExcludeSkillNames @($excludeBundledSkillNames)
         } else {
             Copy-DirContent -Source $src -Destination $dst
         }
@@ -859,13 +900,6 @@ function Install-RuntimeCorePayload {
         }
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
         Copy-Item -LiteralPath $src -Destination $dst -Force
-    }
-
-    $targetVibeRel = 'skills\vibe'
-    if ($packaging.PSObject.Properties.Name -contains 'canonical_vibe_mirror' -and $null -ne $packaging.canonical_vibe_mirror) {
-        if ($packaging.canonical_vibe_mirror.PSObject.Properties.Name -contains 'target_relpath' -and -not [string]::IsNullOrWhiteSpace([string]$packaging.canonical_vibe_mirror.target_relpath)) {
-            $targetVibeRel = [string]$packaging.canonical_vibe_mirror.target_relpath
-        }
     }
 
     Sync-VibeCanonicalToTarget -RepoRoot $RepoRoot -TargetRoot $TargetRoot -TargetRel $targetVibeRel

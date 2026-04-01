@@ -6,8 +6,8 @@
   "instruction_path": "core/skills/vibe/instruction.md",
   "compatibility_path": "core/skills/vibe/compatibility.json",
   "source_of_truth": {
-    "kind": "bundled-skill",
-    "path": "bundled/skills/vibe/SKILL.md"
+    "kind": "canonical-skill",
+    "path": "SKILL.md"
   },
   "tags": [
     "router",

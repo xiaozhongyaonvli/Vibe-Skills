@@ -10,21 +10,20 @@ The goal is to remove silent write behavior from the operator surface while keep
 
 ## Covered Operators
 
-- `scripts/governance/sync-bundled-vibe.ps1`
 - `scripts/governance/release-cut.ps1`
 
-Both operators must expose a machine-readable preview summary before any non-trivial write flow is applied.
+The active write-capable governance operator must expose a machine-readable preview summary before any non-trivial write flow is applied.
 
 ## Required Contract
 
 1. **Precheck**
    - validate execution-context lock;
-   - identify canonical root and mirror targets;
+   - identify canonical root and any declared generated-compatibility scope;
    - enumerate governed write scope.
 2. **Preview**
    - support `-Preview` and `-PreviewOutputPath`;
    - emit a machine-readable preview summary to the configured preview root;
-   - list planned file writes, mirror syncs, and post-apply verification expectations.
+   - list planned file writes and post-apply verification expectations.
 3. **Apply**
    - only run after preview review;
    - reuse the same operator inputs, never a hidden alternate write path.
@@ -36,7 +35,7 @@ Both operators must expose a machine-readable preview summary before any non-tri
 
 - Preview mode never mutates canonical content.
 - Preview receipts are evidence, not a second control plane.
-- Apply mode must stay within the canonical repo tree and declared mirror targets.
+- Apply mode must stay within the canonical repo tree and declared compatibility contract.
 - Operator preview receipts are stored under the governed preview output root.
 
 ## Audit Surface

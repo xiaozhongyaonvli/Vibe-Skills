@@ -133,7 +133,6 @@ def evaluate(repo_root: Path, target_root: Path) -> dict[str, Any]:
     runtime_gate_path = repo_root / str(runtime["post_install_gate"])
     coherence_gate_path = repo_root / str(runtime["coherence_gate"])
     frontmatter_gate_path = repo_root / "scripts" / "verify" / "vibe-bom-frontmatter-gate.ps1"
-    sync_bundled_path = repo_root / "scripts" / "governance" / "sync-bundled-vibe.ps1"
     receipt_path = target_root / str(runtime["receipt_relpath"])
 
     print("=== VCO Release / Install / Runtime Coherence Gate ===")
@@ -150,7 +149,6 @@ def evaluate(repo_root: Path, target_root: Path) -> dict[str, Any]:
     add_assertion(runtime_gate_path.exists(), "[runtime] post-install freshness gate script exists")
     add_assertion(coherence_gate_path.exists(), "[runtime] coherence gate script exists")
     add_assertion(frontmatter_gate_path.exists(), "[runtime] BOM/frontmatter gate script exists")
-    add_assertion(sync_bundled_path.exists(), "[runtime] sync-bundled-vibe script exists for mirror closure")
     add_assertion(str(runtime["post_install_gate"]) in list(runtime["required_runtime_markers"]), "[runtime] required_runtime_markers includes post-install freshness gate")
     add_assertion(str(runtime["coherence_gate"]) in list(runtime["required_runtime_markers"]), "[runtime] required_runtime_markers includes coherence gate")
     add_assertion(int(runtime["receipt_contract_version"]) >= 1, "[runtime] receipt_contract_version is declared and >= 1")

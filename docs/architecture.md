@@ -3,13 +3,15 @@
 ## Layers
 
 1. Orchestration layer
-- `bundled/skills/vibe`
+- repo-root `SKILL.md`
+- `core/skills/vibe`
 - Protocol routing by task grade (M/L/XL)
 
 2. Compatibility dependency layer
 - `bundled/skills/*`
 - `bundled/superpowers-skills/*`
 - All adapted for Codex behavior
+- `bundled/skills/vibe` is not a tracked repo mirror anymore; compatibility materialization happens only at install/runtime boundaries when explicitly required.
 
 3. Governance layer
 - `rules/`

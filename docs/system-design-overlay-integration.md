@@ -24,8 +24,9 @@ This overlay focuses on architecture-quality completeness for `planning/research
 Primary policy:
 - `config/system-design-overlay.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/system-design-overlay.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/system-design-overlay.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -69,7 +70,7 @@ Run dedicated gate:
 pwsh -File .\scripts\verify\vibe-system-design-overlay-gate.ps1
 ```
 
-Run config parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

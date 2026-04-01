@@ -127,12 +127,32 @@ $mirrorDirs = @($nestedEffectivePackaging.directories)
 $bundledTarget = $context.bundledTarget
 $nestedTarget = $context.nestedTarget
 $canonicalRoot = $context.canonicalRoot
+$runtimeConfig = Get-VgoInstalledRuntimeConfig -Governance $context.governance
+$generatedCompatibility = if (
+    $context.governance.PSObject.Properties.Name -contains 'packaging' -and
+    $null -ne $context.governance.packaging -and
+    $context.governance.packaging.PSObject.Properties.Name -contains 'generated_compatibility'
+) {
+    $context.governance.packaging.generated_compatibility
+} else {
+    $null
+}
+$nestedRuntimeRoot = if (
+    $null -ne $generatedCompatibility -and
+    $generatedCompatibility.PSObject.Properties.Name -contains 'nested_runtime_root'
+) {
+    $generatedCompatibility.nested_runtime_root
+} else {
+    $null
+}
+$trackedMirrorRetired = ($null -eq $bundledTarget -and $null -eq $nestedTarget)
 
 $results = [ordered]@{
     gate = 'vibe-nested-bundled-parity-gate'
     repo_root = $context.repoRoot
     generated_at = (Get-Date).ToString('s')
     gate_result = 'FAIL'
+    mode = if ($trackedMirrorRetired) { 'canonical_only_retired_tracked_mirror' } else { 'legacy_nested_parity' }
     legacy_source_of_truth_compatible = [bool]$context.legacySourceOfTruthCompatibility.isCompatible
     legacy_mismatches = @($context.legacySourceOfTruthCompatibility.mismatches)
     targets = [ordered]@{
@@ -146,7 +166,7 @@ $results = [ordered]@{
             path = if ($null -ne $nestedTarget) { $nestedTarget.path } else { 'bundled/skills/vibe/bundled/skills/vibe' }
             exists = if ($null -ne $nestedTarget) { [bool]$nestedTarget.exists } else { $false }
             required = if ($null -ne $nestedTarget) { [bool]$nestedTarget.required } else { $false }
-            presence_policy = if ($null -ne $nestedTarget) { [string]$nestedTarget.presence_policy } else { '<missing>' }
+            presence_policy = if ($null -ne $nestedTarget) { [string]$nestedTarget.presence_policy } else { 'retired_tracked_mirror' }
         }
     }
     files = @()
@@ -168,214 +188,227 @@ Write-Host ("Bundled target : {0}" -f $results.targets.bundled.path)
 Write-Host ("Nested target  : {0}" -f $results.targets.nested.path)
 Write-Host ''
 
-$assertions += Assert-True -Condition $results.legacy_source_of_truth_compatible -Message '[topology] mirror_topology matches legacy source_of_truth fields'
-$assertions += Assert-True -Condition ($null -ne $bundledTarget) -Message '[topology] bundled target declared'
-$assertions += Assert-True -Condition ($null -ne $nestedTarget) -Message '[topology] nested_bundled target declared'
-
-if ($null -ne $bundledTarget) {
-    $assertions += Assert-True -Condition ([bool]$bundledTarget.exists) -Message '[topology] bundled target exists'
-}
-
-if ($null -eq $nestedTarget) {
-    $results.summary.failures = @($assertions | Where-Object { -not $_ }).Count
-    if ($WriteArtifacts) {
-        Write-Artifacts -RepoRoot $context.repoRoot -Artifact ([pscustomobject]$results)
+if ($trackedMirrorRetired) {
+    $assertions += Assert-True -Condition $results.legacy_source_of_truth_compatible -Message '[topology] mirror_topology stays compatible with retired source_of_truth fields'
+    $assertions += Assert-True -Condition ($null -eq $bundledTarget) -Message '[topology] tracked bundled target is not declared'
+    $assertions += Assert-True -Condition ($null -eq $nestedTarget) -Message '[topology] tracked nested_bundled target is not declared'
+    $assertions += Assert-True -Condition (-not (Test-Path -LiteralPath (Join-Path $context.repoRoot 'bundled/skills/vibe'))) -Message '[topology] tracked bundled repo path is absent'
+    $assertions += Assert-True -Condition ($null -ne $nestedRuntimeRoot) -Message '[compat] generated nested runtime root is declared'
+    if ($null -ne $nestedRuntimeRoot) {
+        $assertions += Assert-True -Condition (([string]$nestedRuntimeRoot.relative_path) -eq 'bundled/skills/vibe') -Message '[compat] generated nested runtime root keeps legacy path only as compatibility'
+        $assertions += Assert-True -Condition (([string]$nestedRuntimeRoot.materialization_mode) -eq 'install_only') -Message '[compat] generated nested runtime root stays install_only'
     }
-    exit 1
-}
-
-if (-not $nestedTarget.exists) {
-    if ($nestedTarget.required -or $nestedTarget.presence_policy -eq 'required') {
-        $assertions += Assert-True -Condition $false -Message '[nested] target missing but required by topology'
-    } else {
-        $assertions += Assert-True -Condition $true -Message ('[nested] target absent and allowed by presence policy: {0}' -f $nestedTarget.presence_policy)
-    }
+    $assertions += Assert-True -Condition (-not [bool]$runtimeConfig.require_nested_bundled_root) -Message '[runtime] nested bundled root remains optional'
 } else {
-    foreach ($rel in $mirrorFiles) {
-        $canonicalPath = Join-Path $canonicalRoot $rel
-        $bundledPath = Join-Path $bundledTarget.fullPath $rel
-        $nestedPath = Join-Path $nestedTarget.fullPath $rel
-        $canonicalExists = Test-Path -LiteralPath $canonicalPath
-        $bundledExists = Test-Path -LiteralPath $bundledPath
-        $nestedExists = Test-Path -LiteralPath $nestedPath
-        $nestedMatchesCanonical = $false
-        $nestedMatchesBundled = $false
-        if ($canonicalExists -and $nestedExists) {
-            $nestedMatchesCanonical = Test-VgoFileParity -ReferencePath $canonicalPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys
-        }
-        if ($bundledExists -and $nestedExists) {
-            $nestedMatchesBundled = Test-VgoFileParity -ReferencePath $bundledPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys
-        }
+    $assertions += Assert-True -Condition $results.legacy_source_of_truth_compatible -Message '[topology] mirror_topology matches legacy source_of_truth fields'
+    $assertions += Assert-True -Condition ($null -ne $bundledTarget) -Message '[topology] bundled target declared'
+    $assertions += Assert-True -Condition ($null -ne $nestedTarget) -Message '[topology] nested_bundled target declared'
 
-        $assertions += Assert-True -Condition $canonicalExists -Message ("[file:{0}] canonical exists" -f $rel)
-        $assertions += Assert-True -Condition $bundledExists -Message ("[file:{0}] bundled exists" -f $rel)
-        $assertions += Assert-True -Condition $nestedExists -Message ("[file:{0}] nested exists" -f $rel)
-        if ($canonicalExists -and $nestedExists) {
-            $assertions += Assert-True -Condition $nestedMatchesCanonical -Message ("[file:{0}] nested matches canonical" -f $rel)
-        }
-        if ($bundledExists -and $nestedExists) {
-            $assertions += Assert-True -Condition $nestedMatchesBundled -Message ("[file:{0}] nested matches bundled" -f $rel)
-        }
-
-        $results.files += [pscustomobject]@{
-            path = $rel
-            canonical_exists = $canonicalExists
-            bundled_exists = $bundledExists
-            nested_exists = $nestedExists
-            nested_matches_canonical = $nestedMatchesCanonical
-            nested_matches_bundled = $nestedMatchesBundled
-        }
+    if ($null -ne $bundledTarget) {
+        $assertions += Assert-True -Condition ([bool]$bundledTarget.exists) -Message '[topology] bundled target exists'
     }
 
-    foreach ($dir in $mirrorDirs) {
-        $canonicalDir = Join-Path $canonicalRoot $dir
-        $bundledDir = Join-Path $bundledTarget.fullPath $dir
-        $nestedDir = Join-Path $nestedTarget.fullPath $dir
-        $canonicalExists = Test-Path -LiteralPath $canonicalDir
-        $bundledExists = Test-Path -LiteralPath $bundledDir
-        $nestedExists = Test-Path -LiteralPath $nestedDir
+    if ($null -eq $nestedTarget) {
+        $results.summary.failures = @($assertions | Where-Object { -not $_ }).Count
+        if ($WriteArtifacts) {
+            Write-Artifacts -RepoRoot $context.repoRoot -Artifact ([pscustomobject]$results)
+        }
+        exit 1
+    }
 
-        $canonicalFiles = if ($canonicalExists) { Get-VgoRelativeFileList -RootPath $canonicalDir } else { @() }
-        $bundledFiles = if ($bundledExists) { Get-VgoRelativeFileList -RootPath $bundledDir } else { @() }
-        $nestedFiles = if ($nestedExists) { Get-VgoRelativeFileList -RootPath $nestedDir } else { @() }
+    if (-not $nestedTarget.exists) {
+        if ($nestedTarget.required -or $nestedTarget.presence_policy -eq 'required') {
+            $assertions += Assert-True -Condition $false -Message '[nested] target missing but required by topology'
+        } else {
+            $assertions += Assert-True -Condition $true -Message ('[nested] target absent and allowed by presence policy: {0}' -f $nestedTarget.presence_policy)
+        }
+    } else {
+        foreach ($rel in $mirrorFiles) {
+            $canonicalPath = Join-Path $canonicalRoot $rel
+            $bundledPath = Join-Path $bundledTarget.fullPath $rel
+            $nestedPath = Join-Path $nestedTarget.fullPath $rel
+            $canonicalExists = Test-Path -LiteralPath $canonicalPath
+            $bundledExists = Test-Path -LiteralPath $bundledPath
+            $nestedExists = Test-Path -LiteralPath $nestedPath
+            $nestedMatchesCanonical = $false
+            $nestedMatchesBundled = $false
+            if ($canonicalExists -and $nestedExists) {
+                $nestedMatchesCanonical = Test-VgoFileParity -ReferencePath $canonicalPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys
+            }
+            if ($bundledExists -and $nestedExists) {
+                $nestedMatchesBundled = Test-VgoFileParity -ReferencePath $bundledPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys
+            }
 
-        $onlyInCanonical = @($canonicalFiles | Where-Object { $_ -notin $nestedFiles } | Sort-Object)
-        $onlyInBundledRaw = @($bundledFiles | Where-Object { $_ -notin $nestedFiles } | Sort-Object)
-        $onlyInBundled = @(
-            $onlyInBundledRaw | Where-Object {
-                $fullRel = ('{0}/{1}' -f $dir, $_).Replace('\', '/')
-                $allowBundledOnly -notcontains $fullRel
-            } | Sort-Object
-        )
-        $onlyInNestedRaw = @($nestedFiles | Where-Object { $_ -notin $canonicalFiles } | Sort-Object)
-        $onlyInNested = @(
-            $onlyInNestedRaw | Where-Object {
-                $fullRel = ('{0}/{1}' -f $dir, $_).Replace('\', '/')
-                $allowBundledOnly -notcontains $fullRel
-            } | Sort-Object
-        )
-        $nestedExtraVsBundled = @($nestedFiles | Where-Object { $_ -notin $bundledFiles } | Sort-Object)
+            $assertions += Assert-True -Condition $canonicalExists -Message ("[file:{0}] canonical exists" -f $rel)
+            $assertions += Assert-True -Condition $bundledExists -Message ("[file:{0}] bundled exists" -f $rel)
+            $assertions += Assert-True -Condition $nestedExists -Message ("[file:{0}] nested exists" -f $rel)
+            if ($canonicalExists -and $nestedExists) {
+                $assertions += Assert-True -Condition $nestedMatchesCanonical -Message ("[file:{0}] nested matches canonical" -f $rel)
+            }
+            if ($bundledExists -and $nestedExists) {
+                $assertions += Assert-True -Condition $nestedMatchesBundled -Message ("[file:{0}] nested matches bundled" -f $rel)
+            }
 
-        $diffVsCanonical = @()
-        foreach ($relPath in @($canonicalFiles | Where-Object { $_ -in $nestedFiles } | Sort-Object)) {
-            $canonicalPath = Join-Path $canonicalDir $relPath
-            $nestedPath = Join-Path $nestedDir $relPath
-            if (-not (Test-VgoFileParity -ReferencePath $canonicalPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys)) {
-                $diffVsCanonical += $relPath
+            $results.files += [pscustomobject]@{
+                path = $rel
+                canonical_exists = $canonicalExists
+                bundled_exists = $bundledExists
+                nested_exists = $nestedExists
+                nested_matches_canonical = $nestedMatchesCanonical
+                nested_matches_bundled = $nestedMatchesBundled
             }
         }
 
-        $diffVsBundled = @()
-        foreach ($relPath in @($bundledFiles | Where-Object { $_ -in $nestedFiles } | Sort-Object)) {
-            $bundledPath = Join-Path $bundledDir $relPath
-            $nestedPath = Join-Path $nestedDir $relPath
-            if (-not (Test-VgoFileParity -ReferencePath $bundledPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys)) {
-                $diffVsBundled += $relPath
+        foreach ($dir in $mirrorDirs) {
+            $canonicalDir = Join-Path $canonicalRoot $dir
+            $bundledDir = Join-Path $bundledTarget.fullPath $dir
+            $nestedDir = Join-Path $nestedTarget.fullPath $dir
+            $canonicalExists = Test-Path -LiteralPath $canonicalDir
+            $bundledExists = Test-Path -LiteralPath $bundledDir
+            $nestedExists = Test-Path -LiteralPath $nestedDir
+
+            $canonicalFiles = if ($canonicalExists) { Get-VgoRelativeFileList -RootPath $canonicalDir } else { @() }
+            $bundledFiles = if ($bundledExists) { Get-VgoRelativeFileList -RootPath $bundledDir } else { @() }
+            $nestedFiles = if ($nestedExists) { Get-VgoRelativeFileList -RootPath $nestedDir } else { @() }
+
+            $onlyInCanonical = @($canonicalFiles | Where-Object { $_ -notin $nestedFiles } | Sort-Object)
+            $onlyInBundledRaw = @($bundledFiles | Where-Object { $_ -notin $nestedFiles } | Sort-Object)
+            $onlyInBundled = @(
+                $onlyInBundledRaw | Where-Object {
+                    $fullRel = ('{0}/{1}' -f $dir, $_).Replace('\', '/')
+                    $allowBundledOnly -notcontains $fullRel
+                } | Sort-Object
+            )
+            $onlyInNestedRaw = @($nestedFiles | Where-Object { $_ -notin $canonicalFiles } | Sort-Object)
+            $onlyInNested = @(
+                $onlyInNestedRaw | Where-Object {
+                    $fullRel = ('{0}/{1}' -f $dir, $_).Replace('\', '/')
+                    $allowBundledOnly -notcontains $fullRel
+                } | Sort-Object
+            )
+            $nestedExtraVsBundled = @($nestedFiles | Where-Object { $_ -notin $bundledFiles } | Sort-Object)
+
+            $diffVsCanonical = @()
+            foreach ($relPath in @($canonicalFiles | Where-Object { $_ -in $nestedFiles } | Sort-Object)) {
+                $canonicalPath = Join-Path $canonicalDir $relPath
+                $nestedPath = Join-Path $nestedDir $relPath
+                if (-not (Test-VgoFileParity -ReferencePath $canonicalPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys)) {
+                    $diffVsCanonical += $relPath
+                }
+            }
+
+            $diffVsBundled = @()
+            foreach ($relPath in @($bundledFiles | Where-Object { $_ -in $nestedFiles } | Sort-Object)) {
+                $bundledPath = Join-Path $bundledDir $relPath
+                $nestedPath = Join-Path $nestedDir $relPath
+                if (-not (Test-VgoFileParity -ReferencePath $bundledPath -CandidatePath $nestedPath -IgnoreJsonKeys $ignoreJsonKeys)) {
+                    $diffVsBundled += $relPath
+                }
+            }
+
+            $assertions += Assert-True -Condition $canonicalExists -Message ("[dir:{0}] canonical exists" -f $dir)
+            $assertions += Assert-True -Condition $bundledExists -Message ("[dir:{0}] bundled exists" -f $dir)
+            $assertions += Assert-True -Condition $nestedExists -Message ("[dir:{0}] nested exists" -f $dir)
+            if ($canonicalExists -and $nestedExists) {
+                $assertions += Assert-True -Condition ($onlyInCanonical.Count -eq 0) -Message ("[dir:{0}] no canonical files missing in nested" -f $dir)
+                $assertions += Assert-True -Condition ($onlyInNested.Count -eq 0) -Message ("[dir:{0}] no unexpected nested-only files" -f $dir)
+                $assertions += Assert-True -Condition ($diffVsCanonical.Count -eq 0) -Message ("[dir:{0}] nested file parity with canonical" -f $dir)
+            }
+            if ($bundledExists -and $nestedExists) {
+                $assertions += Assert-True -Condition ($onlyInBundled.Count -eq 0) -Message ("[dir:{0}] no bundled files missing in nested" -f $dir)
+                $assertions += Assert-True -Condition ($nestedExtraVsBundled.Count -eq 0) -Message ("[dir:{0}] no nested files beyond bundled" -f $dir)
+                $assertions += Assert-True -Condition ($diffVsBundled.Count -eq 0) -Message ("[dir:{0}] nested file parity with bundled" -f $dir)
+            }
+
+            $results.directories += [pscustomobject]@{
+                path = $dir
+                canonical_exists = $canonicalExists
+                bundled_exists = $bundledExists
+                nested_exists = $nestedExists
+                only_in_canonical = @($onlyInCanonical)
+                only_in_bundled = @($onlyInBundled)
+                only_in_nested = @($onlyInNested)
+                diff_vs_canonical = @($diffVsCanonical)
+                diff_vs_bundled = @($diffVsBundled)
             }
         }
 
-        $assertions += Assert-True -Condition $canonicalExists -Message ("[dir:{0}] canonical exists" -f $dir)
-        $assertions += Assert-True -Condition $bundledExists -Message ("[dir:{0}] bundled exists" -f $dir)
-        $assertions += Assert-True -Condition $nestedExists -Message ("[dir:{0}] nested exists" -f $dir)
-        if ($canonicalExists -and $nestedExists) {
-            $assertions += Assert-True -Condition ($onlyInCanonical.Count -eq 0) -Message ("[dir:{0}] no canonical files missing in nested" -f $dir)
-            $assertions += Assert-True -Condition ($onlyInNested.Count -eq 0) -Message ("[dir:{0}] no unexpected nested-only files" -f $dir)
-            $assertions += Assert-True -Condition ($diffVsCanonical.Count -eq 0) -Message ("[dir:{0}] nested file parity with canonical" -f $dir)
-        }
-        if ($bundledExists -and $nestedExists) {
-            $assertions += Assert-True -Condition ($onlyInBundled.Count -eq 0) -Message ("[dir:{0}] no bundled files missing in nested" -f $dir)
-            $assertions += Assert-True -Condition ($nestedExtraVsBundled.Count -eq 0) -Message ("[dir:{0}] no nested files beyond bundled" -f $dir)
-            $assertions += Assert-True -Condition ($diffVsBundled.Count -eq 0) -Message ("[dir:{0}] nested file parity with bundled" -f $dir)
+        $skillPath = 'SKILL.md'
+        $versionMarkers = @(
+            [pscustomobject]@{ id = 'skill'; relpath = $skillPath; canonical = (Join-Path $canonicalRoot $skillPath); bundled = (Join-Path $bundledTarget.fullPath $skillPath); nested = (Join-Path $nestedTarget.fullPath $skillPath) },
+            [pscustomobject]@{ id = 'changelog'; relpath = [string]$context.governance.version_markers.changelog_path; canonical = (Join-Path $canonicalRoot $context.governance.version_markers.changelog_path); bundled = (Join-Path $bundledTarget.fullPath $context.governance.version_markers.changelog_path); nested = (Join-Path $nestedTarget.fullPath $context.governance.version_markers.changelog_path) }
+        )
+
+        foreach ($marker in $versionMarkers) {
+            $bundledGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath ([string]$marker.relpath) -Packaging $packaging -TargetId 'bundled'
+            $nestedGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath ([string]$marker.relpath) -Packaging $packaging -TargetId 'nested_bundled'
+            $canonicalExists = Test-Path -LiteralPath $marker.canonical
+            $bundledExists = Test-Path -LiteralPath $marker.bundled
+            $nestedExists = Test-Path -LiteralPath $marker.nested
+            $bundledMatchesCanonical = $false
+            $nestedMatchesCanonical = $false
+            if ($canonicalExists -and $bundledExists) {
+                $bundledMatchesCanonical = Test-VgoFileParity -ReferencePath $marker.canonical -CandidatePath $marker.bundled -IgnoreJsonKeys $ignoreJsonKeys
+            }
+            if ($canonicalExists -and $nestedExists) {
+                $nestedMatchesCanonical = Test-VgoFileParity -ReferencePath $marker.canonical -CandidatePath $marker.nested -IgnoreJsonKeys $ignoreJsonKeys
+            }
+
+            $assertions += Assert-True -Condition $canonicalExists -Message ("[marker:{0}] canonical exists" -f $marker.id)
+            if ($bundledGoverned) {
+                $assertions += Assert-True -Condition $bundledExists -Message ("[marker:{0}] bundled exists" -f $marker.id)
+            }
+            if ($nestedGoverned) {
+                $assertions += Assert-True -Condition $nestedExists -Message ("[marker:{0}] nested exists" -f $marker.id)
+            }
+            if ($bundledGoverned -and $canonicalExists -and $bundledExists) {
+                $assertions += Assert-True -Condition $bundledMatchesCanonical -Message ("[marker:{0}] bundled matches canonical" -f $marker.id)
+            }
+            if ($nestedGoverned -and $canonicalExists -and $nestedExists) {
+                $assertions += Assert-True -Condition $nestedMatchesCanonical -Message ("[marker:{0}] nested matches canonical" -f $marker.id)
+            }
+
+            $results.version_markers += [pscustomobject]@{
+                id = $marker.id
+                canonical_exists = $canonicalExists
+                bundled_exists = $bundledExists
+                nested_exists = $nestedExists
+                bundled_matches_canonical = $bundledMatchesCanonical
+                nested_matches_canonical = $nestedMatchesCanonical
+            }
         }
 
-        $results.directories += [pscustomobject]@{
-            path = $dir
-            canonical_exists = $canonicalExists
-            bundled_exists = $bundledExists
-            nested_exists = $nestedExists
-            only_in_canonical = @($onlyInCanonical)
-            only_in_bundled = @($onlyInBundled)
-            only_in_nested = @($onlyInNested)
-            diff_vs_canonical = @($diffVsCanonical)
-            diff_vs_bundled = @($diffVsBundled)
-        }
-    }
+        $ledgerRel = [string]$context.governance.logs.release_ledger_jsonl
+        $bundledLedgerGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath $ledgerRel -Packaging $packaging -TargetId 'bundled'
+        $nestedLedgerGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath $ledgerRel -Packaging $packaging -TargetId 'nested_bundled'
+        $canonicalLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $canonicalRoot $ledgerRel)
+        $bundledLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $bundledTarget.fullPath $ledgerRel)
+        $nestedLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $nestedTarget.fullPath $ledgerRel)
+        $bundledLedgerMatch = Compare-LatestReleaseRecord -ReferenceRecord $canonicalLedger -CandidateRecord $bundledLedger
+        $nestedLedgerMatch = Compare-LatestReleaseRecord -ReferenceRecord $canonicalLedger -CandidateRecord $nestedLedger
 
-    $skillPath = 'SKILL.md'
-    $versionMarkers = @(
-        [pscustomobject]@{ id = 'skill'; relpath = $skillPath; canonical = (Join-Path $canonicalRoot $skillPath); bundled = (Join-Path $bundledTarget.fullPath $skillPath); nested = (Join-Path $nestedTarget.fullPath $skillPath) },
-        [pscustomobject]@{ id = 'changelog'; relpath = [string]$context.governance.version_markers.changelog_path; canonical = (Join-Path $canonicalRoot $context.governance.version_markers.changelog_path); bundled = (Join-Path $bundledTarget.fullPath $context.governance.version_markers.changelog_path); nested = (Join-Path $nestedTarget.fullPath $context.governance.version_markers.changelog_path) }
-    )
-
-    foreach ($marker in $versionMarkers) {
-        $bundledGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath ([string]$marker.relpath) -Packaging $packaging -TargetId 'bundled'
-        $nestedGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath ([string]$marker.relpath) -Packaging $packaging -TargetId 'nested_bundled'
-        $canonicalExists = Test-Path -LiteralPath $marker.canonical
-        $bundledExists = Test-Path -LiteralPath $marker.bundled
-        $nestedExists = Test-Path -LiteralPath $marker.nested
-        $bundledMatchesCanonical = $false
-        $nestedMatchesCanonical = $false
-        if ($canonicalExists -and $bundledExists) {
-            $bundledMatchesCanonical = Test-VgoFileParity -ReferencePath $marker.canonical -CandidatePath $marker.bundled -IgnoreJsonKeys $ignoreJsonKeys
+        $assertions += Assert-True -Condition ($null -ne $canonicalLedger) -Message '[marker:release-ledger] canonical latest record exists'
+        if ($bundledLedgerGoverned) {
+            $assertions += Assert-True -Condition ($null -ne $bundledLedger) -Message '[marker:release-ledger] bundled latest record exists'
         }
-        if ($canonicalExists -and $nestedExists) {
-            $nestedMatchesCanonical = Test-VgoFileParity -ReferencePath $marker.canonical -CandidatePath $marker.nested -IgnoreJsonKeys $ignoreJsonKeys
+        if ($nestedLedgerGoverned) {
+            $assertions += Assert-True -Condition ($null -ne $nestedLedger) -Message '[marker:release-ledger] nested latest record exists'
         }
-
-        $assertions += Assert-True -Condition $canonicalExists -Message ("[marker:{0}] canonical exists" -f $marker.id)
-        if ($bundledGoverned) {
-            $assertions += Assert-True -Condition $bundledExists -Message ("[marker:{0}] bundled exists" -f $marker.id)
+        if ($bundledLedgerGoverned -and $null -ne $canonicalLedger -and $null -ne $bundledLedger) {
+            $assertions += Assert-True -Condition $bundledLedgerMatch -Message '[marker:release-ledger] bundled latest release matches canonical'
         }
-        if ($nestedGoverned) {
-            $assertions += Assert-True -Condition $nestedExists -Message ("[marker:{0}] nested exists" -f $marker.id)
-        }
-        if ($bundledGoverned -and $canonicalExists -and $bundledExists) {
-            $assertions += Assert-True -Condition $bundledMatchesCanonical -Message ("[marker:{0}] bundled matches canonical" -f $marker.id)
-        }
-        if ($nestedGoverned -and $canonicalExists -and $nestedExists) {
-            $assertions += Assert-True -Condition $nestedMatchesCanonical -Message ("[marker:{0}] nested matches canonical" -f $marker.id)
+        if ($nestedLedgerGoverned -and $null -ne $canonicalLedger -and $null -ne $nestedLedger) {
+            $assertions += Assert-True -Condition $nestedLedgerMatch -Message '[marker:release-ledger] nested latest release matches canonical'
         }
 
         $results.version_markers += [pscustomobject]@{
-            id = $marker.id
-            canonical_exists = $canonicalExists
-            bundled_exists = $bundledExists
-            nested_exists = $nestedExists
-            bundled_matches_canonical = $bundledMatchesCanonical
-            nested_matches_canonical = $nestedMatchesCanonical
+            id = 'release-ledger-latest'
+            canonical_exists = ($null -ne $canonicalLedger)
+            bundled_exists = ($null -ne $bundledLedger)
+            nested_exists = ($null -ne $nestedLedger)
+            bundled_matches_canonical = $bundledLedgerMatch
+            nested_matches_canonical = $nestedLedgerMatch
         }
-    }
-
-    $ledgerRel = [string]$context.governance.logs.release_ledger_jsonl
-    $bundledLedgerGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath $ledgerRel -Packaging $packaging -TargetId 'bundled'
-    $nestedLedgerGoverned = Test-VgoGovernedMirrorRelativePath -RelativePath $ledgerRel -Packaging $packaging -TargetId 'nested_bundled'
-    $canonicalLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $canonicalRoot $ledgerRel)
-    $bundledLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $bundledTarget.fullPath $ledgerRel)
-    $nestedLedger = Get-VgoLatestJsonlRecord -Path (Join-Path $nestedTarget.fullPath $ledgerRel)
-    $bundledLedgerMatch = Compare-LatestReleaseRecord -ReferenceRecord $canonicalLedger -CandidateRecord $bundledLedger
-    $nestedLedgerMatch = Compare-LatestReleaseRecord -ReferenceRecord $canonicalLedger -CandidateRecord $nestedLedger
-
-    $assertions += Assert-True -Condition ($null -ne $canonicalLedger) -Message '[marker:release-ledger] canonical latest record exists'
-    if ($bundledLedgerGoverned) {
-        $assertions += Assert-True -Condition ($null -ne $bundledLedger) -Message '[marker:release-ledger] bundled latest record exists'
-    }
-    if ($nestedLedgerGoverned) {
-        $assertions += Assert-True -Condition ($null -ne $nestedLedger) -Message '[marker:release-ledger] nested latest record exists'
-    }
-    if ($bundledLedgerGoverned -and $null -ne $canonicalLedger -and $null -ne $bundledLedger) {
-        $assertions += Assert-True -Condition $bundledLedgerMatch -Message '[marker:release-ledger] bundled latest release matches canonical'
-    }
-    if ($nestedLedgerGoverned -and $null -ne $canonicalLedger -and $null -ne $nestedLedger) {
-        $assertions += Assert-True -Condition $nestedLedgerMatch -Message '[marker:release-ledger] nested latest release matches canonical'
-    }
-
-    $results.version_markers += [pscustomobject]@{
-        id = 'release-ledger-latest'
-        canonical_exists = ($null -ne $canonicalLedger)
-        bundled_exists = ($null -ne $bundledLedger)
-        nested_exists = ($null -ne $nestedLedger)
-        bundled_matches_canonical = $bundledLedgerMatch
-        nested_matches_canonical = $nestedLedgerMatch
     }
 }
 

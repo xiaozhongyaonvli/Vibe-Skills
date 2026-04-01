@@ -41,10 +41,10 @@ Primary policy files:
 - `config/prompt-asset-boost.json`
 - `config/prompt-intelligence-policy.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/prompt-overlay.json`
-- `bundled/skills/vibe/config/prompt-asset-boost.json`
-- `bundled/skills/vibe/config/prompt-intelligence-policy.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- the canonical config paths above are authoritative
+- install/runtime may still generate compatibility copies outside repo truth when legacy layout is required
 
 ## Runtime Behavior
 
@@ -87,7 +87,7 @@ pwsh -File .\scripts\verify\vibe-prompt-asset-boost-gate.ps1
 pwsh -File .\scripts\verify\vibe-prompt-intelligence-assets-gate.ps1
 ```
 
-Run parity gate (main vs bundled config):
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

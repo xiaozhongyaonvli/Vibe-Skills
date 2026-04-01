@@ -12,15 +12,14 @@
 
 - frontmatter-sensitive 文件带有 UTF-8 BOM；
 - 文件首行文本虽为 `---`，但字节 0 并不是 `0x2D`；
-- canonical / bundled / installed 三类必备副本中任一 `SKILL.md` 违反 byte-0 frontmatter 约束；
-- `nested_bundled` 若被 materialize，则其 `SKILL.md` 同样必须满足 byte-0 frontmatter 约束；缺失本身不构成失败。
+- canonical / installed 两类必备副本中任一 `SKILL.md` 违反 byte-0 frontmatter 约束；
+- install/runtime 兼容生成路径若被 materialize，其 `SKILL.md` 同样必须满足 byte-0 frontmatter 约束；缺失本身不构成失败。
 
 ## Protected Files
 
 - canonical root: `SKILL.md`
-- bundled root: `bundled/skills/vibe/SKILL.md`
-- nested bundled root (if materialized): `bundled/skills/vibe/bundled/skills/vibe/SKILL.md`
 - installed runtime root: `${TARGET_ROOT}/skills/vibe/SKILL.md`
+- installed/runtime generated compatibility root (if materialized): `${TARGET_ROOT}/skills/vibe/bundled/skills/vibe/SKILL.md`
 
 ## Authoring Rule
 
@@ -38,7 +37,7 @@ PowerShell 写入 frontmatter-sensitive 文件时，必须使用 UTF-8 no-BOM：
 
 这条规则与 UTF-8 no-BOM 是互补关系：
 
-- `.gitattributes` 负责让 canonical / bundled / installed，以及任何被 materialize 的 `nested_bundled` 副本的文本换行保持稳定；
+- `.gitattributes` 负责让 canonical / installed，以及任何被 materialize 的兼容副本的文本换行保持稳定；
 - no-BOM 负责让 frontmatter-sensitive 文件在 byte 0 直接可见 `---`。
 
 不要把 `core.autocrlf` 当作 parser safety contract。

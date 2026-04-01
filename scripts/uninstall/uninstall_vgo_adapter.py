@@ -117,6 +117,18 @@ def resolve_adapter(repo_root: Path, host_id: str):
 
 
 def generated_nested_compatibility_suffix(governance: dict) -> Path | None:
+    packaging = governance.get("packaging") or {}
+    generated = packaging.get("generated_compatibility") or {}
+    nested_runtime = generated.get("nested_runtime_root") or {}
+    relative_path = str(nested_runtime.get("relative_path") or "").strip()
+    materialization_mode = str(nested_runtime.get("materialization_mode") or "").strip()
+    if relative_path:
+        if not materialization_mode:
+            materialization_mode = "install_only"
+        if materialization_mode not in {"install_only", "release_install_only"}:
+            return None
+        return Path(*relative_path.replace("\\", "/").strip("/").split("/"))
+
     topology = governance.get("mirror_topology") or {}
     targets = topology.get("targets") or []
     bundled_path = None
@@ -160,24 +172,42 @@ def runtime_core_inventory(repo_root: Path) -> set[str]:
     packaging = load_json(repo_root / "config" / "runtime-core-packaging.json")
     governance = load_json(repo_root / "config" / "version-governance.json")
     inventory: set[str] = set()
+    exclude_bundled_skill_names = {
+        str(name).strip()
+        for name in packaging.get("exclude_bundled_skill_names") or []
+        if str(name).strip()
+    }
 
     for entry in packaging.get("copy_directories", []):
-        inventory.update(collect_file_inventory(repo_root / entry["source"], entry["target"]))
+        source_root = repo_root / entry["source"]
+        target_prefix = normalize_relpath(entry["target"])
+        if target_prefix == "skills" and source_root.exists() and exclude_bundled_skill_names:
+            for candidate in source_root.iterdir():
+                if candidate.name in exclude_bundled_skill_names:
+                    continue
+                inventory.update(collect_file_inventory(candidate, f"{target_prefix}/{candidate.name}"))
+            continue
+        inventory.update(collect_file_inventory(source_root, entry["target"]))
     for entry in packaging.get("copy_files", []):
         inventory.add(normalize_relpath(entry["target"]))
 
-    target_rel = normalize_relpath(packaging.get("canonical_vibe_mirror", {}).get("target_relpath", "skills/vibe")) or "skills/vibe"
-    for rel in governance.get("packaging", {}).get("mirror", {}).get("files", []):
+    target_rel = normalize_relpath(
+        (packaging.get("canonical_vibe_payload") or {}).get("target_relpath")
+        or (packaging.get("canonical_vibe_mirror") or {}).get("target_relpath")
+        or "skills/vibe"
+    ) or "skills/vibe"
+    runtime_payload = (governance.get("packaging") or {}).get("runtime_payload") or (governance.get("packaging") or {}).get("mirror") or {}
+    for rel in runtime_payload.get("files", []):
         inventory.add(f"{target_rel}/{normalize_relpath(rel)}")
-    for rel in governance.get("packaging", {}).get("mirror", {}).get("directories", []):
+    for rel in runtime_payload.get("directories", []):
         inventory.update(collect_file_inventory(repo_root / rel, f"{target_rel}/{normalize_relpath(rel)}"))
 
     nested_suffix = generated_nested_compatibility_suffix(governance)
     if nested_suffix is not None:
         nested_root = f"{target_rel}/{nested_suffix.as_posix()}"
-        for rel in governance.get("packaging", {}).get("mirror", {}).get("files", []):
+        for rel in runtime_payload.get("files", []):
             inventory.add(f"{nested_root}/{normalize_relpath(rel)}")
-        for rel in governance.get("packaging", {}).get("mirror", {}).get("directories", []):
+        for rel in runtime_payload.get("directories", []):
             inventory.update(collect_file_inventory(repo_root / rel, f"{nested_root}/{normalize_relpath(rel)}"))
 
     return {entry for entry in inventory if entry}

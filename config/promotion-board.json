@@ -241,9 +241,9 @@
         "revert_to_stage": "shadow",
         "max_safe_auto_write_stage": "soft"
       },
-      "evidence_summary": "Mirror topology、nested parity、mirror hygiene 与 runtime coherence 已进入 canonical governance。",
+      "evidence_summary": "Tracked bundled mirror is retired; legacy gate names now enforce canonical-only repo truth plus install-time generated compatibility and runtime coherence.",
       "owner": "vco-core",
-      "last_reviewed_at": "2026-03-07"
+      "last_reviewed_at": "2026-04-01"
     },
     {
       "plane_id": "upstream-corpus-governance",

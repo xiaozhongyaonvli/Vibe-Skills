@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-08",
+  "updated_at": "2026-04-01",
   "canonical_target_id": "canonical",
   "sync_source_target_id": "canonical",
   "report_only": false,
@@ -17,20 +17,9 @@
       "id": "canonical",
       "path": ".",
       "role": "canonical"
-    },
-    {
-      "id": "bundled",
-      "path": "bundled/skills/vibe",
-      "role": "mirror"
-    },
-    {
-      "id": "nested_bundled",
-      "path": "bundled/skills/vibe/bundled/skills/vibe",
-      "role": "mirror"
     }
   ],
   "operator_surface": [
-    "scripts/governance/sync-bundled-vibe.ps1",
     "scripts/governance/release-cut.ps1",
     "scripts/common/vibe-wave-gate-runner.ps1"
   ]

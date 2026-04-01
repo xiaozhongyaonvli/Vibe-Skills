@@ -1,6 +1,6 @@
 # Protected Capability Baseline
 
-Updated: 2026-03-12
+Updated: 2026-04-01
 
 ## Positioning
 
@@ -24,8 +24,8 @@ The cleanup program is allowed to simplify structure. It is not allowed to silen
 | --- | --- | --- | --- | --- |
 | Pack routing | exact behavior preserve | `scripts/router/resolve-pack-route.ps1`, `config/pack-manifest.json`, `config/router-thresholds.json`, `config/skill-alias-map.json` | `powershell -NoProfile -File scripts/verify/vibe-pack-routing-smoke.ps1` | restore router/config edits |
 | Router contract | exact behavior preserve | routing configs + gate inputs | `powershell -NoProfile -File scripts/verify/vibe-router-contract-gate.ps1` | restore router contract edits |
-| Packaging parity | exact behavior preserve | `config/version-governance.json`, `scripts/governance/sync-bundled-vibe.ps1`, `scripts/verify/vibe-version-packaging-gate.ps1` | `powershell -NoProfile -File scripts/verify/vibe-version-packaging-gate.ps1` | keep tracked bundled mirror until parity returns |
-| Mirror hygiene | exact behavior preserve | canonical -> bundled sync discipline | `powershell -NoProfile -File scripts/verify/vibe-mirror-edit-hygiene-gate.ps1` | reject direct mirror edits |
+| Packaging contract | exact behavior preserve | `config/version-governance.json`, runtime packaging configs, `scripts/verify/vibe-version-packaging-gate.ps1` | `powershell -NoProfile -File scripts/verify/vibe-version-packaging-gate.ps1` | keep canonical-only repo truth and generated compatibility contract |
+| Compatibility hygiene | exact behavior preserve | no repo-tracked bundled mirror reintroduction | `powershell -NoProfile -File scripts/verify/vibe-mirror-edit-hygiene-gate.ps1` | reject recreated mirror-first edits |
 | Install flow | exact behavior preserve | `install.ps1`, `install.sh` | `powershell -NoProfile -File scripts/verify/vibe-installed-runtime-freshness-gate.ps1` | restore install behavior or re-enable transitional compatibility |
 | Check flow | exact behavior preserve | `check.ps1`, `check.sh` | `powershell -NoProfile -File scripts/verify/vibe-release-install-runtime-coherence-gate.ps1` | restore check behavior or gate wiring |
 | Installed runtime coherence | exact behavior preserve | runtime receipt, freshness gate, coherence gate | `powershell -NoProfile -File scripts/verify/vibe-release-install-runtime-coherence-gate.ps1` | restore receipt contract / target layout |
@@ -35,7 +35,7 @@ The cleanup program is allowed to simplify structure. It is not allowed to silen
 
 | Domain | Allowed Structural Change | Current Protected Outcome | Proof Command |
 | --- | --- | --- | --- |
-| `nested_bundled` | may remain absent by default and be materialized only for compatibility | legacy compatibility path remains covered by the named packaging / runtime / coherence gates | `vibe-version-packaging-gate.ps1`, `vibe-installed-runtime-freshness-gate.ps1`, `vibe-release-install-runtime-coherence-gate.ps1`, `vibe-nested-bundled-parity-gate.ps1` |
+| generated compatibility path | may remain absent in repo and be materialized only during install/runtime | legacy compatibility path remains covered by the named packaging / runtime / coherence gates | `vibe-version-packaging-gate.ps1`, `vibe-installed-runtime-freshness-gate.ps1`, `vibe-release-install-runtime-coherence-gate.ps1`, `vibe-nested-bundled-parity-gate.ps1` |
 | tracked outputs | may migrate into fixtures / ledgers | long-term regression baselines are preserved | `vibe-output-artifact-boundary-gate.ps1` |
 | docs spine | may be shortened aggressively | canonical index surfaces remain readable and status-vs-contract boundaries remain discoverable | manual index audit against `docs/README.md`, `docs/status/README.md`, `references/index.md`, `config/index.md`, `scripts/README.md` |
 | historical plans / reports | may move to archive | current state and current roadmap remain discoverable | manual doc review |

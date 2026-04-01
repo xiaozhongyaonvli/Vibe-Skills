@@ -18,8 +18,9 @@ This integration keeps VCO's deterministic pack scoring as the control plane and
 Primary policy file:
 - `config/ai-rerank-policy.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/ai-rerank-policy.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/ai-rerank-policy.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -65,7 +66,7 @@ Run dedicated gate:
 pwsh -File .\scripts\verify\vibe-ai-rerank-gate.ps1
 ```
 
-Run config parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

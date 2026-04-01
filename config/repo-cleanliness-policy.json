@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "updated_at":  "2026-03-08",
+    "updated_at":  "2026-04-01",
     "shared_repo_ignores":  [
                                 ".serena/",
                                 ".tmp/"
@@ -31,8 +31,13 @@
                                   "third_party/"
                               ],
     "high_risk_managed_roots":  [
-                                    "bundled/skills/vibe/",
-                                    "bundled/skills/vibe/bundled/skills/vibe/"
+                                    "config/version-governance.json",
+                                    "config/runtime-core-packaging.json",
+                                    "config/runtime-core-packaging.minimal.json",
+                                    "config/runtime-core-packaging.full.json",
+                                    "scripts/install/",
+                                    "scripts/uninstall/",
+                                    "scripts/verify/"
                                 ],
     "cleanup_targets":  [
                             {

@@ -53,11 +53,10 @@ Primary policy files:
 - `config/mem0-backend-policy.json`
 - `config/letta-governance-contract.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/memory-governance.json`
-- `bundled/skills/vibe/config/memory-tier-router.json`
-- `bundled/skills/vibe/config/mem0-backend-policy.json`
-- `bundled/skills/vibe/config/letta-governance-contract.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- the canonical `config/*` paths above remain authoritative
+- install/runtime may generate compatibility copies when legacy runtime layout needs them
 
 ## Router Integration
 
@@ -102,7 +101,7 @@ pwsh -File .\scripts\verify\vibe-mem0-backend-gate.ps1
 pwsh -File .\scripts\verify\vibe-letta-contract-gate.ps1
 ```
 
-Run config parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

@@ -47,7 +47,8 @@
         "kind": {
           "type": "string",
           "enum": [
-            "bundled-skill"
+            "bundled-skill",
+            "canonical-skill"
           ]
         },
         "path": {
@@ -66,4 +67,3 @@
   },
   "additionalProperties": false
 }
-

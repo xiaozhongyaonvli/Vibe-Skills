@@ -77,6 +77,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\verify\vibe-bom-frontmatter-g
 powershell -ExecutionPolicy Bypass -File .\scripts\verify\vibe-release-install-runtime-coherence-gate.ps1
 ```
 
+`vibe-version-packaging-gate.ps1` remains in the baseline under its legacy name,
+but its protected behavior is now canonical-only packaging governance plus
+generated-compatibility wiring rather than repo-tracked mirror parity.
+
 `check.ps1 -Profile full -Deep` remains an optional stronger lane when host prerequisites are present.
 
 ## Runtime Truth Boundaries

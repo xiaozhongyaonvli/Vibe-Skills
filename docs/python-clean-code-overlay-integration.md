@@ -24,8 +24,9 @@ This overlay focuses on Python-specific maintainability signals:
 Primary policy:
 - `config/python-clean-code-overlay.json`
 
-Bundled mirror:
-- `bundled/skills/vibe/config/python-clean-code-overlay.json`
+Legacy compatibility note:
+- tracked repo bundled config copies are retired
+- `config/python-clean-code-overlay.json` is the only repo-tracked source of truth
 
 Key fields:
 - `enabled`, `mode` (`off|shadow|soft|strict`)
@@ -72,7 +73,7 @@ Run dedicated gate:
 pwsh -File .\scripts\verify\vibe-python-clean-code-overlay-gate.ps1
 ```
 
-Run config parity gate:
+Run legacy-named packaging gate:
 
 ```powershell
 pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1

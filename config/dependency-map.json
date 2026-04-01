@@ -2,10 +2,6 @@
   "version": 1,
   "items": [
     {
-      "source": "${CODEX_HOME}/skills/vibe",
-      "target": "bundled/skills/vibe"
-    },
-    {
       "source": "${CODEX_HOME}/skills/dialectic",
       "target": "bundled/skills/dialectic"
     },

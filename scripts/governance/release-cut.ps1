@@ -361,7 +361,6 @@ $releaseReadmeRel = 'docs/releases/README.md'
 $releaseReadmePath = Join-Path $repoRoot $releaseReadmeRel
 $existingDistManifestRels = @(Get-ExistingDistManifestRelativePaths -RepoRoot $repoRoot)
 $releaseSummary = Get-ReleaseSummary -Governance $governance -Version $Version
-$syncScript = Join-Path $repoRoot 'scripts\governance\sync-bundled-vibe.ps1'
 $gateScripts = if ($RunGates) { Get-ReleaseGateScripts } else { @() }
 $head = (git -C $repoRoot rev-parse --short HEAD).Trim()
 
@@ -380,15 +379,6 @@ if ($Preview) {
         [ordered]@{ path = [string]$_; action = 'update source_release version/updated' }
     })
 
-    $syncPreviewPath = Join-Path $previewRoot 'sync-bundled-vibe-from-release-cut.json'
-    if (Test-Path -LiteralPath $syncScript) {
-        # operator-preview contract requires sync-bundled-vibe.ps1 -Preview before apply.
-        & $syncScript -Preview -PreviewOutputPath $syncPreviewPath -PruneBundledExtras -IncludeGeneratedCompatibilityTargets
-        if ($LASTEXITCODE -ne 0) {
-            throw 'sync-bundled-vibe preview failed'
-        }
-    }
-
     $artifact = [ordered]@{
         operator = 'release-cut'
         contract_version = if ($null -ne $previewContract -and $previewContract.PSObject.Properties.Name -contains 'contract_version') { $previewContract.contract_version } else { 1 }
@@ -406,7 +396,6 @@ if ($Preview) {
         preview = [ordered]@{
             generated_at = (Get-Date).ToString('s')
             planned_file_actions = $plannedFileActions
-            sync_preview_receipt = if (Test-Path -LiteralPath $syncPreviewPath) { (Get-VgoRelativePathPortable -BasePath $repoRoot -TargetPath $syncPreviewPath) } else { $null }
             planned_gates = $gateScripts
         }
         postcheck = [ordered]@{
@@ -455,13 +444,6 @@ if (Test-Path -LiteralPath $releaseReadmePath) {
 
 foreach ($manifestRel in $existingDistManifestRels) {
     Update-DistManifestRelease -Path (Join-Path $repoRoot $manifestRel) -Version $Version -Updated $Updated
-}
-
-if (Test-Path -LiteralPath $syncScript) {
-    & $syncScript -PruneBundledExtras -IncludeGeneratedCompatibilityTargets
-    if ($LASTEXITCODE -ne 0) {
-        throw 'sync-bundled-vibe failed'
-    }
 }
 
 if ($RunGates) {

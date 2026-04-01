@@ -59,6 +59,10 @@ pwsh -File .\scripts\verify\vibe-offline-skills-gate.ps1
 pwsh -File .\scripts\verify\vibe-version-packaging-gate.ps1
 ```
 
+`vibe-version-packaging-gate.ps1` keeps its legacy name, but in the current
+contract it validates canonical-only packaging governance and generated
+compatibility wiring rather than repo-tracked mirror parity.
+
 ## Host-Managed Surfaces That Must Enter The Enterprise Checklist
 
 According to `docs/universalization/host-capability-matrix.md` and `adapters/*/host-profile.json`, your internal checklist should at least include the following items with clear ownership:

@@ -18,7 +18,7 @@
 ## Config Surface
 
 - 主配置：`config/prompt-asset-boost.json`
-- bundled 镜像：`bundled/skills/vibe/config/prompt-asset-boost.json`
+- 兼容说明：repo 中被跟踪的 bundled 镜像已退役；如旧布局仍被需要，只能在 install/runtime 边界生成兼容副本
 
 关键字段：
 
@@ -79,4 +79,3 @@ pwsh -File .\scripts\verify\vibe-prompt-asset-boost-gate.ps1
 
 - `pwsh -File .\scripts\verify\vibe-config-parity-gate.ps1`
 - `pwsh -File .\scripts\verify\vibe-version-packaging-gate.ps1`
-

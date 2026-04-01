@@ -150,25 +150,19 @@ def mirror_topology_targets(governance: dict[str, Any], repo_root: Path) -> list
     targets = topology.get("targets") or []
     if not targets:
         source = governance.get("source_of_truth") or {}
-        bundled_root = source.get("bundled_root") or "bundled/skills/vibe"
-        nested_root = source.get("nested_bundled_root") or f"{bundled_root}/{bundled_root}"
         targets = [
             {
                 "id": "canonical",
                 "path": source.get("canonical_root") or ".",
                 "role": "canonical",
             },
-            {
-                "id": "bundled",
-                "path": bundled_root,
-                "role": "mirror",
-            },
-            {
-                "id": "nested_bundled",
-                "path": nested_root,
-                "role": "mirror",
-            },
         ]
+        bundled_root = source.get("bundled_root")
+        if bundled_root:
+            targets.append({"id": "bundled", "path": bundled_root, "role": "mirror"})
+        nested_root = source.get("nested_bundled_root")
+        if nested_root:
+            targets.append({"id": "nested_bundled", "path": nested_root, "role": "mirror"})
 
     normalized: list[dict[str, Any]] = []
     for target in targets:
@@ -292,8 +286,11 @@ def evaluate_freshness(
     ignore_keys = set(packaging["normalized_json_ignore_keys"])
     installed_root = (target_root / runtime["target_relpath"]).resolve()
     receipt_path = (target_root / runtime["receipt_relpath"]).resolve()
-    allow_installed_only = set(packaging["allow_bundled_only"])
-    nested_root = (installed_root / "bundled" / "skills" / "vibe").resolve()
+    allow_installed_only = set(packaging.get("allow_installed_only") or packaging["allow_bundled_only"])
+    generated = (governance.get("packaging") or {}).get("generated_compatibility") or {}
+    nested_runtime = generated.get("nested_runtime_root") or {}
+    nested_rel = str(nested_runtime.get("relative_path") or "bundled/skills/vibe").strip()
+    nested_root = (installed_root / nested_rel).resolve()
 
     results: dict[str, Any] = {
         "target_root": str(target_root.resolve()),
