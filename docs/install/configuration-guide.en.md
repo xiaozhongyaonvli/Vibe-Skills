@@ -23,6 +23,40 @@ So:
 
 Do not paste secrets into chat.
 
+## Which file you actually edit when setup is still manual
+
+When an install guide says "configure locally", it should land on one of the real paths below instead of stopping at a vague reminder.
+
+| Host | Real path / file | How to set it |
+| --- | --- | --- |
+| `codex` | `<target-root>/settings.json`, default `~/.codex/settings.json` | open the file, find or create the top-level `env` object, add `VCO_INTENT_ADVICE_*`, and add `VCO_VECTOR_DIFF_*` only when vector diff is desired |
+| `claude-code` | `~/.claude/settings.json` | merge the `VCO_*` keys into the existing `env` object; do not replace the whole file |
+| `cursor` | `~/.cursor/settings.json` | merge `VCO_*` keys into the real settings file; the repo may materialize a bounded minimal Vibe surface there, but it does not take over unrelated Cursor settings |
+| `windsurf` | inspect `<target-root>/.vibeskills/host-settings.json` and `<target-root>/.vibeskills/host-closure.json`; default target root is `WINDSURF_HOME` or `~/.vibeskills/targets/windsurf` | use those files only to confirm repo-owned sidecar state; host-native login, provider, and model-permission settings still belong on the Windsurf side. If you only want to validate AI advice connectivity first, set `VCO_*` in local environment variables |
+| `openclaw` | inspect `<target-root>/.vibeskills/host-settings.json` and `<target-root>/.vibeskills/host-closure.json`; default target root is `OPENCLAW_HOME` or `~/.vibeskills/targets/openclaw` | use those files only to confirm repo-owned sidecar state; host-native login, provider, model, and editor behavior still belong on the OpenClaw side. If you only want to validate AI advice connectivity first, set `VCO_*` in local environment variables |
+| `opencode` | the real host file is `~/.config/opencode/opencode.json`; the scaffold is `<target-root>/opencode.json.example` | open the real host file, compare it with the example, and copy in only the permission / command / provider structure you actually need; provider credentials and MCP trust stay host-managed on the OpenCode side |
+
+For hosts that use an `env` object, the recommended shape is:
+
+```json
+{
+  "env": {
+    "VCO_INTENT_ADVICE_API_KEY": "<local-api-key>",
+    "VCO_INTENT_ADVICE_BASE_URL": "https://api.openai.com/v1",
+    "VCO_INTENT_ADVICE_MODEL": "gpt-5.4-high",
+    "VCO_VECTOR_DIFF_API_KEY": "<optional-vector-diff-key>",
+    "VCO_VECTOR_DIFF_BASE_URL": "https://api.openai.com/v1",
+    "VCO_VECTOR_DIFF_MODEL": "text-embedding-3-small"
+  }
+}
+```
+
+Notes:
+
+- `VCO_VECTOR_DIFF_*` is optional; if absent, diff degrades to plain text
+- legacy `OPENAI_*` values are not auto-migrated into `VCO_*`
+- keep secrets in local settings files or local environment variables, never in chat
+
 ## Built-in intent advice configuration
 
 The governance runtime now drives intent advice exclusively from the `VCO_INTENT_ADVICE_*` keys. This is the public, supported path that the quick check and routers read before making any outbound request.
@@ -95,23 +129,28 @@ In that setup:
 ### Cursor
 
 - target root: `CURSOR_HOME` or `~/.vibeskills/targets/cursor`
-- common location: `~/.cursor/settings.json` -> `env`
+- real file: `~/.cursor/settings.json`
+- common pattern: merge `env` / `VCO_*` keys into the existing settings surface; the repo may materialize a bounded minimal Vibe surface there, but it does not take over unrelated Cursor settings
 
 ### Windsurf
 
 - target root: `WINDSURF_HOME` or `~/.vibeskills/targets/windsurf`
-- if the host does not use `<target-root>/settings.json`, set local environment variables before running the check
+- repo-side files you can inspect: `<target-root>/.vibeskills/host-settings.json` and `<target-root>/.vibeskills/host-closure.json`
+- if the host does not use `<target-root>/settings.json`, set local `VCO_*` environment variables before running the check
 
 ### OpenClaw
 
 - target root: `OPENCLAW_HOME` or `~/.vibeskills/targets/openclaw`
-- if the host does not use `<target-root>/settings.json`, set local environment variables before running the check
+- repo-side files you can inspect: `<target-root>/.vibeskills/host-settings.json` and `<target-root>/.vibeskills/host-closure.json`
+- if the host does not use `<target-root>/settings.json`, set local `VCO_*` environment variables before running the check
 
 ### OpenCode
 
 - target root: `OPENCODE_HOME` or `~/.vibeskills/targets/opencode`
 - the real host config directory remains `~/.config/opencode`
-- if the host does not use `<target-root>/settings.json`, set local environment variables before running the check
+- the real file you edit manually is `~/.config/opencode/opencode.json`
+- `<target-root>/opencode.json.example` is only a reference scaffold, not the live host config
+- if the host does not use `<target-root>/settings.json`, set local `VCO_*` environment variables before running the check
 
 ## Quick-check commands
 

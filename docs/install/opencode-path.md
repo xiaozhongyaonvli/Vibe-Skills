@@ -22,6 +22,23 @@
 - plugin 安装
 - MCP 信任决策
 
+## 手动设置路径
+
+当 OpenCode 的 follow-up 提示你“继续本地配置”时，请明确使用下面这些文件：
+
+- 真实宿主文件：`~/.config/opencode/opencode.json`
+- repo 写出的参考脚手架：`<target-root>/opencode.json.example`
+- repo 写出的 sidecar 元数据：`<target-root>/.vibeskills/host-settings.json` 与 `<target-root>/.vibeskills/host-closure.json`
+
+正确做法：
+
+1. 打开真实宿主文件 `~/.config/opencode/opencode.json`
+2. 对照 `<target-root>/opencode.json.example`
+3. 只把你真正需要的 permission / command / provider 结构复制到真实宿主文件
+4. provider 凭据与 MCP 信任仍留在 OpenCode 宿主侧处理
+
+repo 不会覆盖真实 `opencode.json`，所以文档不应该把 direct install 描述成“已经自动完成 OpenCode 原生配置”。
+
 ## 全局安装
 
 Shell：

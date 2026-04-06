@@ -50,15 +50,18 @@
 ### Codex
 
 - 维护 `~/.codex/settings.json`
+- 直接编辑顶层 `env` 对象，不要再额外造一个自定义 secrets 块
 - 如需 AI 治理 advice 的常见配置路径，优先配置：
   - `VCO_INTENT_ADVICE_API_KEY`
   - 可选 `VCO_INTENT_ADVICE_BASE_URL`
   - `VCO_INTENT_ADVICE_MODEL`
 - 向量 diff（可选）：`VCO_VECTOR_DIFF_API_KEY` + 可选 `VCO_VECTOR_DIFF_BASE_URL` + `VCO_VECTOR_DIFF_MODEL`
+- 旧 `OPENAI_*` 不会自动迁移成 `VCO_*`
 
 ### Claude Code
 
 - 维护 `~/.claude/settings.json`
+- 在现有 `env` 对象里增量补 VCO 相关键，不要整体覆盖整个文件
 - 如需 AI 治理 advice 的常见配置路径，优先补：
   - `VCO_INTENT_ADVICE_API_KEY`
   - 可选 `VCO_INTENT_ADVICE_BASE_URL`
@@ -67,23 +70,25 @@
 ### Cursor
 
 - 维护 `~/.cursor/settings.json`
-- 视需要补本地 provider / MCP 配置
+- 视需要在现有 settings 面里增量补本地 provider / MCP / VCO 配置，不要覆盖无关的 Cursor 原生设置
 
 ### Windsurf
 
-- 确认 `WINDSURF_HOME` 或 `~/.vibeskills/targets/windsurf` 下的 `.vibeskills/host-settings.json` 与 `.vibeskills/host-closure.json`
-- 宿主侧本地配置仍需在 Windsurf 内完成
+- 查看 `WINDSURF_HOME` 或 `~/.vibeskills/targets/windsurf` 下的 `.vibeskills/host-settings.json` 与 `.vibeskills/host-closure.json`
+- 把这些文件理解成 repo 维护的 sidecar 状态，不要把它们误当成 Windsurf 官方全局 settings 文件
+- 宿主侧登录、provider、模型权限等本地配置仍需在 Windsurf 内完成
 
 ### OpenClaw
 
-- 确认 `OPENCLAW_HOME` 或 `~/.vibeskills/targets/openclaw` 下的 runtime-core payload
+- 查看 `OPENCLAW_HOME` 或 `~/.vibeskills/targets/openclaw` 下的 runtime-core payload，以及 `.vibeskills/host-settings.json` / `.vibeskills/host-closure.json`
 - 如需与脚本安装结果对齐，优先使用 attach / copy / bundle 三路径说明
-- 宿主侧本地配置仍需在 OpenClaw 内完成
+- 宿主侧登录、provider、模型和编辑器配置仍需在 OpenClaw 内完成
 
 ### OpenCode
 
 - 确认 `OPENCODE_HOME` 或 `~/.vibeskills/targets/opencode` 下的 preview payload
-- 真实 `~/.config/opencode/opencode.json` 仍由宿主侧维护
+- 真实宿主文件是 `~/.config/opencode/opencode.json`
+- `<target-root>/opencode.json.example` 只作为示例脚手架；需要手动把你要的配置段复制到真实 `~/.config/opencode/opencode.json`
 - 真实 `opencode.json`、provider 凭据、plugin 安装和 MCP 信任仍需宿主侧本地完成
 - 如需项目内隔离安装结果，对齐 `./.opencode`
 

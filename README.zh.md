@@ -554,6 +554,8 @@ _Skills 越积越多——但你不需要逐个管理它们。_
 
 现在的安装面已经改成 registry-driven。`HostId` / `--host` 决定宿主语义，同一个公开入口会按 adapter 落到 `governed`、`preview-guidance` 或 `runtime-core`。`full` 与 `minimal` 仍然是两个不同的产品层级，但现在主要区别在于**内部能力宽度与可选兼容负载**，而不是“显示少量 skills”对“直接暴露几百个 skills”。如果你还不知道自己该走哪条路径，先看 [冷启动宿主矩阵](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/cold-start-install-paths.md) 或 [多宿主命令参考](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/recommended-full-path.md)。
 
+当 follow-up 仍需要你手动处理时，安装文档现在会明确写出真实路径和文件，而不是只说一句“请手动设置”。例如：Codex 用 `~/.codex/settings.json`，Claude Code 用 `~/.claude/settings.json`，Cursor 用 `~/.cursor/settings.json`，OpenCode 的真实宿主文件是 `~/.config/opencode/opencode.json`，而 Windsurf / OpenClaw 只把 `<target-root>/.vibeskills/host-settings.json` 当作 repo 自己维护的 sidecar 状态，不会伪造一个 repo 接管的全局 settings 路径。
+
 ### 已安装宿主验证矩阵
 
 当前安装拓扑已经基于“宿主专属安装面 / closure 先落地之后的已安装运行时”做过探针验证，而不只是验证仓库内脚本：

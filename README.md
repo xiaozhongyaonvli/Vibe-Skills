@@ -539,6 +539,8 @@ This keeps host install state separate from governed workspace/runtime artifacts
 
 The install surface is now registry-driven. `HostId` / `--host` selects host semantics, and the same public entry can resolve into `governed`, `preview-guidance`, or `runtime-core` depending on the adapter. `full` and `minimal` remain different products, but the difference is now mostly **internal capability breadth and optional compatibility payloads**, not "a few visible skills" versus "hundreds of visible skills." If you are not sure which path matches your host, start with the [cold-start host matrix](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/cold-start-install-paths.en.md) or the [multi-host command reference](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/recommended-full-path.en.md).
 
+When a follow-up step remains manual, the install docs now name the real path and file explicitly. For example: Codex uses `~/.codex/settings.json`, Claude Code uses `~/.claude/settings.json`, Cursor uses `~/.cursor/settings.json`, OpenCode keeps the real `~/.config/opencode/opencode.json` host-managed, and runtime-core hosts such as Windsurf / OpenClaw use `<target-root>/.vibeskills/host-settings.json` only as repo-owned sidecar state rather than an invented global settings contract.
+
 ### Installed-host validation matrix
 
 The current install topology has been probe-validated against the installed runtime after each host-specific install / closure surface is materialized, not only against repo-local scripts:

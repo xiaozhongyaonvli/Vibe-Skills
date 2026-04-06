@@ -29,16 +29,23 @@
    - 明确说明当前按 preview-guidance adapter 路径接入，默认目标根目录是 `OPENCODE_HOME`，否则是 `~/.vibeskills/targets/opencode`
    - 明确说明 direct install/check 会写入 runtime payload、`.vibeskills/*` sidecar 与 `opencode.json.example`，但不接管真实 `~/.config/opencode/opencode.json`、provider 凭据、plugin 安装和 MCP 信任
    - 如果我明确要求所有宿主都走同一个 wrapper，也可以改用 `scripts/bootstrap/one-shot-setup.* --host opencode --profile full`，但不要说 one-shot 对 `opencode` 不可用
-10. 对六个宿主，都不要要求我把密钥、URL 或 model 粘贴到聊天里；只告诉我去本地 settings 或本地环境变量里配置。
-11. 如果我后续要补 AI 治理 online 能力，你必须优先告诉我真实推荐键名：
+10. 只要回答里出现“你还需要手动设置 / 本地配置 / 自己去补 settings”之类的 follow-up，你必须同时写清楚真实路径、真实文件、修改方法。最低要求：
+   - `codex`：`~/.codex/settings.json`，编辑顶层 `env`
+   - `claude-code`：`~/.claude/settings.json`，在现有 `env` 里增量补键
+   - `cursor`：`~/.cursor/settings.json`，在真实 settings 文件里增量补键，但不要描述成 repo 接管整份文件
+   - `windsurf`：默认根目录 `WINDSURF_HOME` 或 `~/.vibeskills/targets/windsurf`；把 `<target-root>/.vibeskills/host-settings.json` / `host-closure.json` 说明成 sidecar 状态，不要伪造一个 repo 接管的全局 settings 路径
+   - `openclaw`：默认根目录 `OPENCLAW_HOME` 或 `~/.vibeskills/targets/openclaw`；把 `<target-root>/.vibeskills/host-settings.json` / `host-closure.json` 说明成 sidecar 状态，不要伪造一个 repo 接管的全局 settings 路径
+   - `opencode`：真实宿主文件是 `~/.config/opencode/opencode.json`；`<target-root>/opencode.json.example` 只是参考脚手架，要说明“打开真实文件，对照 example，把需要的 permission / command / provider 段复制进去”
+11. 对六个宿主，都不要要求我把密钥、URL 或 model 粘贴到聊天里；只告诉我去本地 settings 或本地环境变量里配置。
+12. 如果我后续要补 AI 治理 online 能力，你必须优先告诉我真实推荐键名：
    - 主路径：`VCO_INTENT_ADVICE_API_KEY` + 可选 `VCO_INTENT_ADVICE_BASE_URL` + `VCO_INTENT_ADVICE_MODEL`
    - 可选 vector diff：`VCO_VECTOR_DIFF_API_KEY` + 可选 `VCO_VECTOR_DIFF_BASE_URL` + `VCO_VECTOR_DIFF_MODEL`（缺失时 diff 会退化为普通文本）
    - 提醒旧 `OPENAI_*` 不再自动回填，必须手动迁移到 `VCO_*`
-12. 区分“本地安装完成”和“在线能力就绪”。
-13. 安装完成后，主动给我一条“AI 治理是否配置好”的快速检查命令：
+13. 区分“本地安装完成”和“在线能力就绪”。
+14. 安装完成后，主动给我一条“AI 治理是否配置好”的快速检查命令：
    - Windows：`powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<本次宿主根目录>" -WriteArtifacts`
    - Linux / macOS：`python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<本次宿主根目录>" --write-artifacts`
    - 如用户本机已安装 PowerShell 7，可接受等价的 `pwsh` 版本，但不要把 `pwsh` 当作默认前提。
    - 并用一句话说明：`ok` 表示 AI 治理 advice 已连通；`missing_credentials`、`missing_model`、`provider_rejected_request` 等表示本地或在线配置仍未就绪。
-14. 安装完成后，用简洁中文汇报：目标宿主、公开版本、实际 profile、实际命令、已完成部分、仍需我手动处理的部分。
+15. 安装完成后，用简洁中文汇报：目标宿主、公开版本、实际 profile、实际命令、已完成部分、仍需我手动处理的部分。
 ```

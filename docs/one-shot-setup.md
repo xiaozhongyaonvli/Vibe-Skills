@@ -102,6 +102,40 @@ Linux / macOS without `pwsh` still gets the shipped content and the runtime-neut
 - 哪些部分是 optional enhancement
 - 哪些部分仍需要人工一步
 
+## Manual Settings Paths
+
+当 follow-up 提示你“继续本地配置”时，应该定位到下面这些真实路径：
+
+| 宿主 | 真实路径 | 应该怎么处理 |
+| --- | --- | --- |
+| `codex` | `<target-root>/settings.json`，默认 `~/.codex/settings.json` | 在顶层 `env` 对象里补 `VCO_INTENT_ADVICE_*`；如需要再补 `VCO_VECTOR_DIFF_*` |
+| `claude-code` | `~/.claude/settings.json` | 在现有 `env` 对象里增量补键，不要覆盖其他 Claude 设置 |
+| `cursor` | `~/.cursor/settings.json` | 在现有 settings 面里增量补键，不要覆盖无关的 Cursor 原生设置 |
+| `windsurf` | 查看 `<target-root>/.vibeskills/host-settings.json`；默认目标根目录是 `WINDSURF_HOME` 或 `~/.vibeskills/targets/windsurf` | 这里只是 repo sidecar 状态；真正的登录、provider、模型权限继续在 Windsurf 宿主侧完成 |
+| `openclaw` | 查看 `<target-root>/.vibeskills/host-settings.json`；默认目标根目录是 `OPENCLAW_HOME` 或 `~/.vibeskills/targets/openclaw` | 这里只是 repo sidecar 状态；真正的登录、provider、模型和编辑器设置继续在 OpenClaw 宿主侧完成 |
+| `opencode` | 编辑真实宿主文件 `~/.config/opencode/opencode.json`；用 `<target-root>/opencode.json.example` 当参考 | 手动把需要的 permission / command / provider 结构复制到真实宿主文件；repo 不会覆盖真实 `opencode.json` |
+
+对于使用 `env` 对象的宿主，推荐的补法是：
+
+```json
+{
+  "env": {
+    "VCO_INTENT_ADVICE_API_KEY": "<your-intent-advice-api-key>",
+    "VCO_INTENT_ADVICE_BASE_URL": "https://your-openai-compatible-endpoint/v1",
+    "VCO_INTENT_ADVICE_MODEL": "your-intent-advice-model-id",
+    "VCO_VECTOR_DIFF_API_KEY": "<optional-vector-diff-api-key>",
+    "VCO_VECTOR_DIFF_BASE_URL": "https://your-openai-compatible-endpoint/v1",
+    "VCO_VECTOR_DIFF_MODEL": "your-vector-diff-model-id"
+  }
+}
+```
+
+补充说明：
+
+- `VCO_VECTOR_DIFF_*` 是可选的；不配时 diff 会退化成普通文本
+- 旧 `OPENAI_*` 不会自动迁移到 `VCO_*`
+- secrets 只放在本地 settings 文件或本地环境变量里，不要贴到聊天里
+
 ## Deep Check
 
 你可以随时重跑：
@@ -137,8 +171,8 @@ bash ./check.sh --profile full --host <host> --deep
 
 推荐顺序：
 
-1. 先确认目标宿主的本地 settings / provider 约束
-2. 再补 `VCO_INTENT_ADVICE_*`，把 AI 治理主路径接通
+1. 先确认目标宿主的本地 settings 路径和 provider 边界
+2. 再沿对应文件路径补 `VCO_INTENT_ADVICE_*`，把 AI 治理主路径接通
 3. 需要时再补 `VCO_VECTOR_DIFF_*`
 4. 再补 plugin-backed MCP surfaces 或外部服务
 5. 只在你确实需要时再做更重的 host-local enhancement
