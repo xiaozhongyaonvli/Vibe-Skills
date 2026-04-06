@@ -1,13 +1,26 @@
 param(
   [ValidateSet("minimal", "full")]
   [string]$Profile = "full",
-    [string]$HostId = "codex",
+  [string]$HostId = "codex",
   [string]$TargetRoot = '',
   [switch]$SkipRuntimeFreshnessGate,
-  [switch]$Deep
+  [switch]$Deep,
+  [Alias('?')]
+  [switch]$Help
 )
 
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+function Show-WrapperUsage {
+  Write-Output 'Usage: check.ps1 [-Profile minimal|full] [-HostId <id>] [-TargetRoot <path>] [-SkipRuntimeFreshnessGate] [-Deep] [-Help|-?]'
+  Write-Output 'Runs the governed VCO adapter health check without falling back to legacy check scripts.'
+}
+
+if ($Help) {
+  Show-WrapperUsage
+  exit 0
+}
+
 . (Join-Path $RepoRoot 'scripts\common\vibe-governance-helpers.ps1')
 
 $HostId = Resolve-VgoHostId -HostId $HostId
@@ -123,7 +136,7 @@ function Normalize-ComparablePath {
     return $null
   }
 
-  return [System.IO.Path]::GetFullPath($Path).TrimEnd([char[]]@('\','/')).ToLowerInvariant()
+  return [System.IO.Path]::GetFullPath($Path).TrimEnd([char[]]@('\\','/')).ToLowerInvariant()
 }
 
 function Format-OptionalValue {

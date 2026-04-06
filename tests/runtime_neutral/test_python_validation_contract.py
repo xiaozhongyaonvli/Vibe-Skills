@@ -20,6 +20,7 @@ EXPECTED_PYTHON_VALIDATION_TARGETS = [
     "tests/runtime_neutral/test_docs_readme_encoding.py",
     "tests/runtime_neutral/test_governed_runtime_bridge.py",
     "tests/runtime_neutral/test_install_profile_differentiation.py",
+    "tests/runtime_neutral/test_runtime_contract_goldens.py",
     "tests/runtime_neutral/test_python_validation_contract.py",
 ]
 

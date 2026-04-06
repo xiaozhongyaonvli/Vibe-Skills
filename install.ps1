@@ -1,18 +1,30 @@
 param(
   [ValidateSet("minimal", "full")]
   [string]$Profile = "full",
-    [string]$HostId = "codex",
+  [string]$HostId = "codex",
   [string]$TargetRoot = '',
   [switch]$InstallExternal,
   [switch]$StrictOffline,
   [switch]$RequireClosedReady,
   [switch]$AllowExternalSkillFallback,
-  [switch]$SkipRuntimeFreshnessGate
+  [switch]$SkipRuntimeFreshnessGate,
+  [Alias('?')]
+  [switch]$Help
 )
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $helperPath = Join-Path $RepoRoot 'scripts\common\vibe-governance-helpers.ps1'
 $cliMain = Join-Path $RepoRoot 'apps\vgo-cli\src\vgo_cli\main.py'
+
+function Show-WrapperUsage {
+  Write-Output 'Usage: install.ps1 [-Profile minimal|full] [-HostId <id>] [-TargetRoot <path>] [-InstallExternal] [-StrictOffline] [-RequireClosedReady] [-AllowExternalSkillFallback] [-SkipRuntimeFreshnessGate] [-Help|-?]'
+  Write-Output 'Installs the governed VCO runtime for the requested host without falling back to legacy installer scripts.'
+}
+
+if ($Help) {
+  Show-WrapperUsage
+  exit 0
+}
 
 if (Test-Path -LiteralPath $helperPath) {
   . $helperPath
