@@ -476,7 +476,8 @@ function Split-VibeSpecialistDispatch {
             continue
         }
 
-        if ($GovernanceScope -eq 'root' -or $approvedLookup.ContainsKey($skillId)) {
+        if ([string]$recommendation.recommended_promotion_action -eq 'auto_dispatch' -and
+            ($GovernanceScope -eq 'root' -or $approvedLookup.ContainsKey($skillId))) {
             $approvedDispatch += $recommendation
             $promotionOutcomes += [pscustomobject]@{
                 skill_id = $skillId

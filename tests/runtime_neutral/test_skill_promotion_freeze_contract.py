@@ -182,3 +182,38 @@ class SkillPromotionFreezeContractTests(unittest.TestCase):
         self.assertEqual([], as_list(payload["degraded"]))
         outcome = next(item for item in as_list(payload["promotion_outcomes"]) if item["skill_id"] == "demo-skill")
         self.assertEqual("approved_dispatch", outcome["promotion_state"])
+
+    def test_surface_only_recommendation_is_not_auto_approved_in_root_scope(self) -> None:
+        split_function = extract_split_specialist_dispatch_function()
+        payload = run_powershell_json(
+            (
+                "& { "
+                f". '{HELPER_SCRIPT}'; "
+                f"{split_function} "
+                "$policy = [pscustomobject]@{ "
+                "promotion_enabled = $true; "
+                "default_mode = 'recall_first'; "
+                "allow_auto_dispatch_when_non_destructive = $false; "
+                "require_contract_complete = $true; "
+                "destructive_prompt_patterns = [pscustomobject]@{}; "
+                "degraded_fallback_rules = [pscustomobject]@{ missing_contract = 'explicit_degraded' } "
+                "}; "
+                "$recommendation = Get-VgoSkillPromotionMetadata "
+                "-Prompt 'generic prompt' "
+                "-SkillMdPath '/tmp/skill.md' "
+                "-Description 'desc' "
+                "-RequiredInputs @('input') "
+                "-ExpectedOutputs @('output') "
+                "-VerificationExpectation 'verify' "
+                "-PromotionPolicy $policy; "
+                "$recommendation | Add-Member -NotePropertyName skill_id -NotePropertyValue 'demo-skill'; "
+                "$dispatch = Split-VibeSpecialistDispatch -GovernanceScope 'root' -Recommendations @($recommendation); "
+                "$dispatch | ConvertTo-Json -Depth 20 }"
+            )
+        )
+
+        self.assertEqual([], as_list(payload["approved_dispatch"]))
+        self.assertEqual(["demo-skill"], [item["skill_id"] for item in as_list(payload["local_specialist_suggestions"])])
+        outcome = next(item for item in as_list(payload["promotion_outcomes"]) if item["skill_id"] == "demo-skill")
+        self.assertEqual("local_suggestion", outcome["promotion_state"])
+        self.assertEqual("surface_only", outcome["recommended_promotion_action"])

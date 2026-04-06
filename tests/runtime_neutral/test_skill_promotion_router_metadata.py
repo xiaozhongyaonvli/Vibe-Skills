@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import contextlib
 import json
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -21,6 +21,7 @@ DESTRUCTIVE_PROMPT = (
     "Delete the old generated artifacts, remove the obsolete branch, "
     "and overwrite the install settings to reset the environment."
 )
+WINDOWS_DESTRUCTIVE_PROMPT = r"delete C:\tmp\build"
 
 
 def resolve_powershell() -> str | None:
@@ -38,18 +39,19 @@ def resolve_powershell() -> str | None:
     return None
 
 
-def run_route(prompt: str) -> dict[str, object]:
+def run_route(prompt: str, *, repo_root: Path = REPO_ROOT) -> dict[str, object]:
     shell = resolve_powershell()
     if shell is None:
         raise unittest.SkipTest("PowerShell executable not available in PATH")
 
+    route_script = repo_root / "scripts" / "router" / "resolve-pack-route.ps1"
     completed = subprocess.run(
         [
             shell,
             "-NoLogo",
             "-NoProfile",
             "-File",
-            str(ROUTE_SCRIPT),
+            str(route_script),
             "-Prompt",
             prompt,
             "-Grade",
@@ -57,7 +59,7 @@ def run_route(prompt: str) -> dict[str, object]:
             "-TaskType",
             "coding",
         ],
-        cwd=REPO_ROOT,
+        cwd=repo_root,
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -104,14 +106,14 @@ def get_selected_option(route: dict[str, object]) -> dict[str, object]:
     return next(item for item in confirm_ui["options"] if item["skill"] == selected_skill)
 
 
-@contextlib.contextmanager
-def temporary_policy_text(content: str):
-    original = POLICY_PATH.read_text(encoding="utf-8")
-    POLICY_PATH.write_text(content, encoding="utf-8")
-    try:
-        yield
-    finally:
-        POLICY_PATH.write_text(original, encoding="utf-8")
+def copy_repo_fixture(target_root: Path) -> Path:
+    fixture_root = target_root / "repo-copy"
+    shutil.copytree(
+        REPO_ROOT,
+        fixture_root,
+        ignore=shutil.ignore_patterns(".git", ".worktrees", "outputs", "__pycache__", ".pytest_cache"),
+    )
+    return fixture_root
 
 
 class SkillPromotionRouterMetadataTests(unittest.TestCase):
@@ -171,7 +173,47 @@ class SkillPromotionRouterMetadataTests(unittest.TestCase):
         self.assertFalse(assessment["rollback_possible"])
         self.assertFalse(assessment["snapshot_required"])
 
+    def test_windows_style_path_prompt_is_classified_as_destructive(self) -> None:
+        assessment = run_helper_json(
+            (
+                "& { "
+                f". '{HELPER_SCRIPT}'; "
+                f"$policy = Get-Content -LiteralPath '{POLICY_PATH}' -Raw -Encoding UTF8 | ConvertFrom-Json; "
+                f"$result = Get-VgoDestructiveIntentAssessment -Prompt '{WINDOWS_DESTRUCTIVE_PROMPT}' -PromotionPolicy $policy; "
+                "$result | ConvertTo-Json -Depth 20 }"
+            )
+        )
+
+        self.assertTrue(assessment["destructive"])
+        self.assertGreaterEqual(len(as_list(assessment["destructive_reason_codes"])), 1)
+        self.assertTrue(assessment["rollback_possible"])
+        self.assertTrue(assessment["snapshot_required"])
+
+    def test_blank_contract_entries_do_not_count_as_complete(self) -> None:
+        completeness = run_helper_json(
+            (
+                "& { "
+                f". '{HELPER_SCRIPT}'; "
+                "$result = Get-VgoSkillContractCompleteness "
+                "-SkillMdPath '/tmp/skill.md' "
+                "-Description 'desc' "
+                "-RequiredInputs @('   ') "
+                "-ExpectedOutputs @('') "
+                "-VerificationExpectation 'verify'; "
+                "$result | ConvertTo-Json -Depth 20 }"
+            )
+        )
+
+        self.assertFalse(completeness["complete"])
+        self.assertIn("required_inputs", as_list(completeness["missing_fields"]))
+        self.assertIn("expected_outputs", as_list(completeness["missing_fields"]))
+
     def test_route_fails_closed_when_skill_promotion_policy_is_invalid(self) -> None:
-        with temporary_policy_text("{ invalid json"):
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo_copy = copy_repo_fixture(Path(tempdir))
+            (repo_copy / "config" / "skill-promotion-policy.json").write_text(
+                "{ invalid json",
+                encoding="utf-8",
+            )
             with self.assertRaises(subprocess.CalledProcessError):
-                run_route(ML_PROMPT)
+                run_route(ML_PROMPT, repo_root=repo_copy)
