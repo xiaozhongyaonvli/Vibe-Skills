@@ -42,6 +42,7 @@ def reconcile_install_postconditions(
         profile=profile,
         allow_scripted_install=install_external,
     )
+    install_receipt = refresh_install_ledger_payload(repo_root, target_root)
     if os.environ.get('VGO_SUPPRESS_INSTALL_COMPLETION_REPORT', '').strip() != '1':
         print_install_completion_report(
             frontend,

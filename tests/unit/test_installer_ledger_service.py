@@ -9,7 +9,12 @@ for src in (CONTRACTS_SRC, INSTALLER_SRC):
         sys.path.insert(0, str(src))
 
 from vgo_installer.install_plan import build_install_plan
-from vgo_installer.ledger_service import MaterializationLedgerState, build_install_ledger, sanitize_managed_skill_names
+from vgo_installer.ledger_service import (
+    MaterializationLedgerState,
+    build_install_ledger,
+    build_payload_summary,
+    sanitize_managed_skill_names,
+)
 
 
 def test_sanitize_managed_skill_names_rejects_traversal() -> None:
@@ -102,6 +107,64 @@ def test_build_install_ledger_v2_ownership_keys_when_available(tmp_path) -> None
     for key in ('runtime_roots', 'compatibility_roots', 'sidecar_roots', 'legacy_cleanup_candidates'):
         assert isinstance(ledger[key], list)
     assert isinstance(ledger['config_rollbacks'], list)
+
+
+def test_payload_summary_counts_install_ledger_file_when_present(tmp_path) -> None:
+    vibe_root = tmp_path / 'skills' / 'vibe'
+    vibe_root.mkdir(parents=True)
+    (vibe_root / 'SKILL.md').write_text('# vibe\n', encoding='utf-8')
+
+    plan = build_install_plan(
+        profile='minimal',
+        host_id='codex',
+        target_root=tmp_path,
+        managed_skill_names=['vibe'],
+    )
+    state = MaterializationLedgerState(
+        created_paths={tmp_path},
+    )
+
+    ledger = build_install_ledger(
+        plan=plan,
+        state=state,
+        timestamp='2026-04-07T00:00:00Z',
+    )
+    ledger_path = tmp_path / '.vibeskills' / 'install-ledger.json'
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    ledger_path.write_text('{}\n', encoding='utf-8')
+
+    refreshed = build_payload_summary(tmp_path, ledger)
+
+    assert refreshed['installed_file_count'] == 2
+
+
+def test_payload_summary_counts_mcp_receipt_when_present(tmp_path) -> None:
+    vibe_root = tmp_path / 'skills' / 'vibe'
+    vibe_root.mkdir(parents=True)
+    (vibe_root / 'SKILL.md').write_text('# vibe\n', encoding='utf-8')
+
+    plan = build_install_plan(
+        profile='minimal',
+        host_id='codex',
+        target_root=tmp_path,
+        managed_skill_names=['vibe'],
+    )
+    state = MaterializationLedgerState(
+        created_paths={tmp_path},
+    )
+
+    ledger = build_install_ledger(
+        plan=plan,
+        state=state,
+        timestamp='2026-04-07T00:00:00Z',
+    )
+    sidecar_root = tmp_path / '.vibeskills'
+    sidecar_root.mkdir(parents=True, exist_ok=True)
+    (sidecar_root / 'mcp-auto-provision.json').write_text('{}\n', encoding='utf-8')
+
+    refreshed = build_payload_summary(tmp_path, ledger)
+
+    assert refreshed['installed_file_count'] == 2
 
 
 def test_sanitize_managed_skill_names_stays_safe_with_v2_owned_root_like_values() -> None:
