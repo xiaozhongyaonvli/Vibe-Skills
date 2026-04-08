@@ -283,7 +283,7 @@ def create_fake_codex_command(directory: Path) -> Path:
 
 
 class NativeExecutionTopologyTests(unittest.TestCase):
-    def test_vibe_want_shortcut_stops_after_deep_interview(self) -> None:
+    def test_vibe_want_shortcut_stops_after_requirement_freeze(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             payload = run_runtime(
                 task="Clarify the project goal before any implementation starts.",
@@ -296,18 +296,18 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             stage_lineage = load_json(summary["artifacts"]["stage_lineage"])
 
             self.assertEqual("vibe-want", runtime_input["entry_intent_id"])
-            self.assertEqual("deep_interview", runtime_input["requested_stage_stop"])
+            self.assertEqual("requirement_doc", runtime_input["requested_stage_stop"])
             self.assertIsNone(runtime_input["requested_grade_floor"])
-            self.assertEqual("deep_interview", summary["terminal_stage"])
+            self.assertEqual("requirement_doc", summary["terminal_stage"])
             self.assertEqual(
-                ["skeleton_check", "deep_interview"],
+                ["skeleton_check", "deep_interview", "requirement_doc"],
                 list(summary["executed_stage_order"]),
             )
             self.assertEqual(
-                ["skeleton_check", "deep_interview"],
+                ["skeleton_check", "deep_interview", "requirement_doc"],
                 [item["stage_name"] for item in stage_lineage["stages"]],
             )
-            self.assertFalse(summary["artifacts"]["requirement_doc"])
+            self.assertTrue(summary["artifacts"]["requirement_doc"])
             self.assertFalse(summary["artifacts"]["execution_plan"])
             self.assertFalse(summary["artifacts"]["execute_receipt"])
             self.assertFalse(summary["artifacts"]["cleanup_receipt"])
