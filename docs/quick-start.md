@@ -37,8 +37,8 @@
 它们都还是同一个 `vibe` governed runtime，只是默认停靠点不同：
 
 - `vibe` / `Vibe`：走完整受管流程
-- `vibe-want` / `Vibe: What Do I Want?`：先把目标、边界、验收标准说清楚
-- `vibe-how` / `Vibe: How Do We Do It?`：冻结 requirement 和 plan
+- `vibe-want` / `Vibe: What Do I Want?`：先把目标、边界、验收标准说清楚，并冻结 requirement 后停止
+- `vibe-how` / `Vibe: How Do We Do It?`：冻结 requirement 和 plan 后停止
 - `vibe-do` / `Vibe: Do It`：执行完整流程，但不会跳过 requirement / plan
 
 如果你希望提高执行强度，只用：

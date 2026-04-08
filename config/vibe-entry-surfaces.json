@@ -11,7 +11,7 @@
     {
       "id": "vibe-want",
       "display_name": "Vibe: What Do I Want?",
-      "requested_stage_stop": "deep_interview",
+      "requested_stage_stop": "requirement_doc",
       "allow_grade_flags": false
     },
     {

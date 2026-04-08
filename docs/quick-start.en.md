@@ -37,8 +37,8 @@ If your host supports menu-style rendering, it will usually display them as:
 They still resolve to the same governed `vibe` runtime. The difference is the default stop target:
 
 - `vibe` / `Vibe`: run the full governed flow
-- `vibe-want` / `Vibe: What Do I Want?`: clarify goals, boundaries, and acceptance criteria first
-- `vibe-how` / `Vibe: How Do We Do It?`: freeze the requirement and plan
+- `vibe-want` / `Vibe: What Do I Want?`: clarify goals, boundaries, and acceptance criteria, then stop after freezing the requirement
+- `vibe-how` / `Vibe: How Do We Do It?`: freeze the requirement and plan, then stop
 - `vibe-do` / `Vibe: Do It`: execute the full governed flow without skipping requirement or plan
 
 If you want a heavier execution lane, use only:
