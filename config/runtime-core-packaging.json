@@ -169,11 +169,7 @@
           "public_surface_mode": "discoverable_wrapper_projection",
           "discoverable_entry_surface": "config/vibe-entry-surfaces.json",
           "internal_corpus_target_relpath": "skills/vibe/bundled/skills",
-          "compatibility_skill_projections": [
-            "vibe-what-do-i-want",
-            "vibe-how-do-we-do",
-            "vibe-do-it"
-          ]
+          "compatibility_skill_projections": []
         },
         "surface_contracts": {
           "public_skill_surface_mode": "discoverable_wrapper_projection",
@@ -243,6 +239,9 @@
           "vibe-what-do-i-want",
           "vibe-how-do-we-do",
           "vibe-do-it"
+        ],
+        "host_allowlist": [
+          "codex"
         ],
         "resolver_roots": [
           "skills"

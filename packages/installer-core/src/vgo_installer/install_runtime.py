@@ -29,6 +29,7 @@ from .ledger_service import (
 )
 from .materializer import (
     canonical_vibe_target_relpath,
+    compatibility_projection_names,
     copy_dir_replace,
     copy_file,
     copy_skill_roots_without_self_shadow,
@@ -263,19 +264,6 @@ def desired_managed_skill_names(repo_root: Path, packaging: dict) -> set[str]:
     return managed
 
 
-def compatibility_projection_names(packaging: dict) -> list[str]:
-    projections = packaging.get("compatibility_skill_projections") or {}
-    seen: set[str] = set()
-    names: list[str] = []
-    for raw in projections.get("projected_skill_names") or []:
-        name = str(raw).strip()
-        if not name or name in seen:
-            continue
-        seen.add(name)
-        names.append(name)
-    return names
-
-
 def prune_previously_managed_skill_dirs(
     target_root: Path,
     previous_managed_skill_names: set[str],
@@ -312,7 +300,7 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
     previous_ledger = load_existing_install_ledger(target_root)
     skill_inventory = load_managed_skill_inventory(packaging)
     current_managed_skill_names = desired_managed_skill_names(repo_root, packaging)
-    projected_skill_names = set(compatibility_projection_names(packaging))
+    projected_skill_names = set(compatibility_projection_names(packaging, host_id=adapter["id"]))
     include_command_surfaces = not uses_skill_only_activation(adapter["id"])
     runtime_directories = [
         rel for rel in packaging["directories"]
@@ -389,6 +377,7 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
         repo_root,
         target_root,
         packaging,
+        host_id=adapter["id"],
         copy_dir_replace_fn=lambda src, dst: copy_dir_replace(
             src,
             dst,

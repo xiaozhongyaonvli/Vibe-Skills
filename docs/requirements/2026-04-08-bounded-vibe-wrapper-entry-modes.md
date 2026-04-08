@@ -17,7 +17,7 @@ That is insufficient because:
 
 - canonical `vibe` still declares one fixed six-stage state machine
 - wrapper skill text does not impose a hard stop boundary
-- repo-level discoverable-entry metadata still says `vibe-want` stops at `deep_interview`
+- before this change, repo-level discoverable-entry metadata said `vibe-want` stopped at `deep_interview`; current truth must be `requirement_doc`
 - wrapper wording, entry-surface config, quick-start docs, and install/check truth do not currently agree
 
 This mismatch causes the observed failure mode:

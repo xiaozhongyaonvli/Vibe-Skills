@@ -145,6 +145,9 @@
       "vibe-how-do-we-do",
       "vibe-do-it"
     ],
+    "host_allowlist": [
+      "codex"
+    ],
     "resolver_roots": [
       "skills"
     ]
