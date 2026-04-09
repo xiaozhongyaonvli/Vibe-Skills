@@ -223,10 +223,12 @@ if ($runtimeInputPacket) {
             $lines += @(
                 "- Skill: $([string]$recommendation.skill_id)",
                 "  Source: $([string]$recommendation.source); pack: $([string]$recommendation.pack_id); rank: $([string]$recommendation.rank); confidence: $([string]$recommendation.confidence)",
-                "  Role: $([string]$recommendation.bounded_role); native usage required: $([bool]$recommendation.native_usage_required); preserve workflow: $([bool]$recommendation.must_preserve_workflow)",
+                "  Role: $([string]$recommendation.bounded_role); native usage required: $([bool]$recommendation.native_usage_required); usage required: $([bool]$recommendation.usage_required); preserve workflow: $([bool]$recommendation.must_preserve_workflow)",
                 "  Binding: profile=$([string]$recommendation.binding_profile); phase=$([string]$recommendation.dispatch_phase); lane policy=$([string]$recommendation.lane_policy); parallel in XL=$([bool]$recommendation.parallelizable_in_root_xl)",
                 "  Write scope: $([string]$recommendation.write_scope); review mode: $([string]$recommendation.review_mode); execution priority: $([int]$recommendation.execution_priority)",
+                "  Specialist source of truth: entrypoint=$([string]$recommendation.native_skill_entrypoint); root=$([string]$recommendation.skill_root); visibility=$([string]$recommendation.visibility_class)",
                 "  Reason: $([string]$recommendation.reason)",
+                "  Expected contribution: $([string]$recommendation.expected_contribution)",
                 "  Required inputs: $([string]::Join(', ', @($recommendation.required_inputs)))",
                 "  Expected outputs: $([string]::Join(', ', @($recommendation.expected_outputs)))",
                 "  Verification expectation: $([string]$recommendation.verification_expectation)"

@@ -74,20 +74,37 @@ function Get-VibeSkillMetadata {
     )
 
     $skillPath = $null
-    $bundledSkillPath = Join-Path $RepoRoot ("bundled\skills\{0}\SKILL.md" -f $SkillId)
-    if (Test-Path -LiteralPath $bundledSkillPath) {
-        $skillPath = $bundledSkillPath
+    $bundledSkillRoot = Join-Path $RepoRoot ("bundled\skills\{0}" -f $SkillId)
+    foreach ($candidate in @(
+            (Join-Path $bundledSkillRoot 'SKILL.md'),
+            (Join-Path $bundledSkillRoot 'SKILL.runtime-mirror.md')
+        )) {
+        if (Test-Path -LiteralPath $candidate) {
+            $skillPath = $candidate
+            break
+        }
     }
 
     if (-not $skillPath) {
         $installedSkillsRoot = Resolve-VgoInstalledSkillsRoot -TargetRoot $TargetRoot -HostId $HostId
-        $installedSkillPath = Join-Path $installedSkillsRoot (Join-Path $SkillId 'SKILL.md')
-        $customInstalledSkillPath = Join-Path $installedSkillsRoot (Join-Path 'custom' (Join-Path $SkillId 'SKILL.md'))
+        $candidateRoots = @(
+            (Join-Path $installedSkillsRoot $SkillId),
+            (Join-Path (Join-Path $installedSkillsRoot 'custom') $SkillId)
+        )
 
-        if (Test-Path -LiteralPath $installedSkillPath) {
-            $skillPath = $installedSkillPath
-        } elseif (Test-Path -LiteralPath $customInstalledSkillPath) {
-            $skillPath = $customInstalledSkillPath
+        foreach ($candidateRoot in $candidateRoots) {
+            foreach ($candidate in @(
+                    (Join-Path $candidateRoot 'SKILL.md'),
+                    (Join-Path $candidateRoot 'SKILL.runtime-mirror.md')
+                )) {
+                if (Test-Path -LiteralPath $candidate) {
+                    $skillPath = $candidate
+                    break
+                }
+            }
+            if ($skillPath) {
+                break
+            }
         }
     }
 
@@ -161,6 +178,70 @@ function Resolve-VibeSpecialistWriteScopeTemplate {
         [string]$Template
     }
     return $value.Replace('{skill_id}', $SkillId)
+}
+
+function Resolve-VibeSpecialistSkillRoot {
+    param(
+        [AllowEmptyString()] [string]$NativeSkillEntrypoint = ''
+    )
+
+    if ([string]::IsNullOrWhiteSpace($NativeSkillEntrypoint)) {
+        return $null
+    }
+
+    try {
+        $fullPath = [System.IO.Path]::GetFullPath([string]$NativeSkillEntrypoint)
+    } catch {
+        return $null
+    }
+
+    return Split-Path -Parent $fullPath
+}
+
+function Resolve-VibeSpecialistVisibilityClass {
+    param(
+        [AllowEmptyString()] [string]$NativeSkillEntrypoint = '',
+        [AllowEmptyString()] [string]$TargetRoot = '',
+        [AllowEmptyString()] [string]$HostId = ''
+    )
+
+    if ([string]::IsNullOrWhiteSpace($NativeSkillEntrypoint)) {
+        return 'missing_entrypoint'
+    }
+
+    try {
+        $fullPath = [System.IO.Path]::GetFullPath([string]$NativeSkillEntrypoint)
+    } catch {
+        return 'missing_entrypoint'
+    }
+
+    $installedSkillsRoot = Resolve-VgoInstalledSkillsRoot -TargetRoot $TargetRoot -HostId $HostId
+    if (-not [string]::IsNullOrWhiteSpace([string]$installedSkillsRoot)) {
+        try {
+            $installedFullPath = [System.IO.Path]::GetFullPath([string]$installedSkillsRoot)
+            if ($fullPath.StartsWith($installedFullPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+                return 'installed_surface_path_resolved'
+            }
+        } catch {
+        }
+    }
+
+    return 'path_resolved'
+}
+
+function Get-VibeSpecialistExpectedContribution {
+    param(
+        [Parameter(Mandatory)] [string]$TaskType,
+        [Parameter(Mandatory)] [string]$SkillId
+    )
+
+    switch ([string]$TaskType) {
+        'debug' { return ("Use {0} to produce bounded root-cause analysis and verification notes." -f $SkillId) }
+        'review' { return ("Use {0} to produce bounded review findings and verification notes." -f $SkillId) }
+        'research' { return ("Use {0} to produce bounded research findings and source-aware notes." -f $SkillId) }
+        'coding' { return ("Use {0} to produce bounded implementation help and verification notes." -f $SkillId) }
+        default { return ("Use {0} to produce bounded planning or specialist guidance within the governed task." -f $SkillId) }
+    }
 }
 
 function Get-VibeSpecialistBindingProfile {
@@ -254,9 +335,35 @@ function New-VibeSpecialistRecommendation {
     } else {
         $null
     }
+    $skillRoot = if ($null -ne $CustomMetadata -and $CustomMetadata.PSObject.Properties.Name -contains 'skill_root' -and -not [string]::IsNullOrWhiteSpace([string]$CustomMetadata.skill_root)) {
+        [string]$CustomMetadata.skill_root
+    } else {
+        Resolve-VibeSpecialistSkillRoot -NativeSkillEntrypoint $nativeSkillEntrypoint
+    }
+    $visibilityClass = if ($null -ne $CustomMetadata -and $CustomMetadata.PSObject.Properties.Name -contains 'visibility_class' -and -not [string]::IsNullOrWhiteSpace([string]$CustomMetadata.visibility_class)) {
+        [string]$CustomMetadata.visibility_class
+    } else {
+        Resolve-VibeSpecialistVisibilityClass -NativeSkillEntrypoint $nativeSkillEntrypoint -TargetRoot $TargetRoot -HostId $HostId
+    }
+    $usageRequired = if ($null -ne $CustomMetadata -and $CustomMetadata.PSObject.Properties.Name -contains 'usage_required' -and $null -ne $CustomMetadata.usage_required) {
+        [bool]$CustomMetadata.usage_required
+    } else {
+        [bool]$DispatchContract.native_usage_required
+    }
+    $progressiveLoadPolicy = if ($null -ne $CustomMetadata -and $CustomMetadata.PSObject.Properties.Name -contains 'progressive_load_policy' -and $null -ne $CustomMetadata.progressive_load_policy) {
+        [object[]]@($CustomMetadata.progressive_load_policy)
+    } else {
+        [object[]]@(
+            'Open the specialist SKILL.md entrypoint first.',
+            'Load references/ only when they are needed for the bounded task.',
+            'Load scripts/ only when executable specialist support is required.',
+            'Load assets/ only when the specialist workflow explicitly needs them.'
+        )
+    }
     $promotionMetadata = Get-VgoSkillPromotionMetadata `
         -Prompt $Task `
         -SkillMdPath $nativeSkillEntrypoint `
+        -SkillRoot $skillRoot `
         -Description $nativeSkillDescription `
         -RequiredInputs @($DispatchContract.required_inputs) `
         -ExpectedOutputs @($DispatchContract.expected_outputs) `
@@ -275,6 +382,7 @@ function New-VibeSpecialistRecommendation {
         recommended_scope = 'bounded specialist assistance inside vibe-governed runtime'
         bounded_role = [string]$DispatchContract.bounded_role
         native_usage_required = [bool]$DispatchContract.native_usage_required
+        usage_required = [bool]$usageRequired
         must_preserve_workflow = [bool]$DispatchContract.must_preserve_workflow
         required_inputs = @($DispatchContract.required_inputs)
         expected_outputs = @($DispatchContract.expected_outputs)
@@ -287,7 +395,12 @@ function New-VibeSpecialistRecommendation {
         write_scope = if ($null -ne $CustomMetadata -and $CustomMetadata.PSObject.Properties.Name -contains 'write_scope') { [string]$CustomMetadata.write_scope } else { [string]$bindingProfile.write_scope }
         review_mode = if ($null -ne $CustomMetadata -and $CustomMetadata.PSObject.Properties.Name -contains 'review_mode') { [string]$CustomMetadata.review_mode } else { [string]$bindingProfile.review_mode }
         native_skill_entrypoint = $nativeSkillEntrypoint
+        skill_root = $skillRoot
+        visibility_class = $visibilityClass
         native_skill_description = $nativeSkillDescription
+        invocation_reason = [string]$Reason
+        expected_contribution = if ($null -ne $CustomMetadata -and $CustomMetadata.PSObject.Properties.Name -contains 'expected_contribution' -and -not [string]::IsNullOrWhiteSpace([string]$CustomMetadata.expected_contribution)) { [string]$CustomMetadata.expected_contribution } else { Get-VibeSpecialistExpectedContribution -TaskType $TaskType -SkillId $SkillId }
+        progressive_load_policy = [object[]]@($progressiveLoadPolicy)
         promotion_eligible = [bool]$promotionMetadata.promotion_eligible
         destructive = [bool]$promotionMetadata.destructive
         destructive_reason_codes = [object[]]@($promotionMetadata.destructive_reason_codes)

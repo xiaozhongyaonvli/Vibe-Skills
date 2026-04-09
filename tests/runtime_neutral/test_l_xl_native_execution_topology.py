@@ -231,10 +231,17 @@ def load_unit_result(unit: dict[str, object]) -> dict[str, object]:
     return load_json(unit["result_path"])
 
 
-def create_fake_codex_command(directory: Path) -> Path:
+def create_fake_codex_command(directory: Path, *, required_prompt_markers: list[str] | None = None) -> Path:
     suffix = ".cmd" if os.name == "nt" else ""
     command_path = directory / f"codex{suffix}"
+    markers = required_prompt_markers or []
     if os.name == "nt":
+        marker_checks = ""
+        for index, marker in enumerate(markers, start=1):
+            escaped_marker = marker.replace('"', '""')
+            marker_checks += (
+                f"echo %* | findstr /C:\"{escaped_marker}\" >nul || exit /b {90 + index}\r\n"
+            )
         command_path.write_text(
             "@echo off\r\n"
             "setlocal EnableDelayedExpansion\r\n"
@@ -251,14 +258,22 @@ def create_fake_codex_command(directory: Path) -> Path:
             "goto loop\r\n"
             ":done\r\n"
             "if \"%OUT%\"==\"\" exit /b 2\r\n"
+            f"{marker_checks}"
             "> \"%OUT%\" echo {\"status\":\"completed\",\"summary\":\"fake codex specialist executed\",\"verification_notes\":[\"fake native specialist executed\"],\"changed_files\":[],\"bounded_output_notes\":[\"fake codex adapter\"]}\r\n"
             "echo fake codex ok\r\n"
             "exit /b 0\r\n",
             encoding="utf-8",
         )
     else:
+        marker_checks = ""
+        for index, marker in enumerate(markers, start=1):
+            escaped_marker = marker.replace("\\", "\\\\").replace('"', '\\"')
+            marker_checks += (
+                f'printf "%s" "$RAW_ARGS" | grep -F "{escaped_marker}" >/dev/null || exit {90 + index}\n'
+            )
         command_path.write_text(
             "#!/usr/bin/env sh\n"
+            "RAW_ARGS=\"$*\"\n"
             "OUT=''\n"
             "while [ \"$#\" -gt 0 ]; do\n"
             "  case \"$1\" in\n"
@@ -274,6 +289,7 @@ def create_fake_codex_command(directory: Path) -> Path:
             "if [ -z \"$OUT\" ]; then\n"
             "  exit 2\n"
             "fi\n"
+            f"{marker_checks}"
             "printf '%s' '{\"status\":\"completed\",\"summary\":\"fake codex specialist executed\",\"verification_notes\":[\"fake native specialist executed\"],\"changed_files\":[],\"bounded_output_notes\":[\"fake codex adapter\"]}' > \"$OUT\"\n"
             "printf 'fake codex ok\\n'\n",
             encoding="utf-8",
@@ -619,7 +635,15 @@ class NativeExecutionTopologyTests(unittest.TestCase):
     def test_approved_specialist_dispatch_can_execute_live_native_lane_when_adapter_enabled(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             temp_path = Path(tempdir)
-            fake_codex = create_fake_codex_command(temp_path)
+            fake_codex = create_fake_codex_command(
+                temp_path,
+                required_prompt_markers=[
+                    "native_skill_entrypoint:",
+                    "skill_root:",
+                    "usage_required: true",
+                    "must_preserve_workflow: true",
+                ],
+            )
             payload = run_runtime(
                 task="I have a failing test and stack trace. Debug systematically and execute specialist workflow.",
                 artifact_root=temp_path,
@@ -664,6 +688,57 @@ class NativeExecutionTopologyTests(unittest.TestCase):
                     self.assertTrue(Path(result["git_status_after_path"]).exists())
                     self.assertTrue(Path(result["stdout_path"]).exists())
                     self.assertTrue(Path(result["stderr_path"]).exists())
+                    prompt = Path(result["prompt_path"]).read_text(encoding="utf-8")
+                    self.assertIn("native_skill_entrypoint:", prompt)
+                    self.assertIn("skill_root:", prompt)
+                    self.assertIn("usage_required: true", prompt)
+                    self.assertIn("must_preserve_workflow: true", prompt)
+
+    def test_path_resolved_specialist_prompt_uses_entrypoint_and_root_as_source_of_truth(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            temp_path = Path(tempdir)
+            fake_codex = create_fake_codex_command(temp_path)
+            payload = run_runtime(
+                task=(
+                    "Analyze biological sequences with Python, draft a scientific report, "
+                    "and prepare the execution planning notes."
+                ),
+                artifact_root=temp_path,
+                governance_scope="root",
+                extra_env={
+                    "VGO_ENABLE_NATIVE_SPECIALIST_EXECUTION": "1",
+                    "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
+                    "VGO_CODEX_EXECUTABLE": str(fake_codex),
+                },
+            )
+            summary = payload["summary"]
+            execution_manifest = load_json(summary["artifacts"]["execution_manifest"])
+            specialist_outcomes = list(execution_manifest["specialist_accounting"]["specialist_dispatch_outcomes"])
+            self.assertGreaterEqual(len(specialist_outcomes), 1)
+
+            path_resolved_prompt_verified = False
+            for unit in specialist_outcomes:
+                result = load_json(unit["result_path"])
+                prompt = Path(result["prompt_path"]).read_text(encoding="utf-8")
+                dispatch = next(
+                    (
+                        entry
+                        for entry in execution_manifest["specialist_accounting"]["approved_dispatch"]
+                        if str(entry.get("skill_id", "")).strip() == str(result["specialist_skill_id"]).strip()
+                    ),
+                    None,
+                )
+                self.assertIsNotNone(dispatch)
+                native_entrypoint = str((dispatch or {}).get("native_skill_entrypoint") or "").strip()
+                if "/bundled/skills/" not in native_entrypoint:
+                    continue
+                skill_root = str(Path(native_entrypoint).parent)
+                self.assertIn(f"native_skill_entrypoint: {native_entrypoint}", prompt)
+                self.assertIn(f"skill_root: {skill_root}", prompt)
+                self.assertIn("usage_required: true", prompt)
+                path_resolved_prompt_verified = True
+
+            self.assertTrue(path_resolved_prompt_verified)
 
     def test_child_escalation_remains_advisory_and_blocks_unapproved_specialist_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

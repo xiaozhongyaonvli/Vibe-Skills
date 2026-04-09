@@ -535,7 +535,7 @@ run_runtime_neutral_freshness_gate() {
   if ! python_bin="$(pick_python)"; then
     return 127
   fi
-  "${python_bin}" "${gate_path}" --target-root "${TARGET_ROOT}"
+  "${python_bin}" "${gate_path}" --target-root "${TARGET_ROOT}" --write-receipt
 }
 
 run_runtime_neutral_coherence_gate() {
@@ -705,7 +705,7 @@ run_runtime_freshness_gate() {
   if pick_powershell >/dev/null 2>&1; then
     local gate_script="${SCRIPT_DIR}/scripts/verify/vibe-installed-runtime-freshness-gate.ps1"
     if [[ -f "$gate_script" ]]; then
-      if run_powershell_file "$gate_script" -TargetRoot "${TARGET_ROOT}"; then
+      if run_powershell_file "$gate_script" -TargetRoot "${TARGET_ROOT}" -WriteReceipt; then
         echo "[OK] vibe installed runtime freshness gate"
         PASS=$((PASS+1))
       else
@@ -849,7 +849,7 @@ if [[ "${ADAPTER_CHECK_MODE}" == "governed" ]]; then
 fi
 check_codex_duplicate_skill_surface
 check_path "upstream lock" "${TARGET_ROOT}/config/upstream-lock.json"
-check_path "vibe version governance config" "${TARGET_ROOT}/${runtime_target_rel}/config/version-governance.json"
+check_path "vibe version governance config" "${runtime_skill_root}/config/version-governance.json"
 installed_runtime_governance="${runtime_skill_root}/config/version-governance.json"
 runtime_release_ledger_required="true"
 if [[ -f "${installed_runtime_governance}" ]]; then
@@ -974,8 +974,9 @@ fi
 
 if [[ "${DEEP}" == "true" ]]; then
   if [[ "${ADAPTER_CHECK_MODE}" == "governed" ]]; then
-    if pick_powershell >/dev/null 2>&1; then
-      if run_powershell_file "${SCRIPT_DIR}/scripts/verify/vibe-bootstrap-doctor-gate.ps1" -TargetRoot "${TARGET_ROOT}" -WriteArtifacts; then
+    bootstrap_doctor_gate="${SCRIPT_DIR}/scripts/verify/vibe-bootstrap-doctor-gate.ps1"
+    if [[ -f "${bootstrap_doctor_gate}" ]] && pick_powershell >/dev/null 2>&1; then
+      if run_powershell_file "${bootstrap_doctor_gate}" -TargetRoot "${TARGET_ROOT}" -WriteArtifacts; then
         echo "[OK] vibe bootstrap doctor gate"
         PASS=$((PASS+1))
       else

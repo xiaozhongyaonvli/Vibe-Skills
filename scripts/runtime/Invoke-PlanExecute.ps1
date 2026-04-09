@@ -1126,7 +1126,14 @@ $dispatchContractIncompleteSkillIds = @(
     $approvedDispatch | Where-Object {
         -not [bool]$_.native_usage_required -or
         -not [bool]$_.must_preserve_workflow -or
-        [string]::IsNullOrWhiteSpace([string]$_.native_skill_entrypoint)
+        [string]::IsNullOrWhiteSpace([string]$_.native_skill_entrypoint) -or
+        [string]::IsNullOrWhiteSpace([string]$_.skill_root) -or
+        -not [bool]$_.usage_required
+    } | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
+)
+$promptInjectionIncompleteSkillIds = @(
+    $executedSpecialistUnits | Where-Object {
+        ($_.PSObject.Properties.Name -contains 'prompt_injection_complete') -and -not [bool]$_.prompt_injection_complete
     } | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
 )
 
@@ -1150,12 +1157,14 @@ $dispatchIntegrity = [pscustomobject]@{
     executed_specialists_subset_of_approved_dispatch = [bool](@($executedWithoutApproval).Count -eq 0)
     local_suggestions_contained = [bool](@($localSuggestionsExecutedWithoutApproval).Count -eq 0)
     native_contract_complete_for_approved_dispatch = [bool](@($dispatchContractIncompleteSkillIds).Count -eq 0)
+    prompt_injection_complete_for_executed_specialists = [bool](@($promptInjectionIncompleteSkillIds).Count -eq 0)
     matched_skills_resolved = [bool](@($ghostMatchSkillIds).Count -eq 0)
     approved_dispatch_missing_from_recommendations = @($approvedDispatchMissingFromRecommendations)
     approved_dispatch_not_executed = @($approvedDispatchNotExecuted)
     executed_without_approval = @($executedWithoutApproval)
     local_suggestions_executed_without_approval = @($localSuggestionsExecutedWithoutApproval)
     dispatch_contract_incomplete_skill_ids = @($dispatchContractIncompleteSkillIds)
+    prompt_injection_incomplete_skill_ids = @($promptInjectionIncompleteSkillIds)
 }
 $dispatchIntegrity | Add-Member -NotePropertyName 'proof_passed' -NotePropertyValue ([bool](
     $dispatchIntegrity.approved_dispatch_supported_by_recommendation_or_inherited_approval -and
@@ -1163,6 +1172,7 @@ $dispatchIntegrity | Add-Member -NotePropertyName 'proof_passed' -NotePropertyVa
     $dispatchIntegrity.executed_specialists_subset_of_approved_dispatch -and
     $dispatchIntegrity.local_suggestions_contained -and
     $dispatchIntegrity.native_contract_complete_for_approved_dispatch -and
+    $dispatchIntegrity.prompt_injection_complete_for_executed_specialists -and
     $dispatchIntegrity.matched_skills_resolved
 ))
 

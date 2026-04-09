@@ -482,6 +482,26 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
                 self.assertNotIn("VGO adapter registry not found", check_result.stdout)
                 self.assertNotIn("VGO adapter registry not found", check_result.stderr)
 
+    def test_installed_check_sh_deep_does_not_reference_unbound_runtime_target_rel(self) -> None:
+        self.install_shell_runtime(profile="full")
+
+        installed_root = self.target_root / "skills" / "vibe"
+        check_cmd = [
+            "bash",
+            str(installed_root / "check.sh"),
+            "--host",
+            "codex",
+            "--profile",
+            "full",
+            "--target-root",
+            str(self.target_root),
+            "--deep",
+        ]
+        check_result = subprocess.run(check_cmd, capture_output=True, text=True)
+
+        self.assertEqual(0, check_result.returncode, check_result.stderr)
+        self.assertNotIn("runtime_target_rel", check_result.stderr)
+
     def test_installed_runtime_bootstrap_supports_openclaw_without_self_deleting_source(self) -> None:
         self.install_shell_runtime(host="openclaw")
 

@@ -332,10 +332,15 @@ class InstalledHostRuntimeSimulationTests(unittest.TestCase):
                     1,
                     host_id,
                 )
-                if host_id in HOST_BRIDGE_ENV:
+                if host_id == "codex" or host_id in HOST_BRIDGE_ENV:
                     self.assertEqual(
                         "live_native_executed",
                         debug_state["execution_manifest"]["specialist_accounting"]["effective_execution_status"],
+                        host_id,
+                    )
+                    self.assertGreaterEqual(
+                        int(debug_state["execution_manifest"]["specialist_accounting"]["executed_specialist_unit_count"]),
+                        1,
                         host_id,
                     )
 

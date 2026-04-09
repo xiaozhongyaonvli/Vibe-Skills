@@ -175,7 +175,10 @@ if (@($approvedDispatch).Count -gt 0 -or @($localSuggestions).Count -gt 0) {
                 ('- Dispatch {0} as {1}.' -f [string]$recommendation.skill_id, [string]$recommendation.bounded_role),
                 ('  Binding profile: {0}; dispatch phase: {1}; lane policy: {2}; parallel in XL: {3}' -f [string]$recommendation.binding_profile, [string]$recommendation.dispatch_phase, [string]$recommendation.lane_policy, [bool]$recommendation.parallelizable_in_root_xl),
                 ('  Write scope: {0}; review mode: {1}; execution priority: {2}' -f [string]$recommendation.write_scope, [string]$recommendation.review_mode, [int]$recommendation.execution_priority),
+                ('  Specialist source of truth: entrypoint={0}; root={1}; visibility={2}' -f [string]$recommendation.native_skill_entrypoint, [string]$recommendation.skill_root, [string]$recommendation.visibility_class),
+                ('  Usage required: {0}; preserve workflow: {1}' -f [bool]$recommendation.usage_required, [bool]$recommendation.must_preserve_workflow),
                 ('  Reason: {0}' -f [string]$recommendation.reason),
+                ('  Expected contribution: {0}' -f [string]$recommendation.expected_contribution),
                 ('  Required inputs: {0}' -f [string]::Join(', ', @($recommendation.required_inputs))),
                 ('  Expected outputs: {0}' -f [string]::Join(', ', @($recommendation.expected_outputs))),
                 ('  Verification: {0}' -f [string]$recommendation.verification_expectation)
