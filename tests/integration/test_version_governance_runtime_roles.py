@@ -111,3 +111,16 @@ def test_required_runtime_marker_groups_keep_owners_separate_from_compatibility(
     assert "scripts/verify/vibe-release-install-runtime-coherence-gate.ps1" in verification_surfaces
 
     assert all(path.startswith(("apps/", "packages/")) for path in semantic_owners)
+
+
+def test_source_of_truth_declares_explicit_official_self_repo_metadata() -> None:
+    governance = _load_governance()
+    source_of_truth = governance["source_of_truth"]
+    official_repo = source_of_truth["official_self_repo"]
+
+    assert source_of_truth["canonical_root"] == "."
+    assert official_repo == {
+        "repo_url": "https://github.com/foryourhealth111-pixel/Vibe-Skills.git",
+        "default_branch": "main",
+        "canonical_root": ".",
+    }

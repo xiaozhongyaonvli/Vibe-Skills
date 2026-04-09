@@ -7,7 +7,12 @@
     "notes": "remaining architecture closure / owner-consumer proof / live status truth alignment / bounded fallback honesty / governed execution proof"
   },
   "source_of_truth": {
-    "canonical_root": "."
+    "canonical_root": ".",
+    "official_self_repo": {
+      "repo_url": "https://github.com/foryourhealth111-pixel/Vibe-Skills.git",
+      "default_branch": "main",
+      "canonical_root": "."
+    }
   },
   "mirror_topology": {
     "canonical_target_id": "canonical",

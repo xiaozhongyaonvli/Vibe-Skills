@@ -24,6 +24,18 @@ def get_installed_runtime_config(repo_root: Path) -> dict[str, object]:
     return merge_installed_runtime_config(load_governance(repo_root), default_installed_runtime_config())
 
 
+def get_official_self_repo_metadata(repo_root: Path) -> dict[str, str]:
+    governance = load_governance(repo_root)
+    source = governance.get('source_of_truth') or {}
+    official_repo = source.get('official_self_repo') or {}
+    canonical_root = str(official_repo.get('canonical_root') or source.get('canonical_root') or '.').strip() or '.'
+    return {
+        'repo_url': str(official_repo.get('repo_url') or '').strip(),
+        'default_branch': str(official_repo.get('default_branch') or '').strip(),
+        'canonical_root': canonical_root,
+    }
+
+
 def resolve_canonical_repo_root(start_path: Path) -> Path | None:
     current = start_path.resolve()
     while True:

@@ -9,7 +9,11 @@ CLI_SRC = REPO_ROOT / 'apps' / 'vgo-cli' / 'src'
 if str(CLI_SRC) not in sys.path:
     sys.path.insert(0, str(CLI_SRC))
 
-from vgo_cli.repo import get_installed_runtime_config, resolve_canonical_repo_root
+from vgo_cli.repo import (
+    get_installed_runtime_config,
+    get_official_self_repo_metadata,
+    resolve_canonical_repo_root,
+)
 
 
 def test_get_installed_runtime_config_merges_defaults_with_governance_overrides(tmp_path: Path) -> None:
@@ -39,3 +43,23 @@ def test_resolve_canonical_repo_root_prefers_outer_git_root_with_governance(tmp_
 
     assert resolve_canonical_repo_root(nested) == repo_root
     assert resolve_canonical_repo_root(tmp_path) is None
+
+
+def test_get_official_self_repo_metadata_reads_explicit_governance_source(tmp_path: Path) -> None:
+    repo_root = tmp_path / 'repo'
+    (repo_root / 'config').mkdir(parents=True)
+    (repo_root / 'config' / 'version-governance.json').write_text(
+        (
+            '{"source_of_truth": {"canonical_root": ".", "official_self_repo": '
+            '{"repo_url": "https://example.com/Vibe-Skills.git", "default_branch": "main"}}}'
+        ),
+        encoding='utf-8',
+    )
+
+    payload = get_official_self_repo_metadata(repo_root)
+
+    assert payload == {
+        'repo_url': 'https://example.com/Vibe-Skills.git',
+        'default_branch': 'main',
+        'canonical_root': '.',
+    }
