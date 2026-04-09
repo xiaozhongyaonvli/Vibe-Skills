@@ -12,6 +12,13 @@ MINIMAL_MANIFEST = REPO_ROOT / "config" / "runtime-core-packaging.minimal.json"
 FULL_MANIFEST = REPO_ROOT / "config" / "runtime-core-packaging.full.json"
 
 REPRESENTATIVE_NON_CORE_SKILL = "scikit-learn"
+FULL_PUBLIC_WRAPPER_SKILLS = {
+    "vibe",
+    "vibe-do-it",
+    "vibe-how-do-we-do",
+    "vibe-upgrade",
+    "vibe-what-do-i-want",
+}
 
 
 def load_json(path: Path) -> dict:
@@ -69,7 +76,10 @@ class InstallProfileDifferentiationTests(unittest.TestCase):
         self.assertTrue(full["copy_bundled_skills"])
         self.assertFalse(minimal["copy_bundled_skills"])
         self.assertEqual("skills/vibe/bundled/skills", full["internal_skill_corpus"]["target_relpath"])
-        self.assertEqual([], full["compatibility_skill_projections"]["projected_skill_names"])
+        self.assertEqual(
+            sorted(FULL_PUBLIC_WRAPPER_SKILLS - {"vibe"}),
+            sorted(full["compatibility_skill_projections"]["projected_skill_names"]),
+        )
 
     def test_minimal_install_contains_only_required_foundation_skills(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -116,14 +126,14 @@ class InstallProfileDifferentiationTests(unittest.TestCase):
             }
             hidden_full_skill = full_root / "skills" / "vibe" / "bundled" / "skills" / REPRESENTATIVE_NON_CORE_SKILL / "SKILL.runtime-mirror.md"
 
-            self.assertEqual({"vibe"}, full_skills)
+            self.assertEqual(FULL_PUBLIC_WRAPPER_SKILLS, full_skills)
             self.assertTrue(hidden_full_skill.exists())
             self.assertGreater(
                 full_ledger["payload_summary"]["installed_skill_count"],
                 minimal_ledger["payload_summary"]["installed_skill_count"],
             )
-            self.assertEqual(1, full_ledger["payload_summary"]["public_skill_count"])
-            self.assertEqual(["vibe"], full_ledger["payload_summary"]["public_skill_names"])
+            self.assertEqual(len(FULL_PUBLIC_WRAPPER_SKILLS), full_ledger["payload_summary"]["public_skill_count"])
+            self.assertEqual(sorted(FULL_PUBLIC_WRAPPER_SKILLS), full_ledger["payload_summary"]["public_skill_names"])
             self.assertIn(REPRESENTATIVE_NON_CORE_SKILL, full_ledger["payload_summary"]["installed_skill_names"])
             self.assertGreater(
                 full_ledger["payload_summary"]["installed_file_count"],

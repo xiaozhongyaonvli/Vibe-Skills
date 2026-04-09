@@ -308,6 +308,19 @@ def internal_skill_corpus(packaging: dict[str, Any]) -> dict[str, Any]:
     return corpus
 
 
+def compatibility_projection_names(packaging: dict[str, Any]) -> list[str]:
+    projections = packaging.get("compatibility_skill_projections") or {}
+    seen: set[str] = set()
+    names: list[str] = []
+    for raw in projections.get("projected_skill_names") or []:
+        name = str(raw).strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        names.append(name)
+    return names
+
+
 def excluded_bundled_skill_names(packaging: dict[str, Any]) -> set[str]:
     configured = {
         str(name).strip()
@@ -356,8 +369,7 @@ def materialize_allowlisted_skills(
     *,
     copy_dir_replace_fn: Callable[[Path, Path], None],
 ) -> None:
-    projections = packaging.get("compatibility_skill_projections") or {}
-    skills_allowlist = list(projections.get("projected_skill_names") or [])
+    skills_allowlist = compatibility_projection_names(packaging)
     if not skills_allowlist:
         return
 

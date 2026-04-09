@@ -24,6 +24,13 @@ MINIMAL_REQUIRED_SKILLS = set(
 ) | set(
     json.loads(MINIMAL_MANIFEST.read_text(encoding="utf-8"))["managed_skill_inventory"]["required_workflow_skills"]
 )
+CODEX_WRAPPER_SKILL_NAMES = {
+    "vibe",
+    "vibe-do-it",
+    "vibe-how-do-we-do",
+    "vibe-upgrade",
+    "vibe-what-do-i-want",
+}
 
 
 def resolve_powershell() -> str | None:
@@ -318,6 +325,18 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
         self.assertTrue(cli_commands.exists())
         self.assertIn("vgo_cli.main", install_wrapper)
         self.assertIn("vgo_cli.main", install_wrapper_ps1)
+
+    def test_shell_install_materializes_codex_wrapper_skill_surface(self) -> None:
+        self.install_shell_runtime("codex")
+
+        skills_root = self.target_root / "skills"
+        self.assertTrue(skills_root.exists())
+        self.assertEqual(
+            CODEX_WRAPPER_SKILL_NAMES,
+            {path.name for path in skills_root.iterdir() if path.is_dir()},
+        )
+        for skill_name in CODEX_WRAPPER_SKILL_NAMES:
+            self.assertTrue((skills_root / skill_name / "SKILL.md").exists(), skill_name)
 
     def test_canonical_shell_install_supports_minimal_profile(self) -> None:
         target_root = self.root / "bundled-minimal-target"

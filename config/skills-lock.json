@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "generated_at": "2026-04-01T12:10:37+08:00",
+  "generated_at": "2026-04-09T19:29:51+08:00",
   "source": "bundled/skills",
-  "skill_count": 339,
-  "total_bytes": 24233983.0,
+  "skill_count": 343,
+  "total_bytes": 21177958.0,
   "skills": [
     {
       "name": ".system",
@@ -696,10 +696,10 @@
     {
       "name": "document-skills",
       "relative_path": "bundled/skills/document-skills",
-      "file_count": 131,
-      "bytes": 2506024,
+      "file_count": 84,
+      "bytes": 1428830,
       "skill_md_hash": "cf8d095fd6f106a7121655098f22c9ea9678c8105728f9187f461836e4875861",
-      "dir_hash": "6c2aaa878bd047a7e4ccf85b9df569c7b49c304c86edacee1e106ae5ed138fcc"
+      "dir_hash": "391537bbed6a01050e0286b2cc739e92013426e2444092bd4df365a4a88cdb65"
     },
     {
       "name": "documentation-lookup",
@@ -1481,9 +1481,9 @@
       "name": "openai-knowledge",
       "relative_path": "bundled/skills/openai-knowledge",
       "file_count": 1,
-      "bytes": 1884,
-      "skill_md_hash": "13cd63da91450f2a1985675a81c6ac0b0a2befa223627ff38c388bfb41916aca",
-      "dir_hash": "975912d507f6fa102fc12a404de3bf630040668cd0287f96fe11ffa1596b0066"
+      "bytes": 1181,
+      "skill_md_hash": "41d63aafd093751c4b4c26b98f831059b75f756a9e3857a76627c17b5588d635",
+      "dir_hash": "01b890eb9553a53753e617a7b1de4caf1aaab98305e24c3e22fcdf5c79fc7889"
     },
     {
       "name": "openalex-database",
@@ -1760,10 +1760,10 @@
     {
       "name": "pymc-bayesian-modeling",
       "relative_path": "bundled/skills/pymc-bayesian-modeling",
-      "file_count": 8,
-      "bytes": 94545,
-      "skill_md_hash": "2dcf838db6890a897795978b92c0851a67b69cec1f52dadeeab3dda4a5c88203",
-      "dir_hash": "16518f296356005dcedff3875385d4d328c8be589db78d524f5bca96aa9d6e13"
+      "file_count": 1,
+      "bytes": 1108,
+      "skill_md_hash": "6c953428eb2da476e945ac1e5d20a59ee71318e64f23a3623b0f4ba3f40c31dd",
+      "dir_hash": "629015efce693af34928a5e4155f140760b5827f2fc6b3999f88cc1ed8559931"
     },
     {
       "name": "pymoo",
@@ -1905,9 +1905,9 @@
       "name": "reviewing-code",
       "relative_path": "bundled/skills/reviewing-code",
       "file_count": 1,
-      "bytes": 3841,
-      "skill_md_hash": "e6ce204a5a6ae6b45192c05202329c43c38f4b00c7906dee7ce52520b58a8b99",
-      "dir_hash": "2007c32a28730525535f13ae544195de5631e3e5dc284888c0e32fdf077aa4a2"
+      "bytes": 1191,
+      "skill_md_hash": "f67910c986304f7741f21886454f4d19bf4fd7b3ac2d250c44b069205737dc9d",
+      "dir_hash": "36750b8e0367bbb589c95e2efc8e1e7793ee43557207e34295b6fef81ebe1a8a"
     },
     {
       "name": "rowan",
@@ -2456,18 +2456,18 @@
     {
       "name": "timesfm-forecasting",
       "relative_path": "bundled/skills/timesfm-forecasting",
-      "file_count": 27,
-      "bytes": 2099806,
-      "skill_md_hash": "07cc82784213023481348af95426e944eb1f2eda95de7e30708c8df353d7987a",
-      "dir_hash": "e35f069b849ff951cd799b8a4ea53166b0a2a4fdca6b4dd30829b3022e16a3c7"
+      "file_count": 22,
+      "bytes": 320472,
+      "skill_md_hash": "c6425f6c5ad3e56b2ced68d437202fe2c3d4c2552361c8f7b15b9a00b198de80",
+      "dir_hash": "597004a8f975a080799c952a20467a8c922b6323d297661a32b98ce22e42b556"
     },
     {
       "name": "torch_geometric",
       "relative_path": "bundled/skills/torch_geometric",
-      "file_count": 7,
-      "bytes": 107029,
-      "skill_md_hash": "9b617229892a2665e2f033208f4e4643415f45d7cbfc7b4653eca48a7fd15f91",
-      "dir_hash": "455bc96d465e44b9b7a258607a757a04bcd0d9191608f05f1379663d2fe288b2"
+      "file_count": 1,
+      "bytes": 1164,
+      "skill_md_hash": "f587c0e2e574d3b791774f8d9b08e2711c0d9183c2db31c2210e39caf47811cd",
+      "dir_hash": "314ab5cedae2140c680cf02f30f86c5c1303c168c9820caaf5beebf94792cd8d"
     },
     {
       "name": "torch-geometric",
@@ -2612,6 +2612,38 @@
       "bytes": 16032,
       "skill_md_hash": "afde8a69eb5735ef5250d21bcc2d6aafc8ac9f203e84d2d7f2e8fcbcdc0c1abe",
       "dir_hash": "62b6a88a5c03b87c642a58c6bb8407117155433c64e1fab12aee9f718cf46cd4"
+    },
+    {
+      "name": "vibe-do-it",
+      "relative_path": "bundled/skills/vibe-do-it",
+      "file_count": 1,
+      "bytes": 732,
+      "skill_md_hash": "43d439278addb4c7753a01de87ae66b01978c9895ef71b4f43540ba9b0764eee",
+      "dir_hash": "46de9d3a1baf8c63e1a3ac8a662f663ede069695da2778353c6ccc60d26cf42c"
+    },
+    {
+      "name": "vibe-how-do-we-do",
+      "relative_path": "bundled/skills/vibe-how-do-we-do",
+      "file_count": 1,
+      "bytes": 708,
+      "skill_md_hash": "03167f9b514c07a9494d0e02114d7030dbe0447189f9aae6d60ac915ccdbf6ae",
+      "dir_hash": "a4040c4db1d1328e555e551ff63e25d370a3375586255960913f9a0c9edea071"
+    },
+    {
+      "name": "vibe-upgrade",
+      "relative_path": "bundled/skills/vibe-upgrade",
+      "file_count": 1,
+      "bytes": 983,
+      "skill_md_hash": "0ded1670f72081378ebf51b71c7860344a213a6a74017c3e7f3a418949c5136b",
+      "dir_hash": "b98fbce0059d57d91715e73d02a831cb115af70e6feb6432b277c802201fbb72"
+    },
+    {
+      "name": "vibe-what-do-i-want",
+      "relative_path": "bundled/skills/vibe-what-do-i-want",
+      "file_count": 1,
+      "bytes": 735,
+      "skill_md_hash": "4b9dd2247b06c32197f03328481893b804af0126d1158293a9a13ad54386002b",
+      "dir_hash": "b0b06bda8fbb927e7b1ca8b09a63641a780c34e3f9b984c7e169e06692e7dd93"
     },
     {
       "name": "video-studio",

@@ -13,6 +13,12 @@ BASE_MANIFEST = REPO_ROOT / "config" / "runtime-core-packaging.json"
 MINIMAL_MANIFEST = REPO_ROOT / "config" / "runtime-core-packaging.minimal.json"
 FULL_MANIFEST = REPO_ROOT / "config" / "runtime-core-packaging.full.json"
 MODULE_PATH = REPO_ROOT / 'packages' / 'installer-core' / 'src' / 'vgo_installer' / 'runtime_packaging.py'
+CODEX_VIBE_WRAPPER_SKILLS = [
+    'vibe-do-it',
+    'vibe-how-do-we-do',
+    'vibe-upgrade',
+    'vibe-what-do-i-want',
+]
 
 
 def _load(path: Path) -> dict:
@@ -208,3 +214,12 @@ def test_full_profile_defaults_to_no_top_level_bundled_skill_fanout_when_split_s
         if isinstance(entry, dict)
     )
     assert not legacy_flatten
+
+
+def test_full_profile_projects_vibe_wrapper_skills_as_compatibility_surface() -> None:
+    full = _load(FULL_MANIFEST)
+    if not _supports_surface_split(full):
+        pytest.skip('surface split semantics are not available in this branch yet')
+
+    assert sorted(full['compatibility_skill_projections']['projected_skill_names']) == CODEX_VIBE_WRAPPER_SKILLS
+    assert sorted(full['payload_roles']['delivery_model']['compatibility_skill_projections']) == CODEX_VIBE_WRAPPER_SKILLS

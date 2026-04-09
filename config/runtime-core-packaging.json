@@ -223,7 +223,12 @@
       "compatibility_skill_projections": {
         "mode": "explicit_projection_only",
         "target_root": "skills",
-        "projected_skill_names": [],
+        "projected_skill_names": [
+          "vibe-do-it",
+          "vibe-how-do-we-do",
+          "vibe-upgrade",
+          "vibe-what-do-i-want"
+        ],
         "resolver_roots": [
           "skills"
         ]
@@ -246,7 +251,12 @@
           ],
           "public_surface_mode": "canonical_vibe_only",
           "internal_corpus_target_relpath": "skills/vibe/bundled/skills",
-          "compatibility_skill_projections": []
+          "compatibility_skill_projections": [
+            "vibe-do-it",
+            "vibe-how-do-we-do",
+            "vibe-upgrade",
+            "vibe-what-do-i-want"
+          ]
         },
         "surface_contracts": {
           "public_skill_surface_mode": "canonical_vibe_only",

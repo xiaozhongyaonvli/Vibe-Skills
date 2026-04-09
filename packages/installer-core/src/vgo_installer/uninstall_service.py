@@ -123,6 +123,20 @@ def runtime_core_inventory(repo_root: Path) -> set[str]:
                     continue
                 inventory.update(collect_file_inventory(candidate, f"{target_prefix}/{candidate.name}"))
 
+    projections = packaging.get("compatibility_skill_projections") or {}
+    projection_root = normalize_relpath(str(projections.get("target_root") or "skills")) or "skills"
+    projected_names: list[str] = []
+    seen_projected: set[str] = set()
+    for raw in projections.get("projected_skill_names") or []:
+        name = str(raw).strip()
+        if not name or name in seen_projected:
+            continue
+        seen_projected.add(name)
+        projected_names.append(name)
+    bundled_source = repo_root / str(packaging.get("bundled_skills_source") or "bundled/skills")
+    for name in projected_names:
+        inventory.update(collect_file_inventory(bundled_source / name, f"{projection_root}/{name}"))
+
     target_rel = normalize_relpath(
         (packaging.get("canonical_vibe_payload") or {}).get("target_relpath")
         or (packaging.get("canonical_vibe_mirror") or {}).get("target_relpath")

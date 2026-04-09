@@ -26,6 +26,10 @@ def _load_json(relative_path: str) -> dict:
     return json.loads((REPO_ROOT / relative_path).read_text(encoding="utf-8"))
 
 
+def _read_text(relative_path: str) -> str:
+    return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+
+
 def _ordered_unique(items: list[str]) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
@@ -287,3 +291,15 @@ def test_codex_release_manifests_carry_codex_specific_contract_surfaces() -> Non
 
     assert codex_expected_lane.issubset(set(codex_lane["surface_roles"]["proof_surfaces"]))
     assert codex_expected_public.issubset(set(codex_public["surface_roles"]["truth_surfaces"]))
+
+
+def test_vibe_wrapper_skill_templates_declare_canonical_vibe_delegation() -> None:
+    for rel in (
+        "bundled/skills/vibe-do-it/SKILL.md",
+        "bundled/skills/vibe-how-do-we-do/SKILL.md",
+        "bundled/skills/vibe-upgrade/SKILL.md",
+        "bundled/skills/vibe-what-do-i-want/SKILL.md",
+    ):
+        text = _read_text(rel).lower()
+        assert "canonical `vibe`" in text or "canonical vibe" in text, rel
+        assert "only governed runtime authority" in text, rel
