@@ -41,7 +41,11 @@ def test_upgrade_runtime_resolves_canonical_git_root_before_refresh(monkeypatch:
         }
 
     monkeypatch.setattr(upgrade_service, "refresh_installed_status", fake_refresh_installed_status)
-    monkeypatch.setattr(upgrade_service, "refresh_upstream_status", lambda repo_root_arg, target_root_arg, status: status)
+    monkeypatch.setattr(
+        upgrade_service,
+        "refresh_upstream_status",
+        lambda repo_root_arg, target_root_arg, status, **kwargs: status,
+    )
 
     result = upgrade_service.upgrade_runtime(
         repo_root=repo_root,
@@ -84,7 +88,11 @@ def test_upgrade_runtime_noops_when_install_is_already_current(
             "update_available": False,
         },
     )
-    monkeypatch.setattr(upgrade_service, "refresh_upstream_status", lambda repo_root_arg, target_root_arg, status: status)
+    monkeypatch.setattr(
+        upgrade_service,
+        "refresh_upstream_status",
+        lambda repo_root_arg, target_root_arg, status, **kwargs: status,
+    )
     monkeypatch.setattr(
         upgrade_service,
         "reset_repo_to_official_head",
@@ -191,7 +199,12 @@ def test_upgrade_runtime_refreshes_repo_reinstalls_and_checks_when_update_is_ava
     monkeypatch.setattr(upgrade_service, "resolve_upgrade_repo_root", lambda path: repo_root)
     monkeypatch.setattr(upgrade_service, "refresh_installed_status", lambda repo_root_arg, target_root_arg, host_id: next(statuses))
 
-    def fake_refresh_upstream(repo_root_arg: Path, target_root_arg: Path, current_status: dict[str, object]) -> dict[str, object]:
+    def fake_refresh_upstream(
+        repo_root_arg: Path,
+        target_root_arg: Path,
+        current_status: dict[str, object],
+        **kwargs: object,
+    ) -> dict[str, object]:
         steps.append("refresh")
         merged = dict(current_status)
         merged.update(
@@ -205,7 +218,11 @@ def test_upgrade_runtime_refreshes_repo_reinstalls_and_checks_when_update_is_ava
         return merged
 
     monkeypatch.setattr(upgrade_service, "refresh_upstream_status", fake_refresh_upstream)
-    monkeypatch.setattr(upgrade_service, "reset_repo_to_official_head", lambda repo_root_arg, branch: steps.append(f"reset:{branch}"))
+    monkeypatch.setattr(
+        upgrade_service,
+        "reset_repo_to_official_head",
+        lambda repo_root_arg, branch, target_commit=None: steps.append(f"reset:{branch}:{target_commit}"),
+    )
     monkeypatch.setattr(upgrade_service, "reinstall_runtime", lambda **kwargs: steps.append("reinstall"))
     monkeypatch.setattr(
         upgrade_service,
@@ -226,10 +243,85 @@ def test_upgrade_runtime_refreshes_repo_reinstalls_and_checks_when_update_is_ava
         skip_runtime_freshness_gate=False,
     )
 
-    assert steps == ["refresh", "reset:main", "reinstall", "check"]
+    assert steps == ["refresh", "reset:main:new", "reinstall", "check"]
     assert result["changed"] is True
     assert result["before"]["installed_version"] == "3.0.0"
     assert result["after"]["installed_version"] == "3.0.1"
+
+
+def test_upgrade_runtime_forces_fresh_upstream_refresh_before_deciding_update(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    upgrade_service = importlib.import_module("vgo_cli.upgrade_service")
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    target_root = tmp_path / "target"
+    target_root.mkdir()
+
+    monkeypatch.setattr(upgrade_service, "resolve_upgrade_repo_root", lambda path: repo_root)
+    monkeypatch.setattr(
+        upgrade_service,
+        "refresh_installed_status",
+        lambda repo_root_arg, target_root_arg, host_id: {
+            "installed_version": "3.0.0",
+            "installed_commit": "local",
+            "remote_latest_version": "3.0.1",
+            "remote_latest_commit": "stale-remote",
+            "remote_latest_checked_at": "2026-04-10T00:00:00Z",
+            "update_available": True,
+        },
+    )
+
+    recorded: dict[str, object] = {}
+
+    def fake_refresh_upstream(
+        repo_root_arg: Path,
+        target_root_arg: Path,
+        current_status: dict[str, object],
+        *,
+        force_refresh: bool = False,
+    ) -> dict[str, object]:
+        recorded["force_refresh"] = force_refresh
+        return {
+            **current_status,
+            "remote_latest_version": "3.0.0",
+            "remote_latest_commit": "local",
+            "update_available": False,
+        }
+
+    monkeypatch.setattr(upgrade_service, "refresh_upstream_status", fake_refresh_upstream)
+    monkeypatch.setattr(
+        upgrade_service,
+        "reset_repo_to_official_head",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not reset repo")),
+    )
+    monkeypatch.setattr(
+        upgrade_service,
+        "reinstall_runtime",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("should not reinstall")),
+    )
+    monkeypatch.setattr(
+        upgrade_service,
+        "run_upgrade_check",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("should not run check")),
+    )
+
+    result = upgrade_service.upgrade_runtime(
+        repo_root=repo_root,
+        target_root=target_root,
+        host_id="codex",
+        profile="full",
+        frontend="shell",
+        install_external=False,
+        strict_offline=False,
+        require_closed_ready=False,
+        allow_external_skill_fallback=False,
+        skip_runtime_freshness_gate=False,
+    )
+
+    assert recorded["force_refresh"] is True
+    assert result["changed"] is False
 
 
 def test_upgrade_runtime_propagates_refresh_failures(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -249,7 +341,7 @@ def test_upgrade_runtime_propagates_refresh_failures(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(
         upgrade_service,
         "refresh_upstream_status",
-        lambda repo_root_arg, target_root_arg, current_status: (_ for _ in ()).throw(upgrade_service.CliError("refresh failed")),
+        lambda repo_root_arg, target_root_arg, current_status, **kwargs: (_ for _ in ()).throw(upgrade_service.CliError("refresh failed")),
     )
 
     with pytest.raises(upgrade_service.CliError, match="refresh failed"):
@@ -286,7 +378,7 @@ def test_upgrade_runtime_propagates_check_failures(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(
         upgrade_service,
         "refresh_upstream_status",
-        lambda repo_root_arg, target_root_arg, current_status: {
+        lambda repo_root_arg, target_root_arg, current_status, **kwargs: {
             **current_status,
             "remote_latest_version": "3.0.1",
             "remote_latest_commit": "new",
@@ -294,7 +386,7 @@ def test_upgrade_runtime_propagates_check_failures(monkeypatch: pytest.MonkeyPat
             "repo_default_branch": "main",
         },
     )
-    monkeypatch.setattr(upgrade_service, "reset_repo_to_official_head", lambda repo_root_arg, branch: None)
+    monkeypatch.setattr(upgrade_service, "reset_repo_to_official_head", lambda repo_root_arg, branch, target_commit=None: None)
     monkeypatch.setattr(upgrade_service, "reinstall_runtime", lambda **kwargs: None)
     monkeypatch.setattr(
         upgrade_service,
@@ -395,4 +487,30 @@ def test_reset_repo_to_official_head_discards_local_changes_before_switch(monkey
         ["git", "clean", "-fd"],
         ["git", "checkout", "-B", "main", "FETCH_HEAD"],
         ["git", "reset", "--hard", "FETCH_HEAD"],
+    ]
+
+
+def test_reset_repo_to_official_head_uses_explicit_target_commit_when_provided(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    upgrade_service = importlib.import_module("vgo_cli.upgrade_service")
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True)
+    commands: list[list[str]] = []
+
+    def fake_run_subprocess(command: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+        commands.append(command)
+        assert cwd == repo_root
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(upgrade_service, "run_subprocess", fake_run_subprocess)
+
+    upgrade_service.reset_repo_to_official_head(repo_root, "main", "abc123")
+
+    assert commands == [
+        ["git", "reset", "--hard", "HEAD"],
+        ["git", "clean", "-fd"],
+        ["git", "checkout", "-B", "main", "abc123"],
+        ["git", "reset", "--hard", "abc123"],
     ]
