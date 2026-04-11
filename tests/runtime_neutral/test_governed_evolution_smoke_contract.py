@@ -15,10 +15,12 @@ def test_governed_evolution_runtime_smoke_script_keeps_artifact_chain_checks() -
     text = SMOKE_SCRIPT.read_text(encoding="utf-8")
 
     required_markers = [
+        "runtime-summary.json",
         "failure-patterns.json",
         "pitfall-events.json",
         "atomic-skill-call-chain.json",
         "proposal-layer.json",
+        "proposal-layer.md",
         "warning-cards.json",
         "preflight-checklist.json",
         "remediation-notes.json",

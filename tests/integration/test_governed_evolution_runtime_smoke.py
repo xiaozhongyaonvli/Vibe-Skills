@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 import unittest
 import uuid
@@ -36,44 +37,31 @@ class GovernedEvolutionSmokeTests(unittest.TestCase):
 
         self.assertTrue(SMOKE_SCRIPT.exists(), f"Missing smoke script: {SMOKE_SCRIPT}")
 
-        outputs_root = REPO_ROOT / "outputs"
-        outputs_root.mkdir(parents=True, exist_ok=True)
-        artifact_root = outputs_root / f"pytest-governed-evolution-{uuid.uuid4().hex}"
-        artifact_root.mkdir(parents=True, exist_ok=True)
+        artifact_root = Path(
+            tempfile.mkdtemp(prefix=f"pytest-governed-evolution-{uuid.uuid4().hex}-")
+        )
         try:
             run_id = "pytest-governed-evolution-smoke"
-            try:
-                completed = subprocess.run(
-                    [
-                        shell,
-                        "-NoLogo",
-                        "-NoProfile",
-                        "-ExecutionPolicy",
-                        "Bypass",
-                        "-File",
-                        str(SMOKE_SCRIPT),
-                        "-RunId",
-                        run_id,
-                        "-ArtifactRoot",
-                        str(artifact_root),
-                    ],
-                    cwd=REPO_ROOT,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
-                )
-            except subprocess.CalledProcessError as exc:
-                stderr = exc.stderr or ""
-                permission_markers = (
-                    "Access to the path",
-                    "Permission denied",
-                    "Could not find a part of the path",
-                    "could not open directory",
-                )
-                if any(marker in stderr for marker in permission_markers):
-                    self.skipTest(f"Local filesystem permissions prevented smoke execution: {stderr.strip()}")
-                raise
+            completed = subprocess.run(
+                [
+                    shell,
+                    "-NoLogo",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    str(SMOKE_SCRIPT),
+                    "-RunId",
+                    run_id,
+                    "-ArtifactRoot",
+                    str(artifact_root),
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+                env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
+            )
 
             payload = json.loads(completed.stdout)
             session_root = Path(payload["session_root"])
@@ -94,6 +82,6 @@ class GovernedEvolutionSmokeTests(unittest.TestCase):
 
             self.assertTrue(session_root.exists())
             self.assertEqual(run_id, session_root.name)
-            self.assertTrue(str(session_root).startswith(str(artifact_root)))
+            session_root.relative_to(artifact_root)
         finally:
             shutil.rmtree(artifact_root, ignore_errors=True)
