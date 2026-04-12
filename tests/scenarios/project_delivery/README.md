@@ -18,11 +18,13 @@ Each scenario should define:
 
 ## Truth Layers
 
-Each scenario must provide four truth-layer states:
+Each scenario must provide six truth-layer states:
 
 - `governance_truth`
 - `engineering_verification_truth`
+- `code_task_tdd_evidence_truth`
 - `workflow_completion_truth`
+- `artifact_review_truth`
 - `product_acceptance_truth`
 
 ## Purpose

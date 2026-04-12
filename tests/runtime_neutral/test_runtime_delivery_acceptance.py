@@ -14,6 +14,7 @@ if SPEC is None or SPEC.loader is None:
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 evaluate = MODULE.evaluate
+write_artifacts = MODULE.write_artifacts
 
 
 def write_json(path: Path, payload: dict[str, object]) -> None:
@@ -34,6 +35,19 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         failed_unit_count: int = 0,
         manual_spot_checks: list[str] | None = None,
         include_product_criteria: bool = True,
+        artifact_review_requirements: list[str] | None = None,
+        code_task_tdd_evidence_requirements: list[str] | None = None,
+        code_task_tdd_exceptions: list[str] | None = None,
+        baseline_document_quality_dimensions: list[str] | None = None,
+        baseline_ui_quality_dimensions: list[str] | None = None,
+        task_specific_acceptance_extensions: list[str] | None = None,
+        research_augmentation_sources: list[str] | None = None,
+        phase_execute_artifact_review: dict[str, object] | None = None,
+        phase_execute_tdd_evidence: dict[str, object] | None = None,
+        sidecar_artifact_review: dict[str, object] | None = None,
+        sidecar_tdd_evidence: dict[str, object] | None = None,
+        artifact_review_path: str | None = None,
+        tdd_evidence_path: str | None = None,
         governance_scope: str = "root",
         completion_claim_allowed: bool = True,
         cleanup_mode: str = "bounded_cleanup_executed",
@@ -80,6 +94,48 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             "- Governance truth remains distinct from product acceptance truth.",
             "",
         ]
+        if artifact_review_requirements:
+            requirement_lines += [
+                "## Artifact Review Requirements",
+                *[f"- {item}" for item in artifact_review_requirements],
+                "",
+            ]
+        if code_task_tdd_evidence_requirements:
+            requirement_lines += [
+                "## Code Task TDD Evidence Requirements",
+                *[f"- {item}" for item in code_task_tdd_evidence_requirements],
+                "",
+            ]
+        if code_task_tdd_exceptions:
+            requirement_lines += [
+                "## Code Task TDD Exceptions",
+                *[f"- {item}" for item in code_task_tdd_exceptions],
+                "",
+            ]
+        if baseline_document_quality_dimensions:
+            requirement_lines += [
+                "## Baseline Document Quality Dimensions",
+                *[f"- {item}" for item in baseline_document_quality_dimensions],
+                "",
+            ]
+        if baseline_ui_quality_dimensions:
+            requirement_lines += [
+                "## Baseline UI Quality Dimensions",
+                *[f"- {item}" for item in baseline_ui_quality_dimensions],
+                "",
+            ]
+        if task_specific_acceptance_extensions:
+            requirement_lines += [
+                "## Task-Specific Acceptance Extensions",
+                *[f"- {item}" for item in task_specific_acceptance_extensions],
+                "",
+            ]
+        if research_augmentation_sources:
+            requirement_lines += [
+                "## Research Augmentation Sources",
+                *[f"- {item}" for item in research_augmentation_sources],
+                "",
+            ]
         write_text(requirement_doc_path, "\n".join(requirement_lines) + "\n")
         write_text(
             execution_plan_path,
@@ -104,15 +160,22 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 }
             },
         )
+        phase_execute_payload = {
+            "requirement_doc_path": str(requirement_doc_path),
+            "execution_plan_path": str(execution_plan_path),
+            "execution_manifest_path": str(execution_manifest_path),
+            "runtime_input_packet_path": str(runtime_input_packet_path),
+            "completion_claim_allowed": completion_claim_allowed,
+            "artifact_review": phase_execute_artifact_review or {},
+            "tdd_evidence": phase_execute_tdd_evidence or {},
+        }
+        if artifact_review_path:
+            phase_execute_payload["artifact_review_path"] = artifact_review_path
+        if tdd_evidence_path:
+            phase_execute_payload["tdd_evidence_path"] = tdd_evidence_path
         write_json(
             session_root / "phase-execute.json",
-            {
-                "requirement_doc_path": str(requirement_doc_path),
-                "execution_plan_path": str(execution_plan_path),
-                "execution_manifest_path": str(execution_manifest_path),
-                "runtime_input_packet_path": str(runtime_input_packet_path),
-                "completion_claim_allowed": completion_claim_allowed,
-            },
+            phase_execute_payload,
         )
         write_json(
             session_root / "cleanup-receipt.json",
@@ -120,6 +183,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 "cleanup_mode": cleanup_mode,
             },
         )
+        if sidecar_artifact_review is not None:
+            write_json(session_root / "artifact-review.json", sidecar_artifact_review)
+        if sidecar_tdd_evidence is not None:
+            write_json(session_root / "tdd-evidence.json", sidecar_tdd_evidence)
         return session_root
 
     def test_runtime_delivery_acceptance_passes_for_clean_root_run(self) -> None:
@@ -128,7 +195,34 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
 
         self.assertEqual("PASS", report["summary"]["gate_result"])
         self.assertTrue(report["summary"]["completion_language_allowed"])
+        self.assertEqual("not_applicable", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
         self.assertEqual("passing", report["truth_results"]["product_acceptance_truth"]["state"])
+
+    def test_runtime_delivery_acceptance_report_covers_contract_required_fields(self) -> None:
+        contract = json.loads(
+            (REPO_ROOT / "config" / "project-delivery-acceptance-contract.json").read_text(encoding="utf-8")
+        )
+        session_root = self._build_session()
+        report = evaluate(REPO_ROOT, session_root)
+
+        reported_fields = set(report["truth_results"].keys())
+        reported_fields.update(
+            {
+                "completion_language_allowed",
+                "artifact_review_coverage",
+                "tdd_evidence_coverage",
+                "residual_risks",
+                "manual_spot_checks",
+            }
+        )
+        missing_fields = [
+            field
+            for field in contract["report_requirements"]["must_report_fields"]
+            if field not in reported_fields
+        ]
+
+        self.assertEqual([], missing_fields)
+        self.assertIn("completion_language_allowed", report["summary"])
 
     def test_runtime_delivery_acceptance_requires_manual_review_when_spot_checks_pending(self) -> None:
         session_root = self._build_session(
@@ -154,3 +248,663 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         self.assertFalse(report["summary"]["completion_language_allowed"])
         self.assertGreaterEqual(report["summary"]["forbidden_completion_hit_count"], 1)
         self.assertEqual("partial", report["truth_results"]["engineering_verification_truth"]["state"])
+
+    def test_runtime_delivery_acceptance_requires_manual_review_when_artifact_review_is_missing(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the delivered artifact directly and confirm the required controls and layout are present."
+            ]
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertFalse(report["summary"]["completion_language_allowed"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual("manual_review_required", report["truth_results"]["product_acceptance_truth"]["state"])
+        self.assertEqual(
+            [
+                "Inspect the delivered artifact directly and confirm the required controls and layout are present."
+            ],
+            report["frozen_requirement_sections"]["artifact_review_requirements"],
+        )
+
+    def test_runtime_delivery_acceptance_requires_document_baseline_coverage_when_dimensions_are_frozen(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final document artifact directly and confirm the formatting remains intact."
+            ],
+            baseline_document_quality_dimensions=[
+                "Structure Integrity",
+                "Formatting Consistency",
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "notes": "Reviewed the document artifact, but did not map frozen document baseline dimensions.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual(
+            [
+                "Structure Integrity",
+                "Formatting Consistency",
+            ],
+            report["artifact_review_coverage"]["missing_baseline_document_quality_dimensions"],
+        )
+
+    def test_runtime_delivery_acceptance_passes_when_document_baseline_coverage_is_explicit(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final document artifact directly and confirm the formatting remains intact."
+            ],
+            baseline_document_quality_dimensions=[
+                "Structure Integrity",
+                "Formatting Consistency",
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "covered_baseline_document_quality_dimensions": [
+                    "Structure Integrity",
+                    "Formatting Consistency",
+                ],
+                "notes": "Reviewed the document artifact against frozen document baseline dimensions.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertEqual("passing", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual(
+            [
+                "Structure Integrity",
+                "Formatting Consistency",
+            ],
+            report["artifact_review_coverage"]["covered_baseline_document_quality_dimensions"],
+        )
+        self.assertEqual(
+            [],
+            report["artifact_review_coverage"]["missing_baseline_document_quality_dimensions"],
+        )
+        self.assertEqual(
+            [
+                "Structure Integrity",
+                "Formatting Consistency",
+            ],
+            report["frozen_requirement_sections"]["baseline_document_quality_dimensions"],
+        )
+
+    def test_runtime_delivery_acceptance_requires_manual_review_when_code_task_tdd_evidence_is_missing(self) -> None:
+        requirements = [
+            "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+            "Record the green rerun that proves the targeted behavior passed after implementation.",
+        ]
+        session_root = self._build_session(
+            code_task_tdd_evidence_requirements=requirements,
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertFalse(report["summary"]["completion_language_allowed"])
+        self.assertEqual("manual_review_required", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual("manual_review_required", report["truth_results"]["product_acceptance_truth"]["state"])
+        self.assertEqual(
+            requirements,
+            report["frozen_requirement_sections"]["code_task_tdd_evidence_requirements"],
+        )
+
+    def test_runtime_delivery_acceptance_requires_red_and_green_phase_evidence_for_code_tasks(self) -> None:
+        requirements = [
+            "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+            "Record the green rerun that proves the targeted behavior passed after implementation.",
+        ]
+        session_root = self._build_session(
+            code_task_tdd_evidence_requirements=requirements,
+            phase_execute_tdd_evidence={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-tdd-evidence.md"
+                ],
+                "covered_code_task_tdd_evidence_requirements": requirements,
+                "green_phase_evidence_paths": [
+                    "/tmp/pytest-tdd-green.txt"
+                ],
+                "notes": "Recorded only the green phase and omitted the failing-first evidence.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual(
+            [],
+            report["tdd_evidence_coverage"]["red_phase_evidence_paths"],
+        )
+        self.assertEqual(
+            ["/tmp/pytest-tdd-green.txt"],
+            report["tdd_evidence_coverage"]["green_phase_evidence_paths"],
+        )
+
+    def test_runtime_delivery_acceptance_passes_when_code_task_tdd_evidence_is_recorded(self) -> None:
+        requirements = [
+            "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+            "Record the green rerun that proves the targeted behavior passed after implementation.",
+            "Map the changed behavior to targeted verification evidence; generic suite success alone is insufficient.",
+        ]
+        session_root = self._build_session(
+            code_task_tdd_evidence_requirements=requirements,
+            phase_execute_tdd_evidence={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-tdd-evidence.md"
+                ],
+                "red_phase_evidence_paths": [
+                    "/tmp/pytest-tdd-red.txt"
+                ],
+                "green_phase_evidence_paths": [
+                    "/tmp/pytest-tdd-green.txt"
+                ],
+                "covered_code_task_tdd_evidence_requirements": requirements,
+                "notes": "Captured red/green proof for the targeted behavior.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertTrue(report["summary"]["completion_language_allowed"])
+        self.assertEqual("passing", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual(
+            requirements,
+            report["tdd_evidence_coverage"]["covered_code_task_tdd_evidence_requirements"],
+        )
+        self.assertEqual(
+            [],
+            report["tdd_evidence_coverage"]["missing_code_task_tdd_evidence_requirements"],
+        )
+
+    def test_runtime_delivery_acceptance_requires_full_tdd_evidence_when_exception_is_recorded(self) -> None:
+        requirements = [
+            "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+        ]
+        exceptions = [
+            "A bounded hotfix exception was approved because failing-first replay would have required production-state mutation."
+        ]
+        session_root = self._build_session(
+            code_task_tdd_evidence_requirements=requirements,
+            code_task_tdd_exceptions=exceptions,
+            phase_execute_tdd_evidence={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-tdd-exception.md"
+                ],
+                "covered_code_task_tdd_exceptions": exceptions,
+                "notes": "Recorded the approved exception and bounded fallback evidence.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual(requirements, report["tdd_evidence_coverage"]["missing_code_task_tdd_evidence_requirements"])
+        self.assertEqual([], report["tdd_evidence_coverage"]["red_phase_evidence_paths"])
+        self.assertEqual([], report["tdd_evidence_coverage"]["green_phase_evidence_paths"])
+
+    def test_runtime_delivery_acceptance_passes_when_code_task_tdd_exception_and_required_evidence_are_recorded(self) -> None:
+        requirements = [
+            "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+        ]
+        exceptions = [
+            "A bounded hotfix exception was approved because failing-first replay would have required production-state mutation."
+        ]
+        session_root = self._build_session(
+            code_task_tdd_evidence_requirements=requirements,
+            code_task_tdd_exceptions=exceptions,
+            phase_execute_tdd_evidence={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-tdd-exception.md"
+                ],
+                "covered_code_task_tdd_evidence_requirements": requirements,
+                "covered_code_task_tdd_exceptions": exceptions,
+                "red_phase_evidence_paths": [
+                    "/tmp/pytest-tdd-red.txt"
+                ],
+                "green_phase_evidence_paths": [
+                    "/tmp/pytest-tdd-green.txt"
+                ],
+                "notes": "Recorded the approved exception with requirement and red/green evidence coverage.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertEqual("passing", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual(
+            exceptions,
+            report["tdd_evidence_coverage"]["covered_code_task_tdd_exceptions"],
+        )
+        self.assertEqual(
+            [],
+            report["tdd_evidence_coverage"]["missing_code_task_tdd_exceptions"],
+        )
+
+    def test_runtime_delivery_acceptance_passes_when_artifact_review_evidence_is_recorded(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final deliverable directly and confirm the primary CTA provides visible feedback."
+            ],
+            task_specific_acceptance_extensions=[
+                "The CTA should show a loading state before the success message."
+            ],
+            research_augmentation_sources=[
+                "NN/g feedback visibility heuristics"
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "covered_task_specific_acceptance_extensions": [
+                    "The CTA should show a loading state before the success message."
+                ],
+                "considered_research_augmentation_sources": [
+                    "NN/g feedback visibility heuristics"
+                ],
+                "notes": "Reviewed final artifact against frozen task-specific acceptance.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertTrue(report["summary"]["completion_language_allowed"])
+        self.assertEqual("passing", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual("passing", report["truth_results"]["product_acceptance_truth"]["state"])
+        self.assertEqual(
+            ["The CTA should show a loading state before the success message."],
+            report["frozen_requirement_sections"]["task_specific_acceptance_extensions"],
+        )
+        self.assertEqual(
+            ["NN/g feedback visibility heuristics"],
+            report["frozen_requirement_sections"]["research_augmentation_sources"],
+        )
+
+    def test_runtime_delivery_acceptance_requires_task_specific_coverage_when_extensions_are_frozen(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final deliverable directly and confirm the primary CTA provides visible feedback."
+            ],
+            task_specific_acceptance_extensions=[
+                "The CTA should show a loading state before the success message."
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "notes": "Reviewed the artifact, but did not record extension coverage.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual(
+            ["The CTA should show a loading state before the success message."],
+            report["artifact_review_coverage"]["missing_task_specific_acceptance_extensions"],
+        )
+
+    def test_runtime_delivery_acceptance_requires_ui_baseline_coverage_when_dimensions_are_frozen(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final deliverable directly and confirm the primary CTA provides visible feedback."
+            ],
+            baseline_ui_quality_dimensions=[
+                "Structure and visual hierarchy",
+                "Interaction feedback and affordances",
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "notes": "Reviewed the artifact, but did not map frozen UI baseline dimensions.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual(
+            [
+                "Structure and visual hierarchy",
+                "Interaction feedback and affordances",
+            ],
+            report["artifact_review_coverage"]["missing_baseline_ui_quality_dimensions"],
+        )
+
+    def test_runtime_delivery_acceptance_passes_when_ui_baseline_coverage_is_explicit(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final deliverable directly and confirm the primary CTA provides visible feedback."
+            ],
+            baseline_ui_quality_dimensions=[
+                "Structure and visual hierarchy",
+                "Interaction feedback and affordances",
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "covered_baseline_ui_quality_dimensions": [
+                    "Structure and visual hierarchy",
+                    "Interaction feedback and affordances",
+                ],
+                "notes": "Reviewed the artifact against frozen UI baseline dimensions.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertTrue(report["summary"]["completion_language_allowed"])
+        self.assertEqual("passing", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual(
+            [
+                "Structure and visual hierarchy",
+                "Interaction feedback and affordances",
+            ],
+            report["artifact_review_coverage"]["covered_baseline_ui_quality_dimensions"],
+        )
+        self.assertEqual(
+            [],
+            report["artifact_review_coverage"]["missing_baseline_ui_quality_dimensions"],
+        )
+        self.assertEqual(
+            [
+                "Structure and visual hierarchy",
+                "Interaction feedback and affordances",
+            ],
+            report["frozen_requirement_sections"]["baseline_ui_quality_dimensions"],
+        )
+
+    def test_runtime_delivery_acceptance_requires_research_source_consideration_when_sources_are_frozen(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final deliverable directly and confirm the primary CTA provides visible feedback."
+            ],
+            research_augmentation_sources=[
+                "NN/g feedback visibility heuristics"
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "notes": "Reviewed the artifact, but did not record research-source consideration.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual(
+            ["NN/g feedback visibility heuristics"],
+            report["artifact_review_coverage"]["missing_research_augmentation_sources"],
+        )
+
+    def test_runtime_delivery_acceptance_reports_residual_risks_for_unresolved_ui_task_and_research_reviews(self) -> None:
+        session_root = self._build_session(
+            baseline_ui_quality_dimensions=[
+                "Structure and visual hierarchy",
+                "Interaction feedback and affordances",
+            ],
+            task_specific_acceptance_extensions=[
+                "The CTA should show a loading state before the success message."
+            ],
+            research_augmentation_sources=[
+                "NN/g feedback visibility heuristics"
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "notes": "Reviewed artifact, but did not map frozen review dimensions.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertIn("Frozen baseline UI quality dimensions remain unresolved.", report["residual_risks"])
+        self.assertIn("Frozen task-specific acceptance extensions remain unresolved.", report["residual_risks"])
+        self.assertIn("Frozen research augmentation sources remain unresolved.", report["residual_risks"])
+
+    def test_runtime_delivery_acceptance_accepts_sidecar_artifact_review_evidence(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final document artifact directly and confirm the formatting remains intact."
+            ],
+            sidecar_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-sidecar-artifact-review.md"
+                ],
+                "notes": "Sidecar review confirmed the final artifact formatting remained intact.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertTrue(report["summary"]["completion_language_allowed"])
+        self.assertEqual("passing", report["truth_results"]["artifact_review_truth"]["state"])
+
+    def test_runtime_delivery_acceptance_rejects_explicit_artifact_review_paths_outside_session_root(self) -> None:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
+            json.dump(
+                {
+                    "status": "passing",
+                    "evidence_paths": ["/tmp/pytest-explicit-artifact-review.md"],
+                },
+                handle,
+            )
+            explicit_path = handle.name
+        self.addCleanup(lambda: Path(explicit_path).unlink(missing_ok=True))
+
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final document artifact directly and confirm the formatting remains intact."
+            ],
+            artifact_review_path=explicit_path,
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertNotIn(explicit_path, report["truth_results"]["artifact_review_truth"]["evidence"])
+
+    def test_runtime_delivery_acceptance_requires_requirements_and_red_green_when_exception_is_recorded(self) -> None:
+        requirements = [
+            "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+        ]
+        exceptions = [
+            "A bounded hotfix exception was approved because failing-first replay would have required production-state mutation."
+        ]
+        session_root = self._build_session(
+            code_task_tdd_evidence_requirements=requirements,
+            code_task_tdd_exceptions=exceptions,
+            phase_execute_tdd_evidence={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-tdd-exception.md"
+                ],
+                "covered_code_task_tdd_exceptions": exceptions,
+                "notes": "Recorded the approved exception but skipped the remaining TDD proof obligations.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual(requirements, report["tdd_evidence_coverage"]["missing_code_task_tdd_evidence_requirements"])
+        self.assertEqual([], report["tdd_evidence_coverage"]["red_phase_evidence_paths"])
+        self.assertEqual([], report["tdd_evidence_coverage"]["green_phase_evidence_paths"])
+
+    def test_runtime_delivery_acceptance_surfaces_specific_residual_risks_for_unresolved_artifact_review_sources(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final deliverable directly and confirm the primary CTA provides visible feedback."
+            ],
+            baseline_ui_quality_dimensions=[
+                "Structure and visual hierarchy",
+            ],
+            task_specific_acceptance_extensions=[
+                "The CTA should show a loading state before the success message."
+            ],
+            research_augmentation_sources=[
+                "NN/g feedback visibility heuristics",
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "notes": "Reviewed the artifact, but did not record the frozen source coverage.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertIn("Frozen baseline UI quality dimensions remain unresolved.", report["residual_risks"])
+        self.assertIn("Frozen task-specific acceptance extensions remain unresolved.", report["residual_risks"])
+        self.assertIn("Frozen research augmentation sources remain unresolved.", report["residual_risks"])
+
+    def test_runtime_delivery_acceptance_rejects_explicit_payload_paths_outside_session_root(self) -> None:
+        tdd_requirements = [
+            "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+        ]
+        with tempfile.TemporaryDirectory() as tempdir:
+            outside_root = Path(tempdir)
+            artifact_payload_path = outside_root / "outside-artifact-review.json"
+            tdd_payload_path = outside_root / "outside-tdd-evidence.json"
+            write_json(
+                artifact_payload_path,
+                {
+                    "status": "passing",
+                    "evidence_paths": ["/tmp/outside-artifact-review.md"],
+                },
+            )
+            write_json(
+                tdd_payload_path,
+                {
+                    "status": "passing",
+                    "evidence_paths": ["/tmp/outside-tdd-evidence.md"],
+                    "covered_code_task_tdd_evidence_requirements": tdd_requirements,
+                    "red_phase_evidence_paths": ["/tmp/outside-tdd-red.txt"],
+                    "green_phase_evidence_paths": ["/tmp/outside-tdd-green.txt"],
+                },
+            )
+            session_root = self._build_session(
+                artifact_review_requirements=[
+                    "Inspect the final artifact directly and confirm required controls are present."
+                ],
+                code_task_tdd_evidence_requirements=tdd_requirements,
+                artifact_review_path=str(artifact_payload_path),
+                tdd_evidence_path=str(tdd_payload_path),
+            )
+            self.assertTrue(artifact_payload_path.exists())
+            self.assertTrue(tdd_payload_path.exists())
+
+            report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("manual_review_required", report["truth_results"]["artifact_review_truth"]["state"])
+        self.assertEqual("manual_review_required", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual("", report["execution_context"]["artifact_review_source_path"])
+        self.assertEqual("", report["execution_context"]["tdd_evidence_source_path"])
+
+    def test_runtime_delivery_acceptance_report_surfaces_frozen_sections_and_coverage(self) -> None:
+        session_root = self._build_session(
+            artifact_review_requirements=[
+                "Inspect the final deliverable directly and confirm the primary CTA provides visible feedback."
+            ],
+            code_task_tdd_evidence_requirements=[
+                "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+                "Record the green rerun that proves the targeted behavior passed after implementation.",
+            ],
+            baseline_document_quality_dimensions=[
+                "Structure Integrity",
+                "Formatting Consistency",
+            ],
+            task_specific_acceptance_extensions=[
+                "The CTA should show a loading state before the success message."
+            ],
+            baseline_ui_quality_dimensions=[
+                "Structure and visual hierarchy",
+                "Interaction feedback and affordances",
+            ],
+            research_augmentation_sources=[
+                "NN/g feedback visibility heuristics"
+            ],
+            phase_execute_artifact_review={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-artifact-review-notes.md"
+                ],
+                "covered_task_specific_acceptance_extensions": [
+                    "The CTA should show a loading state before the success message."
+                ],
+                "covered_baseline_document_quality_dimensions": [
+                    "Structure Integrity",
+                    "Formatting Consistency",
+                ],
+                "covered_baseline_ui_quality_dimensions": [
+                    "Structure and visual hierarchy",
+                    "Interaction feedback and affordances",
+                ],
+                "considered_research_augmentation_sources": [
+                    "NN/g feedback visibility heuristics"
+                ],
+                "notes": "Reviewed final artifact against frozen task-specific acceptance.",
+            },
+            phase_execute_tdd_evidence={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-tdd-evidence.md"
+                ],
+                "red_phase_evidence_paths": [
+                    "/tmp/pytest-tdd-red.txt"
+                ],
+                "green_phase_evidence_paths": [
+                    "/tmp/pytest-tdd-green.txt"
+                ],
+                "covered_code_task_tdd_evidence_requirements": [
+                    "Record failing-first evidence for the changed behavior before implementation or defect correction.",
+                    "Record the green rerun that proves the targeted behavior passed after implementation.",
+                ],
+                "notes": "Captured red/green TDD evidence for the code change.",
+            },
+        )
+        artifact = evaluate(REPO_ROOT, session_root)
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            output_root = Path(tempdir)
+            write_artifacts(artifact, output_root)
+            md_text = (output_root / "delivery-acceptance-report.md").read_text(encoding="utf-8")
+            self.assertIn("Frozen Baseline Document Quality Dimensions", md_text)
+            self.assertIn("Frozen Code Task TDD Evidence Requirements", md_text)
+            self.assertIn("Frozen Baseline UI Quality Dimensions", md_text)
+            self.assertIn("Frozen Task-Specific Acceptance Extensions", md_text)
+            self.assertIn("Frozen Research Augmentation Sources", md_text)
+            self.assertIn("Code Task TDD Evidence Coverage", md_text)
+            self.assertIn("Artifact Review Coverage", md_text)
+            self.assertIn("Covered baseline document quality dimension: Structure Integrity", md_text)
+            self.assertIn("Covered code-task TDD evidence requirement: Record failing-first evidence for the changed behavior before implementation or defect correction.", md_text)
+            self.assertIn("Covered baseline UI quality dimension: Structure and visual hierarchy", md_text)
+            self.assertIn("NN/g feedback visibility heuristics", md_text)

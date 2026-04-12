@@ -27,8 +27,69 @@ function Test-VibeTaskNeedsManualSpotChecks {
         [AllowEmptyString()] [string]$Deliverable = ''
     )
 
+    return Test-VibeTaskNeedsUiBaseline -Task $Task -Deliverable $Deliverable
+}
+
+function Test-VibeTaskNeedsDocumentArtifactBaseline {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
     $text = ('{0} {1}' -f $Task, $Deliverable).ToLowerInvariant()
-    return $text -match 'ui|ux|frontend|browser|page|screen|openclaw|cursor|windsurf|codex|用户|界面|交互|可视化|体验'
+    $docOnlySignals = 'without changing (application )?code|without code changes|document-only'
+    $documentArtifactSignals = 'readme|documentation|docx|pdf|pptx|headings|spacing|formatting|markdown|slide|slides|presentation|deck|\bdocument\b|\bdocs\b'
+    $codeImplementationSignals = 'failing test|stack trace|debug|bug|fix|refactor|implement|build|develop|production code|source code|unit test|integration test|script|function|class|parser|exporter|renderer|pipeline|service|module|cli'
+
+    if ($text -match $docOnlySignals) {
+        return $true
+    }
+
+    if (-not ($text -match $documentArtifactSignals)) {
+        return $false
+    }
+
+    return -not ($text -match $codeImplementationSignals)
+}
+
+function Test-VibeTaskNeedsUiBaseline {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    if (Test-VibeTaskNeedsDocumentArtifactBaseline -Task $Task -Deliverable $Deliverable) {
+        return $false
+    }
+
+    $text = ('{0} {1}' -f $Task, $Deliverable).ToLowerInvariant()
+    $uiSignals = '(^|\b)(ui|ux|frontend|browser|screen|visual|interaction|responsive|layout|component|page|dashboard|prototype|wireframe)(\b|$)|界面|交互|可视化|体验|前端|网页'
+    return $text -match $uiSignals
+}
+
+function Test-VibeTaskNeedsCodeTaskTddEvidence {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    $text = ('{0} {1}' -f $Task, $Deliverable).ToLowerInvariant()
+    $codeImplementationSignals = 'failing test|stack trace|debug|bug|fix|refactor|implement|build|develop|production code|source code|unit test|integration test|script|function|class|parser|exporter|renderer|pipeline|service|module|cli'
+
+    if ((Test-VibeTaskNeedsDocumentArtifactBaseline -Task $Task -Deliverable $Deliverable) -or ($text -match 'image|logo|illustration|diagram')) {
+        return $false
+    }
+
+    return $text -match $codeImplementationSignals
+}
+
+function Get-VibeDefaultCodeTaskTddEvidenceRequirements {
+    return @(
+        'Record failing-first evidence for the changed behavior before implementation or defect correction.',
+        'Record the green rerun that proves the targeted behavior passed after implementation.',
+        'Map the changed behavior to targeted verification evidence; generic suite success alone is insufficient.',
+        'If automated failing-first evidence is not appropriate, freeze and honor an explicit code-task TDD exception instead of silently skipping the requirement.'
+    )
 }
 
 function Get-VibeProductAcceptanceCriteria {
@@ -73,6 +134,36 @@ function Get-VibeCompletionLanguagePolicy {
     )
 }
 
+function Get-VibeDefaultBaselineUiQualityDimensions {
+    return @(
+        'Structure Completeness',
+        'Interaction Feedback',
+        'State Coverage',
+        'Design System Consistency',
+        'Responsive Stability',
+        'Spec Fidelity'
+    )
+}
+
+function Get-VibeDefaultBaselineDocumentQualityDimensions {
+    return @(
+        'Structure Integrity',
+        'Formatting Consistency',
+        'Content Completeness',
+        'Link and Reference Integrity',
+        'Layout and Asset Stability',
+        'Output Fidelity'
+    )
+}
+
+function Get-VibeDefaultDocumentArtifactReviewRequirements {
+    return @(
+        'Review the touched document artifact directly against each frozen baseline document quality dimension.',
+        'Open, render, or export the touched document artifact at least once and confirm the touched scope remains intact.',
+        'For formatting-only or layout-only work, confirm content fidelity explicitly before full completion wording is allowed.'
+    )
+}
+
 function Get-VibeDeliveryTruthContractLines {
     return @(
         'Governance truth: requirement, plan, execution, and cleanup artifacts remain traceable and authoritative.',
@@ -80,6 +171,26 @@ function Get-VibeDeliveryTruthContractLines {
         'Workflow completion truth: planned units, delegated lanes, and specialist outputs reconcile back into the governed plan.',
         'Product acceptance truth: observable deliverable behavior satisfies frozen acceptance criteria before full completion language is allowed.'
     )
+}
+
+function Get-VibeOptionalFrozenItems {
+    param(
+        [Parameter(Mandatory)] [object]$IntentContract,
+        [Parameter(Mandatory)] [string[]]$PropertyNames
+    )
+
+    $items = @()
+    foreach ($propertyName in @($PropertyNames)) {
+        if ($null -ne $IntentContract -and $IntentContract.PSObject.Properties.Name -contains $propertyName) {
+            foreach ($item in @($IntentContract.$propertyName)) {
+                if (-not [string]::IsNullOrWhiteSpace([string]$item)) {
+                    $items += [string]$item
+                }
+            }
+        }
+    }
+
+    return @($items | Select-Object -Unique)
 }
 
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath
@@ -118,6 +229,25 @@ $productAcceptanceCriteria = Get-VibeProductAcceptanceCriteria -IntentContract $
 $manualSpotChecks = Get-VibeManualSpotChecks -Task $Task -IntentContract $intentContract
 $completionLanguagePolicy = Get-VibeCompletionLanguagePolicy
 $deliveryTruthContract = Get-VibeDeliveryTruthContractLines
+$artifactReviewRequirements = Get-VibeOptionalFrozenItems -IntentContract $intentContract -PropertyNames @('artifact_review_requirements', 'artifactReviewRequirements')
+$codeTaskTddEvidenceRequirements = Get-VibeOptionalFrozenItems -IntentContract $intentContract -PropertyNames @('code_task_tdd_evidence_requirements', 'codeTaskTddEvidenceRequirements')
+$codeTaskTddExceptions = Get-VibeOptionalFrozenItems -IntentContract $intentContract -PropertyNames @('code_task_tdd_exceptions', 'codeTaskTddExceptions')
+$taskSpecificAcceptanceExtensions = Get-VibeOptionalFrozenItems -IntentContract $intentContract -PropertyNames @('task_specific_acceptance_extensions', 'taskSpecificAcceptanceExtensions')
+$researchAugmentationSources = Get-VibeOptionalFrozenItems -IntentContract $intentContract -PropertyNames @('research_augmentation_sources', 'researchAugmentationSources')
+$baselineDocumentQualityDimensions = Get-VibeOptionalFrozenItems -IntentContract $intentContract -PropertyNames @('baseline_document_quality_dimensions', 'baselineDocumentQualityDimensions')
+$baselineUiQualityDimensions = Get-VibeOptionalFrozenItems -IntentContract $intentContract -PropertyNames @('baseline_ui_quality_dimensions', 'baselineUiQualityDimensions')
+if (@($codeTaskTddEvidenceRequirements).Count -eq 0 -and (Test-VibeTaskNeedsCodeTaskTddEvidence -Task $Task -Deliverable ([string]$intentContract.deliverable))) {
+    $codeTaskTddEvidenceRequirements = Get-VibeDefaultCodeTaskTddEvidenceRequirements
+}
+if (@($baselineDocumentQualityDimensions).Count -eq 0 -and (Test-VibeTaskNeedsDocumentArtifactBaseline -Task $Task -Deliverable ([string]$intentContract.deliverable))) {
+    $baselineDocumentQualityDimensions = Get-VibeDefaultBaselineDocumentQualityDimensions
+}
+if (@($artifactReviewRequirements).Count -eq 0 -and @($baselineDocumentQualityDimensions).Count -gt 0) {
+    $artifactReviewRequirements = Get-VibeDefaultDocumentArtifactReviewRequirements
+}
+if (@($baselineUiQualityDimensions).Count -eq 0 -and (Test-VibeTaskNeedsUiBaseline -Task $Task -Deliverable ([string]$intentContract.deliverable))) {
+    $baselineUiQualityDimensions = Get-VibeDefaultBaselineUiQualityDimensions
+}
 $runtimeInputPacket = if (-not [string]::IsNullOrWhiteSpace($RuntimeInputPacketPath) -and (Test-Path -LiteralPath $RuntimeInputPacketPath)) {
     Get-Content -LiteralPath $RuntimeInputPacketPath -Raw -Encoding UTF8 | ConvertFrom-Json
 } else {
@@ -168,6 +298,69 @@ $lines += @(
     '## Delivery Truth Contract'
 )
 $lines += @($deliveryTruthContract | ForEach-Object { "- $_" })
+$lines += @(
+    '',
+    '## Artifact Review Requirements'
+)
+if (@($artifactReviewRequirements).Count -gt 0) {
+    $lines += @($artifactReviewRequirements | ForEach-Object { "- $_" })
+} else {
+    $lines += 'No additional artifact review requirements were frozen for this run.'
+}
+$lines += @(
+    '',
+    '## Code Task TDD Evidence Requirements'
+)
+if (@($codeTaskTddEvidenceRequirements).Count -gt 0) {
+    $lines += @($codeTaskTddEvidenceRequirements | ForEach-Object { "- $_" })
+} else {
+    $lines += 'No code-task TDD evidence requirements were frozen for this run.'
+}
+$lines += @(
+    '',
+    '## Code Task TDD Exceptions'
+)
+if (@($codeTaskTddExceptions).Count -gt 0) {
+    $lines += @($codeTaskTddExceptions | ForEach-Object { "- $_" })
+} else {
+    $lines += 'No code-task TDD exceptions were frozen for this run.'
+}
+$lines += @(
+    '',
+    '## Baseline Document Quality Dimensions'
+)
+if (@($baselineDocumentQualityDimensions).Count -gt 0) {
+    $lines += @($baselineDocumentQualityDimensions | ForEach-Object { "- $_" })
+} else {
+    $lines += 'No baseline document quality dimensions were frozen for this run.'
+}
+$lines += @(
+    '',
+    '## Baseline UI Quality Dimensions'
+)
+if (@($baselineUiQualityDimensions).Count -gt 0) {
+    $lines += @($baselineUiQualityDimensions | ForEach-Object { "- $_" })
+} else {
+    $lines += 'No baseline UI quality dimensions were frozen for this run.'
+}
+$lines += @(
+    '',
+    '## Task-Specific Acceptance Extensions'
+)
+if (@($taskSpecificAcceptanceExtensions).Count -gt 0) {
+    $lines += @($taskSpecificAcceptanceExtensions | ForEach-Object { "- $_" })
+} else {
+    $lines += 'No additional task-specific acceptance extensions were frozen for this run.'
+}
+$lines += @(
+    '',
+    '## Research Augmentation Sources'
+)
+if (@($researchAugmentationSources).Count -gt 0) {
+    $lines += @($researchAugmentationSources | ForEach-Object { "- $_" })
+} else {
+    $lines += 'No research augmentation sources were frozen for this run.'
+}
 $lines += @(
     '',
     '> Fill the anti-drift fields once here. Downstream governed plan and completion surfaces should reuse them rather than restate them.',
@@ -309,6 +502,15 @@ $receipt = [pscustomobject]@{
         $memoryContextPack.PSObject.Properties.Name -contains 'selected_capsules' -and
         $null -ne $memoryContextPack.selected_capsules
     ) { @($memoryContextPack.selected_capsules).Count } else { 0 }
+    frozen_requirement_sections = [ordered]@{
+        artifact_review_requirements = @($artifactReviewRequirements)
+        code_task_tdd_evidence_requirements = @($codeTaskTddEvidenceRequirements)
+        code_task_tdd_exceptions = @($codeTaskTddExceptions)
+        baseline_document_quality_dimensions = @($baselineDocumentQualityDimensions)
+        baseline_ui_quality_dimensions = @($baselineUiQualityDimensions)
+        task_specific_acceptance_extensions = @($taskSpecificAcceptanceExtensions)
+        research_augmentation_sources = @($researchAugmentationSources)
+    }
     generated_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 }
 $receiptPath = Join-Path $sessionRoot 'requirement-doc-receipt.json'
