@@ -397,46 +397,79 @@ $deliveryAcceptanceReport = if ($deliveryAcceptanceReportPath -and (Test-Path -L
     $null
 }
 
-$observedFailurePatterns = New-VibeObservedFailurePatternsArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -ExecutionManifest $(if ($execute) { Read-VibeJsonArtifactIfExists -Path ([string]$execute.execution_manifest_path) } else { $null }) `
-    -CleanupReceipt $(if ($cleanup) { Read-VibeJsonArtifactIfExists -Path ([string]$cleanup.receipt_path) } else { $null }) `
-    -DeliveryAcceptanceReport $deliveryAcceptanceReport
 $observedFailurePatternsPath = Join-Path $skeleton.session_root 'failure-patterns.json'
-Write-VibeJsonArtifact -Path $observedFailurePatternsPath -Value $observedFailurePatterns
-
-$observedPitfallEvents = New-VibeObservedPitfallEventsArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -RuntimeInputPacket (Read-VibeJsonArtifactIfExists -Path ([string]$runtimeInput.packet_path)) `
-    -CleanupReceipt $(if ($cleanup) { Read-VibeJsonArtifactIfExists -Path ([string]$cleanup.receipt_path) } else { $null }) `
-    -DeliveryAcceptanceReport $deliveryAcceptanceReport
 $observedPitfallEventsPath = Join-Path $skeleton.session_root 'pitfall-events.json'
-Write-VibeJsonArtifact -Path $observedPitfallEventsPath -Value $observedPitfallEvents
-
 $runtimeInputPacketRead = Read-VibeJsonArtifactIfExists -Path ([string]$runtimeInput.packet_path)
 $executionManifestRead = if ($execute) { Read-VibeJsonArtifactIfExists -Path ([string]$execute.execution_manifest_path) } else { $null }
 $executionTopologyRead = if ($execute) { Read-VibeJsonArtifactIfExists -Path ([string]$execute.execution_topology_path) } else { $null }
 $stageLineageRead = Read-VibeJsonArtifactIfExists -Path ([string]$stageLineage.path)
-$atomicSkillCallChain = New-VibeAtomicSkillCallChainArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -RuntimeInputPacket $runtimeInputPacketRead `
-    -ExecutionTopology $executionTopologyRead `
-    -ExecutionManifest $executionManifestRead `
-    -StageLineage $stageLineageRead
 $atomicSkillCallChainPath = Join-Path $skeleton.session_root 'atomic-skill-call-chain.json'
-Write-VibeJsonArtifact -Path $atomicSkillCallChainPath -Value $atomicSkillCallChain
-
-$warningCards = New-VibeWarningCardsArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -ObservedFailurePatterns $observedFailurePatterns `
-    -ObservedPitfallEvents $observedPitfallEvents `
-    -DeliveryAcceptanceReport $deliveryAcceptanceReport
 $warningCardsPath = Join-Path $skeleton.session_root 'warning-cards.json'
-Write-VibeJsonArtifact -Path $warningCardsPath -Value $warningCards
+$preflightChecklistPath = Join-Path $skeleton.session_root 'preflight-checklist.json'
+$remediationNotesPath = Join-Path $skeleton.session_root 'remediation-notes.json'
+$candidateCompositeSkillDraftPath = Join-Path $skeleton.session_root 'candidate-composite-skill-draft.json'
+$thresholdPolicySuggestionPath = Join-Path $skeleton.session_root 'threshold-policy-suggestion.json'
+$proposalLayerPath = Join-Path $skeleton.session_root 'proposal-layer.json'
+$proposalLayerMarkdownPath = Join-Path $skeleton.session_root 'proposal-layer.md'
+$applicationReadinessReportPath = Join-Path $skeleton.session_root 'application-readiness-report.json'
+$applicationReadinessMarkdownPath = Join-Path $skeleton.session_root 'application-readiness-report.md'
+
+$governedEvolutionAllowedArtifacts = Resolve-VibeGovernedEvolutionArtifactAllowList `
+    -Runtime $runtime `
+    -RequestedStageStop ([string]$terminalStage)
+
+$observedFailurePatterns = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'failure-patterns.json') {
+    $observedFailurePatterns = New-VibeObservedFailurePatternsArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -ExecutionManifest $executionManifestRead `
+        -CleanupReceipt $(if ($cleanup) { Read-VibeJsonArtifactIfExists -Path ([string]$cleanup.receipt_path) } else { $null }) `
+        -DeliveryAcceptanceReport $deliveryAcceptanceReport
+    Write-VibeJsonArtifact -Path $observedFailurePatternsPath -Value $observedFailurePatterns
+}
+
+$observedPitfallEvents = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'pitfall-events.json') {
+    $observedPitfallEvents = New-VibeObservedPitfallEventsArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -RuntimeInputPacket $runtimeInputPacketRead `
+        -CleanupReceipt $(if ($cleanup) { Read-VibeJsonArtifactIfExists -Path ([string]$cleanup.receipt_path) } else { $null }) `
+        -DeliveryAcceptanceReport $deliveryAcceptanceReport
+    Write-VibeJsonArtifact -Path $observedPitfallEventsPath -Value $observedPitfallEvents
+}
+
+$atomicSkillCallChain = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'atomic-skill-call-chain.json') {
+    $atomicSkillCallChain = New-VibeAtomicSkillCallChainArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -RuntimeInputPacket $runtimeInputPacketRead `
+        -ExecutionTopology $executionTopologyRead `
+        -ExecutionManifest $executionManifestRead `
+        -StageLineage $stageLineageRead
+    Write-VibeJsonArtifact -Path $atomicSkillCallChainPath -Value $atomicSkillCallChain
+}
+
+$warningCards = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'warning-cards.json') {
+    $warningCards = New-VibeWarningCardsArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -ObservedFailurePatterns $observedFailurePatterns `
+        -ObservedPitfallEvents $observedPitfallEvents `
+        -DeliveryAcceptanceReport $deliveryAcceptanceReport
+    Write-VibeJsonArtifact -Path $warningCardsPath -Value $warningCards
+}
 
 $runtimeSummaryDraft = New-VibeRuntimeSummaryProjection `
     -RunId $RunId `
@@ -453,90 +486,116 @@ $runtimeSummaryDraft = New-VibeRuntimeSummaryProjection `
     -MemoryActivationReport $(if ($memoryActivation) { $memoryActivation.report } else { $null }) `
     -DeliveryAcceptanceReport $deliveryAcceptanceReport
 
-$preflightChecklist = New-VibePreflightChecklistArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -ObservedFailurePatterns $observedFailurePatterns `
-    -ObservedPitfallEvents $observedPitfallEvents `
-    -RuntimeSummary $runtimeSummaryDraft
-$preflightChecklistPath = Join-Path $skeleton.session_root 'preflight-checklist.json'
-Write-VibeJsonArtifact -Path $preflightChecklistPath -Value $preflightChecklist
+$preflightChecklist = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'preflight-checklist.json') {
+    $preflightChecklist = New-VibePreflightChecklistArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -ObservedFailurePatterns $observedFailurePatterns `
+        -ObservedPitfallEvents $observedPitfallEvents `
+        -RuntimeSummary $runtimeSummaryDraft
+    Write-VibeJsonArtifact -Path $preflightChecklistPath -Value $preflightChecklist
+}
 
-$remediationNotes = New-VibeRemediationNotesArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -ObservedFailurePatterns $observedFailurePatterns `
-    -ObservedPitfallEvents $observedPitfallEvents `
-    -AtomicSkillCallChain $atomicSkillCallChain
-$remediationNotesPath = Join-Path $skeleton.session_root 'remediation-notes.json'
-Write-VibeJsonArtifact -Path $remediationNotesPath -Value $remediationNotes
+$remediationNotes = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'remediation-notes.json') {
+    $remediationNotes = New-VibeRemediationNotesArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -ObservedFailurePatterns $observedFailurePatterns `
+        -ObservedPitfallEvents $observedPitfallEvents `
+        -AtomicSkillCallChain $atomicSkillCallChain
+    Write-VibeJsonArtifact -Path $remediationNotesPath -Value $remediationNotes
+}
 
-$candidateCompositeSkillDraft = New-VibeCandidateCompositeSkillDraftArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -AtomicSkillCallChain $atomicSkillCallChain `
-    -ObservedFailurePatterns $observedFailurePatterns `
-    -ObservedPitfallEvents $observedPitfallEvents
-$candidateCompositeSkillDraftPath = Join-Path $skeleton.session_root 'candidate-composite-skill-draft.json'
-Write-VibeJsonArtifact -Path $candidateCompositeSkillDraftPath -Value $candidateCompositeSkillDraft
+$candidateCompositeSkillDraft = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'candidate-composite-skill-draft.json') {
+    $candidateCompositeSkillDraft = New-VibeCandidateCompositeSkillDraftArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -AtomicSkillCallChain $atomicSkillCallChain `
+        -ObservedFailurePatterns $observedFailurePatterns `
+        -ObservedPitfallEvents $observedPitfallEvents
+    Write-VibeJsonArtifact -Path $candidateCompositeSkillDraftPath -Value $candidateCompositeSkillDraft
+}
 
-$thresholdPolicySuggestion = New-VibeThresholdPolicySuggestionArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -ObservedFailurePatterns $observedFailurePatterns `
-    -ObservedPitfallEvents $observedPitfallEvents `
-    -RuntimeInputPacket $runtimeInputPacketRead `
-    -RuntimeSummary $runtimeSummaryDraft
-$thresholdPolicySuggestionPath = Join-Path $skeleton.session_root 'threshold-policy-suggestion.json'
-Write-VibeJsonArtifact -Path $thresholdPolicySuggestionPath -Value $thresholdPolicySuggestion
+$thresholdPolicySuggestion = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'threshold-policy-suggestion.json') {
+    $thresholdPolicySuggestion = New-VibeThresholdPolicySuggestionArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -ObservedFailurePatterns $observedFailurePatterns `
+        -ObservedPitfallEvents $observedPitfallEvents `
+        -RuntimeInputPacket $runtimeInputPacketRead `
+        -RuntimeSummary $runtimeSummaryDraft
+    Write-VibeJsonArtifact -Path $thresholdPolicySuggestionPath -Value $thresholdPolicySuggestion
+}
 
-$proposalLayer = New-VibeProposalLayerArtifact `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -ObservedFailurePatterns $observedFailurePatterns `
-    -ObservedPitfallEvents $observedPitfallEvents `
-    -AtomicSkillCallChain $atomicSkillCallChain `
-    -WarningCardsArtifact $warningCards `
-    -PreflightChecklistArtifact $preflightChecklist `
-    -WarningCardsPath $warningCardsPath `
-    -PreflightChecklistPath $preflightChecklistPath `
-    -RemediationNotesPath $remediationNotesPath `
-    -CandidateCompositeSkillDraftPath $candidateCompositeSkillDraftPath `
-    -ThresholdPolicySuggestionPath $thresholdPolicySuggestionPath
-$proposalLayerPath = Join-Path $skeleton.session_root 'proposal-layer.json'
-Write-VibeJsonArtifact -Path $proposalLayerPath -Value $proposalLayer
+$proposalLayer = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'proposal-layer.json') {
+    $proposalLayer = New-VibeProposalLayerArtifact `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
+        -Runtime $runtime `
+        -RequestedStageStop ([string]$terminalStage) `
+        -ObservedFailurePatterns $observedFailurePatterns `
+        -ObservedPitfallEvents $observedPitfallEvents `
+        -AtomicSkillCallChain $atomicSkillCallChain `
+        -WarningCardsArtifact $warningCards `
+        -PreflightChecklistArtifact $preflightChecklist `
+        -WarningCardsPath $(if ($warningCards) { $warningCardsPath } else { '' }) `
+        -PreflightChecklistPath $(if ($preflightChecklist) { $preflightChecklistPath } else { '' }) `
+        -RemediationNotesPath $(if ($remediationNotes) { $remediationNotesPath } else { '' }) `
+        -CandidateCompositeSkillDraftPath $(if ($candidateCompositeSkillDraft) { $candidateCompositeSkillDraftPath } else { '' }) `
+        -ThresholdPolicySuggestionPath $(if ($thresholdPolicySuggestion) { $thresholdPolicySuggestionPath } else { '' })
+    Write-VibeJsonArtifact -Path $proposalLayerPath -Value $proposalLayer
+}
 
-$proposalLayerMarkdownPath = Join-Path $skeleton.session_root 'proposal-layer.md'
-Write-VibeMarkdownArtifact `
-    -Path $proposalLayerMarkdownPath `
-    -Lines (New-VibeProposalLayerMarkdownLines `
+if ($proposalLayer -and (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'proposal-layer.md')) {
+    Write-VibeMarkdownArtifact `
+        -Path $proposalLayerMarkdownPath `
+        -Lines (New-VibeProposalLayerMarkdownLines `
+            -Runtime $runtime `
+            -RequestedStageStop ([string]$terminalStage) `
+            -ProposalLayerArtifact $proposalLayer `
+            -WarningCardsArtifact $warningCards `
+            -PreflightChecklistArtifact $preflightChecklist)
+}
+
+$applicationReadinessReport = $null
+if (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'application-readiness-report.json') {
+    $applicationReadinessReport = New-VibeApplicationReadinessReport `
+        -RunId $RunId `
+        -SessionRoot ([string]$skeleton.session_root) `
         -ProposalLayerArtifact $proposalLayer `
         -WarningCardsArtifact $warningCards `
-        -PreflightChecklistArtifact $preflightChecklist)
+        -PreflightChecklistArtifact $preflightChecklist `
+        -RemediationNotesArtifact $remediationNotes `
+        -CandidateCompositeSkillDraftArtifact $candidateCompositeSkillDraft `
+        -ThresholdPolicySuggestionArtifact $thresholdPolicySuggestion `
+        -ProposalLayerPath $(if ($proposalLayer) { $proposalLayerPath } else { '' }) `
+        -WarningCardsPath $(if ($warningCards) { $warningCardsPath } else { '' }) `
+        -PreflightChecklistPath $(if ($preflightChecklist) { $preflightChecklistPath } else { '' }) `
+        -RemediationNotesPath $(if ($remediationNotes) { $remediationNotesPath } else { '' }) `
+        -CandidateCompositeSkillDraftPath $(if ($candidateCompositeSkillDraft) { $candidateCompositeSkillDraftPath } else { '' }) `
+        -ThresholdPolicySuggestionPath $(if ($thresholdPolicySuggestion) { $thresholdPolicySuggestionPath } else { '' })
+    Write-VibeJsonArtifact -Path $applicationReadinessReportPath -Value $applicationReadinessReport
+}
 
-$applicationReadinessReport = New-VibeApplicationReadinessReport `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -ProposalLayerArtifact $proposalLayer `
-    -WarningCardsArtifact $warningCards `
-    -PreflightChecklistArtifact $preflightChecklist `
-    -RemediationNotesArtifact $remediationNotes `
-    -CandidateCompositeSkillDraftArtifact $candidateCompositeSkillDraft `
-    -ThresholdPolicySuggestionArtifact $thresholdPolicySuggestion `
-    -ProposalLayerPath $proposalLayerPath `
-    -WarningCardsPath $warningCardsPath `
-    -PreflightChecklistPath $preflightChecklistPath `
-    -RemediationNotesPath $remediationNotesPath `
-    -CandidateCompositeSkillDraftPath $candidateCompositeSkillDraftPath `
-    -ThresholdPolicySuggestionPath $thresholdPolicySuggestionPath
-$applicationReadinessReportPath = Join-Path $skeleton.session_root 'application-readiness-report.json'
-Write-VibeJsonArtifact -Path $applicationReadinessReportPath -Value $applicationReadinessReport
-
-$applicationReadinessMarkdownPath = Join-Path $skeleton.session_root 'application-readiness-report.md'
-Write-VibeMarkdownArtifact `
-    -Path $applicationReadinessMarkdownPath `
-    -Lines (New-VibeApplicationReadinessMarkdownLines `
-        -ApplicationReadinessReport $applicationReadinessReport)
+if ($applicationReadinessReport -and (Test-VibeGovernedEvolutionArtifactAllowed -AllowedArtifacts $governedEvolutionAllowedArtifacts -ArtifactName 'application-readiness-report.md')) {
+    Write-VibeMarkdownArtifact `
+        -Path $applicationReadinessMarkdownPath `
+        -Lines (New-VibeApplicationReadinessMarkdownLines `
+            -ApplicationReadinessReport $applicationReadinessReport)
+}
 
 $delegationValidationReceiptPath = if ($delegationValidation) { [string]$delegationValidation.receipt_path } else { '' }
 $summaryArtifacts = New-VibeRuntimeSummaryArtifactProjection `
@@ -560,18 +619,18 @@ $summaryArtifacts = New-VibeRuntimeSummaryArtifactProjection `
     -MemoryActivationMarkdownPath $(if ($memoryActivation) { [string]$memoryActivation.markdown_path } else { '' }) `
     -DelegationEnvelopePath ([string]$hierarchyState.delegation_envelope_path) `
     -DelegationValidationReceiptPath $delegationValidationReceiptPath `
-    -ObservedFailurePatternsPath $observedFailurePatternsPath `
-    -ObservedPitfallEventsPath $observedPitfallEventsPath `
-    -AtomicSkillCallChainPath $atomicSkillCallChainPath `
-    -ProposalLayerPath $proposalLayerPath `
-    -ProposalLayerMarkdownPath $proposalLayerMarkdownPath `
-    -ApplicationReadinessReportPath $applicationReadinessReportPath `
-    -ApplicationReadinessMarkdownPath $applicationReadinessMarkdownPath `
-    -WarningCardsPath $warningCardsPath `
-    -PreflightChecklistPath $preflightChecklistPath `
-    -RemediationNotesPath $remediationNotesPath `
-    -CandidateCompositeSkillDraftPath $candidateCompositeSkillDraftPath `
-    -ThresholdPolicySuggestionPath $thresholdPolicySuggestionPath
+    -ObservedFailurePatternsPath $(if ($observedFailurePatterns) { $observedFailurePatternsPath } else { '' }) `
+    -ObservedPitfallEventsPath $(if ($observedPitfallEvents) { $observedPitfallEventsPath } else { '' }) `
+    -AtomicSkillCallChainPath $(if ($atomicSkillCallChain) { $atomicSkillCallChainPath } else { '' }) `
+    -ProposalLayerPath $(if ($proposalLayer) { $proposalLayerPath } else { '' }) `
+    -ProposalLayerMarkdownPath $(if ($proposalLayer -and (Test-Path -LiteralPath $proposalLayerMarkdownPath)) { $proposalLayerMarkdownPath } else { '' }) `
+    -ApplicationReadinessReportPath $(if ($applicationReadinessReport) { $applicationReadinessReportPath } else { '' }) `
+    -ApplicationReadinessMarkdownPath $(if ($applicationReadinessReport -and (Test-Path -LiteralPath $applicationReadinessMarkdownPath)) { $applicationReadinessMarkdownPath } else { '' }) `
+    -WarningCardsPath $(if ($warningCards) { $warningCardsPath } else { '' }) `
+    -PreflightChecklistPath $(if ($preflightChecklist) { $preflightChecklistPath } else { '' }) `
+    -RemediationNotesPath $(if ($remediationNotes) { $remediationNotesPath } else { '' }) `
+    -CandidateCompositeSkillDraftPath $(if ($candidateCompositeSkillDraft) { $candidateCompositeSkillDraftPath } else { '' }) `
+    -ThresholdPolicySuggestionPath $(if ($thresholdPolicySuggestion) { $thresholdPolicySuggestionPath } else { '' })
 $relativeArtifacts = New-VibeRuntimeSummaryRelativeArtifactProjection -BasePath $artifactBaseRoot -Artifacts $summaryArtifacts
 
 $summary = New-VibeRuntimeSummaryProjection `
