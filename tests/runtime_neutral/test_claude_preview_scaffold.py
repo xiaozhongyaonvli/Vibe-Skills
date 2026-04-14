@@ -173,13 +173,14 @@ class ClaudePreviewScaffoldTests(unittest.TestCase):
 
         self.assertIn('[OK] host closure manifest', result.stdout)
         self.assertIn('[OK] host settings sidecar', result.stdout)
-        self.assertIn('skills-only activation', result.stdout)
+        self.assertIn('managed settings.json surface', result.stdout)
         settings = json.loads((self.target_root / 'settings.json').read_text(encoding='utf-8'))
         self.assertEqual(self.existing_settings['env'], settings['env'])
         self.assertEqual(self.existing_settings['model'], settings['model'])
         self.assertEqual('claude-code', settings['vibeskills']['host_id'])
         self.assertTrue((self.target_root / '.vibeskills' / 'host-settings.json').exists())
-        self.assertIn('[OK] host-visible discoverable entries', result.stdout)
+        self.assertTrue((self.target_root / '.vibeskills' / 'global-instruction-bootstrap.json').exists())
+        self.assertTrue((self.target_root / 'CLAUDE.md').exists())
         for name in self.EXPECTED_WRAPPER_SKILLS:
             self.assertTrue((self.target_root / 'skills' / name / 'SKILL.md').exists())
         self.assertFalse((self.target_root / 'commands').exists())

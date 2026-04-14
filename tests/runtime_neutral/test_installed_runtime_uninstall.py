@@ -70,6 +70,29 @@ class InstalledRuntimeUninstallTests(unittest.TestCase):
         self.assertTrue(sentinel.exists())
         self.assertIn("PASS", payload["gate_result"])
 
+    def test_codex_uninstall_preserves_user_agents_file_and_removes_only_managed_block(self) -> None:
+        target_root = self.root / "codex-root-user-agents"
+        agents_path = target_root / "AGENTS.md"
+        agents_path.parent.mkdir(parents=True, exist_ok=True)
+        agents_path.write_text("# My rules\n\n- keep me\n", encoding="utf-8")
+
+        self.install_host("codex", target_root)
+        self.uninstall_host("codex", target_root)
+
+        self.assertTrue(agents_path.exists())
+        remaining = agents_path.read_text(encoding="utf-8")
+        self.assertIn("# My rules", remaining)
+        self.assertIn("keep me", remaining)
+        self.assertNotIn("VIBESKILLS:BEGIN", remaining)
+
+    def test_codex_uninstall_removes_agents_file_if_installer_created_it_only_for_managed_block(self) -> None:
+        target_root = self.root / "codex-root-managed-agents-only"
+
+        self.install_host("codex", target_root)
+        self.uninstall_host("codex", target_root)
+
+        self.assertFalse((target_root / "AGENTS.md").exists())
+
     def test_claude_code_uninstall_removes_vibe_managed_surface(self) -> None:
         target_root = self.root / "claude-root"
         self.install_host("claude-code", target_root)
@@ -230,6 +253,20 @@ class InstalledRuntimeUninstallTests(unittest.TestCase):
         remaining = json.loads(settings_path.read_text(encoding="utf-8"))
         self.assertIn("vibeskills", remaining)
         self.assertTrue(remaining["user.keep"])
+
+    def test_opencode_uninstall_preserves_user_agents_file_and_removes_only_managed_block(self) -> None:
+        target_root = self.root / "opencode-root-user-agents"
+        agents_path = target_root / "AGENTS.md"
+        agents_path.parent.mkdir(parents=True, exist_ok=True)
+        agents_path.write_text("# Existing OpenCode rules\n", encoding="utf-8")
+
+        self.install_host("opencode", target_root)
+        self.uninstall_host("opencode", target_root)
+
+        self.assertTrue(agents_path.exists())
+        remaining = agents_path.read_text(encoding="utf-8")
+        self.assertIn("# Existing OpenCode rules", remaining)
+        self.assertNotIn("VIBESKILLS:BEGIN", remaining)
 
 
 if __name__ == "__main__":
