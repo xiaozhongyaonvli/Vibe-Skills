@@ -20,6 +20,14 @@
 
 If your AI supports skills, VibeSkills works. 340+ skills spanning coding, research, data science & creative work.
 
+&nbsp;
+*This is a new breed of "super skill" that essentially operates as a full-fledged Agent system.*
+
+&nbsp;
+*Packaged as individual Skills, it offers plug-and-play installation and on-demand execution.*
+
+&nbsp;
+*Backed by a highly customizable framework, it connects effortlessly to your exclusive workflows.*
 <br/>
 
 <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/stargazers">
