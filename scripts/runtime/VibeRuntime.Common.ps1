@@ -370,6 +370,717 @@ function Get-VibeRuntimeContext {
     }
 }
 
+function Get-VibeInteractiveSpecialistDisclosurePolicy {
+    param(
+        [AllowNull()] [object]$RuntimeInputPacketPolicy
+    )
+
+    $policy = $null
+    if ($null -ne $RuntimeInputPacketPolicy -and (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacketPolicy -PropertyName 'interactive_specialist_disclosure')) {
+        $policy = $RuntimeInputPacketPolicy.interactive_specialist_disclosure
+    }
+
+    return [pscustomobject]@{
+        enabled = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'enabled')) { [bool]$policy.enabled } else { $false }
+        stage = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'stage') -and -not [string]::IsNullOrWhiteSpace([string]$policy.stage)) { [string]$policy.stage } else { 'plan_execute' }
+        mode = 'approved_dispatch_pre_execution_unified_once'
+        timing = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'timing') -and -not [string]::IsNullOrWhiteSpace([string]$policy.timing)) { [string]$policy.timing } else { 'before_execution' }
+        scope = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'scope') -and -not [string]::IsNullOrWhiteSpace([string]$policy.scope)) { [string]$policy.scope } else { 'approved_dispatch_only' }
+        aggregation = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'aggregation') -and -not [string]::IsNullOrWhiteSpace([string]$policy.aggregation)) { [string]$policy.aggregation } else { 'unified_once' }
+        path_source = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'path_source') -and -not [string]::IsNullOrWhiteSpace([string]$policy.path_source)) { [string]$policy.path_source } else { 'native_skill_entrypoint' }
+        require_entrypoint_path = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'require_entrypoint_path')) { [bool]$policy.require_entrypoint_path } else { $true }
+        include_description = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'include_description')) { [bool]$policy.include_description } else { $true }
+        header = if ($null -ne $policy -and (Test-VibeObjectHasProperty -InputObject $policy -PropertyName 'header') -and -not [string]::IsNullOrWhiteSpace([string]$policy.header)) { [string]$policy.header } else { 'Pre-dispatch specialist disclosure:' }
+    }
+}
+
+function New-VibeSpecialistUserDisclosureProjection {
+    param(
+        [AllowEmptyCollection()] [AllowNull()] [object[]]$ApprovedDispatch = @(),
+        [AllowNull()] [object]$Policy = $null
+    )
+
+    $resolvedPolicy = if ($null -ne $Policy) { $Policy } else { Get-VibeInteractiveSpecialistDisclosurePolicy }
+    if (-not [bool]$resolvedPolicy.enabled) {
+        return $null
+    }
+
+    $routedSkills = New-Object System.Collections.Generic.List[object]
+    $seenSkillIds = @{}
+    foreach ($dispatch in @($ApprovedDispatch)) {
+        if ($null -eq $dispatch) {
+            continue
+        }
+
+        $skillId = [string]$dispatch.skill_id
+        if ([string]::IsNullOrWhiteSpace($skillId) -or $seenSkillIds.ContainsKey($skillId)) {
+            continue
+        }
+
+        $entrypointRaw = if (Test-VibeObjectHasProperty -InputObject $dispatch -PropertyName 'native_skill_entrypoint') { [string]$dispatch.native_skill_entrypoint } else { '' }
+        $entrypoint = $null
+        $entrypointMissing = $false
+        $entrypointPathInvalid = $false
+        $entrypointPathState = 'resolved'
+        if ([string]::IsNullOrWhiteSpace($entrypointRaw)) {
+            $entrypointMissing = $true
+            $entrypointPathState = 'missing'
+        } elseif (-not [System.IO.Path]::IsPathRooted($entrypointRaw)) {
+            $entrypointPathInvalid = $true
+            $entrypointPathState = 'invalid'
+        } else {
+            $entrypoint = [System.IO.Path]::GetFullPath($entrypointRaw)
+        }
+
+        $seenSkillIds[$skillId] = $true
+        $routedSkills.Add(
+            [pscustomobject]@{
+                skill_id = $skillId
+                native_skill_entrypoint = if ([string]::IsNullOrWhiteSpace($entrypoint)) { $null } else { $entrypoint }
+                native_skill_entrypoint_raw = if ([string]::IsNullOrWhiteSpace($entrypointRaw)) { $null } else { $entrypointRaw }
+                entrypoint_path_state = $entrypointPathState
+                entrypoint_missing = $entrypointMissing
+                entrypoint_path_invalid = $entrypointPathInvalid
+                entrypoint_requirement_satisfied = if ([bool]$resolvedPolicy.require_entrypoint_path) { -not $entrypointMissing -and -not $entrypointPathInvalid } else { $true }
+                native_skill_description = if ([bool]$resolvedPolicy.include_description -and (Test-VibeObjectHasProperty -InputObject $dispatch -PropertyName 'native_skill_description') -and -not [string]::IsNullOrWhiteSpace([string]$dispatch.native_skill_description)) { [string]$dispatch.native_skill_description } else { $null }
+                dispatch_phase = if ((Test-VibeObjectHasProperty -InputObject $dispatch -PropertyName 'dispatch_phase') -and -not [string]::IsNullOrWhiteSpace([string]$dispatch.dispatch_phase)) { [string]$dispatch.dispatch_phase } else { $null }
+                write_scope = if ((Test-VibeObjectHasProperty -InputObject $dispatch -PropertyName 'write_scope') -and -not [string]::IsNullOrWhiteSpace([string]$dispatch.write_scope)) { [string]$dispatch.write_scope } else { $null }
+                review_mode = if ((Test-VibeObjectHasProperty -InputObject $dispatch -PropertyName 'review_mode') -and -not [string]::IsNullOrWhiteSpace([string]$dispatch.review_mode)) { [string]$dispatch.review_mode } else { $null }
+            }
+        )
+    }
+
+    if ($routedSkills.Count -eq 0) {
+        return $null
+    }
+
+    $renderedLines = @([string]$resolvedPolicy.header)
+    foreach ($entry in $routedSkills) {
+        $renderedLines += ('- {0} -> {1}' -f [string]$entry.skill_id, (Get-VibeSpecialistEntrypointDisplayText -SkillRecord $entry))
+    }
+
+    return [pscustomobject]@{
+        enabled = [bool]$resolvedPolicy.enabled
+        stage = [string]$resolvedPolicy.stage
+        mode = [string]$resolvedPolicy.mode
+        timing = [string]$resolvedPolicy.timing
+        scope = [string]$resolvedPolicy.scope
+        aggregation = [string]$resolvedPolicy.aggregation
+        path_source = [string]$resolvedPolicy.path_source
+        routed_skill_count = [int]$routedSkills.Count
+        routed_skills = [object[]]$routedSkills.ToArray()
+        rendered_text = ($renderedLines -join "`n")
+    }
+}
+
+function Get-VibeSpecialistEntrypointDisplayText {
+    param(
+        [AllowNull()] [object]$SkillRecord = $null
+    )
+
+    if ($null -eq $SkillRecord) {
+        return 'path unavailable'
+    }
+
+    $resolvedEntrypoint = if (
+        (Test-VibeObjectHasProperty -InputObject $SkillRecord -PropertyName 'native_skill_entrypoint') -and
+        -not [string]::IsNullOrWhiteSpace([string]$SkillRecord.native_skill_entrypoint)
+    ) {
+        [string]$SkillRecord.native_skill_entrypoint
+    } else {
+        $null
+    }
+    if (-not [string]::IsNullOrWhiteSpace($resolvedEntrypoint)) {
+        return $resolvedEntrypoint
+    }
+
+    $rawEntrypoint = if (
+        (Test-VibeObjectHasProperty -InputObject $SkillRecord -PropertyName 'native_skill_entrypoint_raw') -and
+        -not [string]::IsNullOrWhiteSpace([string]$SkillRecord.native_skill_entrypoint_raw)
+    ) {
+        [string]$SkillRecord.native_skill_entrypoint_raw
+    } elseif (
+        (Test-VibeObjectHasProperty -InputObject $SkillRecord -PropertyName 'native_skill_entrypoint') -and
+        -not [string]::IsNullOrWhiteSpace([string]$SkillRecord.native_skill_entrypoint)
+    ) {
+        [string]$SkillRecord.native_skill_entrypoint
+    } else {
+        $null
+    }
+
+    $entrypointMissing = if ((Test-VibeObjectHasProperty -InputObject $SkillRecord -PropertyName 'entrypoint_missing')) { [bool]$SkillRecord.entrypoint_missing } else { $false }
+    $entrypointPathInvalid = if ((Test-VibeObjectHasProperty -InputObject $SkillRecord -PropertyName 'entrypoint_path_invalid')) { [bool]$SkillRecord.entrypoint_path_invalid } else { $false }
+    if ($entrypointPathInvalid -and -not [string]::IsNullOrWhiteSpace($rawEntrypoint)) {
+        return ('{0} (invalid entrypoint path)' -f $rawEntrypoint)
+    }
+    if ($entrypointMissing) {
+        return 'path unavailable (missing entrypoint path)'
+    }
+    if (-not [string]::IsNullOrWhiteSpace($rawEntrypoint)) {
+        return $rawEntrypoint
+    }
+
+    return 'path unavailable'
+}
+
+function Get-VibeSpecialistLifecycleDisclosurePath {
+    param(
+        [Parameter(Mandatory)] [string]$SessionRoot
+    )
+
+    return [System.IO.Path]::GetFullPath((Join-Path $SessionRoot 'specialist-lifecycle-disclosure.json'))
+}
+
+function Get-VibeHostUserBriefingPath {
+    param(
+        [Parameter(Mandatory)] [string]$SessionRoot
+    )
+
+    return [System.IO.Path]::GetFullPath((Join-Path $SessionRoot 'host-user-briefing.md'))
+}
+
+function Get-VibeHostStageDisclosurePath {
+    param(
+        [Parameter(Mandatory)] [string]$SessionRoot
+    )
+
+    return [System.IO.Path]::GetFullPath((Join-Path $SessionRoot 'host-stage-disclosure.json'))
+}
+
+function New-VibeHostUserBriefingSegmentProjection {
+    param(
+        [AllowNull()] [object]$LifecycleLayer = $null,
+        [AllowNull()] [object]$ConsultationReceipt = $null
+    )
+
+    if ($null -eq $LifecycleLayer) {
+        return $null
+    }
+
+    $segmentId = if ((Test-VibeObjectHasProperty -InputObject $LifecycleLayer -PropertyName 'layer_id') -and -not [string]::IsNullOrWhiteSpace([string]$LifecycleLayer.layer_id)) {
+        [string]$LifecycleLayer.layer_id
+    } else {
+        return $null
+    }
+
+    $segmentLines = @()
+    $category = if ((Test-VibeObjectHasProperty -InputObject $LifecycleLayer -PropertyName 'truth_layer') -and -not [string]::IsNullOrWhiteSpace([string]$LifecycleLayer.truth_layer)) {
+        [string]$LifecycleLayer.truth_layer
+    } else {
+        'informational'
+    }
+    $status = 'informational'
+    $gateStatus = $null
+
+    switch ($segmentId) {
+        'discussion_routing' {
+            $segmentLines += 'Vibe routed these Skills into the discussion/planning chain:'
+        }
+        'execution_dispatch' {
+            $category = 'execution'
+            $status = 'execution_disclosure'
+            $segmentLines += 'Vibe approved these Skills for execution:'
+        }
+        default {
+            if ($segmentId -match '^(discussion|planning)_consultation$') {
+                $windowId = [string]$Matches[1]
+                if ($ConsultationReceipt -and (Test-VibeObjectHasProperty -InputObject $ConsultationReceipt -PropertyName 'freeze_gate') -and $null -ne $ConsultationReceipt.freeze_gate) {
+                    $gateStatus = if ([bool]$ConsultationReceipt.freeze_gate.passed) { 'passed' } else { 'failed' }
+                    $status = if ([bool]$ConsultationReceipt.freeze_gate.passed) { 'gate_passed' } else { 'gate_failed' }
+                } else {
+                    $gateStatus = 'not_applicable'
+                    $status = 'gate_unknown'
+                }
+                $category = 'consultation'
+                $segmentLines += ('Vibe consulted these Skills during {0}; freeze gate: {1}.' -f $windowId, $gateStatus)
+            } else {
+                $segmentLines += ('Vibe reported specialist activity for {0}:' -f $segmentId)
+            }
+        }
+    }
+
+    foreach ($skill in @($LifecycleLayer.skills)) {
+        if ($null -eq $skill) {
+            continue
+        }
+        $skillId = if ((Test-VibeObjectHasProperty -InputObject $skill -PropertyName 'skill_id') -and -not [string]::IsNullOrWhiteSpace([string]$skill.skill_id)) {
+            [string]$skill.skill_id
+        } else {
+            continue
+        }
+        $state = if ((Test-VibeObjectHasProperty -InputObject $skill -PropertyName 'state') -and -not [string]::IsNullOrWhiteSpace([string]$skill.state)) { [string]$skill.state } else { 'reported' }
+        $entrypoint = Get-VibeSpecialistEntrypointDisplayText -SkillRecord $skill
+        $whyNow = if ((Test-VibeObjectHasProperty -InputObject $skill -PropertyName 'why_now') -and -not [string]::IsNullOrWhiteSpace([string]$skill.why_now)) { [string]$skill.why_now } else { 'no additional rationale recorded' }
+        $segmentLines += ('- {0} [{1}] from {2}' -f $skillId, $state, $entrypoint)
+        $segmentLines += ('  Why: {0}' -f $whyNow)
+        if ((Test-VibeObjectHasProperty -InputObject $skill -PropertyName 'summary') -and -not [string]::IsNullOrWhiteSpace([string]$skill.summary)) {
+            $segmentLines += ('  Summary: {0}' -f [string]$skill.summary)
+        }
+    }
+
+    $segmentText = @($segmentLines) -join "`n"
+    return [pscustomobject]@{
+        segment_id = $segmentId
+        stage = if ((Test-VibeObjectHasProperty -InputObject $LifecycleLayer -PropertyName 'stage') -and -not [string]::IsNullOrWhiteSpace([string]$LifecycleLayer.stage)) { [string]$LifecycleLayer.stage } else { $null }
+        category = $category
+        truth_layer = if ((Test-VibeObjectHasProperty -InputObject $LifecycleLayer -PropertyName 'truth_layer') -and -not [string]::IsNullOrWhiteSpace([string]$LifecycleLayer.truth_layer)) { [string]$LifecycleLayer.truth_layer } else { $category }
+        status = $status
+        gate_status = $gateStatus
+        skill_count = if ((Test-VibeObjectHasProperty -InputObject $LifecycleLayer -PropertyName 'skill_count')) { [int]$LifecycleLayer.skill_count } else { @($LifecycleLayer.skills).Count }
+        skills = @($LifecycleLayer.skills)
+        rendered_text = $segmentText
+    }
+}
+
+function New-VibeHostStageDisclosureEventProjection {
+    param(
+        [AllowNull()] [object]$Segment = $null
+    )
+
+    if ($null -eq $Segment) {
+        return $null
+    }
+
+    $segmentId = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'segment_id') -and -not [string]::IsNullOrWhiteSpace([string]$Segment.segment_id)) {
+        [string]$Segment.segment_id
+    } else {
+        return $null
+    }
+
+    $eventId = switch ($segmentId) {
+        'discussion_routing' { 'discussion_routing_frozen' }
+        'discussion_consultation' { 'discussion_consultation_completed' }
+        'planning_consultation' { 'planning_consultation_completed' }
+        'execution_dispatch' { 'execution_dispatch_confirmed' }
+        default { ('{0}_reported' -f $segmentId) }
+    }
+
+    return [pscustomobject]@{
+        event_id = $eventId
+        segment_id = $segmentId
+        stage = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'stage') -and -not [string]::IsNullOrWhiteSpace([string]$Segment.stage)) { [string]$Segment.stage } else { $null }
+        category = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'category') -and -not [string]::IsNullOrWhiteSpace([string]$Segment.category)) { [string]$Segment.category } else { $null }
+        truth_layer = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'truth_layer') -and -not [string]::IsNullOrWhiteSpace([string]$Segment.truth_layer)) { [string]$Segment.truth_layer } else { $null }
+        status = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'status') -and -not [string]::IsNullOrWhiteSpace([string]$Segment.status)) { [string]$Segment.status } else { 'reported' }
+        gate_status = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'gate_status') -and -not [string]::IsNullOrWhiteSpace([string]$Segment.gate_status)) { [string]$Segment.gate_status } else { $null }
+        skill_count = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'skill_count')) { [int]$Segment.skill_count } else { @($Segment.skills).Count }
+        skills = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'skills')) { @($Segment.skills) } else { @() }
+        rendered_text = if ((Test-VibeObjectHasProperty -InputObject $Segment -PropertyName 'rendered_text') -and -not [string]::IsNullOrWhiteSpace([string]$Segment.rendered_text)) { [string]$Segment.rendered_text } else { $null }
+    }
+}
+
+function Add-VibeHostStageDisclosureEvent {
+    param(
+        [Parameter(Mandatory)] [string]$SessionRoot,
+        [AllowNull()] [object]$DisclosureEvent = $null
+    )
+
+    if ($null -eq $DisclosureEvent) {
+        return $null
+    }
+
+    $path = Get-VibeHostStageDisclosurePath -SessionRoot $SessionRoot
+    $document = if (Test-Path -LiteralPath $path) {
+        Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+    } else {
+        [pscustomobject]@{
+            enabled = $false
+            protocol_version = 'v1'
+            mode = 'progressive_host_stage_disclosure'
+            append_only = $true
+            event_count = 0
+            last_sequence = 0
+            freeze_gate_passed = $true
+            events = @()
+            rendered_text = ''
+        }
+    }
+
+    $events = New-Object System.Collections.ArrayList
+    foreach ($existingEvent in @($document.events)) {
+        [void]$events.Add($existingEvent)
+    }
+
+    $segmentId = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'segment_id') -and -not [string]::IsNullOrWhiteSpace([string]$DisclosureEvent.segment_id)) {
+        [string]$DisclosureEvent.segment_id
+    } else {
+        return $null
+    }
+    foreach ($existingEvent in @($events)) {
+        if ($existingEvent -and [string]$existingEvent.segment_id -eq $segmentId) {
+            return [pscustomobject]@{
+                path = $path
+                disclosure = $document
+                event = $existingEvent
+            }
+        }
+    }
+
+    $recordedEvent = [pscustomobject]@{
+        sequence = [int]($events.Count + 1)
+        emitted_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        event_id = [string]$DisclosureEvent.event_id
+        segment_id = $segmentId
+        stage = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'stage') -and -not [string]::IsNullOrWhiteSpace([string]$DisclosureEvent.stage)) { [string]$DisclosureEvent.stage } else { $null }
+        category = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'category') -and -not [string]::IsNullOrWhiteSpace([string]$DisclosureEvent.category)) { [string]$DisclosureEvent.category } else { $null }
+        truth_layer = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'truth_layer') -and -not [string]::IsNullOrWhiteSpace([string]$DisclosureEvent.truth_layer)) { [string]$DisclosureEvent.truth_layer } else { $null }
+        status = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'status') -and -not [string]::IsNullOrWhiteSpace([string]$DisclosureEvent.status)) { [string]$DisclosureEvent.status } else { 'reported' }
+        gate_status = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'gate_status') -and -not [string]::IsNullOrWhiteSpace([string]$DisclosureEvent.gate_status)) { [string]$DisclosureEvent.gate_status } else { $null }
+        skill_count = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'skill_count')) { [int]$DisclosureEvent.skill_count } else { @($DisclosureEvent.skills).Count }
+        skills = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'skills')) { @($DisclosureEvent.skills) } else { @() }
+        rendered_text = if ((Test-VibeObjectHasProperty -InputObject $DisclosureEvent -PropertyName 'rendered_text') -and -not [string]::IsNullOrWhiteSpace([string]$DisclosureEvent.rendered_text)) { [string]$DisclosureEvent.rendered_text } else { $null }
+    }
+    [void]$events.Add($recordedEvent)
+
+    $eventArray = [object[]]$events.ToArray()
+    $renderedSections = @()
+    foreach ($eventEntry in @($eventArray)) {
+        if ($null -eq $eventEntry -or [string]::IsNullOrWhiteSpace([string]$eventEntry.rendered_text)) {
+            continue
+        }
+        $renderedSections += [string]$eventEntry.rendered_text
+    }
+    $failedConsultationEvents = @($eventArray | Where-Object { [string]$_.truth_layer -eq 'consultation' -and [string]$_.status -eq 'gate_failed' })
+    $document = [pscustomobject]@{
+        enabled = [bool](@($eventArray).Count -gt 0)
+        protocol_version = 'v1'
+        mode = 'progressive_host_stage_disclosure'
+        append_only = $true
+        event_count = [int]@($eventArray).Count
+        last_sequence = [int]$recordedEvent.sequence
+        freeze_gate_passed = [bool](@($failedConsultationEvents).Count -eq 0)
+        events = $eventArray
+        rendered_text = (@($renderedSections) -join "`n`n")
+    }
+    Write-VibeJsonArtifact -Path $path -Value $document
+
+    return [pscustomobject]@{
+        path = $path
+        disclosure = $document
+        event = $recordedEvent
+    }
+}
+
+function New-VibeHostUserBriefingProjection {
+    param(
+        [AllowNull()] [object]$LifecycleDisclosure = $null,
+        [AllowNull()] [object]$DiscussionConsultationReceipt = $null,
+        [AllowNull()] [object]$PlanningConsultationReceipt = $null
+    )
+
+    if ($null -eq $LifecycleDisclosure -or -not [bool]$LifecycleDisclosure.enabled) {
+        return $null
+    }
+
+    $consultationReceiptIndex = @{}
+    foreach ($receipt in @($DiscussionConsultationReceipt, $PlanningConsultationReceipt)) {
+        if ($null -eq $receipt) {
+            continue
+        }
+        $windowId = if ((Test-VibeObjectHasProperty -InputObject $receipt -PropertyName 'window_id') -and -not [string]::IsNullOrWhiteSpace([string]$receipt.window_id)) {
+            [string]$receipt.window_id
+        } else {
+            $null
+        }
+        if (-not [string]::IsNullOrWhiteSpace($windowId)) {
+            $consultationReceiptIndex[$windowId] = $receipt
+        }
+    }
+
+    $segments = New-Object System.Collections.Generic.List[object]
+    $renderedSections = @('Specialist activity under governed vibe:')
+    foreach ($layer in @($LifecycleDisclosure.layers)) {
+        if ($null -eq $layer) {
+            continue
+        }
+        $windowId = $null
+        if ((Test-VibeObjectHasProperty -InputObject $layer -PropertyName 'layer_id') -and [string]$layer.layer_id -match '^(discussion|planning)_consultation$') {
+            $windowId = [string]$Matches[1]
+        }
+        $receipt = if (-not [string]::IsNullOrWhiteSpace($windowId) -and $consultationReceiptIndex.ContainsKey($windowId)) { $consultationReceiptIndex[$windowId] } else { $null }
+        $segment = New-VibeHostUserBriefingSegmentProjection -LifecycleLayer $layer -ConsultationReceipt $receipt
+        if ($null -eq $segment) {
+            continue
+        }
+        $segments.Add($segment) | Out-Null
+        $renderedSections += @('', [string]$segment.rendered_text)
+    }
+
+    $segmentArray = [object[]]$segments.ToArray()
+    $failedConsultationSegments = @($segmentArray | Where-Object { [string]$_.category -eq 'consultation' -and [string]$_.status -eq 'gate_failed' })
+    $freezeGatePassed = [bool](@($failedConsultationSegments).Count -eq 0)
+
+    return [pscustomobject]@{
+        enabled = [bool](@($segmentArray).Count -gt 0)
+        mode = 'progressive_specialist_host_briefing'
+        freeze_gate_passed = $freezeGatePassed
+        segment_count = @($segmentArray).Count
+        segments = $segmentArray
+        rendered_text = (@($renderedSections) -join "`n")
+    }
+}
+
+function New-VibeSpecialistRoutingLifecycleLayerProjection {
+    param(
+        [AllowNull()] [object]$RuntimeInputPacket
+    )
+
+    if ($null -eq $RuntimeInputPacket -or -not (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'specialist_recommendations')) {
+        return $null
+    }
+
+    $skills = New-Object System.Collections.Generic.List[object]
+    $renderedLines = @('Discussion-chain routed Skills:')
+    foreach ($recommendation in @($RuntimeInputPacket.specialist_recommendations)) {
+        if ($null -eq $recommendation) {
+            continue
+        }
+
+        $skillId = [string]$recommendation.skill_id
+        if ([string]::IsNullOrWhiteSpace($skillId)) {
+            continue
+        }
+        $entrypoint = if ((Test-VibeObjectHasProperty -InputObject $recommendation -PropertyName 'native_skill_entrypoint') -and -not [string]::IsNullOrWhiteSpace([string]$recommendation.native_skill_entrypoint)) { [string]$recommendation.native_skill_entrypoint } else { $null }
+        if (-not [string]::IsNullOrWhiteSpace($entrypoint) -and [System.IO.Path]::IsPathRooted($entrypoint)) {
+            $entrypoint = [System.IO.Path]::GetFullPath($entrypoint)
+        }
+        $whyNow = if ((Test-VibeObjectHasProperty -InputObject $recommendation -PropertyName 'reason') -and -not [string]::IsNullOrWhiteSpace([string]$recommendation.reason)) { [string]$recommendation.reason } else { 'routed as a relevant specialist candidate for the governed discussion and planning chain' }
+
+        $skills.Add(
+            [pscustomobject]@{
+                skill_id = $skillId
+                why_now = $whyNow
+                source = if ((Test-VibeObjectHasProperty -InputObject $recommendation -PropertyName 'source') -and -not [string]::IsNullOrWhiteSpace([string]$recommendation.source)) { [string]$recommendation.source } else { $null }
+                native_skill_entrypoint = $entrypoint
+                native_skill_description = if ((Test-VibeObjectHasProperty -InputObject $recommendation -PropertyName 'native_skill_description') -and -not [string]::IsNullOrWhiteSpace([string]$recommendation.native_skill_description)) { [string]$recommendation.native_skill_description } else { $null }
+                state = 'routed'
+            }
+        ) | Out-Null
+        $renderedLines += ('- {0}: {1} ({2})' -f $skillId, $whyNow, $(if ([string]::IsNullOrWhiteSpace($entrypoint)) { 'path unavailable' } else { $entrypoint }))
+    }
+
+    if ($skills.Count -eq 0) {
+        return $null
+    }
+
+    return [pscustomobject]@{
+        layer_id = 'discussion_routing'
+        truth_layer = 'routing'
+        stage = if ((Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'stage') -and -not [string]::IsNullOrWhiteSpace([string]$RuntimeInputPacket.stage)) { [string]$RuntimeInputPacket.stage } else { 'runtime_input_freeze' }
+        skill_count = [int]$skills.Count
+        skills = [object[]]$skills.ToArray()
+        rendered_text = ($renderedLines -join "`n")
+    }
+}
+
+function New-VibeSpecialistConsultationLifecycleLayerProjection {
+    param(
+        [AllowNull()] [object]$ConsultationReceipt
+    )
+
+    if ($null -eq $ConsultationReceipt -or -not [bool]$ConsultationReceipt.enabled) {
+        return $null
+    }
+
+    $windowId = if ((Test-VibeObjectHasProperty -InputObject $ConsultationReceipt -PropertyName 'window_id') -and -not [string]::IsNullOrWhiteSpace([string]$ConsultationReceipt.window_id)) {
+        [string]$ConsultationReceipt.window_id
+    } else {
+        $null
+    }
+    if ($windowId -notin @('discussion', 'planning')) {
+        throw 'Enabled specialist consultation receipts must declare window_id as discussion or planning.'
+    }
+    $skills = New-Object System.Collections.Generic.List[object]
+    $renderedLines = @(('Specialist consultation during {0}:' -f $windowId))
+    foreach ($disclosure in @($ConsultationReceipt.user_disclosures)) {
+        if ($null -eq $disclosure) {
+            continue
+        }
+
+        $consultedUnit = $null
+        foreach ($candidate in @($ConsultationReceipt.consulted_units)) {
+            if ($null -ne $candidate -and [string]$candidate.skill_id -eq [string]$disclosure.skill_id) {
+                $consultedUnit = $candidate
+                break
+            }
+        }
+
+        $skills.Add(
+            [pscustomobject]@{
+                skill_id = [string]$disclosure.skill_id
+                why_now = if ((Test-VibeObjectHasProperty -InputObject $disclosure -PropertyName 'why_now') -and -not [string]::IsNullOrWhiteSpace([string]$disclosure.why_now)) { [string]$disclosure.why_now } else { $null }
+                native_skill_entrypoint = if ((Test-VibeObjectHasProperty -InputObject $disclosure -PropertyName 'native_skill_entrypoint') -and -not [string]::IsNullOrWhiteSpace([string]$disclosure.native_skill_entrypoint)) { [string]$disclosure.native_skill_entrypoint } else { $null }
+                native_skill_description = if ((Test-VibeObjectHasProperty -InputObject $disclosure -PropertyName 'native_skill_description') -and -not [string]::IsNullOrWhiteSpace([string]$disclosure.native_skill_description)) { [string]$disclosure.native_skill_description } else { $null }
+                state = if ($consultedUnit -and (Test-VibeObjectHasProperty -InputObject $consultedUnit -PropertyName 'status')) { [string]$consultedUnit.status } else { 'consulted' }
+                summary = if ($consultedUnit -and (Test-VibeObjectHasProperty -InputObject $consultedUnit -PropertyName 'summary')) { [string]$consultedUnit.summary } else { $null }
+            }
+        ) | Out-Null
+        $renderedLines += ('- {0}: {1} ({2})' -f [string]$disclosure.skill_id, [string]$disclosure.why_now, (Get-VibeSpecialistEntrypointDisplayText -SkillRecord $disclosure))
+    }
+
+    if ($skills.Count -eq 0) {
+        return $null
+    }
+
+    return [pscustomobject]@{
+        layer_id = ('{0}_consultation' -f $windowId)
+        truth_layer = 'consultation'
+        stage = if ((Test-VibeObjectHasProperty -InputObject $ConsultationReceipt -PropertyName 'stage') -and -not [string]::IsNullOrWhiteSpace([string]$ConsultationReceipt.stage)) { [string]$ConsultationReceipt.stage } else { $windowId }
+        skill_count = [int]$skills.Count
+        skills = [object[]]$skills.ToArray()
+        rendered_text = ($renderedLines -join "`n")
+    }
+}
+
+function New-VibeSpecialistExecutionLifecycleLayerProjection {
+    param(
+        [AllowNull()] [object]$SpecialistUserDisclosure = $null,
+        [AllowNull()] [object]$ExecutionManifest = $null
+    )
+
+    if ($null -eq $SpecialistUserDisclosure) {
+        return $null
+    }
+
+    $executedSkillIds = @()
+    if ($null -ne $ExecutionManifest -and (Test-VibeObjectHasProperty -InputObject $ExecutionManifest -PropertyName 'specialist_accounting') -and $null -ne $ExecutionManifest.specialist_accounting) {
+        foreach ($unit in @($ExecutionManifest.specialist_accounting.executed_specialist_units)) {
+            if ($null -eq $unit) {
+                continue
+            }
+            if ((Test-VibeObjectHasProperty -InputObject $unit -PropertyName 'skill_id') -and -not [string]::IsNullOrWhiteSpace([string]$unit.skill_id)) {
+                $executedSkillIds += [string]$unit.skill_id
+            } elseif ((Test-VibeObjectHasProperty -InputObject $unit -PropertyName 'specialist_skill_id') -and -not [string]::IsNullOrWhiteSpace([string]$unit.specialist_skill_id)) {
+                $executedSkillIds += [string]$unit.specialist_skill_id
+            }
+        }
+        $executedSkillIds = @($executedSkillIds | Select-Object -Unique)
+    }
+
+    $skills = New-Object System.Collections.Generic.List[object]
+    $renderedLines = @('Execution-chain specialist disclosure:')
+    foreach ($entry in @($SpecialistUserDisclosure.routed_skills)) {
+        if ($null -eq $entry) {
+            continue
+        }
+        $skillId = [string]$entry.skill_id
+        if ([string]::IsNullOrWhiteSpace($skillId)) {
+            continue
+        }
+        $state = if ($executedSkillIds -contains $skillId) { 'executed' } else { 'disclosed_for_execution' }
+        $skills.Add(
+            [pscustomobject]@{
+                skill_id = $skillId
+                why_now = 'approved for execution-time specialist dispatch under governed vibe'
+                native_skill_entrypoint = if ((Test-VibeObjectHasProperty -InputObject $entry -PropertyName 'native_skill_entrypoint') -and -not [string]::IsNullOrWhiteSpace([string]$entry.native_skill_entrypoint)) { [string]$entry.native_skill_entrypoint } else { $null }
+                native_skill_entrypoint_raw = if ((Test-VibeObjectHasProperty -InputObject $entry -PropertyName 'native_skill_entrypoint_raw') -and -not [string]::IsNullOrWhiteSpace([string]$entry.native_skill_entrypoint_raw)) { [string]$entry.native_skill_entrypoint_raw } else { $null }
+                entrypoint_path_state = if ((Test-VibeObjectHasProperty -InputObject $entry -PropertyName 'entrypoint_path_state') -and -not [string]::IsNullOrWhiteSpace([string]$entry.entrypoint_path_state)) { [string]$entry.entrypoint_path_state } else { 'resolved' }
+                entrypoint_missing = if ((Test-VibeObjectHasProperty -InputObject $entry -PropertyName 'entrypoint_missing')) { [bool]$entry.entrypoint_missing } else { $false }
+                entrypoint_path_invalid = if ((Test-VibeObjectHasProperty -InputObject $entry -PropertyName 'entrypoint_path_invalid')) { [bool]$entry.entrypoint_path_invalid } else { $false }
+                native_skill_description = if ((Test-VibeObjectHasProperty -InputObject $entry -PropertyName 'native_skill_description') -and -not [string]::IsNullOrWhiteSpace([string]$entry.native_skill_description)) { [string]$entry.native_skill_description } else { $null }
+                state = $state
+            }
+        ) | Out-Null
+        $renderedLines += ('- {0}: approved for execution ({1})' -f $skillId, (Get-VibeSpecialistEntrypointDisplayText -SkillRecord $entry))
+    }
+
+    if ($skills.Count -eq 0) {
+        return $null
+    }
+
+    return [pscustomobject]@{
+        layer_id = 'execution_dispatch'
+        truth_layer = 'execution'
+        stage = if ((Test-VibeObjectHasProperty -InputObject $SpecialistUserDisclosure -PropertyName 'stage') -and -not [string]::IsNullOrWhiteSpace([string]$SpecialistUserDisclosure.stage)) { [string]$SpecialistUserDisclosure.stage } else { 'plan_execute' }
+        skill_count = [int]$skills.Count
+        skills = [object[]]$skills.ToArray()
+        rendered_text = ($renderedLines -join "`n")
+    }
+}
+
+function New-VibeSpecialistLifecycleDisclosureProjection {
+    param(
+        [AllowNull()] [object]$RuntimeInputPacket = $null,
+        [AllowNull()] [object]$DiscussionConsultationReceipt = $null,
+        [AllowNull()] [object]$PlanningConsultationReceipt = $null,
+        [AllowNull()] [object]$SpecialistUserDisclosure = $null,
+        [AllowNull()] [object]$ExecutionManifest = $null
+    )
+
+    $layers = New-Object System.Collections.Generic.List[object]
+    foreach ($candidate in @(
+        (New-VibeSpecialistRoutingLifecycleLayerProjection -RuntimeInputPacket $RuntimeInputPacket),
+        (New-VibeSpecialistConsultationLifecycleLayerProjection -ConsultationReceipt $DiscussionConsultationReceipt),
+        (New-VibeSpecialistConsultationLifecycleLayerProjection -ConsultationReceipt $PlanningConsultationReceipt),
+        (New-VibeSpecialistExecutionLifecycleLayerProjection -SpecialistUserDisclosure $SpecialistUserDisclosure -ExecutionManifest $ExecutionManifest)
+    )) {
+        if ($null -ne $candidate) {
+            $layers.Add($candidate) | Out-Null
+        }
+    }
+
+    $layerArray = [object[]]$layers.ToArray()
+    $skillIds = @()
+    $renderedSections = @()
+    foreach ($layer in @($layerArray)) {
+        foreach ($skill in @($layer.skills)) {
+            if ($null -ne $skill -and -not [string]::IsNullOrWhiteSpace([string]$skill.skill_id)) {
+                $skillIds += [string]$skill.skill_id
+            }
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$layer.rendered_text)) {
+            $renderedSections += [string]$layer.rendered_text
+        }
+    }
+    $skillIds = @($skillIds | Select-Object -Unique)
+
+    return [pscustomobject]@{
+        enabled = [bool](@($layerArray).Count -gt 0)
+        truth_model = 'routing_consultation_execution_separated'
+        layer_count = @($layerArray).Count
+        skill_count = @($skillIds).Count
+        skill_ids = @($skillIds)
+        layers = $layerArray
+        rendered_text = (@($renderedSections) -join "`n`n")
+    }
+}
+
+function Get-VibeSpecialistLifecycleDisclosureMarkdownLines {
+    param(
+        [AllowNull()] [object]$LifecycleDisclosure = $null,
+        [AllowEmptyCollection()] [string[]]$IncludeLayerIds = @()
+    )
+
+    if ($null -eq $LifecycleDisclosure -or -not [bool]$LifecycleDisclosure.enabled) {
+        return @()
+    }
+
+    $allowedLayerIds = @($IncludeLayerIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+    $lines = @(
+        '## Unified Specialist Lifecycle Disclosure',
+        'This unified disclosure keeps routing truth, consultation truth, and execution truth separate while showing one user-readable specialist timeline.'
+    )
+    foreach ($layer in @($LifecycleDisclosure.layers)) {
+        if ($allowedLayerIds.Count -gt 0 -and -not ($allowedLayerIds -contains [string]$layer.layer_id)) {
+            continue
+        }
+        $lines += @(
+            '',
+            ('### {0}' -f [string]$layer.layer_id)
+        )
+        foreach ($skill in @($layer.skills)) {
+            $lines += @(
+                ('- Skill: {0}' -f [string]$skill.skill_id),
+                ('  State: {0}' -f [string]$skill.state),
+                ('  Why now: {0}' -f [string]$skill.why_now),
+                ('  Loaded from: {0}' -f (Get-VibeSpecialistEntrypointDisplayText -SkillRecord $skill))
+            )
+        }
+    }
+
+    return @($lines)
+}
+
 function Resolve-VibeGovernedEvolutionArtifactAllowList {
     param(
         [Parameter(Mandatory)] [object]$Runtime,

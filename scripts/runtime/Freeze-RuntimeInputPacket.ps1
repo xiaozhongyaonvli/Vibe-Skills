@@ -3,6 +3,8 @@ param(
     [string]$Mode = 'interactive_governed',
     [string]$RunId = '',
     [string]$ArtifactRoot = '',
+    [AllowEmptyString()] [string]$EntryIntentId = '',
+    [AllowEmptyString()] [string]$RequestedStageStop = '',
     [AllowEmptyString()] [string]$GovernanceScope = '',
     [AllowEmptyString()] [string]$RootRunId = '',
     [AllowEmptyString()] [string]$ParentRunId = '',
@@ -759,6 +761,8 @@ $packet = New-VibeRuntimeInputPacketProjection `
     -Task $Task `
     -Mode $Mode `
     -InternalGrade $grade `
+    -EntryIntentId $EntryIntentId `
+    -RequestedStageStop $RequestedStageStop `
     -HierarchyState $hierarchyState `
     -HierarchyProjection $hierarchyProjection `
     -AuthorityFlagsProjection $authorityFlagsProjection `

@@ -5,7 +5,6 @@ param(
     [string]$ArtifactRoot = '',
     [AllowEmptyString()] [string]$EntryIntentId = '',
     [AllowEmptyString()] [string]$RequestedStageStop = '',
-    [AllowEmptyString()] [string]$RequestedGradeFloor = '',
     [AllowEmptyString()] [string]$GovernanceScope = '',
     [AllowEmptyString()] [string]$RootRunId = '',
     [AllowEmptyString()] [string]$ParentRunId = '',
@@ -153,27 +152,27 @@ $freezeArgs = @{
     ArtifactRoot = $ArtifactRoot
     EntryIntentId = $EntryIntentId
     RequestedStageStop = $RequestedStageStop
-    RequestedGradeFloor = $RequestedGradeFloor
     ApprovedSpecialistSkillIds = $ApprovedSpecialistSkillIds
 }
 foreach ($key in @($hierarchyArgs.Keys)) {
     $freezeArgs[$key] = $hierarchyArgs[$key]
 }
 $runtimeInput = & (Join-Path $PSScriptRoot 'Freeze-RuntimeInputPacket.ps1') @freezeArgs
+$runtimeInputPacket = if ($runtimeInput -and $runtimeInput.PSObject.Properties.Name -contains 'packet' -and $null -ne $runtimeInput.packet) {
+    $runtimeInput.packet
+} else {
+    $null
+}
 $terminalStage = if ($runtimeInput.packet -and -not [string]::IsNullOrWhiteSpace([string]$runtimeInput.packet.requested_stage_stop)) {
     [string]$runtimeInput.packet.requested_stage_stop
 } else {
-<<<<<<< HEAD
-    $null
+    'phase_cleanup'
 }
 $discussionRoutingLayer = New-VibeSpecialistRoutingLifecycleLayerProjection -RuntimeInputPacket $runtimeInputPacket
 if ($discussionRoutingLayer) {
     $discussionRoutingSegment = New-VibeHostUserBriefingSegmentProjection -LifecycleLayer $discussionRoutingLayer
     $discussionRoutingEvent = New-VibeHostStageDisclosureEventProjection -Segment $discussionRoutingSegment
     Add-VibeHostStageDisclosureEvent -SessionRoot ([string]$skeleton.session_root) -DisclosureEvent $discussionRoutingEvent | Out-Null
-=======
-    'phase_cleanup'
->>>>>>> 13b3922 (Add governed evolution runtime artifacts)
 }
 
 $interview = & (Join-Path $PSScriptRoot 'Invoke-DeepInterview.ps1') -Task $Task -Mode $Mode -RunId $RunId -ArtifactRoot $ArtifactRoot
@@ -341,9 +340,6 @@ if (Test-VibeGovernedStageReached -TerminalStage $terminalStage -TargetStage 'ph
         -PlanExecuteWriteActions @($memoryExecuteWrite, $memoryExecuteRufloWrite) `
         -CleanupWriteActions @($memoryCleanupDecision, $memoryCleanupCognee) `
         -CleanupFoldAction $memoryCleanupFold
-    Assert-VibeMemoryActivationHealthy `
-        -MemoryActivationReport $memoryActivation.report `
-        -ReportPath ([string]$memoryActivation.report_path)
     $deliveryAcceptanceReportPath = Join-Path $skeleton.session_root 'delivery-acceptance-report.json'
     $deliveryAcceptanceMarkdownPath = Join-Path $skeleton.session_root 'delivery-acceptance-report.md'
 }
