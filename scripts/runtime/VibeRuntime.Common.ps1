@@ -2789,16 +2789,16 @@ function New-VibeCandidateCompositeSkillDraftArtifact {
 
         $drafts += [pscustomobject]@{
             draft_id = 'draft-review-bundle'
-            title = 'review-oriented composite skill draft'
-            trigger_shape = 'repository review / governed verification task'
+            title = 'observed specialist composition surface'
+            trigger_shape = 'observed specialist co-dispatch under governed review / verification'
             governor_skill = 'vibe'
             component_skills = @($approvedSpecialists)
             entry_conditions = @(
-                'Task requires governed review or verification.',
-                'Specialist dispatch surfaced review-oriented specialist skills.'
+                'A governed run surfaced one or more approved specialist dispatches.',
+                'This draft records an observed specialist combination for review-only follow-up.'
             )
             known_risks = @($degradedSkillIds + $pitfallTypes + $activeFailures | Select-Object -Unique)
-            promotion_readiness = if (@($degradedSkillIds).Count -gt 0) { 'needs-shadow-review' } else { 'candidate' }
+            promotion_readiness = if (@($degradedSkillIds).Count -gt 0) { 'needs-shadow-review' } else { 'review-signal' }
         }
     }
 
@@ -2995,7 +2995,7 @@ function New-VibeApplicationReadinessReport {
             readiness = 'ready_for_review'
             blocked_by = @()
             required_manual_actions = @('Confirm the remediation text before promoting it into a reusable playbook entry.')
-            evidence_refs = @([string]$note.evidence_level)
+            evidence_levels = @([string]$note.evidence_level)
             boundary_impact = 'none'
             coupling_risk = 'low'
             regression_risk = 'low'
@@ -3021,20 +3021,20 @@ function New-VibeApplicationReadinessReport {
             candidate_id = 'lane-b-draft-' + [string]$draft.draft_id
             proposal_type = 'composite_skill_draft'
             source_ref = if ([string]::IsNullOrWhiteSpace($CandidateCompositeSkillDraftPath)) { [string]$draft.draft_id } else { $CandidateCompositeSkillDraftPath + '#' + [string]$draft.draft_id }
-            recommended_surface = 'shadow_candidate'
-            governance_path = 'lifecycle.shadow'
-            target_scope = 'composite_skill_bundle'
+            recommended_surface = 'review_signal_surface'
+            governance_path = 'lifecycle.review_only'
+            target_scope = 'observed_specialist_combination'
             manual_review_required = $true
-            shadow_required = $true
-            shadow_plan_status = if (@($blockedBy).Count -gt 0) { 'missing_prerequisites' } else { 'ready_to_prepare' }
+            shadow_required = [bool]($promotionReadiness -eq 'needs-shadow-review')
+            shadow_plan_status = if (@($blockedBy).Count -gt 0) { 'missing_prerequisites' } elseif ($promotionReadiness -eq 'needs-shadow-review') { 'review_before_shadow' } else { 'review_only' }
             board_review_required = $false
             replay_evidence_refs = @($ProposalLayerPath, $CandidateCompositeSkillDraftPath)
             rollback_plan_required = $true
-            readiness = if (@($blockedBy).Count -gt 0) { 'blocked' } else { 'ready_for_shadow_review' }
+            readiness = if (@($blockedBy).Count -gt 0) { 'blocked' } elseif ($promotionReadiness -eq 'needs-shadow-review') { 'ready_for_shadow_review' } else { 'ready_for_review' }
             blocked_by = @($blockedBy)
             required_manual_actions = @(
-                'Confirm module ownership and write scope before any shadow run.',
-                'Write an explicit rollback note before promoting beyond shadow.'
+                'Confirm whether this is only an observed specialist combination or a stable reusable pattern.',
+                'Do not treat this surface as a promotion-ready composite skill proposal without extra evidence.'
             )
             boundary_impact = 'module_boundary_review'
             coupling_risk = if (@($componentSkills).Count -gt 2) { 'medium' } else { 'low' }
@@ -3084,8 +3084,8 @@ function New-VibeApplicationReadinessReport {
         }
     }
 
-    $readyForReviewCount = @($laneACandidates | Where-Object { [string]$_.readiness -eq 'ready_for_review' }).Count
-    $readyForShadowReviewCount = @($laneBCandidates | Where-Object { [string]$_.readiness -eq 'ready_for_shadow_review' }).Count
+    $readyForReviewCount = @($laneACandidates + $laneBCandidates | Where-Object { [string]$_.readiness -eq 'ready_for_review' }).Count
+    $readyForShadowReviewCount = @($laneACandidates + $laneBCandidates | Where-Object { [string]$_.readiness -eq 'ready_for_shadow_review' }).Count
     $blockedCount = @($laneACandidates + $laneBCandidates | Where-Object { [string]$_.readiness -eq 'blocked' }).Count
     $highRiskFindings = @()
     foreach ($candidate in @($laneBCandidates | Where-Object { [string]$_.regression_risk -eq 'medium' -or [string]$_.coupling_risk -eq 'medium' })) {
@@ -3159,7 +3159,7 @@ function New-VibeApplicationReadinessMarkdownLines {
             'warning_card' { return '风险提示' }
             'preflight_check' { return '运行前检查' }
             'remediation_note' { return '处理经验' }
-            'composite_skill_draft' { return '候选组合技能草案' }
+            'composite_skill_draft' { return '组合现象暴露草案' }
             'threshold_policy_suggestion' { return '阈值/策略建议' }
             default {
                 if ([string]::IsNullOrWhiteSpace($ProposalType)) { return '未知类型' }
@@ -3176,6 +3176,7 @@ function New-VibeApplicationReadinessMarkdownLines {
             'preflight_rule_set' { return '下次执行前加入检查项' }
             'remediation_playbook' { return '沉淀为 review / cleanup 处理经验' }
             'shadow_candidate' { return '进入 shadow review，不直接提升为正式能力' }
+            'review_signal_surface' { return '先作为组合现象暴露面进入人工复核' }
             'policy_shadow_candidate' { return '进入 policy shadow / board review，不直接改策略' }
             default {
                 if ([string]::IsNullOrWhiteSpace($Surface)) { return '未指定落点' }
@@ -3274,7 +3275,7 @@ function New-VibeApplicationReadinessMarkdownLines {
             'delivery-gate' { '交付验收门禁需要保持审查' }
             'code-reviewer' { 'code-reviewer skill 出现降级' }
             'peer-review' { 'peer-review skill 出现降级' }
-            'draft-review-bundle' { '评审型组合技能草案' }
+            'draft-review-bundle' { '组合现象暴露草案' }
             default { $name -replace '_', ' ' }
         }
 
@@ -3291,7 +3292,7 @@ function New-VibeApplicationReadinessMarkdownLines {
             'warning_card' { return '保留为提示，不要自动拦截执行。' }
             'preflight_check' { return '人工判断应作为 soft check 还是 hard check。' }
             'remediation_note' { return '人工确认文案后沉淀进处理经验。' }
-            'composite_skill_draft' { return '先准备 shadow run 和 rollback 说明，不要直接 promote。' }
+            'composite_skill_draft' { return '先确认这是否只是一次组合现象，再决定是否值得进入 shadow review。' }
             'threshold_policy_suggestion' {
                 if ([string]$Candidate.governance_path -eq 'policy.board_review') {
                     return '进入 board review，并补齐 rollback 文案后再考虑策略变更。'
@@ -3309,7 +3310,7 @@ function New-VibeApplicationReadinessMarkdownLines {
             'warning_card' { return '确认提示文案和触发条件，再考虑放入共享 warning surface。' }
             'preflight_check' { return '判断该检查项应该作为 soft check 还是 hard check。' }
             'remediation_note' { return '确认处理建议文案，再沉淀为可复用 playbook 条目。' }
-            'composite_skill_draft' { return '确认模块归属和写入范围；补充 rollback 说明；只允许先做 shadow run。' }
+            'composite_skill_draft' { return '先确认是否存在稳定可复用的组合模式；没有额外证据前，不要把它当作可推广 proposal。' }
             'threshold_policy_suggestion' { return '确认目标 policy scope；补充 rollback 文案；进入 shadow 或 board review 后再考虑应用。' }
             default {
                 $manualActions = Join-VibeMarkdownListValue -Value $Candidate.required_manual_actions
@@ -3372,7 +3373,7 @@ function New-VibeApplicationReadinessMarkdownLines {
         ('- 本次 run：`{0}`' -f [string]$ApplicationReadinessReport.run_id),
         ('- 运行模式：`{0}`，审查状态：`{1}`' -f [string]$ApplicationReadinessReport.mode, [string]$ApplicationReadinessReport.review_status),
         ('- 低风险经验复用候选：`{0}` 个' -f [int]$ApplicationReadinessReport.summary.lane_a_candidate_count),
-        ('- 高风险治理变更候选：`{0}` 个' -f [int]$ApplicationReadinessReport.summary.lane_b_candidate_count),
+        ('- 治理复核候选：`{0}` 个' -f [int]$ApplicationReadinessReport.summary.lane_b_candidate_count),
         ('- 可进入人工审查：`{0}` 个' -f [int]$ApplicationReadinessReport.summary.ready_for_review_count),
         ('- 可准备 shadow review：`{0}` 个' -f [int]$ApplicationReadinessReport.summary.ready_for_shadow_review_count),
         ('- 当前阻塞：`{0}` 个' -f [int]$ApplicationReadinessReport.summary.blocked_count)
@@ -3407,9 +3408,9 @@ function New-VibeApplicationReadinessMarkdownLines {
     if (@($laneB).Count -gt 0) {
         $lines += @(
             '',
-            '## 高风险治理变更候选',
+            '## 治理复核候选',
             '',
-            '这些候选必须保持 manual review、shadow-first、replayable、rollbackable，不能直接应用到 live policy 或正式 skill 生命周期。',
+            '这些候选都需要保持 manual review；其中一部分只是组合现象暴露面，另一部分才接近治理变更讨论，因此都不能直接应用到 live policy 或正式 skill 生命周期。',
             '',
             '| 候选 | 建议落点 | 准备状态 | 风险判断 | 建议下一步 | 阻塞原因 |',
             '| --- | --- | --- | --- | --- | --- |'
