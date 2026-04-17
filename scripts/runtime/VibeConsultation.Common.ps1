@@ -609,7 +609,17 @@ function Invoke-VibeSpecialistConsultationUnit {
         -Policy $Policy
     Write-VgoUtf8NoBomText -Path $promptPath -Content ($prompt + [Environment]::NewLine)
 
-    $beforeSnapshot = Get-VibeGitStatusSnapshot -RepoRoot $RepoRoot
+    $workingRoot = Resolve-VibeNativeSpecialistWorkingRoot `
+        -RepoRoot $RepoRoot `
+        -SessionRoot $SessionRoot `
+        -SourceArtifactPath $SourceArtifactPath
+    $environmentOverrides = Get-VibeNativeSpecialistCodexHomeEnvironmentOverrides `
+        -AdapterResolution $adapterResolution `
+        -SkillRecord $Consultation `
+        -RunId $RunId `
+        -UnitId $UnitId
+
+    $beforeSnapshot = Get-VibeGitStatusSnapshot -RepoRoot $workingRoot
     Write-VgoUtf8NoBomText -Path $beforeGitPath -Content ((@($beforeSnapshot.lines) -join [Environment]::NewLine) + [Environment]::NewLine)
 
     $arguments = @()
@@ -619,8 +629,11 @@ function Invoke-VibeSpecialistConsultationUnit {
     foreach ($item in @($adapter.arguments_prefix)) {
         $arguments += [string]$item
     }
+    foreach ($item in @(Get-VibeNativeSpecialistRepoCheckBypassArguments -AdapterResolution $adapterResolution -WorkingRoot $workingRoot)) {
+        $arguments += [string]$item
+    }
     $arguments += @(
-        '-C', $RepoRoot,
+        '-C', $workingRoot,
         '--output-schema', $schemaPath,
         '-o', $responsePath,
         $prompt
@@ -630,13 +643,14 @@ function Invoke-VibeSpecialistConsultationUnit {
     $processResult = Invoke-VibeCapturedProcess `
         -Command ([string]$adapterResolution.command_path) `
         -Arguments $arguments `
-        -WorkingDirectory $RepoRoot `
+        -WorkingDirectory $workingRoot `
         -TimeoutSeconds ([int]$nativePolicy.default_timeout_seconds) `
         -StdOutPath $stdoutPath `
-        -StdErrPath $stderrPath
+        -StdErrPath $stderrPath `
+        -EnvironmentOverrides $environmentOverrides
     $finishedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.ffffffZ')
 
-    $afterSnapshot = Get-VibeGitStatusSnapshot -RepoRoot $RepoRoot
+    $afterSnapshot = Get-VibeGitStatusSnapshot -RepoRoot $workingRoot
     Write-VgoUtf8NoBomText -Path $afterGitPath -Content ((@($afterSnapshot.lines) -join [Environment]::NewLine) + [Environment]::NewLine)
 
     $beforeLookup = @{}
@@ -677,7 +691,7 @@ function Invoke-VibeSpecialistConsultationUnit {
         command = [string]$adapterResolution.command_path
         arguments = @($arguments)
         display_command = @([string]$adapterResolution.command_path) + @($arguments) -join ' '
-        cwd = $RepoRoot
+        cwd = $workingRoot
         timeout_seconds = [int]$nativePolicy.default_timeout_seconds
         expected_exit_code = 0
         exit_code = [int]$processResult.exit_code

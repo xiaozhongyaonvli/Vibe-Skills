@@ -66,3 +66,85 @@ Invoke-VibeCapturedProcess `
 
     captured_args = json.loads(captured_args_path.read_text(encoding="utf-8"))
     assert captured_args == ["--flag", "value with spaces", prompt]
+
+
+def test_invoke_vibe_captured_process_applies_environment_overrides(tmp_path: Path) -> None:
+    powershell = _require_powershell()
+    captured_env_path = tmp_path / "captured-env.json"
+    script_path = tmp_path / "capture_env.py"
+    stdout_path = tmp_path / "stdout.txt"
+    stderr_path = tmp_path / "stderr.txt"
+    script_path.write_text(
+        "import json, os, pathlib, sys\n"
+        "pathlib.Path(sys.argv[1]).write_text("
+        "json.dumps({'SPECIAL_TEST_ENV': os.environ.get('SPECIAL_TEST_ENV')}, ensure_ascii=False), encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+
+    command = f"""
+. '{(REPO_ROOT / "scripts" / "runtime" / "VibeExecution.Common.ps1").as_posix()}'
+Invoke-VibeCapturedProcess `
+    -Command '{shutil.which("python3") or sys.executable}' `
+    -Arguments @(
+        '{script_path.as_posix()}',
+        '{captured_env_path.as_posix()}'
+    ) `
+    -WorkingDirectory '{REPO_ROOT.as_posix()}' `
+    -TimeoutSeconds 10 `
+    -StdOutPath '{stdout_path.as_posix()}' `
+    -StdErrPath '{stderr_path.as_posix()}' `
+    -EnvironmentOverrides @{{ SPECIAL_TEST_ENV = 'expected-value' }} | Out-Null
+"""
+
+    subprocess.run(
+        [powershell, "-NoLogo", "-NoProfile", "-Command", command],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    captured_env = json.loads(captured_env_path.read_text(encoding="utf-8"))
+    assert captured_env == {"SPECIAL_TEST_ENV": "expected-value"}
+
+
+def test_invoke_vibe_captured_process_closes_stdin_for_child_process(tmp_path: Path) -> None:
+    powershell = _require_powershell()
+    stdin_state_path = tmp_path / "stdin-state.json"
+    script_path = tmp_path / "capture_stdin.py"
+    stdout_path = tmp_path / "stdout.txt"
+    stderr_path = tmp_path / "stderr.txt"
+    script_path.write_text(
+        "import json, pathlib, sys\n"
+        "payload = sys.stdin.read()\n"
+        "pathlib.Path(sys.argv[1]).write_text("
+        "json.dumps({'stdin_closed': payload == ''}, ensure_ascii=False), encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+
+    command = f"""
+. '{(REPO_ROOT / "scripts" / "runtime" / "VibeExecution.Common.ps1").as_posix()}'
+Invoke-VibeCapturedProcess `
+    -Command '{shutil.which("python3") or sys.executable}' `
+    -Arguments @(
+        '{script_path.as_posix()}',
+        '{stdin_state_path.as_posix()}'
+    ) `
+    -WorkingDirectory '{REPO_ROOT.as_posix()}' `
+    -TimeoutSeconds 10 `
+    -StdOutPath '{stdout_path.as_posix()}' `
+    -StdErrPath '{stderr_path.as_posix()}' | Out-Null
+"""
+
+    subprocess.run(
+        [powershell, "-NoLogo", "-NoProfile", "-Command", command],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    stdin_state = json.loads(stdin_state_path.read_text(encoding="utf-8"))
+    assert stdin_state == {"stdin_closed": True}

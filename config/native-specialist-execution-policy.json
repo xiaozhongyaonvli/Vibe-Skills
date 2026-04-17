@@ -36,7 +36,6 @@
       "command": "codex",
       "arguments_prefix": [
         "exec",
-        "--json",
         "--ephemeral",
         "--full-auto"
       ],

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
+import stat
 import subprocess
+import tempfile
 import unittest
+import uuid
 from pathlib import Path
 
 
@@ -46,6 +50,238 @@ def extract_powershell_function(script_path: Path, function_name: str) -> str:
                 break
         index += 1
     return text[start:index]
+
+
+def create_repo_check_fake_codex_command(directory: Path) -> Path:
+    suffix = ".cmd" if os.name == "nt" else ""
+    command_path = directory / f"codex-repo-check{suffix}"
+    if os.name == "nt":
+        command_path.write_text(
+            "@echo off\r\n"
+            "setlocal EnableDelayedExpansion\r\n"
+            "set OUT=\r\n"
+            "set HAS_SKIP=0\r\n"
+            ":loop\r\n"
+            "if \"%~1\"==\"\" goto done\r\n"
+            "if /I \"%~1\"==\"-o\" (\r\n"
+            "  set OUT=%~2\r\n"
+            "  shift\r\n"
+            "  shift\r\n"
+            "  goto loop\r\n"
+            ")\r\n"
+            "if /I \"%~1\"==\"--skip-git-repo-check\" (\r\n"
+            "  set HAS_SKIP=1\r\n"
+            "  shift\r\n"
+            "  goto loop\r\n"
+            ")\r\n"
+            "shift\r\n"
+            "goto loop\r\n"
+            ":done\r\n"
+            "if \"%HAS_SKIP%\"==\"0\" (\r\n"
+            "  >&2 echo Not inside a trusted directory and --skip-git-repo-check was not specified.\r\n"
+            "  exit /b 1\r\n"
+            ")\r\n"
+            "if \"%OUT%\"==\"\" exit /b 2\r\n"
+            "> \"%OUT%\" echo {\"status\":\"completed\",\"summary\":\"Executed specialist from a non-git workspace.\",\"verification_notes\":[\"Repo-check bypass was applied only for this codex exec.\"],\"changed_files\":[],\"bounded_output_notes\":[\"Execution stayed bounded to the provided artifacts.\"]}\r\n"
+            "echo fake codex repo-check ok\r\n"
+            "exit /b 0\r\n",
+            encoding="utf-8",
+        )
+    else:
+        command_path.write_text(
+            "#!/usr/bin/env sh\n"
+            "OUT=''\n"
+            "HAS_SKIP=0\n"
+            "while [ \"$#\" -gt 0 ]; do\n"
+            "  case \"$1\" in\n"
+            "    -o)\n"
+            "      OUT=\"$2\"\n"
+            "      shift 2\n"
+            "      ;;\n"
+            "    --skip-git-repo-check)\n"
+            "      HAS_SKIP=1\n"
+            "      shift\n"
+            "      ;;\n"
+            "    *)\n"
+            "      shift\n"
+            "      ;;\n"
+            "  esac\n"
+            "done\n"
+            "if [ \"$HAS_SKIP\" != \"1\" ]; then\n"
+            "  printf 'Not inside a trusted directory and --skip-git-repo-check was not specified.\\n' >&2\n"
+            "  exit 1\n"
+            "fi\n"
+            "if [ -z \"$OUT\" ]; then\n"
+            "  exit 2\n"
+            "fi\n"
+            "printf '%s' '{\"status\":\"completed\",\"summary\":\"Executed specialist from a non-git workspace.\",\"verification_notes\":[\"Repo-check bypass was applied only for this codex exec.\"],\"changed_files\":[],\"bounded_output_notes\":[\"Execution stayed bounded to the provided artifacts.\"]}' > \"$OUT\"\n"
+            "printf 'fake codex repo-check ok\\n'\n",
+            encoding="utf-8",
+        )
+        command_path.chmod(command_path.stat().st_mode | stat.S_IXUSR)
+    return command_path
+
+
+def create_codex_home_verifying_fake_dispatch_command(directory: Path) -> Path:
+    suffix = ".cmd" if os.name == "nt" else ""
+    command_path = directory / f"codex-home-dispatch{suffix}"
+    if os.name == "nt":
+        command_path.write_text(
+            "@echo off\r\n"
+            "setlocal EnableDelayedExpansion\r\n"
+            "set OUT=\r\n"
+            ":loop\r\n"
+            "if \"%~1\"==\"\" goto done\r\n"
+            "if /I \"%~1\"==\"-o\" (\r\n"
+            "  set OUT=%~2\r\n"
+            "  shift\r\n"
+            "  shift\r\n"
+            "  goto loop\r\n"
+            ")\r\n"
+            "shift\r\n"
+            "goto loop\r\n"
+            ":done\r\n"
+            "if \"%OUT%\"==\"\" exit /b 2\r\n"
+            "if \"%CODEX_HOME%\"==\"\" (\r\n"
+            "  >&2 echo CODEX_HOME missing\r\n"
+            "  exit /b 3\r\n"
+            ")\r\n"
+            "if not exist \"%CODEX_HOME%\\skills\\systematic-debugging\\SKILL.md\" (\r\n"
+            "  >&2 echo skill surface missing\r\n"
+            "  exit /b 4\r\n"
+            ")\r\n"
+            "> \"%OUT%\" echo {\"status\":\"completed\",\"summary\":\"Executed specialist from a bounded sidecar home.\",\"verification_notes\":[\"Execution used a writable CODEX_HOME sidecar.\"],\"changed_files\":[],\"bounded_output_notes\":[\"Specialist skill surface was materialized before launch.\"]}\r\n"
+            "echo CODEX_HOME=%CODEX_HOME%\r\n"
+            "echo SKILL_SURFACE=%CODEX_HOME%\\skills\\systematic-debugging\\SKILL.md\r\n"
+            "exit /b 0\r\n",
+            encoding="utf-8",
+        )
+    else:
+        command_path.write_text(
+            "#!/usr/bin/env sh\n"
+            "OUT=''\n"
+            "while [ \"$#\" -gt 0 ]; do\n"
+            "  case \"$1\" in\n"
+            "    -o)\n"
+            "      OUT=\"$2\"\n"
+            "      shift 2\n"
+            "      ;;\n"
+            "    *)\n"
+            "      shift\n"
+            "      ;;\n"
+            "  esac\n"
+            "done\n"
+            "if [ -z \"$OUT\" ]; then\n"
+            "  exit 2\n"
+            "fi\n"
+            "if [ -z \"$CODEX_HOME\" ]; then\n"
+            "  printf 'CODEX_HOME missing\\n' >&2\n"
+            "  exit 3\n"
+            "fi\n"
+            "if [ ! -f \"$CODEX_HOME/skills/systematic-debugging/SKILL.md\" ]; then\n"
+            "  printf 'skill surface missing\\n' >&2\n"
+            "  exit 4\n"
+            "fi\n"
+            "printf '%s' '{\"status\":\"completed\",\"summary\":\"Executed specialist from a bounded sidecar home.\",\"verification_notes\":[\"Execution used a writable CODEX_HOME sidecar.\"],\"changed_files\":[],\"bounded_output_notes\":[\"Specialist skill surface was materialized before launch.\"]}' > \"$OUT\"\n"
+            "printf 'CODEX_HOME=%s\\n' \"$CODEX_HOME\"\n"
+            "printf 'SKILL_SURFACE=%s\\n' \"$CODEX_HOME/skills/systematic-debugging/SKILL.md\"\n",
+            encoding="utf-8",
+        )
+        command_path.chmod(command_path.stat().st_mode | stat.S_IXUSR)
+    return command_path
+
+
+def create_codex_home_seed_verifying_fake_dispatch_command(directory: Path) -> Path:
+    suffix = ".cmd" if os.name == "nt" else ""
+    command_path = directory / f"codex-home-seed-dispatch{suffix}"
+    if os.name == "nt":
+        command_path.write_text(
+            "@echo off\r\n"
+            "setlocal EnableDelayedExpansion\r\n"
+            "set OUT=\r\n"
+            ":loop\r\n"
+            "if \"%~1\"==\"\" goto done\r\n"
+            "if /I \"%~1\"==\"-o\" (\r\n"
+            "  set OUT=%~2\r\n"
+            "  shift\r\n"
+            "  shift\r\n"
+            "  goto loop\r\n"
+            ")\r\n"
+            "shift\r\n"
+            "goto loop\r\n"
+            ":done\r\n"
+            "if \"%OUT%\"==\"\" exit /b 2\r\n"
+            "if \"%CODEX_HOME%\"==\"\" (\r\n"
+            "  >&2 echo CODEX_HOME missing\r\n"
+            "  exit /b 3\r\n"
+            ")\r\n"
+            "if not exist \"%CODEX_HOME%\\config.toml\" exit /b 4\r\n"
+            "findstr /c:\"config-seed-marker\" \"%CODEX_HOME%\\config.toml\" >nul || exit /b 5\r\n"
+            "if not exist \"%CODEX_HOME%\\auth.json\" exit /b 6\r\n"
+            "findstr /c:\"auth-seed-marker\" \"%CODEX_HOME%\\auth.json\" >nul || exit /b 7\r\n"
+            "if not exist \"%CODEX_HOME%\\config\\seed.json\" exit /b 8\r\n"
+            "if not exist \"%CODEX_HOME%\\mcp\\seed.json\" exit /b 9\r\n"
+            "> \"%OUT%\" echo {\"status\":\"completed\",\"summary\":\"Executed specialist from a seeded codex home.\",\"verification_notes\":[\"Execution used copied auth and config in the sidecar.\"],\"changed_files\":[],\"bounded_output_notes\":[\"Sidecar was seeded from the current host codex home before launch.\"]}\r\n"
+            "echo CODEX_HOME_SEEDED=1\r\n"
+            "exit /b 0\r\n",
+            encoding="utf-8",
+        )
+    else:
+        command_path.write_text(
+            "#!/usr/bin/env sh\n"
+            "OUT=''\n"
+            "while [ \"$#\" -gt 0 ]; do\n"
+            "  case \"$1\" in\n"
+            "    -o)\n"
+            "      OUT=\"$2\"\n"
+            "      shift 2\n"
+            "      ;;\n"
+            "    *)\n"
+            "      shift\n"
+            "      ;;\n"
+            "  esac\n"
+            "done\n"
+            "if [ -z \"$OUT\" ]; then\n"
+            "  exit 2\n"
+            "fi\n"
+            "if [ -z \"$CODEX_HOME\" ]; then\n"
+            "  printf 'CODEX_HOME missing\\n' >&2\n"
+            "  exit 3\n"
+            "fi\n"
+            "if [ ! -f \"$CODEX_HOME/config.toml\" ]; then\n"
+            "  exit 4\n"
+            "fi\n"
+            "grep -q 'config-seed-marker' \"$CODEX_HOME/config.toml\" || exit 5\n"
+            "if [ ! -f \"$CODEX_HOME/auth.json\" ]; then\n"
+            "  exit 6\n"
+            "fi\n"
+            "grep -q 'auth-seed-marker' \"$CODEX_HOME/auth.json\" || exit 7\n"
+            "if [ ! -f \"$CODEX_HOME/config/seed.json\" ]; then\n"
+            "  exit 8\n"
+            "fi\n"
+            "if [ ! -f \"$CODEX_HOME/mcp/seed.json\" ]; then\n"
+            "  exit 9\n"
+            "fi\n"
+            "printf '%s' '{\"status\":\"completed\",\"summary\":\"Executed specialist from a seeded codex home.\",\"verification_notes\":[\"Execution used copied auth and config in the sidecar.\"],\"changed_files\":[],\"bounded_output_notes\":[\"Sidecar was seeded from the current host codex home before launch.\"]}' > \"$OUT\"\n"
+            "printf 'CODEX_HOME_SEEDED=1\\n'\n",
+            encoding="utf-8",
+        )
+        command_path.chmod(command_path.stat().st_mode | stat.S_IXUSR)
+    return command_path
+
+
+def set_directory_read_only(path: Path) -> None:
+    if os.name == "nt":
+        path.chmod(stat.S_IREAD | stat.S_IEXEC)
+    else:
+        path.chmod(0o555)
+
+
+def set_directory_writable(path: Path) -> None:
+    if os.name == "nt":
+        path.chmod(stat.S_IWRITE | stat.S_IREAD | stat.S_IEXEC)
+    else:
+        path.chmod(0o755)
 
 
 class PlanExecuteReceiptTests(unittest.TestCase):
@@ -242,6 +478,289 @@ class PlanExecuteReceiptTests(unittest.TestCase):
         self.assertIsNone(result["prompt_path"])
         self.assertFalse(result["prompt_injection_complete"])
         self.assertEqual([], result["missing_prompt_injection_fields"])
+
+    def test_specialist_dispatch_bypasses_codex_repo_check_for_non_git_roots(self) -> None:
+        powershell = resolve_powershell()
+        if powershell is None:
+            self.skipTest("PowerShell not available")
+
+        common_path = REPO_ROOT / "scripts" / "runtime" / "VibeExecution.Common.ps1"
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            temp_path = Path(tempdir)
+            fake_codex = create_repo_check_fake_codex_command(temp_path)
+            non_git_root = temp_path / "non-git-workspace"
+            non_git_root.mkdir(parents=True, exist_ok=True)
+            session_root = temp_path / "session"
+            session_root.mkdir(parents=True, exist_ok=True)
+            requirement_doc = temp_path / "requirement.md"
+            execution_plan = temp_path / "plan.md"
+            skill_root = temp_path / "skills" / "systematic-debugging"
+            skill_root.mkdir(parents=True, exist_ok=True)
+            entrypoint_path = skill_root / "SKILL.runtime-mirror.md"
+            requirement_doc.write_text("# Requirement\n", encoding="utf-8")
+            execution_plan.write_text("# Plan\n", encoding="utf-8")
+            entrypoint_path.write_text("# Specialist\n", encoding="utf-8")
+
+            ps_script = (
+                "& { "
+                f". '{common_path}'; "
+                "$dispatch = [pscustomobject]@{ "
+                "skill_id = 'systematic-debugging'; "
+                "bounded_role = 'specialist_assist'; "
+                f"native_skill_entrypoint = '{entrypoint_path.as_posix()}'; "
+                f"skill_root = '{skill_root.as_posix()}'; "
+                "visibility_class = 'path_resolved'; "
+                "native_usage_required = $true; "
+                "usage_required = $true; "
+                "must_preserve_workflow = $true; "
+                "required_inputs = @('requirement_doc', 'execution_plan'); "
+                "expected_outputs = @('verification_notes', 'changed_files'); "
+                "verification_expectation = 'Return bounded execution guidance.'; "
+                "progressive_load_policy = @('Open the declared specialist entrypoint before executing.') "
+                "}; "
+                f"$result = Invoke-VibeSpecialistDispatchUnit -UnitId 'unit-{uuid.uuid4().hex[:8]}' -Dispatch $dispatch -SessionRoot '{session_root.as_posix()}' -RepoRoot '{non_git_root.as_posix()}' -RequirementDocPath '{requirement_doc.as_posix()}' -ExecutionPlanPath '{execution_plan.as_posix()}' -RunId 'run-1' -GovernanceScope 'root' -WriteScope 'read_only'; "
+                "$result.result | ConvertTo-Json -Depth 20 }"
+            )
+
+            completed = subprocess.run(
+                [powershell, "-NoLogo", "-NoProfile", "-Command", ps_script],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+                env={
+                    **os.environ,
+                    "VGO_ENABLE_NATIVE_SPECIALIST_EXECUTION": "1",
+                    "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
+                    "VGO_CODEX_EXECUTABLE": str(fake_codex),
+                },
+            )
+
+            result = json.loads(completed.stdout)
+            self.assertEqual("completed", result["status"])
+            self.assertTrue(result["live_native_execution"])
+            self.assertEqual(non_git_root.as_posix(), result["cwd"])
+            self.assertIn("--skip-git-repo-check", list(result["arguments"]))
+            self.assertTrue(Path(result["response_json_path"]).exists())
+            self.assertEqual([], list(result["observed_changed_files"]))
+
+    def test_specialist_dispatch_falls_back_to_requirement_workspace_when_repo_root_is_read_only(self) -> None:
+        powershell = resolve_powershell()
+        if powershell is None:
+            self.skipTest("PowerShell executable not available in PATH")
+
+        common_path = REPO_ROOT / "scripts" / "runtime" / "VibeExecution.Common.ps1"
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            temp_path = Path(tempdir)
+            fake_codex = create_repo_check_fake_codex_command(temp_path)
+            read_only_root = temp_path / "read-only-install-root"
+            read_only_root.mkdir(parents=True, exist_ok=True)
+            session_root = temp_path / "session"
+            session_root.mkdir(parents=True, exist_ok=True)
+            requirement_doc = temp_path / "docs" / "requirements" / "requirement.md"
+            execution_plan = temp_path / "docs" / "plans" / "plan.md"
+            requirement_doc.parent.mkdir(parents=True, exist_ok=True)
+            execution_plan.parent.mkdir(parents=True, exist_ok=True)
+            skill_root = temp_path / "skills" / "systematic-debugging"
+            skill_root.mkdir(parents=True, exist_ok=True)
+            entrypoint_path = skill_root / "SKILL.runtime-mirror.md"
+            requirement_doc.write_text("# Requirement\n", encoding="utf-8")
+            execution_plan.write_text("# Plan\n", encoding="utf-8")
+            entrypoint_path.write_text("# Specialist\n", encoding="utf-8")
+
+            try:
+                set_directory_read_only(read_only_root)
+
+                ps_script = (
+                    "& { "
+                    f". '{common_path}'; "
+                    "$dispatch = [pscustomobject]@{ "
+                    "skill_id = 'systematic-debugging'; "
+                    "bounded_role = 'specialist_assist'; "
+                    f"native_skill_entrypoint = '{entrypoint_path.as_posix()}'; "
+                    f"skill_root = '{skill_root.as_posix()}'; "
+                    "visibility_class = 'path_resolved'; "
+                    "native_usage_required = $true; "
+                    "usage_required = $true; "
+                    "must_preserve_workflow = $true; "
+                    "required_inputs = @('requirement_doc', 'execution_plan'); "
+                    "expected_outputs = @('verification_notes', 'changed_files'); "
+                    "verification_expectation = 'Return bounded execution guidance.'; "
+                    "progressive_load_policy = @('Open the declared specialist entrypoint before executing.') "
+                    "}; "
+                    f"$result = Invoke-VibeSpecialistDispatchUnit -UnitId 'unit-{uuid.uuid4().hex[:8]}' -Dispatch $dispatch -SessionRoot '{session_root.as_posix()}' -RepoRoot '{read_only_root.as_posix()}' -RequirementDocPath '{requirement_doc.as_posix()}' -ExecutionPlanPath '{execution_plan.as_posix()}' -RunId 'run-1' -GovernanceScope 'root' -WriteScope 'read_only'; "
+                    "$result.result | ConvertTo-Json -Depth 20 }"
+                )
+
+                completed = subprocess.run(
+                    [powershell, "-NoLogo", "-NoProfile", "-Command", ps_script],
+                    cwd=REPO_ROOT,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    env={
+                        **os.environ,
+                        "VGO_ENABLE_NATIVE_SPECIALIST_EXECUTION": "1",
+                        "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
+                        "VGO_CODEX_EXECUTABLE": str(fake_codex),
+                    },
+                )
+            finally:
+                set_directory_writable(read_only_root)
+
+            result = json.loads(completed.stdout)
+            self.assertEqual("completed", result["status"])
+            self.assertEqual(temp_path.as_posix(), result["cwd"])
+            self.assertIn("--skip-git-repo-check", list(result["arguments"]))
+            self.assertTrue(Path(result["response_json_path"]).exists())
+
+    def test_specialist_dispatch_uses_sidecar_codex_home_with_materialized_skill_surface(self) -> None:
+        powershell = resolve_powershell()
+        if powershell is None:
+            self.skipTest("PowerShell executable not available in PATH")
+
+        common_path = REPO_ROOT / "scripts" / "runtime" / "VibeExecution.Common.ps1"
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            temp_path = Path(tempdir)
+            fake_codex = create_codex_home_verifying_fake_dispatch_command(temp_path)
+            non_git_root = temp_path / "non-git-workspace"
+            non_git_root.mkdir(parents=True, exist_ok=True)
+            session_root = temp_path / "session"
+            session_root.mkdir(parents=True, exist_ok=True)
+            requirement_doc = temp_path / "requirement.md"
+            execution_plan = temp_path / "plan.md"
+            skill_root = temp_path / "skills" / "systematic-debugging"
+            skill_root.mkdir(parents=True, exist_ok=True)
+            entrypoint_path = skill_root / "SKILL.runtime-mirror.md"
+            requirement_doc.write_text("# Requirement\n", encoding="utf-8")
+            execution_plan.write_text("# Plan\n", encoding="utf-8")
+            entrypoint_path.write_text("# Specialist\n", encoding="utf-8")
+
+            ps_script = (
+                "& { "
+                f". '{common_path}'; "
+                "$dispatch = [pscustomobject]@{ "
+                "skill_id = 'systematic-debugging'; "
+                "bounded_role = 'specialist_assist'; "
+                f"native_skill_entrypoint = '{entrypoint_path.as_posix()}'; "
+                f"skill_root = '{skill_root.as_posix()}'; "
+                "visibility_class = 'path_resolved'; "
+                "native_usage_required = $true; "
+                "usage_required = $true; "
+                "must_preserve_workflow = $true; "
+                "required_inputs = @('requirement_doc', 'execution_plan'); "
+                "expected_outputs = @('verification_notes', 'changed_files'); "
+                "verification_expectation = 'Return bounded execution guidance.'; "
+                "progressive_load_policy = @('Open the declared specialist entrypoint before executing.') "
+                "}; "
+                f"$result = Invoke-VibeSpecialistDispatchUnit -UnitId 'unit-sidecar' -Dispatch $dispatch -SessionRoot '{session_root.as_posix()}' -RepoRoot '{non_git_root.as_posix()}' -RequirementDocPath '{requirement_doc.as_posix()}' -ExecutionPlanPath '{execution_plan.as_posix()}' -RunId 'run-sidecar' -GovernanceScope 'root' -WriteScope 'read_only'; "
+                "$result.result | ConvertTo-Json -Depth 20 }"
+            )
+
+            completed = subprocess.run(
+                [powershell, "-NoLogo", "-NoProfile", "-Command", ps_script],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+                env={
+                    **os.environ,
+                    "VGO_ENABLE_NATIVE_SPECIALIST_EXECUTION": "1",
+                    "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
+                    "VGO_CODEX_EXECUTABLE": str(fake_codex),
+                },
+            )
+
+            result = json.loads(completed.stdout)
+            self.assertEqual("completed", result["status"])
+            self.assertTrue(result["live_native_execution"])
+            self.assertEqual(non_git_root.as_posix(), result["cwd"])
+            codex_home_line = next(
+                line for line in list(result["stdout_preview"]) if str(line).startswith("CODEX_HOME=")
+            )
+            codex_home = codex_home_line.split("=", 1)[1]
+            self.assertNotIn(str(session_root), codex_home)
+            self.assertNotIn(str(temp_path), codex_home)
+            skill_surface_line = next(
+                line for line in list(result["stdout_preview"]) if str(line).startswith("SKILL_SURFACE=")
+            )
+            skill_surface = skill_surface_line.split("=", 1)[1]
+            self.assertTrue(Path(skill_surface).exists())
+            self.assertEqual("SKILL.md", Path(skill_surface).name)
+
+    def test_specialist_dispatch_seeds_sidecar_codex_home_from_current_host(self) -> None:
+        powershell = resolve_powershell()
+        if powershell is None:
+            self.skipTest("PowerShell executable not available in PATH")
+
+        common_path = REPO_ROOT / "scripts" / "runtime" / "VibeExecution.Common.ps1"
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            temp_path = Path(tempdir)
+            fake_codex = create_codex_home_seed_verifying_fake_dispatch_command(temp_path)
+            source_codex_home = temp_path / "source-codex-home"
+            (source_codex_home / "config").mkdir(parents=True, exist_ok=True)
+            (source_codex_home / "mcp").mkdir(parents=True, exist_ok=True)
+            (source_codex_home / "config.toml").write_text("# config-seed-marker\n", encoding="utf-8")
+            (source_codex_home / "auth.json").write_text("{\"marker\":\"auth-seed-marker\"}\n", encoding="utf-8")
+            (source_codex_home / "config" / "seed.json").write_text("{\"marker\":\"config-dir\"}\n", encoding="utf-8")
+            (source_codex_home / "mcp" / "seed.json").write_text("{\"marker\":\"mcp-dir\"}\n", encoding="utf-8")
+            non_git_root = temp_path / "non-git-workspace"
+            non_git_root.mkdir(parents=True, exist_ok=True)
+            session_root = temp_path / "session"
+            session_root.mkdir(parents=True, exist_ok=True)
+            requirement_doc = temp_path / "requirement.md"
+            execution_plan = temp_path / "plan.md"
+            skill_root = temp_path / "skills" / "systematic-debugging"
+            skill_root.mkdir(parents=True, exist_ok=True)
+            entrypoint_path = skill_root / "SKILL.runtime-mirror.md"
+            requirement_doc.write_text("# Requirement\n", encoding="utf-8")
+            execution_plan.write_text("# Plan\n", encoding="utf-8")
+            entrypoint_path.write_text("# Specialist\n", encoding="utf-8")
+
+            ps_script = (
+                "& { "
+                f". '{common_path}'; "
+                "$dispatch = [pscustomobject]@{ "
+                "skill_id = 'systematic-debugging'; "
+                "bounded_role = 'specialist_assist'; "
+                f"native_skill_entrypoint = '{entrypoint_path.as_posix()}'; "
+                f"skill_root = '{skill_root.as_posix()}'; "
+                "visibility_class = 'path_resolved'; "
+                "native_usage_required = $true; "
+                "usage_required = $true; "
+                "must_preserve_workflow = $true; "
+                "required_inputs = @('requirement_doc', 'execution_plan'); "
+                "expected_outputs = @('verification_notes', 'changed_files'); "
+                "verification_expectation = 'Return bounded execution guidance.'; "
+                "progressive_load_policy = @('Open the declared specialist entrypoint before executing.') "
+                "}; "
+                f"$result = Invoke-VibeSpecialistDispatchUnit -UnitId 'unit-seed' -Dispatch $dispatch -SessionRoot '{session_root.as_posix()}' -RepoRoot '{non_git_root.as_posix()}' -RequirementDocPath '{requirement_doc.as_posix()}' -ExecutionPlanPath '{execution_plan.as_posix()}' -RunId 'run-seed' -GovernanceScope 'root' -WriteScope 'read_only'; "
+                "$result.result | ConvertTo-Json -Depth 20 }"
+            )
+
+            completed = subprocess.run(
+                [powershell, "-NoLogo", "-NoProfile", "-Command", ps_script],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+                env={
+                    **os.environ,
+                    "CODEX_HOME": str(source_codex_home),
+                    "VGO_ENABLE_NATIVE_SPECIALIST_EXECUTION": "1",
+                    "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
+                    "VGO_CODEX_EXECUTABLE": str(fake_codex),
+                },
+            )
+
+            result = json.loads(completed.stdout)
+            self.assertEqual("completed", result["status"])
+            self.assertTrue(result["live_native_execution"])
+            self.assertIn("CODEX_HOME_SEEDED=1", list(result["stdout_preview"]))
 
 
 if __name__ == "__main__":

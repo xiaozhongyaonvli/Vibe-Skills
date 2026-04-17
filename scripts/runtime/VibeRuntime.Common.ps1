@@ -328,6 +328,127 @@ function Get-VibeWorkspaceMemoryPlaneContract {
     }
 }
 
+function Test-VibeWritableDirectory {
+    param(
+        [AllowEmptyString()] [string]$Path
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return $false
+    }
+
+    $candidate = [System.IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path -LiteralPath $candidate)) {
+        return $false
+    }
+
+    try {
+        $item = Get-Item -LiteralPath $candidate -ErrorAction Stop
+        $directory = if ($item.PSIsContainer) { [string]$item.FullName } else { [string]$item.Directory.FullName }
+        if ([string]::IsNullOrWhiteSpace($directory)) {
+            return $false
+        }
+
+        $probePath = Join-Path $directory ('.vibe-write-probe-{0}.tmp' -f [System.Guid]::NewGuid().ToString('N'))
+        [System.IO.File]::WriteAllText($probePath, '')
+        Remove-Item -LiteralPath $probePath -Force -ErrorAction SilentlyContinue
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+function Resolve-VibeGovernedArtifactRootFromPath {
+    param(
+        [AllowEmptyString()] [string]$Path
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return $null
+    }
+
+    $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path -LiteralPath $resolvedPath)) {
+        return $null
+    }
+
+    $container = if (Test-Path -LiteralPath $resolvedPath -PathType Container) {
+        $resolvedPath
+    } else {
+        Split-Path -Parent $resolvedPath
+    }
+    if ([string]::IsNullOrWhiteSpace($container)) {
+        return $null
+    }
+
+    $leafName = [System.IO.Path]::GetFileName($container)
+    $parent = Split-Path -Parent $container
+    if (($leafName -in @('requirements', 'plans')) -and ([System.IO.Path]::GetFileName($parent) -eq 'docs')) {
+        return [System.IO.Path]::GetFullPath((Split-Path -Parent $parent))
+    }
+
+    return [System.IO.Path]::GetFullPath($container)
+}
+
+function Resolve-VibeNativeSpecialistWorkingRoot {
+    param(
+        [Parameter(Mandatory)] [string]$RepoRoot,
+        [AllowEmptyString()] [string]$SessionRoot = '',
+        [AllowEmptyString()] [string]$RequirementDocPath = '',
+        [AllowEmptyString()] [string]$ExecutionPlanPath = '',
+        [AllowEmptyString()] [string]$SourceArtifactPath = ''
+    )
+
+    $preferArtifactWorkspace = (
+        (Test-Path -LiteralPath (Join-Path $RepoRoot 'scripts/runtime/Invoke-VibeCanonicalEntry.ps1') -PathType Leaf) -and
+        (Test-Path -LiteralPath (Join-Path $RepoRoot 'config/version-governance.json') -PathType Leaf)
+    )
+    $orderedCandidates = if ($preferArtifactWorkspace) {
+        @(
+            $(Resolve-VibeGovernedArtifactRootFromPath -Path $RequirementDocPath),
+            $(Resolve-VibeGovernedArtifactRootFromPath -Path $ExecutionPlanPath),
+            $(Resolve-VibeGovernedArtifactRootFromPath -Path $SourceArtifactPath),
+            $SessionRoot,
+            $RepoRoot
+        )
+    } else {
+        @(
+            $RepoRoot,
+            $(Resolve-VibeGovernedArtifactRootFromPath -Path $RequirementDocPath),
+            $(Resolve-VibeGovernedArtifactRootFromPath -Path $ExecutionPlanPath),
+            $(Resolve-VibeGovernedArtifactRootFromPath -Path $SourceArtifactPath),
+            $SessionRoot
+        )
+    }
+
+    $candidates = New-Object System.Collections.Generic.List[string]
+    foreach ($candidate in @($orderedCandidates)) {
+        if ([string]::IsNullOrWhiteSpace([string]$candidate)) {
+            continue
+        }
+
+        $resolvedCandidate = [System.IO.Path]::GetFullPath([string]$candidate)
+        if (-not (Test-Path -LiteralPath $resolvedCandidate)) {
+            continue
+        }
+        if (-not $candidates.Contains($resolvedCandidate)) {
+            $candidates.Add($resolvedCandidate) | Out-Null
+        }
+    }
+
+    foreach ($candidate in @($candidates)) {
+        if (Test-VibeWritableDirectory -Path $candidate) {
+            return $candidate
+        }
+    }
+
+    if ($candidates.Count -gt 0) {
+        return [string]$candidates[0]
+    }
+
+    return [System.IO.Path]::GetFullPath($RepoRoot)
+}
+
 function Get-VibeHostSidecarRoot {
     param(
         [AllowNull()] [object]$Runtime,
