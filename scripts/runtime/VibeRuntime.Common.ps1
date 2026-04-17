@@ -1985,8 +1985,10 @@ function New-VibeSpecialistConsultationLifecycleLayerProjection {
     $skills = New-Object System.Collections.Generic.List[object]
     $renderedLines = @(if ($routedCount -gt 0 -and $consultedCount -eq 0) {
         ('Specialist consultation routing during {0}:' -f $windowId)
-    } else {
+    } elseif ($consultedCount -gt 0 -and $routedCount -eq 0) {
         ('Specialist consultation during {0}:' -f $windowId)
+    } else {
+        ('Recorded specialist consultation chain during {0}:' -f $windowId)
     })
     foreach ($disclosure in @($ConsultationReceipt.user_disclosures)) {
         if ($null -eq $disclosure) {

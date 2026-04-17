@@ -674,6 +674,32 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
         self.assertEqual("systematic-debugging", skill["skill_id"])
         self.assertEqual("consultation_disclosed", skill["state"])
 
+    def test_consultation_lifecycle_projection_uses_chain_header_for_mixed_consultation_state(self) -> None:
+        result = run_runtime_common_json(
+            """
+            $receipt = [pscustomobject]@{
+                enabled = $true
+                window_id = 'discussion'
+                stage = 'requirement_doc'
+                summary = [pscustomobject]@{
+                    consulted_unit_count = 1
+                    routed_unit_count = 1
+                }
+                user_disclosures = @(
+                    [pscustomobject]@{
+                        skill_id = 'systematic-debugging'
+                        why_now = 'need debugging guidance before requirement freeze'
+                        native_skill_entrypoint = 'scripts/runtime/systematic-debugging/SKILL.md'
+                    }
+                )
+            }
+            $result = New-VibeSpecialistConsultationLifecycleLayerProjection -ConsultationReceipt $receipt
+            $result | ConvertTo-Json -Depth 20
+            """
+        )
+
+        self.assertIn("Recorded specialist consultation chain during discussion:", result["rendered_text"])
+
     def test_host_stage_disclosure_treats_suffix_routed_states_as_routed(self) -> None:
         result = run_runtime_common_json(
             """

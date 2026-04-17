@@ -1154,6 +1154,31 @@ $directRoutedSpecialistUnits = @($executedSpecialistUnits | Where-Object {
 })
 $verifiedSpecialistUnits = @($liveSpecialistUnits)
 
+function Get-VibeSpecialistEntrySkillId {
+    param(
+        [AllowNull()] [object]$Entry = $null
+    )
+
+    if ($null -eq $Entry) {
+        return $null
+    }
+
+    if (
+        $Entry.PSObject.Properties.Name -contains 'skill_id' -and
+        -not [string]::IsNullOrWhiteSpace([string]$Entry.skill_id)
+    ) {
+        return [string]$Entry.skill_id
+    }
+    if (
+        $Entry.PSObject.Properties.Name -contains 'specialist_skill_id' -and
+        -not [string]::IsNullOrWhiteSpace([string]$Entry.specialist_skill_id)
+    ) {
+        return [string]$Entry.specialist_skill_id
+    }
+
+    return $null
+}
+
 function Get-VibeSpecialistDispatchResolutionKey {
     param(
         [AllowNull()] [object]$Entry = $null
@@ -1163,19 +1188,7 @@ function Get-VibeSpecialistDispatchResolutionKey {
         return $null
     }
 
-    $skillId = if (
-        $Entry.PSObject.Properties.Name -contains 'skill_id' -and
-        -not [string]::IsNullOrWhiteSpace([string]$Entry.skill_id)
-    ) {
-        [string]$Entry.skill_id
-    } elseif (
-        $Entry.PSObject.Properties.Name -contains 'specialist_skill_id' -and
-        -not [string]::IsNullOrWhiteSpace([string]$Entry.specialist_skill_id)
-    ) {
-        [string]$Entry.specialist_skill_id
-    } else {
-        $null
-    }
+    $skillId = Get-VibeSpecialistEntrySkillId -Entry $Entry
     if ([string]::IsNullOrWhiteSpace($skillId)) {
         return $null
     }
@@ -1208,7 +1221,7 @@ function Get-VibeSpecialistDispatchExplicitPhase {
     return $null
 }
 
-function Test-VibeSpecialistEntrySupportedByCandidates {
+function Test-VibeSpecialistEntrySupportedByCandidate {
     param(
         [AllowNull()] [object]$Entry = $null,
         [object[]]$Candidates = @()
@@ -1218,19 +1231,7 @@ function Test-VibeSpecialistEntrySupportedByCandidates {
         return $false
     }
 
-    $entrySkillId = if (
-        $Entry.PSObject.Properties.Name -contains 'skill_id' -and
-        -not [string]::IsNullOrWhiteSpace([string]$Entry.skill_id)
-    ) {
-        [string]$Entry.skill_id
-    } elseif (
-        $Entry.PSObject.Properties.Name -contains 'specialist_skill_id' -and
-        -not [string]::IsNullOrWhiteSpace([string]$Entry.specialist_skill_id)
-    ) {
-        [string]$Entry.specialist_skill_id
-    } else {
-        $null
-    }
+    $entrySkillId = Get-VibeSpecialistEntrySkillId -Entry $Entry
     if ([string]::IsNullOrWhiteSpace($entrySkillId)) {
         return $false
     }
@@ -1241,19 +1242,7 @@ function Test-VibeSpecialistEntrySupportedByCandidates {
             continue
         }
 
-        $candidateSkillId = if (
-            $candidate.PSObject.Properties.Name -contains 'skill_id' -and
-            -not [string]::IsNullOrWhiteSpace([string]$candidate.skill_id)
-        ) {
-            [string]$candidate.skill_id
-        } elseif (
-            $candidate.PSObject.Properties.Name -contains 'specialist_skill_id' -and
-            -not [string]::IsNullOrWhiteSpace([string]$candidate.specialist_skill_id)
-        ) {
-            [string]$candidate.specialist_skill_id
-        } else {
-            $null
-        }
+        $candidateSkillId = Get-VibeSpecialistEntrySkillId -Entry $candidate
         if ([string]::IsNullOrWhiteSpace($candidateSkillId) -or $candidateSkillId -ne $entrySkillId) {
             continue
         }
@@ -1288,42 +1277,42 @@ $resolvedSpecialistResolutionKeys = @((@($executedSpecialistResolutionKeys) + @(
 $approvedDispatchMissingFromRecommendations = @($approvedDispatchSkillIds | Where-Object { $_ -notin $recommendationSkillIds })
 $approvedDispatchMissingFromRecommendationsResolutionKeys = @(
     $approvedDispatch |
-        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @($specialistRecommendations)) } |
+        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @($specialistRecommendations)) } |
         ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
         Select-Object -Unique
 )
 $approvedDispatchNotExecuted = @(
     $approvedDispatch |
-        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @($verifiedSpecialistUnits)) } |
+        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @($verifiedSpecialistUnits)) } |
         ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
         Select-Object -Unique
 )
 $approvedDispatchNotResolved = @(
     $approvedDispatch |
-        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @(@($verifiedSpecialistUnits) + @($directRoutedSpecialistUnits))) } |
+        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @(@($verifiedSpecialistUnits) + @($directRoutedSpecialistUnits))) } |
         ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
         Select-Object -Unique
 )
 $executedWithoutApproval = @(
     $verifiedSpecialistUnits |
-        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @($approvedDispatch)) } |
+        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @($approvedDispatch)) } |
         ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
         Select-Object -Unique
 )
 $routedWithoutApproval = @(
     $directRoutedSpecialistUnits |
-        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @($approvedDispatch)) } |
+        Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @($approvedDispatch)) } |
         ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
         Select-Object -Unique
 )
 $localSuggestionsExecutedWithoutApproval = @(
     $localSuggestions |
-        Where-Object { Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @($verifiedSpecialistUnits) } |
+        Where-Object { Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @($verifiedSpecialistUnits) } |
         ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
         Select-Object -Unique

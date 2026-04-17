@@ -191,6 +191,9 @@ class SkillPromotionMetricsTests(unittest.TestCase):
             self.assertEqual(0, int(funnel["ghost_match"]))
 
     def test_phase_qualified_resolution_keys_do_not_collapse_duplicate_skill_ids(self) -> None:
+        skill_id_block = extract_block(
+            r"^function Get-VibeSpecialistEntrySkillId \{.*?^}\s*$"
+        )
         resolution_key_block = extract_block(
             r"^function Get-VibeSpecialistDispatchResolutionKey \{.*?^}\s*$"
         )
@@ -198,7 +201,7 @@ class SkillPromotionMetricsTests(unittest.TestCase):
             r"^function Get-VibeSpecialistDispatchExplicitPhase \{.*?^}\s*$"
         )
         support_block = extract_block(
-            r"^function Test-VibeSpecialistEntrySupportedByCandidates \{.*?^}\s*$"
+            r"^function Test-VibeSpecialistEntrySupportedByCandidate \{.*?^}\s*$"
         )
         approved_keys_expr = extract_expression(r"^\$approvedDispatchResolutionKeys = (.+)$")
         executed_keys_expr = extract_expression(r"^\$executedSpecialistResolutionKeys = (.+)$")
@@ -208,6 +211,7 @@ class SkillPromotionMetricsTests(unittest.TestCase):
         payload = run_powershell_json(
             (
                 "& { "
+                f"{skill_id_block} "
                 f"{resolution_key_block} "
                 f"{explicit_phase_block} "
                 f"{support_block} "
@@ -225,7 +229,7 @@ class SkillPromotionMetricsTests(unittest.TestCase):
                 f"$resolvedSpecialistResolutionKeys = {resolved_keys_expr}; "
                 "$approvedDispatchNotResolved = @("
                 "$approvedDispatch | "
-                "Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @(@($verifiedSpecialistUnits) + @($directRoutedSpecialistUnits))) } | "
+                "Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @(@($verifiedSpecialistUnits) + @($directRoutedSpecialistUnits))) } | "
                 "ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } | "
                 "Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | "
                 "Select-Object -Unique"
@@ -246,6 +250,9 @@ class SkillPromotionMetricsTests(unittest.TestCase):
         self.assertEqual(["verification|demo-skill"], list(payload["not_resolved"]))
 
     def test_unphased_recommendations_support_phase_bound_dispatch(self) -> None:
+        skill_id_block = extract_block(
+            r"^function Get-VibeSpecialistEntrySkillId \{.*?^}\s*$"
+        )
         resolution_key_block = extract_block(
             r"^function Get-VibeSpecialistDispatchResolutionKey \{.*?^}\s*$"
         )
@@ -253,12 +260,13 @@ class SkillPromotionMetricsTests(unittest.TestCase):
             r"^function Get-VibeSpecialistDispatchExplicitPhase \{.*?^}\s*$"
         )
         support_block = extract_block(
-            r"^function Test-VibeSpecialistEntrySupportedByCandidates \{.*?^}\s*$"
+            r"^function Test-VibeSpecialistEntrySupportedByCandidate \{.*?^}\s*$"
         )
 
         payload = run_powershell_json(
             (
                 "& { "
+                f"{skill_id_block} "
                 f"{resolution_key_block} "
                 f"{explicit_phase_block} "
                 f"{support_block} "
@@ -271,7 +279,7 @@ class SkillPromotionMetricsTests(unittest.TestCase):
                 "); "
                 "$approvedDispatchMissingFromRecommendationsResolutionKeys = @("
                 "$approvedDispatch | "
-                "Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidates -Entry $_ -Candidates @($specialistRecommendations)) } | "
+                "Where-Object { -not (Test-VibeSpecialistEntrySupportedByCandidate -Entry $_ -Candidates @($specialistRecommendations)) } | "
                 "ForEach-Object { Get-VibeSpecialistDispatchResolutionKey -Entry $_ } | "
                 "Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | "
                 "Select-Object -Unique"
