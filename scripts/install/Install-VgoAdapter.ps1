@@ -73,6 +73,7 @@ function Resolve-InstallAdapterDescriptor {
     return [pscustomobject]@{
         id = [string]$entry.id
         install_mode = [string]$entry.install_mode
+        canonical_vibe = if ($entry.PSObject.Properties.Name -contains 'canonical_vibe') { $entry.canonical_vibe } else { $null }
     }
 }
 
@@ -565,7 +566,7 @@ function Resolve-VgoDirectRuntimeExecutable {
 
     return [pscustomobject]@{
         required = $true
-        ready = [bool](-not [string]::IsNullOrWhiteSpace($resolvedPath) -and $invocationKind -eq 'direct')
+        ready = [bool](-not [string]::IsNullOrWhiteSpace($resolvedPath))
         invocation_kind = if (-not [string]::IsNullOrWhiteSpace($invocationKind)) { $invocationKind } else { $null }
         executable_env = if (-not [string]::IsNullOrWhiteSpace($envName)) { $envName } else { $null }
         command = if (-not [string]::IsNullOrWhiteSpace($command)) { $command } else { $null }

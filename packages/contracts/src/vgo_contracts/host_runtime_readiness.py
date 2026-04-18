@@ -50,6 +50,19 @@ def _resolve_executable_candidate(raw: str) -> str | None:
     return None
 
 
+def _fallback_canonical_vibe_contract(host_id: str | None) -> dict[str, Any]:
+    normalized_host_id = str(host_id or "").strip().lower()
+    return {
+        "host_id": normalized_host_id,
+        "entry_mode": "bridged_runtime",
+        "fallback_policy": "blocked",
+        "proof_required": True,
+        "allow_skill_doc_fallback": False,
+        "launcher_kind": "managed_bridge",
+        "supports_bounded_stop": True,
+    }
+
+
 def evaluate_host_runtime_readiness(
     repo_root: str | Path | None,
     host_id: str | None,
@@ -62,7 +75,10 @@ def evaluate_host_runtime_readiness(
         contract_repo_root: str | Path | None = resolved_repo_root
     except RuntimeError:
         contract_repo_root = REPO_ROOT
-    contract = resolve_canonical_vibe_contract(contract_repo_root, host_id)
+    try:
+        contract = resolve_canonical_vibe_contract(contract_repo_root, host_id)
+    except ValueError:
+        contract = _fallback_canonical_vibe_contract(host_id)
     normalized_host_id = str(contract.get("host_id") or "").strip().lower()
     readiness_driver = "direct_runtime" if contract["entry_mode"] == "direct_runtime" else "specialist_wrapper"
     wrapper_ready = bool(specialist_wrapper_ready)
@@ -78,7 +94,10 @@ def evaluate_host_runtime_readiness(
     }
 
     if readiness_driver == "direct_runtime":
-        policy_adapter = _resolve_direct_runtime_policy(contract_repo_root, normalized_host_id)
+        try:
+            policy_adapter = _resolve_direct_runtime_policy(contract_repo_root, normalized_host_id)
+        except RuntimeError:
+            policy_adapter = None
         if policy_adapter is None:
             direct_runtime["reason"] = "native_specialist_policy_missing"
         else:

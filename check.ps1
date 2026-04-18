@@ -656,6 +656,7 @@ function Invoke-AdapterSpecificChecks {
   param(
     [psobject]$Adapter,
     [string]$TargetRoot,
+    [string]$HostId,
     [string]$RuntimeSkillRoot,
     [string]$RuntimeNestedSkillRoot,
     [bool]$NestedBundledRequired,
@@ -862,7 +863,7 @@ if ($null -ne $startupGovernance -and $startupGovernance.PSObject.Properties.Nam
   }
 }
 
-Invoke-AdapterSpecificChecks -Adapter $Adapter -TargetRoot $TargetRoot -RuntimeSkillRoot $runtimeSkillRoot -RuntimeNestedSkillRoot $runtimeNestedSkillRoot -NestedBundledRequired:$nestedBundledRequired -NestedBundledPresencePolicy $nestedBundledPresencePolicy
+Invoke-AdapterSpecificChecks -Adapter $Adapter -TargetRoot $TargetRoot -HostId $HostId -RuntimeSkillRoot $runtimeSkillRoot -RuntimeNestedSkillRoot $runtimeNestedSkillRoot -NestedBundledRequired:$nestedBundledRequired -NestedBundledPresencePolicy $nestedBundledPresencePolicy
 Check-CodexDuplicateSkillSurface -TargetRoot $TargetRoot -HostId $HostId
 
 Invoke-RuntimeFreshnessCheck -RepoRoot $RepoRoot -TargetRoot $TargetRoot -SkipGate:$SkipRuntimeFreshnessGate
