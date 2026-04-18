@@ -701,8 +701,8 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 "$consultation = [pscustomobject]@{ "
                 "skill_id = 'systematic-debugging'; "
-                f"native_skill_entrypoint = '{entrypoint_path.as_posix()}'; "
-                f"skill_root = '{skill_root.as_posix()}'; "
+                f"native_skill_entrypoint = {_ps_single_quote(entrypoint_path.as_posix())}; "
+                f"skill_root = {_ps_single_quote(skill_root.as_posix())}; "
                 "consultation_reason = 'verify session-root ignore coverage'; "
                 "consultation_scope = 'bounded consultation'; "
                 "consultation_role = 'discussion_consultant'; "
@@ -710,7 +710,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 "expected_outputs = @('consultation_notes'); "
                 "verification_expectation = 'Return structured consultation output.' "
                 "}; "
-                f"$result = Invoke-VibeSpecialistConsultationUnit -UnitId 'consult-session-root' -Consultation $consultation -SessionRoot '{session_root.as_posix()}' -RepoRoot $runtime.repo_root -Task 'debug this workflow' -RunId 'run-session-root' -WindowId 'discussion' -Stage 'deep_interview' -SourceArtifactPath '{source_artifact.as_posix()}' -Policy $runtime.specialist_consultation_policy; "
+                f"$result = Invoke-VibeSpecialistConsultationUnit -UnitId 'consult-session-root' -Consultation $consultation -SessionRoot {_ps_single_quote(session_root.as_posix())} -RepoRoot $runtime.repo_root -Task 'debug this workflow' -RunId 'run-session-root' -WindowId 'discussion' -Stage 'deep_interview' -SourceArtifactPath {_ps_single_quote(source_artifact.as_posix())} -Policy $runtime.specialist_consultation_policy; "
                 "$result.result | ConvertTo-Json -Depth 20 }"
             )
             completed = subprocess.run(

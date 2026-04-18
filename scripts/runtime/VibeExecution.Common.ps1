@@ -1208,11 +1208,11 @@ function Get-VibeObservedChangedPaths {
         }
 
         $resolvedIgnoredPath = [System.IO.Path]::GetFullPath([string]$ignoredPath)
-        if (-not (Test-Path -LiteralPath $resolvedIgnoredPath)) {
-            continue
-        }
         if ([System.StringComparer]::OrdinalIgnoreCase.Equals($resolvedRoot, $resolvedIgnoredPath)) {
             $ignoreRootSubtree = $true
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $resolvedIgnoredPath)) {
             continue
         }
 
