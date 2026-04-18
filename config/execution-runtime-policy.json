@@ -28,20 +28,14 @@
           "description": "Execute governed runtime proof units against repo-safe local commands.",
           "units": [
             {
-              "unit_id": "runtime-neutral-freshness-gate-tests",
-              "kind": "python_command",
+              "unit_id": "installed-runtime-freshness-gate",
+              "kind": "powershell_file",
               "parallelizable": true,
-              "write_scope": "tests/runtime_neutral",
-              "command": "${VGO_PYTHON}",
+              "write_scope": "scripts/verify",
+              "script_path": "scripts/verify/vibe-installed-runtime-freshness-gate.ps1",
               "arguments": [
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "tests/runtime_neutral",
-                "-p",
-                "test_freshness_gate.py",
-                "-v"
+                "-TargetRoot",
+                "${TARGET_ROOT}"
               ],
               "cwd": "${REPO_ROOT}",
               "timeout_seconds": 240,
@@ -49,12 +43,15 @@
               "expected_artifacts": []
             },
             {
-              "unit_id": "version-consistency-gate",
+              "unit_id": "release-install-runtime-coherence-gate",
               "kind": "powershell_file",
               "parallelizable": true,
               "write_scope": "scripts/verify",
-              "script_path": "scripts/verify/vibe-version-consistency-gate.ps1",
-              "arguments": [],
+              "script_path": "scripts/verify/vibe-release-install-runtime-coherence-gate.ps1",
+              "arguments": [
+                "-TargetRoot",
+                "${TARGET_ROOT}"
+              ],
               "cwd": "${REPO_ROOT}",
               "timeout_seconds": 240,
               "expected_exit_code": 0,

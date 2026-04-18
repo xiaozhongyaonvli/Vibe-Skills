@@ -729,6 +729,71 @@ function Get-VibePlanDerivedExecutionShadow {
     }
 }
 
+function Resolve-VibeExecutionTargetRoot {
+    param(
+        [AllowNull()] [object]$RuntimeInputPacket = $null,
+        [AllowNull()] [object]$Runtime = $null
+    )
+
+    $candidates = New-Object System.Collections.Generic.List[string]
+    if ($null -ne $RuntimeInputPacket) {
+        if (
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'canonical_router') -and
+            $null -ne $RuntimeInputPacket.canonical_router -and
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket.canonical_router -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$RuntimeInputPacket.canonical_router.target_root)
+        ) {
+            [void]$candidates.Add([string]$RuntimeInputPacket.canonical_router.target_root)
+        }
+
+        if (
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'host_adapter') -and
+            $null -ne $RuntimeInputPacket.host_adapter -and
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket.host_adapter -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$RuntimeInputPacket.host_adapter.target_root)
+        ) {
+            [void]$candidates.Add([string]$RuntimeInputPacket.host_adapter.target_root)
+        }
+
+        if (
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'custom_admission') -and
+            $null -ne $RuntimeInputPacket.custom_admission -and
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket.custom_admission -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$RuntimeInputPacket.custom_admission.target_root)
+        ) {
+            [void]$candidates.Add([string]$RuntimeInputPacket.custom_admission.target_root)
+        }
+    }
+
+    if ($null -ne $Runtime) {
+        if (
+            (Test-VibeObjectHasProperty -InputObject $Runtime -PropertyName 'host_settings') -and
+            $null -ne $Runtime.host_settings -and
+            (Test-VibeObjectHasProperty -InputObject $Runtime.host_settings -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$Runtime.host_settings.target_root)
+        ) {
+            [void]$candidates.Add([string]$Runtime.host_settings.target_root)
+        }
+
+        if (
+            (Test-VibeObjectHasProperty -InputObject $Runtime -PropertyName 'host_closure') -and
+            $null -ne $Runtime.host_closure -and
+            (Test-VibeObjectHasProperty -InputObject $Runtime.host_closure -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$Runtime.host_closure.target_root)
+        ) {
+            [void]$candidates.Add([string]$Runtime.host_closure.target_root)
+        }
+    }
+
+    foreach ($candidate in @($candidates)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+            return [System.IO.Path]::GetFullPath([string]$candidate)
+        }
+    }
+
+    return Resolve-VgoTargetRoot -HostId (Resolve-VgoHostId -HostId $env:VCO_HOST_ID)
+}
+
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath
 if ([string]::IsNullOrWhiteSpace($RunId)) {
     $RunId = New-VibeRunId
@@ -780,11 +845,13 @@ New-Item -ItemType Directory -Path $logsRoot -Force | Out-Null
 New-Item -ItemType Directory -Path $resultsRoot -Force | Out-Null
 New-Item -ItemType Directory -Path $proofRoot -Force | Out-Null
 
+$executionTargetRoot = Resolve-VibeExecutionTargetRoot -RuntimeInputPacket $runtimeInputPacket -Runtime $runtime
 $tokens = @{
     '${REPO_ROOT}' = [System.IO.Path]::GetFullPath($runtime.repo_root)
     '${SESSION_ROOT}' = [System.IO.Path]::GetFullPath($sessionRoot)
     '${REQUIREMENT_DOC}' = [System.IO.Path]::GetFullPath($requirementPath)
     '${EXECUTION_PLAN}' = [System.IO.Path]::GetFullPath($planPath)
+    '${TARGET_ROOT}' = [string]$executionTargetRoot
     '${RUN_ID}' = [string]$RunId
     '${ROOT_RUN_ID}' = [string]$hierarchyState.root_run_id
 }
