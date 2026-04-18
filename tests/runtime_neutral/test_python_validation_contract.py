@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import configparser
+import json
+import re
 import unittest
 from pathlib import Path
 
@@ -9,6 +11,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PYTEST_INI = REPO_ROOT / "pytest.ini"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "vco-gates.yml"
 TARGETS_FILE = REPO_ROOT / "config" / "python-validation-targets.txt"
+PACK_MANIFEST = REPO_ROOT / "config" / "pack-manifest.json"
+RESOLVE_PACK_ROUTE = REPO_ROOT / "scripts" / "router" / "resolve-pack-route.ps1"
 CONFTEST = REPO_ROOT / "tests" / "conftest.py"
 PYTHON_HELPERS = REPO_ROOT / "scripts" / "common" / "python_helpers.sh"
 TIMESFM_OUTPUT_ROOT = REPO_ROOT / "bundled" / "skills" / "timesfm-forecasting" / "examples"
@@ -16,6 +20,8 @@ EXPECTED_PYTHON_VALIDATION_TARGETS = [
     "tests/contract/test_repo_layout_contract.py",
     "tests/integration/test_runtime_surface_contract_cutover.py",
     "tests/runtime_neutral/test_apps_surface_hygiene.py",
+    "tests/runtime_neutral/test_bundled_stage_assistant_freeze.py",
+    "tests/runtime_neutral/test_bundled_skill_governance_gate.py",
     "tests/runtime_neutral/test_custom_admission_bridge.py",
     "tests/runtime_neutral/test_docs_readme_encoding.py",
     "tests/runtime_neutral/test_governed_runtime_bridge.py",
@@ -90,6 +96,48 @@ class PythonValidationContractTests(unittest.TestCase):
         )
 
         self.assertEqual([], forbidden_paths)
+
+    def test_pack_defaults_do_not_point_to_non_authority_stage_assistants(self) -> None:
+        manifest = json.loads(PACK_MANIFEST.read_text(encoding="utf-8-sig"))
+        mismatches: dict[str, dict[str, str]] = {}
+
+        for pack in manifest["packs"]:
+            authority_source = (
+                pack.get("route_authority_candidates")
+                if "route_authority_candidates" in pack
+                else pack.get("skill_candidates")
+            )
+            authority = {skill.casefold() for skill in (authority_source or [])}
+            if not authority:
+                continue
+
+            bad_defaults = {
+                task: skill
+                for task, skill in (pack.get("defaults_by_task") or {}).items()
+                if skill.casefold() not in authority
+            }
+            if bad_defaults:
+                mismatches[pack["id"]] = bad_defaults
+
+        self.assertEqual({}, mismatches)
+
+    def test_pack_route_overrides_stay_inside_authority_ranked_results(self) -> None:
+        text = RESOLVE_PACK_ROUTE.read_text(encoding="utf-8-sig")
+        normalized_text = re.sub(r"\s+", " ", text)
+        authority_lookup = (
+            "$overrideTop = $authorityRanked | Where-Object { [string]$_.pack_id -eq $overridePackId } | "
+            "Select-Object -First 1"
+        )
+        ranked_lookup = (
+            "$overrideTop = $ranked | Where-Object { [string]$_.pack_id -eq $overridePackId } | "
+            "Select-Object -First 1"
+        )
+
+        self.assertEqual(2, normalized_text.count(authority_lookup))
+        self.assertNotIn(ranked_lookup, normalized_text)
+        self.assertIn("ai_rerank_override_block_reason", text)
+        self.assertIn("llm_acceleration_override_block_reason", text)
+        self.assertIn("route_override_requested", text)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 ---
 name: smart-file-writer
-description: "Intelligent file write error handler: diagnoses permissions, disk space, path length, file locks before retrying. Auto-activates on 'Error writing file', 'Permission denied', 'Access denied', 'No space left', file write failures."
+description: "Intelligent file write error handler: diagnoses permissions, disk space, path length, file locks before retrying. Use when you encounter 'Error writing file', 'Permission denied', 'Access denied', 'No space left', or related file write failures."
 ---
 
 # smart-file-writer Skill
@@ -9,7 +9,7 @@ Automatically diagnoses and resolves file write errors through systematic invest
 
 ## When to Use This Skill
 
-Auto-activates when any of these occurs:
+Use this skill when any of these occurs:
 - "Error writing file" messages
 - "Permission denied" or "Access denied" errors
 - "No space left on device" errors

@@ -80,7 +80,11 @@ def route_prompt(
 
         selection = select_pack_candidate(
             prompt_lower=prompt_lower,
-            candidates=[normalize_text(item) for item in (pack.get("skill_candidates") or [])],
+            candidates=[
+                str(item).strip()
+                for item in (pack.get("skill_candidates") or [])
+                if str(item).strip()
+            ],
             task_type=task_type,
             requested_canonical=requested_canonical,
             skill_keyword_index=skill_keyword_index,
@@ -90,16 +94,17 @@ def route_prompt(
         )
         trigger_ratio = keyword_ratio(prompt_lower, pack.get("trigger_keywords") or [])
         priority_signal = min(max(float(pack.get("priority", 0)) / 100.0, 0.0), 1.0)
-        score = ((0.5 * trigger_ratio) + (0.4 * float(selection["score"])) + (0.1 * priority_signal))
+        relevance_score = float(selection.get("relevance_score", selection["score"]))
+        score = ((0.5 * trigger_ratio) + (0.4 * relevance_score) + (0.1 * priority_signal))
         score = round(max(0.0, min(1.0, score)), 4)
         candidate_signal = round(
             max(0.0, min(1.0, (0.75 * float(selection["score"])) + (0.25 * float(selection["top1_top2_gap"])))),
             4,
         )
         custom_metadata = pack.get("custom_admission")
-        route_authority_eligible = True
+        route_authority_eligible = bool(selection.get("route_authority_eligible", selection.get("selected") is not None))
         if isinstance(custom_metadata, dict):
-            route_authority_eligible = bool(custom_metadata.get("route_authority_eligible", False))
+            route_authority_eligible = route_authority_eligible and bool(custom_metadata.get("route_authority_eligible", False))
         pack_results.append(
             {
                 "pack_id": normalize_text(pack.get("id")),
@@ -107,7 +112,9 @@ def route_prompt(
                 "selected_candidate": selection["selected"],
                 "candidate_selection_reason": selection["reason"],
                 "candidate_selection_score": round(float(selection["score"]), 4),
+                "candidate_relevance_score": round(relevance_score, 4),
                 "candidate_ranking": selection["ranking"],
+                "stage_assistant_candidates": selection.get("stage_assistant_candidates", []),
                 "candidate_top1_top2_gap": round(float(selection["top1_top2_gap"]), 4),
                 "candidate_signal": candidate_signal,
                 "candidate_filtered_out_by_task": selection["filtered_out_by_task"],

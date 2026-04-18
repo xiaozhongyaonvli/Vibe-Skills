@@ -1,10 +1,8 @@
 ---
 name: generating-test-reports
 description: |
-  Generate comprehensive test reports with metrics, coverage, and visualizations.
-  Use when performing specialized testing.
-  Trigger with phrases like "generate test report", "create test documentation", or "show test metrics".
-  
+  Generate structured test reports with pass/fail rollups, coverage summaries, and test artifacts.
+  Use when the user is asking for test-result packaging or delivery, not for root-cause debugging or feature implementation.
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash(test:report-*)
 version: 1.0.0
 author: Jeremy Longshore <jeremy@intentsolutions.io>
@@ -12,111 +10,30 @@ license: MIT
 ---
 # Test Report Generator
 
-This skill provides automated assistance for test report generator tasks.
+## Purpose
 
-## Prerequisites
+Use this skill when the next deliverable is a readable test report rather than another round of debugging.
 
-Before using this skill, ensure you have:
-- Test environment configured and accessible
-- Required testing tools and frameworks installed
-- Test data and fixtures prepared
-- Appropriate permissions for test execution
-- Network connectivity if testing external services
+## When to Use
 
-## Instructions
+Use this skill when:
+- Summarizing pass/fail status, flaky tests, or coverage output for others to read
+- Turning raw `pytest`, JUnit, or coverage artifacts into a concise report
+- Producing release, QA, or review-facing test documentation
 
-### Step 1: Prepare Test Environment
-Set up the testing context:
-1. Use Read tool to examine configuration from {baseDir}/config/
-2. Validate test prerequisites are met
-3. Initialize test framework and load dependencies
-4. Configure test parameters and thresholds
+## Not For / Boundaries
 
-### Step 2: Execute Tests
-Run the test suite:
-1. Use Bash(test:report-*) to invoke test framework
-2. Monitor test execution progress
-3. Capture test outputs and metrics
-4. Handle test failures and error conditions
+- Root-cause debugging of a failure: use `systematic-debugging`
+- Code review of the underlying implementation: use `code-reviewer`
+- Implementing a new test suite from scratch: use `tdd-guide`
 
-### Step 3: Analyze Results
-Process test outcomes:
-- Identify passed and failed tests
-- Calculate success rate and performance metrics
-- Detect patterns in failures
-- Generate insights for improvement
+## Typical Outputs
 
-### Step 4: Generate Report
-Document findings in {baseDir}/test-reports/:
-- Test execution summary
-- Detailed failure analysis
-- Performance benchmarks
-- Recommendations for fixes
+- Test execution summary with totals and failure clusters
+- Coverage snapshot and quality-gate status
+- Follow-up action list for the most important failures
 
-## Output
+## Related Skills
 
-The skill generates comprehensive test results:
-
-### Test Summary
-- Total tests executed
-- Pass/fail counts and percentage
-- Execution time metrics
-- Resource utilization stats
-
-### Detailed Results
-Each test includes:
-- Test name and identifier
-- Execution status (pass/fail/skip)
-- Actual vs. expected outcomes
-- Error messages and stack traces
-
-### Metrics and Analysis
-- Code coverage percentages
-- Performance benchmarks
-- Trend analysis across runs
-- Quality gate compliance status
-
-## Error Handling
-
-Common issues and solutions:
-
-**Environment Setup Failures**
-- Error: Test environment not properly configured
-- Solution: Verify configuration files; check environment variables; ensure dependencies are installed
-
-**Test Execution Timeouts**
-- Error: Tests exceeded maximum execution time
-- Solution: Increase timeout thresholds; optimize slow tests; parallelize test execution
-
-**Resource Exhaustion**
-- Error: Insufficient memory or disk space during testing
-- Solution: Clean up temporary files; reduce concurrent test workers; increase resource allocation
-
-**Dependency Issues**
-- Error: Required services or databases unavailable
-- Solution: Verify service health; check network connectivity; use mocks if services are down
-
-## Resources
-
-### Testing Tools
-- Industry-standard testing frameworks for your language/platform
-- CI/CD integration guides and plugins
-- Test automation best practices documentation
-
-### Best Practices
-- Maintain test isolation and independence
-- Use meaningful test names and descriptions
-- Keep tests fast and focused
-- Implement proper setup and teardown
-- Version control test artifacts
-- Run tests in CI/CD pipelines
-
-## Overview
-
-
-This skill provides automated assistance for test report generator tasks.
-This skill provides automated assistance for the described functionality.
-
-## Examples
-
-Example usage patterns will be demonstrated in context.
+- `systematic-debugging` before report packaging if failures are still unexplained
+- `verification-before-completion` when the report is part of a completion gate

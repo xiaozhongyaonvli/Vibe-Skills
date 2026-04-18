@@ -22,7 +22,7 @@
       "keywords": ["flashrag", "evidence", "evidence plane", "citation", "cite", "source of truth", "where is this defined", "policy", "protocol", "config", "router config", "vco config", "vibe config", "证据", "引用", "出处", "在哪里定义", "协议", "策略", "配置", "路由器"]
     },
     "webthinker-deep-research": {
-      "keywords": ["webthinker", "deep research", "research report", "multi-hop", "browse", "navigate", "extract", "trace", "trace.jsonl", "sources.json", "深度调研", "调研", "调研报告", "网页探索", "可审计", "证据链"]
+      "keywords": ["webthinker", "deep research", "deep research report", "multi-hop", "browse", "navigate", "extract", "trace", "trace.jsonl", "sources.json", "深度调研", "调研", "调研报告", "网页探索", "可审计", "证据链"]
     },
     "scrapling": {
       "keywords": ["scrapling", "scrapling extract", "scrapling mcp", "web scraping", "scrape", "scraping", "scraper", "crawl", "crawler", "spider", "html extraction", "content extraction", "css selector", "css-selector", "xpath", "xpath selector", "cf-turnstile", "turnstile", "cloudflare", "cloudflare challenge", "captcha", "anti-bot", "网页爬虫", "爬虫", "网页爬取", "抓取网页", "网页抓取", "网页采集", "反爬", "CSS选择器", "XPath选择器", "选择器提取"]
@@ -56,6 +56,9 @@
     },
     "gh-address-comments": {
       "keywords": ["pr comments", "review comments", "处理评论", "回复评审意见", "地址评论"]
+    },
+    "generating-test-reports": {
+      "keywords": ["test report", "coverage report", "test summary", "junit report", "coverage summary", "测试报告", "测试覆盖率", "测试结果汇总"]
     },
     "mcp-integration": {
       "keywords": ["mcp server", ".mcp.json", "model context protocol", "接入mcp", "配置mcp", "连接mcp服务", "主路由工具可用性", "skills agent mcp", "工具可用性检查", "mcp工具接入"]
@@ -93,6 +96,9 @@
     "scikit-learn": {
       "keywords": ["scikit-learn", "sklearn", "cross validation", "scikit学习", "机器学习建模", "交叉验证", "机器学习分析", "模型训练分析", "训练评估"]
     },
+    "LQF_Machine_Learning_Expert_Guide": {
+      "keywords": ["machine learning expert", "机器学习专家", "批判式讨论", "批判性评估", "challenge my assumptions", "挑战我的假设", "baseline first", "基线是否充分", "ablation study", "消融实验"]
+    },
     "shap": {
       "keywords": ["shap", "feature attribution", "beeswarm", "模型解释", "特征归因", "shap图"]
     },
@@ -101,6 +107,9 @@
     },
     "ml-data-leakage-guard": {
       "keywords": ["data leakage", "leakage guard", "防止泄漏", "数据泄漏检查", "时序泄漏"]
+    },
+    "preprocessing-data-with-automated-pipelines": {
+      "keywords": ["preprocess data", "data preprocessing", "data cleaning pipeline", "etl pipeline", "data transformation", "feature encoding", "standardize data", "normalize data", "数据预处理", "清洗数据", "ETL流水线", "数据转换"]
     },
     "scanpy": {
       "keywords": ["scanpy", "single-cell", "scRNA", "单细胞分析", "细胞聚类", "marker基因"]
@@ -177,6 +186,9 @@
     "research-lookup": {
       "keywords": ["literature search", "paper search", "文献检索", "查找论文", "研究调研"]
     },
+    "performing-regression-analysis": {
+      "keywords": ["regression analysis", "linear regression", "multiple regression", "glm", "ols", "回归分析", "线性回归", "回归建模", "回归诊断"]
+    },
     "pubmed-database": {
       "keywords": ["pubmed", "pmid", "mesh", "medline", "ncbi", "e-utilities", "biomedical literature", "文献检索", "医学文献"]
     },
@@ -187,7 +199,7 @@
       "keywords": ["biorxiv", "bioRxiv", "preprint", "预印本", "生物预印本"]
     },
     "bgpt-paper-search": {
-      "keywords": ["paper search", "literature search", "论文检索", "文献搜索", "bgpt"]
+      "keywords": ["bgpt", "full-text paper", "structured paper data", "sample size extraction", "effect size extraction", "systematic review evidence table", "论文全文提取", "结构化证据表", "实验数据抽取"]
     },
     "paper-2-web": {
       "keywords": ["paper to web", "paper2web", "论文转网页", "论文可视化", "paper viewer"]
@@ -403,7 +415,7 @@
       "keywords": ["infographic", "data story", "visual summary", "信息图", "可视化总结"]
     },
     "markdown-mermaid-writing": {
-      "keywords": ["mermaid", "flowchart", "sequence diagram", "markdown diagram", "流程图", "时序图"]
+      "keywords": ["mermaid", "mermaid flowchart", "sequence diagram", "markdown diagram", "mermaid 流程图", "时序图"]
     },
     "markitdown": {
       "keywords": ["markitdown", "convert to markdown", "pdf to markdown", "docx to markdown", "转成 markdown", "转成markdown", "markdown转换", "pdf转markdown"]

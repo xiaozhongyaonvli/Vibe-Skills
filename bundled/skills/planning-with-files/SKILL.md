@@ -16,7 +16,7 @@ hooks:
   SessionStart:
     - hooks:
         - type: command
-          command: "echo '[planning-with-files] Ready. Auto-activates for complex tasks, or invoke manually with /planning-with-files'"
+          command: "echo '[planning-with-files] Ready. Recommended for complex tasks, or invoke manually with /planning-with-files'"
   PreToolUse:
     - matcher: "Write|Edit|Bash"
       hooks:

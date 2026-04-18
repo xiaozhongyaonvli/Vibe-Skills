@@ -68,6 +68,24 @@ Rationale:
   - explicit out-of-scope items (to prevent misfires)
   - required inputs and what to ask when missing (1-3 questions)
 
+### 3.5 Related Skills Rules
+
+- `## Related Skills` is OPTIONAL, but it SHOULD be included when routing boundaries or workflow adjacency would otherwise be unclear.
+- Related-skill references MAY be asymmetric or symmetric. Choose the pattern intentionally:
+  - Use asymmetric one-way references when one skill is the declared governance owner and the other is a helper or overflow path.
+  - Use symmetric mutual references when two skills are collaborative peers and users may reasonably move between them in both directions.
+- Ownership language such as "governed routed owner" SHOULD appear only when repository routing metadata actually grants that ownership.
+
+Examples:
+- One-way governance reference:
+  - `detecting-data-anomalies` MAY reference `anomaly-detector` as the governed routed owner.
+  - `anomaly-detector` does NOT need to reference `detecting-data-anomalies` back unless that reverse path is intentionally supported.
+- Symmetric collaboration reference:
+  - `correlation-analyzer` and `performing-regression-analysis` SHOULD reference each other when screening commonly hands off into regression and regression often points back to screening outputs.
+- Routing-language usage:
+  - Use phrases like "governed routed owner" only when the relationship is about route authority.
+  - Use neutral phrases like "next modeling step" or "complementary helper" when the relationship is collaborative rather than authoritative.
+
 ## 4. references/ (Long-form Docs)
 
 - `references/` SHOULD exist when the domain has:
