@@ -729,6 +729,145 @@ function Get-VibePlanDerivedExecutionShadow {
     }
 }
 
+function Resolve-VibeExecutionTargetRoot {
+    param(
+        [AllowNull()] [object]$RuntimeInputPacket = $null,
+        [AllowNull()] [object]$Runtime = $null
+    )
+
+    $candidates = New-Object System.Collections.Generic.List[string]
+    if ($null -ne $RuntimeInputPacket) {
+        if (
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'canonical_router') -and
+            $null -ne $RuntimeInputPacket.canonical_router -and
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket.canonical_router -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$RuntimeInputPacket.canonical_router.target_root)
+        ) {
+            [void]$candidates.Add([string]$RuntimeInputPacket.canonical_router.target_root)
+        }
+
+        if (
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'host_adapter') -and
+            $null -ne $RuntimeInputPacket.host_adapter -and
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket.host_adapter -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$RuntimeInputPacket.host_adapter.target_root)
+        ) {
+            [void]$candidates.Add([string]$RuntimeInputPacket.host_adapter.target_root)
+        }
+
+        if (
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'custom_admission') -and
+            $null -ne $RuntimeInputPacket.custom_admission -and
+            (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket.custom_admission -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$RuntimeInputPacket.custom_admission.target_root)
+        ) {
+            [void]$candidates.Add([string]$RuntimeInputPacket.custom_admission.target_root)
+        }
+    }
+
+    if ($null -ne $Runtime) {
+        if (
+            (Test-VibeObjectHasProperty -InputObject $Runtime -PropertyName 'host_settings') -and
+            $null -ne $Runtime.host_settings -and
+            (Test-VibeObjectHasProperty -InputObject $Runtime.host_settings -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$Runtime.host_settings.target_root)
+        ) {
+            [void]$candidates.Add([string]$Runtime.host_settings.target_root)
+        }
+
+        if (
+            (Test-VibeObjectHasProperty -InputObject $Runtime -PropertyName 'host_closure') -and
+            $null -ne $Runtime.host_closure -and
+            (Test-VibeObjectHasProperty -InputObject $Runtime.host_closure -PropertyName 'target_root') -and
+            -not [string]::IsNullOrWhiteSpace([string]$Runtime.host_closure.target_root)
+        ) {
+            [void]$candidates.Add([string]$Runtime.host_closure.target_root)
+        }
+    }
+
+    foreach ($candidate in @($candidates)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+            return [System.IO.Path]::GetFullPath([string]$candidate)
+        }
+    }
+
+    return Resolve-VgoTargetRoot -HostId (Resolve-VgoHostId -HostId $env:VCO_HOST_ID)
+}
+
+function Test-VibeInstalledRuntimeExecutionContext {
+    param(
+        [Parameter(Mandatory)] [string]$RepoRoot,
+        [AllowEmptyString()] [string]$TargetRoot = ''
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TargetRoot)) {
+        return $false
+    }
+
+    $installedSkillRoot = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $TargetRoot 'skills') 'vibe'))
+    return (Test-VgoPathWithin -ParentPath $installedSkillRoot -ChildPath $RepoRoot)
+}
+
+function New-VibeInstalledRuntimeVerificationUnit {
+    param(
+        [Parameter(Mandatory)] [string]$UnitId,
+        [Parameter(Mandatory)] [string]$ScriptPath
+    )
+
+    return [pscustomobject]@{
+        unit_id = $UnitId
+        kind = 'powershell_file'
+        parallelizable = $true
+        write_scope = 'scripts/verify'
+        script_path = $ScriptPath
+        arguments = @('-TargetRoot', '${TARGET_ROOT}')
+        cwd = '${REPO_ROOT}'
+        timeout_seconds = 240
+        expected_exit_code = 0
+        expected_artifacts = @()
+    }
+}
+
+function Get-VibeEffectiveExecutionPolicy {
+    param(
+        [Parameter(Mandatory)] [object]$ExecutionPolicy,
+        [Parameter(Mandatory)] [string]$RepoRoot,
+        [AllowEmptyString()] [string]$TargetRoot = ''
+    )
+
+    if (-not (Test-VibeInstalledRuntimeExecutionContext -RepoRoot $RepoRoot -TargetRoot $TargetRoot)) {
+        return $ExecutionPolicy
+    }
+
+    $policyCopy = $ExecutionPolicy | ConvertTo-Json -Depth 100 | ConvertFrom-Json
+    foreach ($profileCandidate in @($policyCopy.profiles)) {
+        foreach ($wave in @($profileCandidate.waves)) {
+            $mappedUnits = foreach ($unit in @($wave.units)) {
+                switch ([string]$unit.unit_id) {
+                    'runtime-neutral-freshness-gate-tests' {
+                        New-VibeInstalledRuntimeVerificationUnit `
+                            -UnitId 'installed-runtime-freshness-gate' `
+                            -ScriptPath 'scripts/verify/vibe-installed-runtime-freshness-gate.ps1'
+                        continue
+                    }
+                    'version-consistency-gate' {
+                        New-VibeInstalledRuntimeVerificationUnit `
+                            -UnitId 'release-install-runtime-coherence-gate' `
+                            -ScriptPath 'scripts/verify/vibe-release-install-runtime-coherence-gate.ps1'
+                        continue
+                    }
+                    default {
+                        $unit
+                    }
+                }
+            }
+            $wave.units = @($mappedUnits)
+        }
+    }
+
+    return $policyCopy
+}
+
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath
 if ([string]::IsNullOrWhiteSpace($RunId)) {
     $RunId = New-VibeRunId
@@ -769,7 +908,11 @@ $hierarchyState = Get-VibeHierarchyState `
     -DelegationEnvelopePath $(if ($runtimeInputPacket -and $runtimeInputPacket.hierarchy) { [string]$runtimeInputPacket.hierarchy.delegation_envelope_path } else { '' }) `
     -HierarchyContract $runtime.runtime_input_packet_policy.hierarchy_contract
 
-$policy = $runtime.execution_runtime_policy
+$executionTargetRoot = Resolve-VibeExecutionTargetRoot -RuntimeInputPacket $runtimeInputPacket -Runtime $runtime
+$policy = Get-VibeEffectiveExecutionPolicy `
+    -ExecutionPolicy $runtime.execution_runtime_policy `
+    -RepoRoot ([System.IO.Path]::GetFullPath($runtime.repo_root)) `
+    -TargetRoot $executionTargetRoot
 $proofRegistry = $runtime.proof_class_registry
 $profile = Get-VibeExecutionProfileById -ExecutionPolicy $policy -ProfileId ([string]$policy.default_profile_id)
 
@@ -785,6 +928,7 @@ $tokens = @{
     '${SESSION_ROOT}' = [System.IO.Path]::GetFullPath($sessionRoot)
     '${REQUIREMENT_DOC}' = [System.IO.Path]::GetFullPath($requirementPath)
     '${EXECUTION_PLAN}' = [System.IO.Path]::GetFullPath($planPath)
+    '${TARGET_ROOT}' = [string]$executionTargetRoot
     '${RUN_ID}' = [string]$RunId
     '${ROOT_RUN_ID}' = [string]$hierarchyState.root_run_id
 }

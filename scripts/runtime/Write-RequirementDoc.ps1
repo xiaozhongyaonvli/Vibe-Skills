@@ -23,14 +23,87 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'VibeConsultation.Common.ps1')
 . (Join-Path $PSScriptRoot '..\common\AntiProxyGoalDrift.ps1')
 
+function Get-VibeExplicitNonUiSignalRegex {
+    return 'non[- ]?ui|non[- ]?interactive|without ui|without user interface|headless|runtime[- ]?only|pure runtime|infrastructure( fix| repair| task| change)?|infra[- ]?(fix|repair|task|change)?|backend[- ]?only|cli[- ]?only|automation[- ]?only|非\s*ui|非交互|无界面|纯运行时|基础设施(修复|任务|改动)?|仅自动化|纯后端|命令行'
+}
+
 function Test-VibeTaskNeedsManualSpotChecks {
     param(
         [Parameter(Mandatory)] [string]$Task,
         [AllowEmptyString()] [string]$Deliverable = ''
     )
 
-    $text = ('{0} {1}' -f $Task, $Deliverable).ToLowerInvariant()
-    return $text -match 'ui|ux|frontend|browser|page|screen|openclaw|cursor|windsurf|codex|用户|界面|交互|可视化|体验'
+    if (Test-VibeTaskNeedsDocumentArtifactBaseline -Task $Task -Deliverable $Deliverable) {
+        return $false
+    }
+
+    if (-not (Test-VibeTaskHasUiArtifactSignals -Task $Task -Deliverable $Deliverable)) {
+        return $false
+    }
+
+    if (-not (Test-VibeTaskHasExplicitNonUiSignals -Task $Task -Deliverable $Deliverable)) {
+        return $true
+    }
+
+    return (Test-VibeTaskHasStrongInteractiveUiSignals -Task $Task -Deliverable $Deliverable)
+}
+
+function Get-VibeTaskSignalText {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    return ('{0} {1}' -f $Task, $Deliverable).ToLowerInvariant()
+}
+
+function Test-VibeTaskHasExplicitNonUiSignals {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    $text = Get-VibeTaskSignalText -Task $Task -Deliverable $Deliverable
+    return $text -match (Get-VibeExplicitNonUiSignalRegex)
+}
+
+function Get-VibeTaskSignalTextWithoutExplicitNonUiPhrases {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    $text = Get-VibeTaskSignalText -Task $Task -Deliverable $Deliverable
+    return ($text -replace (Get-VibeExplicitNonUiSignalRegex), ' ')
+}
+
+function Test-VibeTaskHasUiArtifactSignals {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    $text = Get-VibeTaskSignalText -Task $Task -Deliverable $Deliverable
+    return $text -match '(?<!non[-\s])\bui\b|(?<!non[-\s])\bux\b|frontend|browser|page|screen|dashboard|dialog|modal|layout|responsive|user[- ]?facing|visual|interface|用户|界面|交互|可视化|体验'
+}
+
+function Test-VibeTaskHasStrongInteractiveUiSignals {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    $text = Get-VibeTaskSignalTextWithoutExplicitNonUiPhrases -Task $Task -Deliverable $Deliverable
+    return $text -match '(?<!non[-\s])\bui\b|(?<!non[-\s])\bux\b|frontend|page|screen|dashboard|dialog|modal|layout|responsive|user[- ]?facing|visual|interface|click|tap|form|navigation|用户|界面|交互|可视化|体验'
+}
+
+function Test-VibeTaskNeedsBaselineUiQualityDimensions {
+    param(
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = ''
+    )
+
+    return (Test-VibeTaskNeedsManualSpotChecks -Task $Task -Deliverable $Deliverable)
 }
 
 function Test-VibeTaskNeedsDocumentArtifactBaseline {
@@ -248,7 +321,7 @@ if (@($baselineDocumentQualityDimensions).Count -eq 0 -and (Test-VibeTaskNeedsDo
 if (@($artifactReviewRequirements).Count -eq 0 -and @($baselineDocumentQualityDimensions).Count -gt 0) {
     $artifactReviewRequirements = Get-VibeDefaultDocumentArtifactReviewRequirements
 }
-if (@($baselineUiQualityDimensions).Count -eq 0 -and (Test-VibeTaskNeedsManualSpotChecks -Task $Task -Deliverable ([string]$intentContract.deliverable))) {
+if (@($baselineUiQualityDimensions).Count -eq 0 -and (Test-VibeTaskNeedsBaselineUiQualityDimensions -Task $Task -Deliverable ([string]$intentContract.deliverable))) {
     $baselineUiQualityDimensions = Get-VibeDefaultBaselineUiQualityDimensions
 }
 $runtimeInputPath = if (-not [string]::IsNullOrWhiteSpace($RuntimeInputPacketPath)) {
