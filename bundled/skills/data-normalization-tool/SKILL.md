@@ -1,9 +1,8 @@
 ---
 name: data-normalization-tool
 description: |
-  Data Normalization Tool - Auto-activating skill for ML Training.
-  Triggers on: data normalization tool, data normalization tool
-  Part of the ML Training skill category.
+  Scale and normalize numeric features for model-ready pipelines.
+  Use for z-score, min-max, robust scaling, and train-only statistic handling; not for leakage audits or broader feature-engineering ownership.
 allowed-tools: Read, Write, Edit, Bash(python:*), Bash(pip:*)
 version: 1.0.0
 license: MIT
@@ -14,29 +13,28 @@ author: Jeremy Longshore <jeremy@intentsolutions.io>
 
 ## Purpose
 
-This skill provides automated assistance for data normalization tool tasks within the ML Training domain.
+Use this skill when the task is specifically about scaling or normalizing features before fitting a model.
 
 ## When to Use
 
-This skill activates automatically when you:
-- Mention "data normalization tool" in your request
-- Ask about data normalization tool patterns or best practices
-- Need help with machine learning training skills covering data preparation, model training, hyperparameter tuning, and experiment tracking.
+Use this skill when:
+- Choosing between standardization, min-max, robust scaling, or log transforms
+- Normalizing train/test data without contaminating evaluation
+- Preparing numeric features for distance-based or gradient-based models
 
-## Capabilities
+## Not For / Boundaries
 
-- Provides step-by-step guidance for data normalization tool
-- Follows industry best practices and patterns
-- Generates production-ready code and configurations
-- Validates outputs against common standards
+- Broader feature creation or encoding: use `engineering-features-for-machine-learning`
+- Leakage review of the whole preprocessing chain: use `ml-data-leakage-guard`
+- Final model evaluation: use `evaluating-machine-learning-models`
 
-## Example Triggers
+## Typical Outputs
 
-- "Help me with data normalization tool"
-- "Set up data normalization tool"
-- "How do I implement data normalization tool?"
+- Normalization strategy recommendations
+- Train-only fit / test-only transform workflow
+- Warnings about skew, outliers, and metric sensitivity
 
 ## Related Skills
 
-Part of the **ML Training** skill category.
-Tags: ml, training, pytorch, tensorflow, sklearn
+- `engineering-features-for-machine-learning` for the surrounding preprocessing plan
+- `ml-data-leakage-guard` to verify the normalization order is safe

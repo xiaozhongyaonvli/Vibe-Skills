@@ -1,7 +1,8 @@
 ---
 name: creating-data-visualizations
 description: |
-  Generate plots, charts, and graphs from data with automatic visualization type selection. Use when requesting "visualization", "plot", "chart", or "graph". Trigger with phrases like 'generate', 'create', or 'scaffold'.
+  Create analytical charts and plots from existing data.
+  Use for exploratory or reporting visuals such as bars, lines, scatters, and dashboards; not for publication-grade scientific figures or AI-generated schematics.
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash(cmd:*)
 version: 1.0.0
 author: Jeremy Longshore <jeremy@intentsolutions.io>
@@ -9,76 +10,31 @@ license: MIT
 ---
 # Data Visualization Creator
 
-This skill provides automated assistance for data visualization creator tasks.
+Use this skill when the user needs a chart from data that already exists.
 
 ## Overview
 
-This skill empowers Claude to transform raw data into compelling visual representations. It leverages intelligent automation to select optimal visualization types and generate informative plots, charts, and graphs. This skill helps users understand complex data more easily.
-
-## How It Works
-
-1. **Data Analysis**: Claude analyzes the provided data to understand its structure, type, and distribution.
-2. **Visualization Selection**: Based on the data analysis, Claude selects the most appropriate visualization type (e.g., bar chart, scatter plot, line graph).
-3. **Visualization Generation**: Claude generates the visualization using appropriate libraries and best practices for visual clarity and accuracy.
+This skill focuses on everyday analytical visualization choices: bars, lines, scatters, distributions, comparisons, and simple dashboards.
 
 ## When to Use This Skill
 
-This skill activates when you need to:
-- Create a visual representation of data.
-- Generate a specific type of plot, chart, or graph (e.g., "create a bar chart").
-- Explore data patterns and relationships through visualization.
+- Plotting trends, distributions, comparisons, or correlations from structured data
+- Turning query output or CSV tables into charts for analysis or slides
+- Choosing a sensible chart type and axis treatment for a non-specialist audience
 
-## Examples
+## Not For / Boundaries
 
-### Example 1: Visualizing Sales Data
-
-User request: "Create a bar chart showing sales by region."
-
-The skill will:
-1. Analyze the sales data, identifying regions and corresponding sales figures.
-2. Generate a bar chart with regions on the x-axis and sales on the y-axis.
-
-### Example 2: Plotting Stock Prices
-
-User request: "Plot the stock price of AAPL over the last year."
-
-The skill will:
-1. Retrieve historical stock price data for AAPL.
-2. Generate a line graph showing the stock price over time.
-
-## Best Practices
-
-- **Data Clarity**: Ensure the data is clean and well-formatted before requesting a visualization.
-- **Specific Requests**: Be specific about the desired visualization type and any relevant data filters.
-- **Contextual Information**: Provide context about the data and the purpose of the visualization.
+- Journal-ready figures, multi-panel publication layouts, TIFF/600dpi exports: use `scientific-visualization`
+- Structural diagrams, flowcharts, and mechanism illustrations: use `scientific-schematics` or `markdown-mermaid-writing`
+- Full research-report ownership: use `scientific-reporting`
 
 ## Integration
 
-This skill can be integrated with other data processing and analysis tools within the Claude Code environment. It can receive data from other skills and provide visualizations for further analysis or reporting.
+- Pair with `data-quality-checker` before plotting questionable data
+- Hand off to `scientific-visualization` if the chart must meet publication standards
 
-## Prerequisites
+## Example Requests
 
-- Appropriate file access permissions
-- Required dependencies installed
-
-## Instructions
-
-1. Invoke this skill when the trigger conditions are met
-2. Provide necessary context and parameters
-3. Review the generated output
-4. Apply modifications as needed
-
-## Output
-
-The skill produces structured output relevant to the task.
-
-## Error Handling
-
-- Invalid input: Prompts for correction
-- Missing dependencies: Lists required components
-- Permission errors: Suggests remediation steps
-
-## Resources
-
-- Project documentation
-- Related skills and commands
+- "Plot monthly conversion rate with a confidence band"
+- "Make a scatter plot of latency vs throughput"
+- "Turn this CSV summary into a small dashboard"

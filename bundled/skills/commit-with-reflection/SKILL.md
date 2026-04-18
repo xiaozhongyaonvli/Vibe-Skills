@@ -1,6 +1,6 @@
 ---
 name: commit-with-reflection
-description: "Git提交与调试反思报告生成技能。自动分析开发过程中的错误、调试步骤和解决方案,生成结构化的中文反思报告,并创建包含报告引用的Git提交。触发词:反思提交、智能提交、生成调试报告、commit with reflection。"
+description: "Git提交与调试反思报告生成技能。用于分析开发过程中的错误、调试步骤和解决方案,生成结构化的中文反思报告,并创建包含报告引用的Git提交。显式请求词:反思提交、智能提交、生成调试报告、commit with reflection。"
 ---
 
 # Git提交与反思报告技能 (Commit with Reflection)
@@ -9,7 +9,7 @@ description: "Git提交与调试反思报告生成技能。自动分析开发过
 
 ## 何时使用此技能 (When to Use)
 
-在以下情况下触发此技能:
+在以下情况下使用此技能:
 
 - 用户说:"反思提交"、"智能提交"、"生成调试报告"
 - 用户说:"commit with reflection"、"reflective commit"
@@ -18,7 +18,7 @@ description: "Git提交与调试反思报告生成技能。自动分析开发过
 - 重构代码时遇到并解决了架构问题
 - 希望将本次开发经验转化为可复用的知识
 
-**自动触发条件**:
+**相关信号（用于人工判断或路由参考）**:
 - 检测到会话中出现了错误消息
 - 对同一文件进行了3次以上的修改迭代
 - Git diff显示添加了调试相关代码(console.log, try-catch等)

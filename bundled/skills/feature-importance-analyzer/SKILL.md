@@ -1,9 +1,8 @@
 ---
 name: feature-importance-analyzer
 description: |
-  Feature Importance Analyzer - Auto-activating skill for ML Training.
-  Triggers on: feature importance analyzer, feature importance analyzer
-  Part of the ML Training skill category.
+  Explain which features drive a trained model's predictions.
+  Use after a model exists and you need ranking, pruning, or interpretation; not for raw feature engineering or leakage checking.
 allowed-tools: Read, Write, Edit, Bash(python:*), Bash(pip:*)
 version: 1.0.0
 license: MIT
@@ -14,29 +13,28 @@ author: Jeremy Longshore <jeremy@intentsolutions.io>
 
 ## Purpose
 
-This skill provides automated assistance for feature importance analyzer tasks within the ML Training domain.
+Use this skill when the user asks why a model depends on some features more than others.
 
 ## When to Use
 
-This skill activates automatically when you:
-- Mention "feature importance analyzer" in your request
-- Ask about feature importance analyzer patterns or best practices
-- Need help with machine learning training skills covering data preparation, model training, hyperparameter tuning, and experiment tracking.
+Use this skill when:
+- Ranking features after training a tree model, linear model, or ensemble
+- Comparing permutation importance, built-in importance, or SHAP-style signals
+- Deciding which features to keep, prune, or investigate further
 
-## Capabilities
+## Not For / Boundaries
 
-- Provides step-by-step guidance for feature importance analyzer
-- Follows industry best practices and patterns
-- Generates production-ready code and configurations
-- Validates outputs against common standards
+- Creating new features from scratch: use `engineering-features-for-machine-learning`
+- Checking whether a pipeline leaks future information: use `ml-data-leakage-guard`
+- Full model benchmark suites: use `evaluating-machine-learning-models`
 
-## Example Triggers
+## Typical Outputs
 
-- "Help me with feature importance analyzer"
-- "Set up feature importance analyzer"
-- "How do I implement feature importance analyzer?"
+- Ranked feature lists with interpretation notes
+- Suggested pruning or follow-up analysis
+- Warnings when importance may be unstable or misleading
 
 ## Related Skills
 
-Part of the **ML Training** skill category.
-Tags: ml, training, pytorch, tensorflow, sklearn
+- `evaluating-machine-learning-models` for the surrounding performance context
+- `shap` when deeper explanation plots are required

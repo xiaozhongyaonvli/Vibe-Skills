@@ -73,6 +73,151 @@ class RouterBridgeTests(unittest.TestCase):
             self.assertTrue(result["confirm_ui"]["enabled"])
             self.assertGreaterEqual(len(result["confirm_ui"]["options"]), 1)
 
+    def test_ml_critical_discussion_routes_to_lqf_ml_expert(self) -> None:
+        result = run_bridge(
+            "请你作为机器学习专家和我进行三轮批判式讨论：这个分类方案有没有数据泄漏、基线是否充分、是否该先用简单模型",
+            "L",
+            "research",
+        )
+
+        self.assertEqual("pack_overlay", result["route_mode"])
+        self.assertEqual("data-ml", result["selected"]["pack_id"])
+        self.assertEqual("LQF_Machine_Learning_Expert_Guide", result["selected"]["skill"])
+
+    def test_requested_mixed_case_skill_routes_authoritatively_in_runtime_neutral_lane(self) -> None:
+        result = run_bridge(
+            "请用机器学习专家视角审视这个分类方案",
+            "L",
+            "research",
+            requested_skill="LQF_Machine_Learning_Expert_Guide",
+        )
+
+        self.assertEqual("pack_overlay", result["route_mode"])
+        self.assertEqual("data-ml", result["selected"]["pack_id"])
+        self.assertEqual("LQF_Machine_Learning_Expert_Guide", result["selected"]["skill"])
+
+    def test_vibe_keeps_route_authority_while_plan_helpers_move_to_stage_assistants(self) -> None:
+        result = run_bridge(
+            "请持续更新 task_plan.md 和 progress.md，按阶段推进这个复杂任务",
+            "L",
+            "planning",
+            requested_skill="vibe",
+        )
+
+        self.assertEqual("orchestration-core", result["selected"]["pack_id"])
+        self.assertEqual("vibe", result["selected"]["skill"])
+
+        orchestration_row = next(row for row in result["ranked"] if row["pack_id"] == "orchestration-core")
+        self.assertEqual("vibe", orchestration_row["selected_candidate"])
+        self.assertEqual(["vibe"], [row["skill"] for row in orchestration_row["candidate_ranking"]])
+        self.assertIn("planning-with-files", [row["skill"] for row in orchestration_row["stage_assistant_candidates"]])
+
+    def test_scientific_figure_route_keeps_plotting_libraries_out_of_main_candidate_pool(self) -> None:
+        result = run_bridge(
+            "帮我做科研绘图，产出期刊级 figure，多面板、颜色无障碍、矢量导出",
+            "L",
+            "research",
+        )
+
+        self.assertEqual("science-figures-visualization", result["selected"]["pack_id"])
+        self.assertEqual("scientific-visualization", result["selected"]["skill"])
+
+        figure_row = next(row for row in result["ranked"] if row["pack_id"] == "science-figures-visualization")
+        self.assertEqual(
+            ["scientific-visualization", "scientific-schematics"],
+            [row["skill"] for row in figure_row["candidate_ranking"]],
+        )
+
+    def test_full_text_evidence_table_prefers_bgpt_structured_paper_search(self) -> None:
+        result = run_bridge(
+            "请帮我做 full-text 文献检索，提取样本量、effect size、方法学细节，做系统综述证据表",
+            "L",
+            "research",
+        )
+
+        self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
+        self.assertEqual("science-literature-citations", result["selected"]["pack_id"])
+        self.assertEqual("bgpt-paper-search", result["selected"]["skill"])
+
+    def test_deep_research_pack_keeps_deepagent_helpers_out_of_main_candidate_pool(self) -> None:
+        result = run_bridge(
+            "我要做 deep research，多跳浏览网页并保留 trace.jsonl 和 sources.json 证据链",
+            "L",
+            "research",
+        )
+
+        self.assertEqual("ruc-nlpir-augmentation", result["selected"]["pack_id"])
+        self.assertEqual("webthinker-deep-research", result["selected"]["skill"])
+
+        deep_research_row = next(row for row in result["ranked"] if row["pack_id"] == "ruc-nlpir-augmentation")
+        self.assertEqual(
+            ["webthinker-deep-research", "flashrag-evidence"],
+            [row["skill"] for row in deep_research_row["candidate_ranking"]],
+        )
+
+    def test_data_leakage_audit_can_route_to_ml_data_leakage_guard(self) -> None:
+        result = run_bridge(
+            "请检查这个特征工程流程有没有数据泄漏，尤其是 fit before split 和 prediction time 问题",
+            "L",
+            "review",
+        )
+
+        self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
+        self.assertEqual("data-ml", result["selected"]["pack_id"])
+        self.assertEqual("ml-data-leakage-guard", result["selected"]["skill"])
+
+    def test_test_report_packaging_routes_to_generating_test_reports(self) -> None:
+        result = run_bridge(
+            "请根据 pytest 和 coverage 输出生成测试报告，整理失败摘要、覆盖率和质量门禁结论",
+            "L",
+            "review",
+        )
+
+        self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
+        self.assertEqual("code-quality", result["selected"]["pack_id"])
+        self.assertEqual("generating-test-reports", result["selected"]["skill"])
+
+    def test_regression_analysis_routes_to_regression_owner(self) -> None:
+        result = run_bridge(
+            "请对这个实验数据做回归分析：线性回归或 GLM 建模、残差诊断、系数解释和拟合优度比较",
+            "L",
+            "research",
+        )
+
+        self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
+        self.assertEqual("research-design", result["selected"]["pack_id"])
+        self.assertEqual("performing-regression-analysis", result["selected"]["skill"])
+
+    def test_preprocessing_pipeline_surfaces_stage_assistant_without_taking_main_route(self) -> None:
+        result = run_bridge(
+            "请用 scikit-learn 设计数据预处理流水线：清洗、编码、标准化、ETL pipeline，但先不要做数据泄漏审计",
+            "L",
+            "research",
+        )
+
+        self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
+        data_ml_row = next(row for row in result["ranked"] if row["pack_id"] == "data-ml")
+        self.assertEqual("scikit-learn", data_ml_row["selected_candidate"])
+        self.assertNotIn(
+            "preprocessing-data-with-automated-pipelines",
+            [row["skill"] for row in data_ml_row["candidate_ranking"]],
+        )
+        self.assertIn(
+            "preprocessing-data-with-automated-pipelines",
+            [row["skill"] for row in data_ml_row["stage_assistant_candidates"]],
+        )
+
+    def test_research_report_authoring_stays_on_scientific_reporting(self) -> None:
+        result = run_bridge(
+            "请把我们现有实验结果整理成 research report，带 executive summary、appendix、Quarto/PDF 导出",
+            "L",
+            "research",
+        )
+
+        self.assertEqual("pack_overlay", result["route_mode"])
+        self.assertEqual("science-reporting", result["selected"]["pack_id"])
+        self.assertEqual("scientific-reporting", result["selected"]["skill"])
+
     def test_requested_vibe_can_preserve_runtime_authority_while_router_selects_specialist(self) -> None:
         result = run_bridge(
             "I have a failing test and a stack trace. Help me debug systematically before proposing fixes.",

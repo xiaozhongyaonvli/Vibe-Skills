@@ -1,6 +1,6 @@
 ---
 name: ml-data-leakage-guard
-description: "Detects and prevents data leakage in machine learning and mathematical modeling. Auto-activates after ML tasks involving: data cleaning, feature engineering, data augmentation, algorithm development, normalization, missing value imputation, dimensionality reduction, feature selection, time series modeling. Checks if features/statistics would be available at prediction time."
+description: "Detects and prevents data leakage in machine learning and mathematical modeling. Use after ML tasks involving data cleaning, feature engineering, data augmentation, algorithm development, normalization, missing value imputation, dimensionality reduction, feature selection, or time series modeling. Checks if features/statistics would be available at prediction time."
 ---
 
 # ML Data Leakage Guard Skill
@@ -9,7 +9,7 @@ Automatically detects and prevents data leakage in machine learning workflows by
 
 ## When to Use This Skill
 
-**AUTO-ACTIVATES** at the end of responses involving:
+Use this skill after work involving:
 - Data preprocessing (normalization, standardization, scaling)
 - Missing value imputation
 - Feature engineering and feature selection

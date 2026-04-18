@@ -456,6 +456,52 @@ function Get-VibeSpecialistRecommendations {
         $seen[$skillId] = $true
     }
 
+    foreach ($ranked in @($RouteResult.ranked)) {
+        if (@($recommendations).Count -ge $limit) {
+            break
+        }
+        if (-not ($ranked.PSObject.Properties.Name -contains 'stage_assistant_candidates')) {
+            continue
+        }
+
+        foreach ($assistant in @($ranked.stage_assistant_candidates)) {
+            if (@($recommendations).Count -ge $limit) {
+                break
+            }
+
+            $skillId = if ($assistant.PSObject.Properties.Name -contains 'skill') { [string]$assistant.skill } else { $null }
+            if ([string]::IsNullOrWhiteSpace($skillId)) {
+                continue
+            }
+            if ([string]::Equals($skillId, $RuntimeSelectedSkill, [System.StringComparison]::OrdinalIgnoreCase)) {
+                continue
+            }
+            if ($seen.ContainsKey($skillId)) {
+                continue
+            }
+
+            $customMetadata = if ($customAdmissionIndex.ContainsKey($skillId)) { $customAdmissionIndex[$skillId] } else { $null }
+            $reason = "pack stage assistant from '{0}'" -f ([string]$ranked.pack_id)
+            $assistantScore = if ($assistant.PSObject.Properties.Name -contains 'score') { [double]$assistant.score } else { 0.0 }
+            $recommendations += (New-VibeSpecialistRecommendation `
+                -RepoRoot $RepoRoot `
+                -Task $Task `
+                -SkillId $skillId `
+                -Source 'route_stage_assistant' `
+                -TaskType $TaskType `
+                -Reason $reason `
+                -PackId ([string]$ranked.pack_id) `
+                -Confidence $assistantScore `
+                -Rank (@($recommendations).Count + 1) `
+                -DispatchContract $dispatchContractForRecommendation `
+                -PromotionPolicy $PromotionPolicy `
+                -CustomMetadata $customMetadata `
+                -TargetRoot $TargetRoot `
+                -HostId $HostId)
+            $seen[$skillId] = $true
+        }
+    }
+
     foreach ($overlayField in @($Policy.overlay_fields)) {
         if (@($recommendations).Count -ge $limit) {
             break

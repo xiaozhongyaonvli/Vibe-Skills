@@ -1,7 +1,7 @@
 ---
 name: autonomous-builder
 version: "1.0.0"
-description: "Full-stack autonomous software development agent: handles design, implementation, testing, and deployment end-to-end. Auto-activates for project creation, feature development, bug fixing, code refactoring, or when user requests 'build', 'create', 'implement', 'develop', 'fix', or 'refactor' any software project."
+description: "Full-stack software development agent for design, implementation, testing, and deployment. Use when the user explicitly asks for end-to-end project creation, feature development, bug fixing, or code refactoring."
 user-invocable: true
 allowed-tools:
   - Read
@@ -1259,4 +1259,3 @@ Before marking project complete:
 3. [ ] No uncommitted changes
 4. [ ] Documentation generated
 5. [ ] State archived to `.builder/archive/`
-

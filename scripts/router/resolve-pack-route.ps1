@@ -561,22 +561,21 @@ foreach ($pack in $packsForScoring) {
     $prior = [double]$pack.priority / 100.0
     $conflictInverse = if ($gradeAllowed -and $taskAllowed) { 1.0 } else { 0.0 }
 
+    $selection = Select-PackCandidate -PromptLower $promptLower -Candidates $pack.skill_candidates -TaskType $TaskType -RequestedCanonical $requestedCanonical -SkillKeywordIndex $skillKeywordIndex -RoutingRules $routingRules -Pack $pack -CandidateSelectionConfig $candidateSelectionConfig
+    $selectionRelevanceScore = if ($selection.PSObject.Properties.Name -contains 'relevance_score') { [double]$selection.relevance_score } else { [double]$selection.score }
     $score =
         ([double]$weights.intent_match * $intent) +
         ([double]$weights.trigger_keyword_match * $trigger) +
         ([double]$weights.workspace_signal_match * $workspace) +
-        ($weightSkillSignal * $skillSignal) +
+        ($weightSkillSignal * $selectionRelevanceScore) +
         ([double]$weights.recent_success_prior * $prior) +
         ([double]$weights.conflict_penalty_inverse * $conflictInverse)
-
-    $selection = Select-PackCandidate -PromptLower $promptLower -Candidates $pack.skill_candidates -TaskType $TaskType -RequestedCanonical $requestedCanonical -SkillKeywordIndex $skillKeywordIndex -RoutingRules $routingRules -Pack $pack -CandidateSelectionConfig $candidateSelectionConfig
     $candidateSignal = ([double]$selection.score * 0.75) + ([double]$selection.top1_top2_gap * 0.25)
     $candidateSignal = [Math]::Round([Math]::Min(1.0, [Math]::Max(0.0, $candidateSignal)), 4)
     $customMetadata = if ($pack.PSObject.Properties.Name -contains 'custom_admission') { $pack.custom_admission } else { $null }
-    $routeAuthorityEligible = if ($null -ne $customMetadata -and $customMetadata.PSObject.Properties.Name -contains 'route_authority_eligible') {
-        [bool]$customMetadata.route_authority_eligible
-    } else {
-        $true
+    $routeAuthorityEligible = if ($selection.PSObject.Properties.Name -contains 'route_authority_eligible') { [bool]$selection.route_authority_eligible } else { -not [string]::IsNullOrWhiteSpace([string]$selection.selected) }
+    if ($null -ne $customMetadata -and $customMetadata.PSObject.Properties.Name -contains 'route_authority_eligible') {
+        $routeAuthorityEligible = $routeAuthorityEligible -and [bool]$customMetadata.route_authority_eligible
     }
 
     $packResults += [pscustomobject]@{
@@ -593,7 +592,9 @@ foreach ($pack in $packsForScoring) {
         selected_candidate = $selection.selected
         candidate_selection_reason = $selection.reason
         candidate_selection_score = [Math]::Round([double]$selection.score, 4)
+        candidate_relevance_score = [Math]::Round([double]$selectionRelevanceScore, 4)
         candidate_ranking = @($selection.ranking)
+        stage_assistant_candidates = @($selection.stage_assistant_candidates)
         candidate_top1_top2_gap = [Math]::Round([double]$selection.top1_top2_gap, 4)
         candidate_signal = $candidateSignal
         candidate_filtered_out_by_task = @($selection.filtered_out_by_task)

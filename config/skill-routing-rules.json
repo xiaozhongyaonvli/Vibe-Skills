@@ -136,7 +136,7 @@
                                                    "positive_keywords":  [
                                                                              "webthinker",
                                                                              "deep research",
-                                                                             "research report",
+                                                                             "deep research report",
                                                                              "multi-hop",
                                                                              "browse",
                                                                              "navigate",
@@ -159,7 +159,13 @@
                                                                              "flashrag",
                                                                              "where is this defined",
                                                                              "工具链",
-                                                                             "记忆折叠"
+                                                                             "记忆折叠",
+                                                                             "quarto",
+                                                                             "rmarkdown",
+                                                                             "pdf report",
+                                                                             "html report",
+                                                                             "executive summary",
+                                                                             "appendix"
                                                                          ],
                                                    "equivalent_group":  "deep-research",
                                                    "canonical_for_task":  [
@@ -973,6 +979,40 @@
 
                                                                           ]
                                                },
+                   "preprocessing-data-with-automated-pipelines":  {
+                                                                        "task_allow":  [
+                                                                                           "coding",
+                                                                                           "research",
+                                                                                           "review"
+                                                                                       ],
+                                                                        "positive_keywords":  [
+                                                                                                  "preprocess data",
+                                                                                                  "data preprocessing",
+                                                                                                  "data cleaning pipeline",
+                                                                                                  "etl pipeline",
+                                                                                                  "data transformation",
+                                                                                                  "feature encoding",
+                                                                                                  "standardize data",
+                                                                                                  "normalize data",
+                                                                                                  "数据预处理",
+                                                                                                  "清洗数据",
+                                                                                                  "ETL流水线",
+                                                                                                  "数据转换"
+                                                                                              ],
+                                                                        "negative_keywords":  [
+                                                                                                  "data leakage",
+                                                                                                  "fit before split",
+                                                                                                  "prediction time",
+                                                                                                  "批判式讨论",
+                                                                                                  "challenge my assumptions",
+                                                                                                  "publication figure",
+                                                                                                  "research report"
+                                                                                              ],
+                                                                        "equivalent_group":  "ml-preprocessing",
+                                                                        "canonical_for_task":  [
+
+                                                                                               ]
+                                                                    },
                    "windows-hook-debugging":  {
                                                   "task_allow":  [
                                                                      "debug"
@@ -1014,6 +1054,43 @@
                                                                    "research"
                                                                ]
                                     },
+                   "LQF_Machine_Learning_Expert_Guide":  {
+                                                               "task_allow":  [
+                                                                                  "planning",
+                                                                                  "research",
+                                                                                  "review"
+                                                                              ],
+                                                               "positive_keywords":  [
+                                                                                         "machine learning expert",
+                                                                                         "机器学习专家",
+                                                                                         "批判式讨论",
+                                                                                         "批判性评估",
+                                                                                         "challenge my assumptions",
+                                                                                         "挑战我的假设",
+                                                                                         "baseline",
+                                                                                         "基线",
+                                                                                         "data leakage",
+                                                                                         "数据泄漏",
+                                                                                         "simple model",
+                                                                                         "先别写代码"
+                                                                                     ],
+                                                               "negative_keywords":  [
+                                                                                         "single-cell",
+                                                                                         "deploy infra",
+                                                                                         "matplotlib",
+                                                                                         "科研绘图",
+                                                                                         "fit before split",
+                                                                                         "train test split",
+                                                                                         "cross-validation setup",
+                                                                                         "泄漏检查",
+                                                                                         "audit this pipeline"
+                                                                                     ],
+                                                               "equivalent_group":  "ml-critical-discussion",
+                                                               "canonical_for_task":  [
+                                                                                          "research",
+                                                                                          "review"
+                                                                                      ]
+                                                           },
                    "ml-pipeline-workflow":  {
                                                 "task_allow":  [
                                                                    "planning",
@@ -1156,14 +1233,23 @@
                                                  "positive_keywords":  [
                                                                            "data leakage",
                                                                            "time leakage",
-                                                                           "防止泄漏"
+                                                                           "防止泄漏",
+                                                                           "泄漏检查",
+                                                                           "leakage audit",
+                                                                           "fit before split",
+                                                                           "prediction time"
                                                                        ],
                                                  "negative_keywords":  [
-                                                                           "render screenshot"
+                                                                           "render screenshot",
+                                                                           "批判式讨论",
+                                                                           "challenge my assumptions",
+                                                                           "baseline",
+                                                                           "消融实验"
                                                                        ],
-                                                 "equivalent_group":  null,
+                                                 "equivalent_group":  "ml-validation",
                                                  "canonical_for_task":  [
-
+                                                                           "coding",
+                                                                           "review"
                                                                         ]
                                              },
                    "creating-data-visualizations":  {
@@ -2171,7 +2257,12 @@
                                                                  ],
                                            "negative_keywords":  [
                                                                      "build script",
-                                                                     "ci"
+                                                                     "ci",
+                                                                     "full-text",
+                                                                     "structured data",
+                                                                     "effect size",
+                                                                     "sample size",
+                                                                     "证据表"
                                                                  ],
                                            "equivalent_group":  "research-discovery",
                                            "canonical_for_task":  [
@@ -2373,10 +2464,10 @@
                                                                  ]
                                       },
                    "scientific-reporting":  {
-                                                "task_allow":  [
-                                                                   "planning",
-                                                                   "coding",
-                                                                   "research",
+                                                 "task_allow":  [
+                                                                    "planning",
+                                                                    "coding",
+                                                                    "research",
                                                                    "review"
                                                                ],
                                                 "positive_keywords":  [
@@ -2402,19 +2493,58 @@
                                                                           "rebuttal",
                                                                           "response to reviewers",
                                                                           "camera-ready",
-                                                                          "cover letter"
+                                                                          "cover letter",
+                                                                          "trace.jsonl",
+                                                                          "sources.json",
+                                                                          "multi-hop browse",
+                                                                          "evidence chain"
                                                                       ],
                                                 "equivalent_group":  "science-reporting",
-                                                "canonical_for_task":  [
-                                                                           "planning",
-                                                                           "coding",
-                                                                           "research"
-                                                                       ]
-                                            },
+                                                 "canonical_for_task":  [
+                                                                            "planning",
+                                                                            "coding",
+                                                                            "research"
+                                                                        ]
+                                             },
+                   "performing-regression-analysis":  {
+                                                           "task_allow":  [
+                                                                              "research",
+                                                                              "review"
+                                                                          ],
+                                                           "positive_keywords":  [
+                                                                                     "regression analysis",
+                                                                                     "linear regression",
+                                                                                     "multiple regression",
+                                                                                     "glm",
+                                                                                     "ols",
+                                                                                     "回归分析",
+                                                                                     "线性回归",
+                                                                                     "回归建模",
+                                                                                     "回归诊断"
+                                                                                 ],
+                                                           "negative_keywords":  [
+                                                                                     "causal inference",
+                                                                                     "difference-in-differences",
+                                                                                     "synthetic control",
+                                                                                     "literature review",
+                                                                                     "grant proposal",
+                                                                                     "research report",
+                                                                                     "executive summary",
+                                                                                     "data leakage",
+                                                                                     "fit before split",
+                                                                                     "因果分析",
+                                                                                     "基金申请"
+                                                                                 ],
+                                                           "equivalent_group":  "quant-regression",
+                                                           "canonical_for_task":  [
+                                                                                      "research",
+                                                                                      "review"
+                                                                                  ]
+                                                       },
                    "scientific-visualization":  {
-                                                    "task_allow":  [
-                                                                       "planning",
-                                                                       "coding",
+                                                     "task_allow":  [
+                                                                        "planning",
+                                                                        "coding",
                                                                        "research",
                                                                        "review"
                                                                    ],
@@ -2826,7 +2956,12 @@
                                            "negative_keywords":  [
                                                                      "patent",
                                                                      "docking",
-                                                                     "专利"
+                                                                     "专利",
+                                                                     "full-text",
+                                                                     "structured data",
+                                                                     "effect size",
+                                                                     "sample size",
+                                                                     "证据表"
                                                                  ],
                                            "equivalent_group":  "literature-search",
                                            "canonical_for_task":  [
@@ -2886,19 +3021,28 @@
                                              "positive_keywords":  [
                                                                        "bgpt",
                                                                        "full-text",
+                                                                       "full-text paper",
                                                                        "structured data",
                                                                        "effect size",
                                                                        "sample size",
+                                                                       "evidence table",
+                                                                       "systematic review evidence table",
+                                                                       "structured extraction",
                                                                        "实验数据",
-                                                                       "方法学"
+                                                                       "方法学",
+                                                                       "证据表"
                                                                    ],
                                              "negative_keywords":  [
                                                                        "zotero",
-                                                                       "bibtex"
-                                                                   ],
+                                                                       "bibtex",
+                                                                       "quick overview",
+                                                                       "background research",
+                                                                       "citation source",
+                                                                       "recent developments"
+                                                                    ],
                                              "equivalent_group":  "literature-search",
                                              "canonical_for_task":  [
- 
+                                                                    "research"
                                                                     ]
                                          },
                    "paper-2-web":  {
@@ -3013,7 +3157,13 @@
                                                                    ],
                                              "negative_keywords":  [
                                                                        "smiles",
-                                                                       "docking"
+                                                                       "docking",
+                                                                       "full-text",
+                                                                       "structured data",
+                                                                       "effect size",
+                                                                       "sample size",
+                                                                       "方法学",
+                                                                       "证据表"
                                                                    ],
                                              "equivalent_group":  "literature-synthesis",
                                              "canonical_for_task":  [
@@ -3885,15 +4035,20 @@
                                                                    ],
                                                     "positive_keywords":  [
                                                                               "mermaid",
-                                                                              "flowchart",
+                                                                              "mermaid flowchart",
                                                                               "sequence diagram",
                                                                               "mindmap",
-                                                                              "流程图",
+                                                                              "markdown flowchart",
+                                                                              "mermaid 流程图",
                                                                               "时序图"
                                                                           ],
                                                     "negative_keywords":  [
                                                                               "dicom",
-                                                                              "smiles"
+                                                                              "smiles",
+                                                                              "schematic",
+                                                                              "graphical abstract",
+                                                                              "600dpi",
+                                                                              "publication figure"
                                                                           ],
                                                     "equivalent_group":  "science-communication",
                                                     "canonical_for_task":  [
