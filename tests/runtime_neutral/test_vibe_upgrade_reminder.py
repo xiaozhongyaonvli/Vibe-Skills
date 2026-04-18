@@ -117,11 +117,11 @@ def test_build_update_reminder_returns_none_when_target_install_truth_is_missing
             'installed_commit': '',
             'remote_latest_version': '3.0.3',
             'remote_latest_commit': 'new',
-            'update_available': False,
+            'update_available': True,
         },
     )
     monkeypatch.setattr('vgo_cli.version_reminder.has_recorded_install_truth', lambda status: False)
-    monkeypatch.setattr('vgo_cli.version_reminder.is_upstream_cache_stale', lambda status: False)
+    monkeypatch.setattr('vgo_cli.version_reminder.is_upstream_cache_stale', lambda status: True)
     monkeypatch.setattr(
         'vgo_cli.version_reminder.refresh_upstream_status',
         lambda repo_root, target_root, current_status: (_ for _ in ()).throw(AssertionError('should not refresh')),

@@ -298,6 +298,93 @@ def test_upgrade_runtime_reinstalls_when_target_root_has_no_recorded_install_tru
     assert result["after"]["installed_commit"] == "new-source-head"
 
 
+def test_upgrade_runtime_reinstalls_when_recorded_install_version_has_no_commit(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    upgrade_service = importlib.import_module("vgo_cli.upgrade_service")
+
+    repo_root = tmp_path / "fresh-clone"
+    repo_root.mkdir()
+    target_root = tmp_path / "target"
+    target_root.mkdir()
+    steps: list[str] = []
+
+    upgrade_service.save_upgrade_status(
+        target_root,
+        {
+            "host_id": "codex",
+            "target_root": str(target_root.resolve()),
+            "repo_remote": "https://github.com/foryourhealth111-pixel/Vibe-Skills.git",
+            "repo_default_branch": "main",
+            "installed_version": "3.0.3",
+            "installed_commit": "",
+            "installed_recorded_at": "2026-04-10T00:00:00Z",
+        },
+    )
+
+    monkeypatch.setattr(upgrade_service, "resolve_upgrade_repo_root", lambda path: repo_root)
+    monkeypatch.setattr(
+        upgrade_service,
+        "get_official_self_repo_metadata",
+        lambda repo_root_arg: {
+            "repo_url": "https://github.com/foryourhealth111-pixel/Vibe-Skills.git",
+            "default_branch": "main",
+            "canonical_root": ".",
+        },
+    )
+    monkeypatch.setattr(
+        upgrade_service,
+        "refresh_upstream_status",
+        lambda repo_root_arg, target_root_arg, current_status, **kwargs: {
+            **current_status,
+            "remote_latest_version": "3.0.3",
+            "remote_latest_commit": "new-source-head",
+            "update_available": False,
+            "repo_default_branch": "main",
+        },
+    )
+    monkeypatch.setattr(
+        upgrade_service,
+        "reset_repo_to_official_head",
+        lambda repo_root_arg, branch, target_commit=None: steps.append(f"reset:{branch}:{target_commit}"),
+    )
+    monkeypatch.setattr(upgrade_service, "reinstall_runtime", lambda **kwargs: steps.append("reinstall"))
+    monkeypatch.setattr(
+        upgrade_service,
+        "run_upgrade_check",
+        lambda **kwargs: (steps.append("check") or subprocess.CompletedProcess(args=["check"], returncode=0, stdout="", stderr="")),
+    )
+    monkeypatch.setattr(
+        upgrade_service,
+        "refresh_installed_status",
+        lambda repo_root_arg, target_root_arg, host_id, **kwargs: {
+            "installed_version": "3.0.3",
+            "installed_commit": "new-source-head",
+            "remote_latest_version": "3.0.3",
+            "remote_latest_commit": "new-source-head",
+            "update_available": False,
+        },
+    )
+
+    result = upgrade_service.upgrade_runtime(
+        repo_root=repo_root,
+        target_root=target_root,
+        host_id="codex",
+        profile="full",
+        frontend="shell",
+        install_external=False,
+        strict_offline=False,
+        require_closed_ready=False,
+        allow_external_skill_fallback=False,
+        skip_runtime_freshness_gate=False,
+    )
+
+    assert steps == ["reset:main:new-source-head", "reinstall", "check"]
+    assert result["changed"] is True
+    assert result["before"]["installed_version"] == "3.0.3"
+    assert result["before"]["installed_commit"] == ""
+
+
 def test_resolve_upgrade_repo_root_does_not_fall_back_to_unrelated_cwd_repo(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

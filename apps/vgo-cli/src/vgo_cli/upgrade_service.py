@@ -49,7 +49,7 @@ def load_recorded_install_status(repo_root: Path, target_root: Path, host_id: st
 def has_recorded_install_truth(status: dict[str, object] | None) -> bool:
     return bool(
         str((status or {}).get('installed_version') or '').strip()
-        or str((status or {}).get('installed_commit') or '').strip()
+        and str((status or {}).get('installed_commit') or '').strip()
     )
 
 

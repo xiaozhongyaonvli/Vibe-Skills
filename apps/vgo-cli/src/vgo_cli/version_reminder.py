@@ -15,13 +15,13 @@ from vgo_cli.upgrade_state import is_upstream_cache_stale
 def build_update_reminder(repo_root: Path, target_root: Path, host_id: str) -> str | None:
     try:
         status = load_recorded_install_status(repo_root, target_root, host_id)
+        if not has_recorded_install_truth(status):
+            return None
         if is_upstream_cache_stale(status):
             status = refresh_upstream_status(repo_root, target_root, status)
     except Exception:
         return None
 
-    if not has_recorded_install_truth(status):
-        return None
     if not bool(status.get('update_available')):
         return None
 
