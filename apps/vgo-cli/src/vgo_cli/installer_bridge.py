@@ -7,6 +7,7 @@ from .workspace import extend_workspace_package_path
 
 
 def refresh_install_ledger_payload(repo_root: Path, target_root: Path) -> dict[str, object]:
+    """Refresh the install ledger and attach current runtime diagnostics."""
     extend_workspace_package_path(repo_root)
     from vgo_installer.ledger_service import refresh_install_ledger
     from vgo_verify.bootstrap_doctor_runtime import collect_host_runtime

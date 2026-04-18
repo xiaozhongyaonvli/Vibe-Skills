@@ -86,7 +86,7 @@ resolve_executable_candidate() {
       return 0
     fi
   fi
-  if [[ -e "${candidate}" ]]; then
+  if [[ -f "${candidate}" ]]; then
     if [[ "${candidate}" == /* ]]; then
       printf '%s' "${candidate}"
     else
@@ -852,8 +852,12 @@ if [[ -f "${TARGET_ROOT}/.vibeskills/host-closure.json" ]]; then
   closure_state="$(json_query_scalar_from_file "${TARGET_ROOT}/.vibeskills/host-closure.json" 'host_closure_state' 2>/dev/null || true)"
   if [[ -n "${closure_state}" ]]; then
     if [[ "${closure_state}" == "closed_ready" ]]; then
-      echo "[OK] host closure state -> ${closure_state}"
-      PASS=$((PASS+1))
+      if [[ "${HOST_ID}" == "codex" && -z "${direct_runtime_resolved}" ]]; then
+        warn_note "host closure receipt stale -> ${closure_state} (live direct runtime unavailable for ${HOST_ID})"
+      else
+        echo "[OK] host closure state -> ${closure_state}"
+        PASS=$((PASS+1))
+      fi
     elif [[ "${HOST_ID}" == "codex" && -n "${direct_runtime_resolved}" ]]; then
       warn_note "host closure receipt stale -> ${closure_state} (live direct runtime ready via ${direct_runtime_source:-path})"
     else

@@ -165,6 +165,7 @@ def reconcile_mcp_servers_with_active_surface(
 
 
 def collect_host_runtime(repo_root: Path, target_root: Path) -> dict[str, Any]:
+    """Collect the host runtime state surfaced by bootstrap doctor."""
     runtime_skill_entry = target_root / "skills" / "vibe" / "SKILL.md"
     commands_root = target_root / "commands"
     host_closure_path = target_root / ".vibeskills" / "host-closure.json"
@@ -342,6 +343,7 @@ def build_summary(
     external_tools: list[dict[str, Any]],
     global_instruction_bootstrap: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    """Build the user-facing summary for bootstrap doctor results."""
     blocking_issues: list[str] = []
     manual_actions: list[str] = []
     warnings: list[str] = []

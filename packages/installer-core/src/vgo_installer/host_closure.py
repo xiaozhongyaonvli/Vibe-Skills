@@ -330,6 +330,7 @@ def materialize_host_closure(
     record_managed_json: RecordManagedJson,
     record_bridge_launcher: RecordBridgeLauncher,
 ) -> tuple[Path, dict[str, Any]]:
+    """Materialize host-closure metadata using live runtime readiness checks."""
     host_id = adapter["id"]
     bridge_command, bridge_source = resolve_bridge_command(host_id)
     wrapper_info = materialize_host_specialist_wrapper(

@@ -13,12 +13,14 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 def _resolve_repo_root(repo_root: str | Path | None) -> Path:
+    """Resolve the repo root used for registry and policy lookups."""
     if repo_root is None:
         return REPO_ROOT
     return Path(repo_root).resolve()
 
 
 def _load_native_specialist_execution_policy(repo_root: str | Path | None) -> dict[str, Any]:
+    """Load native specialist execution policy data from the active repo tree."""
     repo_candidates = [_resolve_repo_root(repo_root)]
     if REPO_ROOT not in repo_candidates:
         repo_candidates.append(REPO_ROOT)
@@ -30,6 +32,7 @@ def _load_native_specialist_execution_policy(repo_root: str | Path | None) -> di
 
 
 def _resolve_direct_runtime_policy(repo_root: str | Path | None, host_id: str) -> dict[str, Any] | None:
+    """Return the native direct-runtime policy entry for a given host."""
     policy = _load_native_specialist_execution_policy(repo_root)
     for adapter in policy.get("adapters") or []:
         if isinstance(adapter, dict) and str(adapter.get("id") or "").strip().lower() == host_id:
@@ -38,6 +41,7 @@ def _resolve_direct_runtime_policy(repo_root: str | Path | None, host_id: str) -
 
 
 def _resolve_executable_candidate(raw: str) -> str | None:
+    """Resolve a command or file path to an executable file path."""
     candidate = str(raw or "").strip()
     if not candidate:
         return None
@@ -45,12 +49,13 @@ def _resolve_executable_candidate(raw: str) -> str | None:
     if resolved:
         return str(Path(resolved).resolve())
     path_candidate = Path(candidate).expanduser()
-    if path_candidate.exists():
+    if path_candidate.is_file():
         return str(path_candidate.resolve())
     return None
 
 
 def _fallback_canonical_vibe_contract(host_id: str | None) -> dict[str, Any]:
+    """Return a safe bridged contract when canonical contract lookup fails."""
     normalized_host_id = str(host_id or "").strip().lower()
     return {
         "host_id": normalized_host_id,
@@ -69,6 +74,7 @@ def evaluate_host_runtime_readiness(
     *,
     specialist_wrapper_ready: bool | None = None,
 ) -> dict[str, Any]:
+    """Evaluate whether a host is truly ready for canonical vibe execution."""
     resolved_repo_root = _resolve_repo_root(repo_root)
     try:
         load_adapter_registry(resolved_repo_root)

@@ -549,7 +549,7 @@ function Resolve-VgoDirectRuntimeExecutable {
             if ($candidate) {
                 $resolvedPath = [string]$candidate.Source
                 $source = "env:$envName"
-            } elseif (Test-Path -LiteralPath $envValue) {
+            } elseif (Test-Path -LiteralPath $envValue -PathType Leaf) {
                 $resolvedPath = [System.IO.Path]::GetFullPath($envValue)
                 $source = "env:$envName"
             }
@@ -1279,6 +1279,12 @@ switch ([string]$adapter.install_mode) {
 $closureReceipt = Write-VgoHostClosure -TargetRoot $TargetRoot -Adapter $adapter
 $requireClosedReadyEffective = [bool]($RequireClosedReady -and (Test-VgoClosedReadyRequiredForAdapter -Adapter $adapter))
 if ($requireClosedReadyEffective -and [string]$closureReceipt.data.host_closure_state -ne 'closed_ready') {
+    $hostClosureDriver = if ($closureReceipt.data.PSObject.Properties.Name -contains 'host_closure_driver') { [string]$closureReceipt.data.host_closure_driver } else { '' }
+    if ($hostClosureDriver -eq 'direct_runtime') {
+        $directRuntime = if ($closureReceipt.data.PSObject.Properties.Name -contains 'direct_runtime') { $closureReceipt.data.direct_runtime } else { $null }
+        $runtimeCommand = if ($null -ne $directRuntime -and $directRuntime.PSObject.Properties.Name -contains 'command' -and -not [string]::IsNullOrWhiteSpace([string]$directRuntime.command)) { [string]$directRuntime.command } else { [string]$adapter.id }
+        throw ("Host closure for '{0}' is not closed_ready (got '{1}'). Required direct runtime executable '{2}' is not ready; verify the executable path or install the runtime, then retry install." -f [string]$adapter.id, [string]$closureReceipt.data.host_closure_state, $runtimeCommand)
+    }
     throw ("Host closure for '{0}' is not closed_ready (got '{1}'). Configure the host specialist bridge command first, then retry install." -f [string]$adapter.id, [string]$closureReceipt.data.host_closure_state)
 }
 $installLedgerPath = Write-VgoInstallLedger -Adapter $adapter -Profile $Profile -ExternalFallbackUsed @($result.external_fallback_used)

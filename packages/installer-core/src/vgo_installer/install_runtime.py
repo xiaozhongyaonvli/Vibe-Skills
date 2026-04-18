@@ -85,6 +85,31 @@ ledger_state = {
 }
 
 
+def build_closed_ready_failure_message(adapter: dict[str, object], closure: dict[str, object]) -> str:
+    """Describe why a host closure failed the closed_ready requirement."""
+    adapter_id = str(adapter.get("id") or "")
+    closure_state = str(closure.get("host_closure_state") or "")
+    readiness_driver = str(closure.get("host_closure_driver") or "")
+    if readiness_driver == "direct_runtime":
+        direct_runtime = closure.get("direct_runtime")
+        command = adapter_id
+        if isinstance(direct_runtime, dict):
+            command = str(direct_runtime.get("command") or adapter_id)
+        return (
+            "Host closure for "
+            f"'{adapter_id}' is not closed_ready "
+            f"(got '{closure_state}'). "
+            f"Required direct runtime executable '{command}' is not ready; "
+            "verify the executable path or install the runtime, then retry install."
+        )
+    return (
+        "Host closure for "
+        f"'{adapter_id}' is not closed_ready "
+        f"(got '{closure_state}'). "
+        "Configure the host specialist bridge command first, then retry install."
+    )
+
+
 def reset_ledger_state() -> None:
     for key, value in ledger_state.items():
         if isinstance(value, set):
@@ -608,12 +633,7 @@ def main(argv: list[str] | None = None):
     record_sidecar_root(target_root / ".vibeskills")
     require_closed_ready_effective = bool(args.require_closed_ready and is_closed_ready_required(adapter))
     if require_closed_ready_effective and closure["host_closure_state"] != "closed_ready":
-        raise SystemExit(
-            "Host closure for "
-            f"'{adapter['id']}' is not closed_ready "
-            f"(got '{closure['host_closure_state']}'). "
-            "Configure the host specialist bridge command first, then retry install."
-        )
+        raise SystemExit(build_closed_ready_failure_message(adapter, closure))
 
     canonical_vibe_rel = canonical_vibe_target_relpath(packaging)
     install_plan = build_install_plan(

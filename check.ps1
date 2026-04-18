@@ -131,7 +131,7 @@ function Resolve-DirectRuntimeExecutableForCheck {
     if ($candidate) {
       $resolvedPath = [string]$candidate.Source
       $source = "env:$envName"
-    } elseif (Test-Path -LiteralPath $envValue) {
+    } elseif (Test-Path -LiteralPath $envValue -PathType Leaf) {
       $resolvedPath = [System.IO.Path]::GetFullPath($envValue)
       $source = "env:$envName"
     }
@@ -699,7 +699,11 @@ function Invoke-AdapterSpecificChecks {
       $closureState = if ($hostClosure.PSObject.Properties.Name -contains 'host_closure_state') { [string]$hostClosure.host_closure_state } else { '' }
       if (-not [string]::IsNullOrWhiteSpace($closureState)) {
         if ($closureState -eq 'closed_ready') {
-          Check-Condition -Label 'host closure state' -Condition $true
+          if ([string]$HostId -eq 'codex' -and -not $directRuntime.ready) {
+            Write-WarnNote -Message ("host closure receipt stale -> {0} (live direct runtime unavailable for {1})" -f $closureState, [string]$HostId)
+          } else {
+            Check-Condition -Label 'host closure state' -Condition $true
+          }
         } elseif ([string]$HostId -eq 'codex' -and $directRuntime.ready) {
           Write-WarnNote -Message ("host closure receipt stale -> {0} (live direct runtime ready via {1})" -f $closureState, (Format-OptionalValue -Value ([string]$directRuntime.source)))
         } else {
