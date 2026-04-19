@@ -203,3 +203,6 @@ Before leaving this protocol, write or preserve the evidence needed for cleanup:
 - For L grade, use Superpowers subagent system, NOT Everything-CC agents.
 - If the preferred orchestration stack is unavailable, do not silently downgrade. Follow `fallback-chains.md` only as an explicit degraded path, emit a standalone hazard alert, and record that the resulting execution is non-authoritative.
 - Do not self-introduce new fallback logic during implementation unless the active requirement document explicitly approves fallback-related changes.
+- Do not convert primary-path failure into fake success by swallowing exceptions, returning template-only success text, or leaving mock / simulation placeholders in production behavior.
+- Prefer explicit failure exposure over convenience recovery: if the real path fails, keep the failure visible in logs, receipts, verification output, or downgraded closure wording.
+- If a requirement explicitly permits fallback or degraded behavior, keep it explicit, document the trigger and non-authoritative status, and make the path easy to disable or remove later.

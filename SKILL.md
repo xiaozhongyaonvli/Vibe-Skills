@@ -357,6 +357,16 @@ Minimum invariants:
 - canonical vibe claims require `host-launch-receipt.json`, `runtime-input-packet.json`, `governance-capsule.json`, and `stage-lineage.json`
 - canonical vibe claims require runtime artifact proof, not SKILL.md-only simulation
 
+### Failure Exposure And Fallback Discipline
+
+- Do not introduce new fallback, degraded-success, or boundary behavior just to keep a path running when it would otherwise fail.
+- Do not add mock success paths, template-only success outputs, swallowed errors, or any other fake-success behavior that hides the root cause.
+- Prefer full exposure: surface real failures with explicit errors, exceptions, logs, failing verification, or downgraded closure wording instead of pretending the primary path succeeded.
+- Only introduce or retain fallback / degraded behavior when the active requirement explicitly asks for it.
+- Any allowed fallback or boundary behavior must be explicit, traceable in artifacts or logs, documented in the relevant contract or requirement surface, and easy to disable.
+- Fallback or boundary behavior must not be used to bypass real execution, verification, or root-cause repair.
+- Existing explicit governance boundaries are not themselves violations; this rule targets newly introduced behavior that hides capability loss or papers over a broken primary path.
+
 ## Outputs
 
 The governed runtime should leave behind:

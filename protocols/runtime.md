@@ -50,7 +50,9 @@ These are syntax variants for the same governed runtime, not separate entrypoint
 5. Cleanup is mandatory before a phase is considered complete.
 6. Silent fallback and silent degradation are forbidden.
 7. Fallback success is non-authoritative unless a requirement explicitly approves otherwise.
-8. `L` runs serial native units; `XL` runs wave-sequential with step-level bounded parallel units only when dependency-safe.
+8. Fake-success behavior is forbidden: the runtime must not swallow errors, emit mock completion, or template a pass result when the primary path failed.
+9. New fallback or boundary behavior may exist only when the active requirement explicitly approves it, and it must remain explicit, traceable, and easy to disable.
+10. `L` runs serial native units; `XL` runs wave-sequential with step-level bounded parallel units only when dependency-safe.
 
 ## Official Runtime Modes
 

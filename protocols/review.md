@@ -82,14 +82,16 @@ Before approving code:
 8. Immutable patterns used (no mutation)
 9. No new fallback or degraded-path logic unless the active requirement explicitly approves it
 10. Any fallback path is labeled as a hazard, not presented as equivalent success
-11. The reviewed change states its primary objective, not only its local success signal
-12. Validation material is not absorbed into product logic or route truth
-13. The claimed completion state matches the evidence bundle and scope
-14. Bounded specialization is either preserved as specialization or explicitly marked as not-yet-generalized
-15. Any anti-drift warning is recorded as report-only review evidence, not hidden hard enforcement
-16. Product acceptance criteria are frozen in the requirement doc rather than improvised at closeout
-17. Manual spot checks are either explicitly not needed or honestly left as pending manual review
-18. Delivery-truth wording does not collapse workflow/process success into downstream project acceptance
+11. No mock-success, template-success, swallowed-error, or simulation-only path is introduced where the real execution path can fail
+12. Any allowed fallback or degraded path is explicit, traceable, documented, and easy to disable
+13. The reviewed change states its primary objective, not only its local success signal
+14. Validation material is not absorbed into product logic or route truth
+15. The claimed completion state matches the evidence bundle and scope
+16. Bounded specialization is either preserved as specialization or explicitly marked as not-yet-generalized
+17. Any anti-drift warning is recorded as report-only review evidence, not hidden hard enforcement
+18. Product acceptance criteria are frozen in the requirement doc rather than improvised at closeout
+19. Manual spot checks are either explicitly not needed or honestly left as pending manual review
+20. Delivery-truth wording does not collapse workflow/process success into downstream project acceptance
 
 ## Output Format
 Review findings categorized by severity:
@@ -100,6 +102,7 @@ Review findings categorized by severity:
 
 Fallback-specific review rule:
 - Treat silent fallback, silent degradation, or self-introduced fallback logic as HIGH at minimum and CRITICAL when it can hide capability loss from users.
+- Treat swallowed errors, mock-success branches, or template-only pass results as HIGH at minimum and CRITICAL when they can mislead users or reviewers about real execution success.
 
 Objective-protection disposition:
 - `aligned`: objective, scope, and completion wording match the evidence.
