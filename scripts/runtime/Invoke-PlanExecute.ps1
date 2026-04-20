@@ -1034,8 +1034,8 @@ $planShadow = Get-VibePlanDerivedExecutionShadow -PlanPath $planPath -RunId $Run
 $specialistRecommendations = if ($runtimeInputPacket) { @($runtimeInputPacket.specialist_recommendations) } else { @() }
 $frozenApprovedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.approved_dispatch) } else { @() }
 $frozenLocalSuggestions = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.local_specialist_suggestions) } else { @() }
-$frozenBlockedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'blocked' -and $null -ne $runtimeInputPacket.specialist_dispatch.blocked) { @($runtimeInputPacket.specialist_dispatch.blocked) } else { @() }
-$frozenDegradedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'degraded' -and $null -ne $runtimeInputPacket.specialist_dispatch.degraded) { @($runtimeInputPacket.specialist_dispatch.degraded) } else { @() }
+$frozenBlockedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'blocked' -and $null -ne $runtimeInputPacket.specialist_dispatch.blocked) { ConvertTo-VibeObjectArray -InputObject $runtimeInputPacket.specialist_dispatch.blocked } else { @() }
+$frozenDegradedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'degraded' -and $null -ne $runtimeInputPacket.specialist_dispatch.degraded) { ConvertTo-VibeObjectArray -InputObject $runtimeInputPacket.specialist_dispatch.degraded } else { @() }
 $matchedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'matched_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.matched_skill_ids) { ConvertTo-VibeStringArray -InputObject $runtimeInputPacket.specialist_dispatch.matched_skill_ids } else { @() }
 $surfacedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'surfaced_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.surfaced_skill_ids) { ConvertTo-VibeStringArray -InputObject $runtimeInputPacket.specialist_dispatch.surfaced_skill_ids } else { @() }
 $blockedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'blocked_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.blocked_skill_ids) { ConvertTo-VibeStringArray -InputObject $runtimeInputPacket.specialist_dispatch.blocked_skill_ids } else { @() }
@@ -1095,8 +1095,12 @@ if ([string]$hierarchyState.governance_scope -eq 'child' -and $escalationRequire
 
 $blockedSpecialistUnits = @()
 foreach ($dispatch in @($frozenBlockedDispatch)) {
+    $dispatchSkillId = Get-VibeSkillId -InputObject $dispatch
+    if ([string]::IsNullOrWhiteSpace($dispatchSkillId)) {
+        throw "Blocked specialist dispatch is missing skill_id."
+    }
     $blockedOutcome = New-VibeBlockedSpecialistDispatchResult `
-        -UnitId ("blocked-{0}" -f [string]$dispatch.skill_id) `
+        -UnitId ("blocked-{0}" -f $dispatchSkillId) `
         -Dispatch $dispatch `
         -SessionRoot $sessionRoot `
         -Reason $(if ($dispatch.PSObject.Properties.Name -contains 'recommended_promotion_action' -and -not [string]::IsNullOrWhiteSpace([string]$dispatch.recommended_promotion_action)) { [string]$dispatch.recommended_promotion_action } else { 'require_confirmation' }) `
@@ -1104,7 +1108,7 @@ foreach ($dispatch in @($frozenBlockedDispatch)) {
         -ReviewMode $(if ($dispatch.PSObject.Properties.Name -contains 'review_mode') { [string]$dispatch.review_mode } else { 'native_contract' })
     $blockedSpecialistUnits += [pscustomobject]@{
         unit_id = [string]$blockedOutcome.result.unit_id
-        skill_id = [string]$dispatch.skill_id
+        skill_id = $dispatchSkillId
         dispatch_phase = if ($dispatch.PSObject.Properties.Name -contains 'dispatch_phase') { [string]$dispatch.dispatch_phase } else { $null }
         binding_profile = if ($dispatch.PSObject.Properties.Name -contains 'binding_profile') { [string]$dispatch.binding_profile } else { $null }
         lane_policy = if ($dispatch.PSObject.Properties.Name -contains 'lane_policy') { [string]$dispatch.lane_policy } else { $null }
@@ -1120,8 +1124,12 @@ foreach ($dispatch in @($frozenBlockedDispatch)) {
 
 $preDispatchDegradedUnits = @()
 foreach ($dispatch in @($frozenDegradedDispatch)) {
+    $dispatchSkillId = Get-VibeSkillId -InputObject $dispatch
+    if ([string]::IsNullOrWhiteSpace($dispatchSkillId)) {
+        throw "Degraded specialist dispatch is missing skill_id."
+    }
     $degradedOutcome = New-VibeDegradedSpecialistDispatchResult `
-        -UnitId ("degraded-{0}" -f [string]$dispatch.skill_id) `
+        -UnitId ("degraded-{0}" -f $dispatchSkillId) `
         -Dispatch $dispatch `
         -SessionRoot $sessionRoot `
         -Policy $runtime.native_specialist_execution_policy `
@@ -1130,7 +1138,7 @@ foreach ($dispatch in @($frozenDegradedDispatch)) {
         -ReviewMode $(if ($dispatch.PSObject.Properties.Name -contains 'review_mode') { [string]$dispatch.review_mode } else { 'native_contract' })
     $preDispatchDegradedUnits += [pscustomobject]@{
         unit_id = [string]$degradedOutcome.result.unit_id
-        skill_id = [string]$dispatch.skill_id
+        skill_id = $dispatchSkillId
         dispatch_phase = if ($dispatch.PSObject.Properties.Name -contains 'dispatch_phase') { [string]$dispatch.dispatch_phase } else { $null }
         binding_profile = if ($dispatch.PSObject.Properties.Name -contains 'binding_profile') { [string]$dispatch.binding_profile } else { $null }
         lane_policy = if ($dispatch.PSObject.Properties.Name -contains 'lane_policy') { [string]$dispatch.lane_policy } else { $null }
