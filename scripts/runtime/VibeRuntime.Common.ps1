@@ -2564,18 +2564,32 @@ function New-VibeCandidateCompositeSkillDraftArtifact {
     )
     $drafts = @()
     if (@($approvedSpecialists).Count -gt 0) {
+        $degradedSkillIds = @(
+            $events |
+            Where-Object { [bool]$_.degraded } |
+            ForEach-Object { [string]$_.skill_id } |
+            Select-Object -Unique
+        )
+        $pitfallTypes = @()
+        if ($null -ne $ObservedPitfallEvents -and $ObservedPitfallEvents.PSObject.Properties.Name -contains 'events') {
+            $pitfallTypes = @($ObservedPitfallEvents.events | ForEach-Object { [string]$_.pitfall_type } | Select-Object -Unique)
+        }
+        $activeFailures = @()
+        if ($null -ne $ObservedFailurePatterns -and $ObservedFailurePatterns.PSObject.Properties.Name -contains 'patterns') {
+            $activeFailures = @($ObservedFailurePatterns.patterns | Where-Object { $_.active } | ForEach-Object { [string]$_.classification } | Select-Object -Unique)
+        }
         $drafts += [pscustomobject]@{
             draft_id = 'draft-review-bundle'
-            title = 'review-oriented composite skill draft'
-            trigger_shape = 'repository review / governed verification task'
+            title = 'observed specialist composition surface'
+            trigger_shape = 'observed specialist co-dispatch under governed review / verification'
             governor_skill = 'vibe'
             component_skills = @($approvedSpecialists)
             entry_conditions = @(
-                'Task requires governed review or verification.',
-                'Specialist dispatch surfaced review-oriented specialist skills.'
+                'A governed run surfaced one or more approved specialist dispatches.',
+                'This draft records an observed specialist combination for review-only follow-up.'
             )
-            known_risks = @()
-            promotion_readiness = 'candidate'
+            known_risks = @($degradedSkillIds + $pitfallTypes + $activeFailures | Select-Object -Unique)
+            promotion_readiness = if (@($degradedSkillIds).Count -gt 0) { 'needs-shadow-review' } else { 'review-signal' }
         }
     }
 
@@ -2787,7 +2801,7 @@ function New-VibeApplicationReadinessReport {
             readiness = 'ready_for_review'
             blocked_by = @()
             required_manual_actions = @('Confirm the remediation text before promoting it into a reusable playbook entry.')
-            evidence_refs = @([string]$note.evidence_level)
+            evidence_levels = @([string]$note.evidence_level)
             boundary_impact = 'none'
             coupling_risk = 'low'
             regression_risk = 'low'
@@ -2796,26 +2810,34 @@ function New-VibeApplicationReadinessReport {
 
     $laneBCandidates = @()
     foreach ($draft in @($(if ($null -ne $CandidateCompositeSkillDraftArtifact -and (Test-VibeObjectHasProperty -InputObject $CandidateCompositeSkillDraftArtifact -PropertyName 'drafts')) { $CandidateCompositeSkillDraftArtifact.drafts } else { @() }))) {
+        $blockedBy = @()
         $componentSkills = @($(if ($draft.PSObject.Properties.Name -contains 'component_skills') { $draft.component_skills } else { @() }))
+        if (@($componentSkills).Count -eq 0) {
+            $blockedBy += 'missing_component_skills'
+        }
+        $promotionReadiness = if ($draft.PSObject.Properties.Name -contains 'promotion_readiness') { [string]$draft.promotion_readiness } else { '' }
         $laneBCandidates += [pscustomobject]@{
             candidate_id = 'lane-b-draft-' + [string]$draft.draft_id
             proposal_type = 'composite_skill_draft'
             source_ref = if ([string]::IsNullOrWhiteSpace($CandidateCompositeSkillDraftPath)) { [string]$draft.draft_id } else { $CandidateCompositeSkillDraftPath + '#' + [string]$draft.draft_id }
-            recommended_surface = 'shadow_candidate'
-            governance_path = 'lifecycle.shadow'
-            target_scope = 'composite_skill_bundle'
+            recommended_surface = 'review_signal_surface'
+            governance_path = 'lifecycle.review_only'
+            target_scope = 'observed_specialist_combination'
             manual_review_required = $true
-            shadow_required = $true
-            shadow_plan_status = if (@($componentSkills).Count -eq 0) { 'missing_prerequisites' } else { 'ready_to_prepare' }
+            shadow_required = [bool]($promotionReadiness -eq 'needs-shadow-review')
+            shadow_plan_status = if (@($blockedBy).Count -gt 0) { 'missing_prerequisites' } elseif ($promotionReadiness -eq 'needs-shadow-review') { 'review_before_shadow' } else { 'review_only' }
             board_review_required = $false
             replay_evidence_refs = @($ProposalLayerPath, $CandidateCompositeSkillDraftPath)
             rollback_plan_required = $true
-            readiness = if (@($componentSkills).Count -eq 0) { 'blocked' } else { 'ready_for_shadow_review' }
-            blocked_by = if (@($componentSkills).Count -eq 0) { @('missing_component_skills') } else { @() }
-            required_manual_actions = @('Confirm module ownership and write scope before any shadow run.', 'Write an explicit rollback note before promoting beyond shadow.')
+            readiness = if (@($blockedBy).Count -gt 0) { 'blocked' } elseif ($promotionReadiness -eq 'needs-shadow-review') { 'ready_for_shadow_review' } else { 'ready_for_review' }
+            blocked_by = @($blockedBy)
+            required_manual_actions = @(
+                'Confirm whether this is only an observed specialist combination or a stable reusable pattern.',
+                'Do not treat this surface as a promotion-ready composite skill proposal without extra evidence.'
+            )
             boundary_impact = 'module_boundary_review'
             coupling_risk = if (@($componentSkills).Count -gt 2) { 'medium' } else { 'low' }
-            regression_risk = 'low'
+            regression_risk = if ($promotionReadiness -eq 'needs-shadow-review') { 'medium' } else { 'low' }
         }
     }
     foreach ($suggestion in @($(if ($null -ne $ThresholdPolicySuggestionArtifact -and (Test-VibeObjectHasProperty -InputObject $ThresholdPolicySuggestionArtifact -PropertyName 'suggestions')) { $ThresholdPolicySuggestionArtifact.suggestions } else { @() }))) {
@@ -2849,8 +2871,8 @@ function New-VibeApplicationReadinessReport {
         }
     }
 
-    $readyForReviewCount = @($laneACandidates | Where-Object { [string]$_.readiness -eq 'ready_for_review' }).Count
-    $readyForShadowReviewCount = @($laneBCandidates | Where-Object { [string]$_.readiness -eq 'ready_for_shadow_review' }).Count
+    $readyForReviewCount = @(@($laneACandidates) + @($laneBCandidates) | Where-Object { [string]$_.readiness -eq 'ready_for_review' }).Count
+    $readyForShadowReviewCount = @(@($laneACandidates) + @($laneBCandidates) | Where-Object { [string]$_.readiness -eq 'ready_for_shadow_review' }).Count
     $blockedCount = @($laneACandidates + $laneBCandidates | Where-Object { [string]$_.readiness -eq 'blocked' }).Count
     $highRiskFindings = @($laneBCandidates | Where-Object { [string]$_.regression_risk -eq 'medium' -or [string]$_.coupling_risk -eq 'medium' } | ForEach-Object { [string]$_.candidate_id } | Select-Object -Unique)
 
@@ -2883,17 +2905,318 @@ function New-VibeApplicationReadinessReport {
 }
 
 function New-VibeApplicationReadinessMarkdownLines {
-    param([Parameter(Mandatory)] [object]$ApplicationReadinessReport)
+    param(
+        [Parameter(Mandatory)] [object]$ApplicationReadinessReport
+    )
+
+    function Format-VibeMarkdownCell {
+        param([AllowNull()] [object]$Value)
+
+        if ($null -eq $Value) {
+            return ''
+        }
+        if ($Value -is [array]) {
+            $text = (@($Value) | ForEach-Object { [string]$_ }) -join ', '
+        } else {
+            $text = [string]$Value
+        }
+        return ($text -replace '\|', '\|' -replace "`r?`n", ' ')
+    }
+
+    function Join-VibeMarkdownListValue {
+        param([AllowNull()] [object]$Value)
+
+        if ($null -eq $Value) {
+            return ''
+        }
+        $items = @($Value | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if (@($items).Count -eq 0) {
+            return ''
+        }
+        return ($items -join ', ')
+    }
+
+    function Get-VibeReadableProposalType {
+        param([AllowEmptyString()] [string]$ProposalType)
+
+        switch ($ProposalType) {
+            'warning_card' { return 'Warning card' }
+            'preflight_check' { return 'Preflight check' }
+            'remediation_note' { return 'Remediation note' }
+            'composite_skill_draft' { return 'Observed composition draft' }
+            'threshold_policy_suggestion' { return 'Threshold or policy suggestion' }
+            default {
+                if ([string]::IsNullOrWhiteSpace($ProposalType)) { return 'Unknown type' }
+                return $ProposalType
+            }
+        }
+    }
+
+    function Get-VibeReadableSurface {
+        param([AllowEmptyString()] [string]$Surface)
+
+        switch ($Surface) {
+            'warning_surface' { return 'Show as a warning before the next run' }
+            'preflight_rule_set' { return 'Add as a preflight check before execution' }
+            'remediation_playbook' { return 'Capture as a review or cleanup playbook note' }
+            'shadow_candidate' { return 'Enter shadow review, not direct promotion' }
+            'review_signal_surface' { return 'Expose first as a review-only observed combination' }
+            'policy_shadow_candidate' { return 'Enter policy shadow or board review, not direct policy change' }
+            default {
+                if ([string]::IsNullOrWhiteSpace($Surface)) { return 'No surface assigned' }
+                return $Surface
+            }
+        }
+    }
+
+    function Get-VibeReadableReadiness {
+        param([AllowEmptyString()] [string]$Readiness)
+
+        switch ($Readiness) {
+            'ready_for_review' { return 'Ready for manual review' }
+            'ready_for_shadow_review' { return 'Ready to prepare shadow review' }
+            'needs_more_review' { return 'Needs more review' }
+            'blocked' { return 'Blocked' }
+            default {
+                if ([string]::IsNullOrWhiteSpace($Readiness)) { return 'Unspecified' }
+                return $Readiness
+            }
+        }
+    }
+
+    function Get-VibeReadableRisk {
+        param(
+            [AllowEmptyString()] [string]$BoundaryImpact,
+            [AllowEmptyString()] [string]$CouplingRisk,
+            [AllowEmptyString()] [string]$RegressionRisk
+        )
+
+        $parts = @()
+        switch ($BoundaryImpact) {
+            'none' { $parts += 'No module boundary impact' }
+            'module_boundary_review' { $parts += 'Needs module-boundary review' }
+            'routing_policy' { $parts += 'Touches routing policy' }
+            'delivery_policy' { $parts += 'Touches delivery policy' }
+            'policy_review' { $parts += 'Needs policy review' }
+            default {
+                if (-not [string]::IsNullOrWhiteSpace($BoundaryImpact)) { $parts += ('Boundary impact=' + $BoundaryImpact) }
+            }
+        }
+
+        switch ($CouplingRisk) {
+            'low' { $parts += 'Low coupling risk' }
+            'medium' { $parts += 'Medium coupling risk' }
+            'high' { $parts += 'High coupling risk' }
+            default {
+                if (-not [string]::IsNullOrWhiteSpace($CouplingRisk)) { $parts += ('Coupling risk=' + $CouplingRisk) }
+            }
+        }
+
+        switch ($RegressionRisk) {
+            'low' { $parts += 'Low regression risk' }
+            'medium' { $parts += 'Medium regression risk' }
+            'high' { $parts += 'High regression risk' }
+            default {
+                if (-not [string]::IsNullOrWhiteSpace($RegressionRisk)) { $parts += ('Regression risk=' + $RegressionRisk) }
+            }
+        }
+
+        return ($parts -join '; ')
+    }
+
+    function Get-VibeReadableCandidateTitle {
+        param([object]$Candidate)
+
+        $candidateId = [string]$Candidate.candidate_id
+        $proposalType = [string]$Candidate.proposal_type
+
+        $name = $candidateId
+        foreach ($prefix in @(
+            'lane-a-warning-warning-pitfall-',
+            'lane-a-warning-warning-',
+            'lane-a-preflight-check-pitfall-',
+            'lane-a-preflight-check-',
+            'lane-a-remediation-remediation-skill-',
+            'lane-a-remediation-remediation-',
+            'lane-b-draft-',
+            'lane-b-policy-policy-'
+        )) {
+            if ($name.StartsWith($prefix)) {
+                $name = $name.Substring($prefix.Length)
+                break
+            }
+        }
+
+        if ($name -eq 'delivery-gate' -and $proposalType -eq 'threshold_policy_suggestion') {
+            $readableName = 'Delivery acceptance policy suggestion'
+            return ((Get-VibeReadableProposalType -ProposalType $proposalType) + ': ' + $readableName)
+        }
+
+        $readableName = switch ($name) {
+            'partial_completion' { 'Run did not complete cleanly' }
+            'delivery_gate_failed' { 'Delivery acceptance failed' }
+            'delivery-acceptance' { 'Delivery acceptance failure' }
+            'delivery-gate' { 'Delivery gate should remain under review' }
+            'code-reviewer' { 'code-reviewer skill degraded' }
+            'peer-review' { 'peer-review skill degraded' }
+            'draft-review-bundle' { 'Observed composition draft' }
+            default { $name -replace '_', ' ' }
+        }
+
+        return ((Get-VibeReadableProposalType -ProposalType $proposalType) + ': ' + $readableName)
+    }
+
+    function Get-VibeReadableNextStep {
+        param([object]$Candidate)
+
+        $proposalType = [string]$Candidate.proposal_type
+        $surface = [string]$Candidate.recommended_surface
+
+        switch ($proposalType) {
+            'warning_card' { return 'Keep as a warning only; do not auto-block execution.' }
+            'preflight_check' { return 'Decide manually whether this should be a soft check or a hard check.' }
+            'remediation_note' { return 'Confirm the wording before promoting it into a reusable remediation note.' }
+            'composite_skill_draft' { return 'First confirm whether this is only an observed combination before deciding on any shadow review.' }
+            'threshold_policy_suggestion' {
+                if ([string]$Candidate.governance_path -eq 'policy.board_review') {
+                    return 'Send to board review and add rollback wording before considering any policy change.'
+                }
+                return 'Enter policy shadow first; do not change live policy directly.'
+            }
+            default { return (Get-VibeReadableSurface -Surface $surface) }
+        }
+    }
+
+    function Get-VibeReadableManualActions {
+        param([object]$Candidate)
+
+        switch ([string]$Candidate.proposal_type) {
+            'warning_card' { return 'Confirm the warning text and trigger conditions before adding it to a shared warning surface.' }
+            'preflight_check' { return 'Decide whether the check should remain soft or become hard.' }
+            'remediation_note' { return 'Confirm the remediation wording before turning it into a reusable playbook item.' }
+            'composite_skill_draft' { return 'Confirm there is a stable reusable pattern; do not treat it as promotion-ready without extra evidence.' }
+            'threshold_policy_suggestion' { return 'Confirm target policy scope, add rollback wording, and only then consider shadow or board review.' }
+            default {
+                $manualActions = Join-VibeMarkdownListValue -Value $Candidate.required_manual_actions
+                if ([string]::IsNullOrWhiteSpace($manualActions)) {
+                    return 'No additional manual actions.'
+                }
+                return $manualActions
+            }
+        }
+    }
+
+    function Add-VibeReadableCandidateRows {
+        param(
+            [AllowNull()] [object[]]$Candidates,
+            [string[]]$Lines
+        )
+
+        foreach ($candidate in @($Candidates)) {
+            $title = Get-VibeReadableCandidateTitle -Candidate $candidate
+            $surface = Get-VibeReadableSurface -Surface ([string]$candidate.recommended_surface)
+            $readiness = Get-VibeReadableReadiness -Readiness ([string]$candidate.readiness)
+            $risk = Get-VibeReadableRisk -BoundaryImpact ([string]$candidate.boundary_impact) -CouplingRisk ([string]$candidate.coupling_risk) -RegressionRisk ([string]$candidate.regression_risk)
+            $nextStep = Get-VibeReadableNextStep -Candidate $candidate
+            $blockedBy = Join-VibeMarkdownListValue -Value $candidate.blocked_by
+            if ([string]::IsNullOrWhiteSpace($blockedBy)) {
+                $blockedBy = 'None'
+            }
+
+            $Lines += ('| {0} | {1} | {2} | {3} | {4} | {5} |' -f `
+                (Format-VibeMarkdownCell $title),
+                (Format-VibeMarkdownCell $surface),
+                (Format-VibeMarkdownCell $readiness),
+                (Format-VibeMarkdownCell $risk),
+                (Format-VibeMarkdownCell $nextStep),
+                (Format-VibeMarkdownCell $blockedBy))
+        }
+
+        return $Lines
+    }
+
+    $laneA = @($ApplicationReadinessReport.lane_a_candidates)
+    $laneB = @($ApplicationReadinessReport.lane_b_candidates)
+
+    $highestRiskFindingNames = @()
+    $highestRiskFindingIds = @($ApplicationReadinessReport.summary.highest_risk_findings | ForEach-Object { [string]$_ })
+    foreach ($findingId in @($highestRiskFindingIds)) {
+        $matchedCandidate = @($laneA + $laneB | Where-Object { [string]$_.candidate_id -eq $findingId } | Select-Object -First 1)
+        if (@($matchedCandidate).Count -gt 0) {
+            $highestRiskFindingNames += Get-VibeReadableCandidateTitle -Candidate $matchedCandidate[0]
+        } else {
+            $highestRiskFindingNames += $findingId
+        }
+    }
 
     $lines = @(
         '# Application Readiness Report',
         '',
-        ('- mode: `{0}`' -f [string]$ApplicationReadinessReport.mode),
-        ('- review_status: `{0}`' -f [string]$ApplicationReadinessReport.review_status),
-        ('- lane_a_candidate_count: `{0}`' -f [int]$ApplicationReadinessReport.summary.lane_a_candidate_count),
-        ('- lane_b_candidate_count: `{0}`' -f [int]$ApplicationReadinessReport.summary.lane_b_candidate_count),
-        ''
+        '## Summary',
+        '',
+        ('- Run: `' + [string]$ApplicationReadinessReport.run_id + '`'),
+        ('- Mode: `' + [string]$ApplicationReadinessReport.mode + '`; review status: `' + [string]$ApplicationReadinessReport.review_status + '`'),
+        ('- Lane A low-risk reuse candidates: `' + [int]$ApplicationReadinessReport.summary.lane_a_candidate_count + '`'),
+        ('- Lane B governance review candidates: `' + [int]$ApplicationReadinessReport.summary.lane_b_candidate_count + '`'),
+        ('- Ready for manual review: `' + [int]$ApplicationReadinessReport.summary.ready_for_review_count + '`'),
+        ('- Ready for shadow review: `' + [int]$ApplicationReadinessReport.summary.ready_for_shadow_review_count + '`'),
+        ('- Blocked: `' + [int]$ApplicationReadinessReport.summary.blocked_count + '`')
     )
+
+    $highestRiskFindings = Join-VibeMarkdownListValue -Value $highestRiskFindingNames
+    if (-not [string]::IsNullOrWhiteSpace($highestRiskFindings)) {
+        $lines += ('- Highest risk findings: ' + $highestRiskFindings)
+    }
+
+    if (@($laneA).Count -gt 0) {
+        $lines += @(
+            '',
+            '## Lane A: Low-Risk Reuse Candidates',
+            '',
+            'These candidates should remain warnings, preflight checks, or remediation notes. They should not directly change default routing or global skill weights.',
+            '',
+            '| Candidate | Suggested surface | Readiness | Risk | Suggested next step | Blockers |',
+            '| --- | --- | --- | --- | --- | --- |'
+        )
+        $lines = Add-VibeReadableCandidateRows -Candidates $laneA -Lines $lines
+
+        $lines += @('', '### Manual Actions', '')
+        foreach ($candidate in @($laneA)) {
+            $manualActions = Get-VibeReadableManualActions -Candidate $candidate
+            if (-not [string]::IsNullOrWhiteSpace($manualActions)) {
+                $lines += ('- ' + (Format-VibeMarkdownCell (Get-VibeReadableCandidateTitle -Candidate $candidate)) + ': ' + (Format-VibeMarkdownCell $manualActions))
+            }
+        }
+    }
+
+    if (@($laneB).Count -gt 0) {
+        $lines += @(
+            '',
+            '## Lane B: Governance Review Candidates',
+            '',
+            'These candidates all require manual review. Some are only observed combination surfaces, while others are closer to governance-change discussions, so none of them should be applied directly to live policy or formal skill lifecycle state.',
+            '',
+            '| Candidate | Suggested surface | Readiness | Risk | Suggested next step | Blockers |',
+            '| --- | --- | --- | --- | --- | --- |'
+        )
+        $lines = Add-VibeReadableCandidateRows -Candidates $laneB -Lines $lines
+
+        $lines += @('', '### Manual Actions', '')
+        foreach ($candidate in @($laneB)) {
+            $manualActions = Get-VibeReadableManualActions -Candidate $candidate
+            if (-not [string]::IsNullOrWhiteSpace($manualActions)) {
+                $lines += ('- ' + (Format-VibeMarkdownCell (Get-VibeReadableCandidateTitle -Candidate $candidate)) + ': ' + (Format-VibeMarkdownCell $manualActions))
+            }
+        }
+    }
+
+    $lines += @(
+        '',
+        '## Traceability',
+        '',
+        'Machine-readable fields remain in `application-readiness-report.json`. This Markdown is only a human review view and not the canonical truth surface.'
+    )
+
     return @($lines)
 }
 
