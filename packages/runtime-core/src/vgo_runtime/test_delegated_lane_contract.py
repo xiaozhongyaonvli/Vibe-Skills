@@ -348,6 +348,12 @@ class DelegatedLaneContractTests(unittest.TestCase):
         self.assertIn("launch_metadata_path", script_text)
         self.assertIn("script_used_as_executable", script_text)
 
+    def test_parallel_lane_failure_cleans_up_remaining_handles(self):
+        script_text = SCRIPT_PATH.read_text(encoding="utf-8")
+        self.assertIn("function Stop-VibeDelegatedLaneHandle", script_text)
+        self.assertIn("$completedLaneIds = New-Object 'System.Collections.Generic.HashSet[string]'", script_text)
+        self.assertIn("Stop-VibeDelegatedLaneHandle -Handle $remainingHandle", script_text)
+
     def test_runtime_execution_mentions_unicode_path_preflight_surfaces(self):
         script_text = (REPO_ROOT / "scripts" / "runtime" / "VibeExecution.Common.ps1").read_text(encoding="utf-8")
         self.assertIn("resolved executable does not exist:", script_text)
@@ -456,6 +462,7 @@ class BridgeFailureLayeringTests(unittest.TestCase):
             resolution = module._resolve_powershell_host(return_diagnostics=True)
 
         self.assertIsInstance(resolution, dict)
+        self.assertEqual(resolution.get("error"), "pwsh is required on non-Windows hosts")
         checked_names = [entry["candidate_name"] for entry in resolution["candidates_checked"]]
         self.assertEqual(["path-pwsh", "path-pwsh-exe"], checked_names)
 
@@ -668,6 +675,43 @@ class BridgeFailureLayeringTests(unittest.TestCase):
         self.assertIn("PowerShell executable not found; locations searched (PATH and well-known install paths):", message)
         self.assertIn("path-pwsh", message)
         self.assertIn("powershell.exe", message)
+
+    def test_canonical_entry_surfaces_pwsh_policy_reason_when_missing_on_non_windows(self):
+        module = _load_canonical_entry_module()
+        with tempfile.TemporaryDirectory() as repo_dir:
+            repo_root = Path(repo_dir)
+            bridge_path = repo_root / "scripts" / "runtime"
+            bridge_path.mkdir(parents=True, exist_ok=True)
+            (bridge_path / "Invoke-VibeCanonicalEntry.ps1").write_text("# stub", encoding="utf-8")
+            with self.assertRaises(RuntimeError) as ctx:
+                with patch.object(
+                    module,
+                    "_resolve_powershell_host",
+                    return_value={
+                        "host_path": None,
+                        "host_kind": None,
+                        "fallback_used": False,
+                        "candidates_checked": [
+                            {"candidate_name": "path-pwsh", "candidate_path": None},
+                            {"candidate_name": "path-pwsh-exe", "candidate_path": None},
+                        ],
+                        "error": "pwsh is required on non-Windows hosts",
+                    },
+                ):
+                    module.invoke_vibe_runtime_entrypoint(
+                        repo_root=repo_root,
+                        host_id="codex",
+                        entry_id="vibe",
+                        prompt="test",
+                        requested_stage_stop=None,
+                        requested_grade_floor=None,
+                        run_id="run-1",
+                        artifact_root=None,
+                        force_runtime_neutral=False,
+                    )
+        message = str(ctx.exception)
+        self.assertIn("pwsh is required on non-Windows hosts", message)
+        self.assertIn("locations searched (PATH and well-known install paths): path-pwsh, path-pwsh-exe", message)
 
 
 if __name__ == "__main__":

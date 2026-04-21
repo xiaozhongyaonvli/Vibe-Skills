@@ -173,6 +173,17 @@ def _resolve_powershell_host(*, return_diagnostics: bool = False) -> str | dict[
             }
             return diagnostics if return_diagnostics else resolved
 
+    if not is_windows and policy["require_pwsh_on_non_windows"]:
+        diagnostics = {
+            "host_path": None,
+            "host_kind": None,
+            "fallback_used": False,
+            "candidates_checked": checked,
+            "policy": policy,
+            "error": "pwsh is required on non-Windows hosts",
+        }
+        return diagnostics if return_diagnostics else None
+
     diagnostics = {
         "host_path": None,
         "host_kind": None,
@@ -252,14 +263,20 @@ def invoke_vibe_runtime_entrypoint(
     resolution = _resolve_powershell_host(return_diagnostics=True)
     if not isinstance(resolution, dict) or not resolution.get("host_path"):
         checked = []
+        policy_error = ""
         if isinstance(resolution, dict):
             checked = [
                 entry.get("candidate_path") or entry.get("candidate_name") or "<unknown>"
                 for entry in resolution.get("candidates_checked", [])
             ]
+            policy_error = str(resolution.get("error") or "").strip()
+        searched = ", ".join(checked) if checked else "<none>"
+        reason = f"{policy_error}; " if policy_error else ""
         raise RuntimeError(
-            "PowerShell executable not found; locations searched (PATH and well-known install paths): "
-            + ", ".join(checked)
+            "PowerShell executable not found; "
+            + reason
+            + "locations searched (PATH and well-known install paths): "
+            + searched
         )
     shell = str(resolution["host_path"])
 

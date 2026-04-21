@@ -323,6 +323,41 @@ function Start-VibeDelegatedLaneProcess {
     }
 }
 
+function Stop-VibeDelegatedLaneHandle {
+    param(
+        [Parameter(Mandatory)] [object]$Handle
+    )
+
+    if ($null -eq $Handle -or $null -eq $Handle.process) {
+        return
+    }
+
+    try {
+        $hasExited = $true
+        try {
+            $hasExited = [bool]$Handle.process.HasExited
+        } catch {
+            $hasExited = $true
+        }
+
+        if (-not $hasExited) {
+            try {
+                $Handle.process.Kill($true)
+            } catch {
+            }
+            try {
+                $Handle.process.WaitForExit()
+            } catch {
+            }
+        }
+    } finally {
+        try {
+            $Handle.process.Dispose()
+        } catch {
+        }
+    }
+}
+
 function Wait-VibeDelegatedLaneProcess {
     param(
         [Parameter(Mandatory)] [object]$Handle,
@@ -369,7 +404,7 @@ function Wait-VibeDelegatedLaneProcess {
             ('stderr_path={0}' -f [string]($Handle.stderr_path)),
             ('payload_path={0}' -f [string]($Handle.payload_path))
         ) -join '; '
-        $Handle.process.Dispose()
+        Stop-VibeDelegatedLaneHandle -Handle $Handle
         throw $message
     }
 
@@ -1334,8 +1369,20 @@ foreach ($topologyWave in @($executionTopology.waves)) {
                     }
 
                     $windowOutcomes = @()
-                    foreach ($handle in @($handles)) {
-                        $windowOutcomes += Wait-VibeDelegatedLaneProcess -Handle $handle -TimeoutSeconds ([int]$policy.scheduler.default_timeout_seconds)
+                    $completedLaneIds = New-Object 'System.Collections.Generic.HashSet[string]'
+                    try {
+                        foreach ($handle in @($handles)) {
+                            $windowOutcomes += Wait-VibeDelegatedLaneProcess -Handle $handle -TimeoutSeconds ([int]$policy.scheduler.default_timeout_seconds)
+                            [void]$completedLaneIds.Add([string]$handle.lane_id)
+                        }
+                    } catch {
+                        foreach ($remainingHandle in @($handles)) {
+                            if ($completedLaneIds.Contains([string]$remainingHandle.lane_id)) {
+                                continue
+                            }
+                            Stop-VibeDelegatedLaneHandle -Handle $remainingHandle
+                        }
+                        throw
                     }
                     $stepOutcomes += $windowOutcomes
                     $parallelUnitsExecutedCount += @($windowOutcomes).Count
