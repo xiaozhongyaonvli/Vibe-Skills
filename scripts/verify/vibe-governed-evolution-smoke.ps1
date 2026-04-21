@@ -108,11 +108,23 @@ if ([string]::IsNullOrWhiteSpace($SessionRoot)) {
 
     New-Item -ItemType Directory -Force -Path $ArtifactRoot | Out-Null
 
-    $result = & $runtimeScript `
-        -Task $Task `
-        -Mode interactive_governed `
-        -RunId $RunId `
-        -ArtifactRoot $ArtifactRoot
+    $previousDisableNative = $env:VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION
+    $env:VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION = '1'
+    try {
+        $result = & $runtimeScript `
+            -Task $Task `
+            -Mode interactive_governed `
+            -RunId $RunId `
+            -ArtifactRoot $ArtifactRoot
+    }
+    finally {
+        if ($null -eq $previousDisableNative) {
+            Remove-Item Env:VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION -ErrorAction SilentlyContinue
+        }
+        else {
+            $env:VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION = $previousDisableNative
+        }
+    }
 
     if ($null -eq $result) {
         throw 'invoke-vibe-runtime.ps1 returned null.'
@@ -162,21 +174,27 @@ if ($failures.Count -eq 0) {
     $readinessReport = Read-JsonFile $paths.application_readiness_report
 
     $artifacts = Get-RequiredMemberValue -InputObject $summary -Name 'artifacts' -Failures $failures -Label 'runtime-summary.json'
-    foreach ($artifactName in @(
-        'observed_failure_patterns',
-        'observed_pitfall_events',
-        'atomic_skill_call_chain',
-        'proposal_layer',
-        'proposal_layer_markdown',
-        'warning_cards',
-        'preflight_checklist',
-        'remediation_notes',
-        'candidate_composite_skill_draft',
-        'threshold_policy_suggestion',
-        'application_readiness_report',
-        'application_readiness_markdown'
-    )) {
+    $expectedArtifactRefs = [ordered]@{
+        observed_failure_patterns       = 'failure-patterns.json'
+        observed_pitfall_events         = 'pitfall-events.json'
+        atomic_skill_call_chain         = 'atomic-skill-call-chain.json'
+        proposal_layer                  = 'proposal-layer.json'
+        proposal_layer_markdown         = 'proposal-layer.md'
+        warning_cards                   = 'warning-cards.json'
+        preflight_checklist             = 'preflight-checklist.json'
+        remediation_notes               = 'remediation-notes.json'
+        candidate_composite_skill_draft = 'candidate-composite-skill-draft.json'
+        threshold_policy_suggestion     = 'threshold-policy-suggestion.json'
+        application_readiness_report    = 'application-readiness-report.json'
+        application_readiness_markdown  = 'application-readiness-report.md'
+    }
+
+    foreach ($artifactName in $expectedArtifactRefs.Keys) {
         Require-NonEmptyStringMember -InputObject $artifacts -Name $artifactName -Label 'runtime-summary.json artifacts' -Failures $failures
+        if (Has-Property $artifacts $artifactName) {
+            $leaf = Split-Path -Leaf ([string]$artifacts.$artifactName)
+            Require ($leaf -eq $expectedArtifactRefs[$artifactName]) "runtime-summary.json artifacts.$artifactName must reference $($expectedArtifactRefs[$artifactName])" $failures
+        }
     }
 
     $failurePatterns = @()

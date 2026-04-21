@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 import unittest
 import uuid
@@ -38,8 +39,12 @@ class GovernedEvolutionSmokeTests(unittest.TestCase):
 
         outputs_root = REPO_ROOT / "outputs"
         outputs_root.mkdir(parents=True, exist_ok=True)
-        artifact_root = outputs_root / f"pytest-governed-evolution-{uuid.uuid4().hex}"
-        artifact_root.mkdir(parents=True, exist_ok=True)
+        artifact_root = Path(
+            tempfile.mkdtemp(
+                dir=outputs_root,
+                prefix=f"pytest-governed-evolution-{uuid.uuid4().hex}-",
+            )
+        )
         try:
             run_id = "pytest-governed-evolution-smoke"
             try:
@@ -94,6 +99,6 @@ class GovernedEvolutionSmokeTests(unittest.TestCase):
 
             self.assertTrue(session_root.exists())
             self.assertEqual(run_id, session_root.name)
-            self.assertTrue(str(session_root).startswith(str(artifact_root)))
+            session_root.relative_to(artifact_root)
         finally:
             shutil.rmtree(artifact_root, ignore_errors=True)
