@@ -18,7 +18,10 @@ def refresh_install_ledger_payload(repo_root: Path, target_root: Path) -> dict[s
 
     try:
         from vgo_verify.bootstrap_doctor_runtime import collect_host_runtime
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as exc:
+        missing_root = (exc.name or '').split('.')[0]
+        if missing_root != 'vgo_verify':
+            raise
         return payload
 
     payload['host_runtime'] = collect_host_runtime(repo_root, target_root)

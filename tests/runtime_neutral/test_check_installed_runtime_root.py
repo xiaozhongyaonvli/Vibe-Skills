@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import locale
+import os
 import shutil
 import subprocess
 import unittest
 import uuid
 from pathlib import Path
+
+import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -27,24 +30,67 @@ def resolve_powershell() -> str | None:
     return None
 
 
+def _run_path_tool(tool_name: str, flag: str, path: Path) -> str | None:
+    tool = shutil.which(tool_name)
+    if not tool:
+        return None
+
+    try:
+        converted = subprocess.run(
+            [tool, flag, str(path.resolve())],
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+    value = converted.stdout.strip()
+    return value or None
+
+
+def _bash_looks_like_wsl() -> bool:
+    bash = shutil.which("bash")
+    if not bash:
+        return False
+
+    normalized = bash.replace("/", "\\").lower()
+    return normalized.endswith("\\windows\\system32\\bash.exe")
+
+
 def _to_bash_path(path: Path) -> str:
-    resolved = str(path.resolve()).replace("\\", "/")
+    resolved_path = path.resolve()
+    resolved = str(resolved_path).replace("\\", "/")
     if len(resolved) >= 3 and resolved[1:3] == ':/':
+        if not _bash_looks_like_wsl():
+            converted = _run_path_tool("cygpath", "-u", resolved_path) or _run_path_tool("wslpath", "-u", resolved_path)
+            if converted:
+                return converted
         return f"/mnt/{resolved[0].lower()}/{resolved[3:]}"
     return resolved
 
 
 def _to_windows_path(path: Path) -> str:
-    converted = subprocess.run(
-        ["cygpath", "-w", str(path)],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    return converted.stdout.strip()
+    resolved_path = path.resolve()
+    resolved = str(resolved_path)
+    if os.name == "nt" or (len(resolved) >= 3 and resolved[1:3] == ':/'):
+        return resolved
+
+    converted = _run_path_tool("cygpath", "-w", resolved_path) or _run_path_tool("wslpath", "-w", resolved_path)
+    if converted:
+        return converted
+
+    normalized = resolved.replace("\\", "/")
+    if normalized.startswith("/mnt/") and len(normalized) > 6 and normalized[5].isalpha() and normalized[6] == "/":
+        rest = normalized[7:].replace("/", "\\")
+        return f"{normalized[5].upper()}:\\{rest}"
+    if normalized.startswith("/") and len(normalized) > 3 and normalized[1].isalpha() and normalized[2] == "/":
+        rest = normalized[3:].replace("/", "\\")
+        return f"{normalized[1].upper()}:\\{rest}"
+    return resolved
 
 
 def _capture_text_kwargs() -> dict[str, object]:
@@ -63,6 +109,33 @@ def _repo_temp_dir() -> Path:
     root = REPO_ROOT / ".pytest_tmp" / f"check-installed-runtime-root-{uuid.uuid4().hex}"
     root.mkdir(parents=True, exist_ok=True)
     return root
+
+
+def test_to_windows_path_does_not_require_cygpath_for_native_windows_paths(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def fail_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        raise AssertionError("subprocess.run should not be used for native Windows paths")
+
+    monkeypatch.setattr(subprocess, "run", fail_run)
+
+    assert _to_windows_path(tmp_path).lower() == str(tmp_path.resolve()).lower()
+
+
+def test_to_bash_path_prefers_cygpath_for_non_wsl_bash(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def fake_which(name: str) -> str | None:
+        if name == "bash":
+            return r"D:\tool\Git\bin\bash.exe"
+        if name == "cygpath":
+            return r"D:\tool\Git\usr\bin\cygpath.exe"
+        return None
+
+    def fake_run(args: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        assert args[:2] == [r"D:\tool\Git\usr\bin\cygpath.exe", "-u"]
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout="/f/test/example\n", stderr="")
+
+    monkeypatch.setattr(shutil, "which", fake_which)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert _to_bash_path(tmp_path) == "/f/test/example"
 
 
 def install_minimal_codex_runtime(target_root: Path) -> None:
@@ -86,12 +159,30 @@ def install_minimal_codex_runtime(target_root: Path) -> None:
 
 
 class CheckInstalledRuntimeRootTests(unittest.TestCase):
-    def test_check_sh_accepts_installed_runtime_root(self) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls._baseline_temp_root = _repo_temp_dir()
+        cls._baseline_target_root = cls._baseline_temp_root / ".codex"
+        install_minimal_codex_runtime(cls._baseline_target_root)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        baseline_root = getattr(cls, "_baseline_temp_root", None)
+        if isinstance(baseline_root, Path):
+            shutil.rmtree(baseline_root, ignore_errors=True)
+        super().tearDownClass()
+
+    def _fresh_installed_runtime(self) -> tuple[Path, Path]:
         temp_root = _repo_temp_dir()
         self.addCleanup(lambda: shutil.rmtree(temp_root, ignore_errors=True))
         target_root = temp_root / ".codex"
-        install_minimal_codex_runtime(target_root)
-        installed_root = target_root / "skills" / "vibe"
+        # Avoid repeating the WSL-backed installer for every test on Windows.
+        shutil.copytree(self._baseline_target_root, target_root)
+        return target_root, target_root / "skills" / "vibe"
+
+    def test_check_sh_accepts_installed_runtime_root(self) -> None:
+        target_root, installed_root = self._fresh_installed_runtime()
 
         result = subprocess.run(
             [
@@ -117,11 +208,7 @@ class CheckInstalledRuntimeRootTests(unittest.TestCase):
         if powershell is None:
             self.skipTest("PowerShell executable not available in PATH")
 
-        temp_root = _repo_temp_dir()
-        self.addCleanup(lambda: shutil.rmtree(temp_root, ignore_errors=True))
-        target_root = temp_root / ".codex"
-        install_minimal_codex_runtime(target_root)
-        installed_root = target_root / "skills" / "vibe"
+        target_root, installed_root = self._fresh_installed_runtime()
 
         result = subprocess.run(
             [
@@ -152,11 +239,7 @@ class CheckInstalledRuntimeRootTests(unittest.TestCase):
         if powershell is None:
             self.skipTest("PowerShell executable not available in PATH")
 
-        temp_root = _repo_temp_dir()
-        self.addCleanup(lambda: shutil.rmtree(temp_root, ignore_errors=True))
-        target_root = temp_root / ".codex"
-        install_minimal_codex_runtime(target_root)
-        installed_root = target_root / "skills" / "vibe"
+        target_root, installed_root = self._fresh_installed_runtime()
         installed_governance = json.loads(
             (installed_root / "config" / "version-governance.json").read_text(encoding="utf-8-sig")
         )
@@ -208,11 +291,7 @@ class CheckInstalledRuntimeRootTests(unittest.TestCase):
         if powershell is None:
             self.skipTest("PowerShell executable not available in PATH")
 
-        temp_root = _repo_temp_dir()
-        self.addCleanup(lambda: shutil.rmtree(temp_root, ignore_errors=True))
-        target_root = temp_root / ".codex"
-        install_minimal_codex_runtime(target_root)
-        installed_root = target_root / "skills" / "vibe"
+        target_root, installed_root = self._fresh_installed_runtime()
         governance_path = installed_root / "config" / "version-governance.json"
         installed_governance = json.loads(governance_path.read_text(encoding="utf-8-sig"))
         installed_governance["runtime"]["installed_runtime"]["receipt_contract_version"] = "abc"

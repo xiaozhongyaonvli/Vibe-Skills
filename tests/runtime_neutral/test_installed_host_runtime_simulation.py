@@ -12,7 +12,9 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-INSTALL_SCRIPT = REPO_ROOT / "install.sh"
+INSTALL_SCRIPT_SH = REPO_ROOT / "install.sh"
+INSTALL_SCRIPT_PS1 = REPO_ROOT / "install.ps1"
+TEST_SANDBOX_ROOT = REPO_ROOT.parent / ".pytest-tmp-installed-host-sim"
 PLANNING_TASK = "Create a PRD and backlog for a small feature with quality gate requirements $vibe"
 DEBUG_TASK = "I have a failing test and a stack trace. Help me debug systematically before proposing fixes. $vibe"
 EXECUTION_TASK = "Implement a bounded runtime enhancement with verification and cleanup $vibe"
@@ -193,23 +195,45 @@ def create_fake_codex_command(directory: Path) -> Path:
 
 
 def install_host(target_root: Path, host_id: str, *, env: dict[str, str]) -> None:
-    command = [
-        "bash",
-        str(INSTALL_SCRIPT),
-        "--host",
-        host_id,
-        "--profile",
-        "full",
-        "--target-root",
-        str(target_root),
-    ]
-    if host_id in HOST_BRIDGE_ENV:
-        command.append("--require-closed-ready")
+    if os.name == "nt":
+        shell = resolve_powershell()
+        if shell is None:
+            raise unittest.SkipTest("PowerShell executable not available in PATH")
+        command = [
+            shell,
+            "-NoLogo",
+            "-NoProfile",
+            "-File",
+            str(INSTALL_SCRIPT_PS1),
+            "-HostId",
+            host_id,
+            "-Profile",
+            "full",
+            "-TargetRoot",
+            str(target_root),
+        ]
+        if host_id in HOST_BRIDGE_ENV:
+            command.append("-RequireClosedReady")
+    else:
+        command = [
+            "bash",
+            str(INSTALL_SCRIPT_SH),
+            "--host",
+            host_id,
+            "--profile",
+            "full",
+            "--target-root",
+            str(target_root),
+        ]
+        if host_id in HOST_BRIDGE_ENV:
+            command.append("--require-closed-ready")
     subprocess.run(
         command,
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
         env=env,
     )
@@ -249,6 +273,7 @@ def run_installed_runtime(
         capture_output=True,
         text=True,
         encoding="utf-8",
+        errors="replace",
         env=env,
         check=True,
     )
@@ -263,7 +288,8 @@ def run_installed_runtime(
 
 class InstalledHostRuntimeSimulationTests(unittest.TestCase):
     def _install_context(self, host_id: str) -> tuple[Path, Path, dict[str, str]]:
-        tempdir = tempfile.TemporaryDirectory()
+        TEST_SANDBOX_ROOT.mkdir(parents=True, exist_ok=True)
+        tempdir = tempfile.TemporaryDirectory(dir=str(TEST_SANDBOX_ROOT))
         self.addCleanup(tempdir.cleanup)
         root = Path(tempdir.name)
         target_root = root / "target"

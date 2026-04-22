@@ -69,8 +69,14 @@ function Test-VgoPathWithin {
         return $false
     }
 
-    $parentFull = [System.IO.Path]::GetFullPath($ParentPath)
-    $childFull = [System.IO.Path]::GetFullPath($ChildPath)
+    $trimChars = @([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $parentFull = [System.IO.Path]::GetFullPath($ParentPath).TrimEnd($trimChars)
+    $childFull = [System.IO.Path]::GetFullPath($ChildPath).TrimEnd($trimChars)
+
+    if ($childFull.Equals($parentFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $true
+    }
+
     if (-not $parentFull.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
         $parentFull += [System.IO.Path]::DirectorySeparatorChar
     }

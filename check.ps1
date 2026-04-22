@@ -294,6 +294,10 @@ function Resolve-LocalPathForCheck {
     return $Path
   }
 
+  if ([System.IO.Path]::DirectorySeparatorChar -ne '\') {
+    return $Path
+  }
+
   if ($Path -match '^/mnt/([a-zA-Z])/(.*)$') {
     $drive = $Matches[1].ToUpperInvariant()
     $rest = ($Matches[2] -replace '/', '\')
