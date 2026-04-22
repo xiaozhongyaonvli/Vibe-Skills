@@ -12,6 +12,17 @@ If this is your first install, the default path is simple:
 3. if you are unsure, choose `Full Version + Customizable Governance`
 4. copy the matching prompt and paste it into your AI app
 
+## Runtime Prerequisites
+
+Before using the documented install, check, upgrade, or one-shot commands:
+
+- Windows: install **PowerShell 7** and make sure `pwsh` is available in `PATH`
+- Linux: install **PowerShell 7** and make sure `pwsh` is available in `PATH`
+- macOS: install **PowerShell 7** and make sure `pwsh` is available in `PATH` if you plan to use the PowerShell command surface
+- all platforms: `python3` / `python` must satisfy **Python 3.10+** for the wrapper-driven install surface
+- shell entrypoints are still available on Linux / macOS, but the full governed runtime and verification surface also depends on PowerShell 7
+
+
 ## Choose Host, Action, and Version
 
 1. Confirm the host: `codex`, `claude-code`, `cursor`, `windsurf`, `openclaw`, or `opencode`
