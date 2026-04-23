@@ -5,7 +5,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tempfile
 
 import pytest
 
@@ -330,9 +329,41 @@ def test_resolve_effective_prompt_ignores_bounded_preferred_summary_without_expl
         run_id="prior-bounded-run",
         terminal_stage="xl_plan",
         allowed_followup_entry_ids=["vibe", "vibe-do"],
-        reentry_token="token-123",
+        reentry_token="token-123",  # noqa: S106 - non-secret fixture token
         task="plan runtime entry hardening",
     )
+
+    prompt = canonical_entry._resolve_effective_prompt(
+        host_id="codex",
+        entry_id="vibe-do",
+        prompt="execute plan",
+        artifact_root=tmp_path,
+        run_id="current-run",
+        continuation_source_run_id="prior-bounded-run",
+    )
+
+    assert prompt == "execute plan"
+
+
+def test_runtime_summary_path_for_run_id_rejects_invalid_path_segments(tmp_path: Path) -> None:
+    assert canonical_entry._runtime_summary_path_for_run_id(tmp_path, "../escape") is None
+    assert canonical_entry._runtime_summary_path_for_run_id(tmp_path, r"..\\escape") is None
+    assert canonical_entry._runtime_summary_path_for_run_id(tmp_path, "nested/run") is None
+    assert canonical_entry._runtime_summary_path_for_run_id(tmp_path, r"nested\\run") is None
+
+
+def test_resolve_effective_prompt_skips_malformed_bounded_preferred_summary(tmp_path: Path) -> None:
+    summary_path = _write_bounded_return_summary(
+        tmp_path,
+        run_id="prior-bounded-run",
+        terminal_stage="xl_plan",
+        allowed_followup_entry_ids=["vibe", "vibe-do"],
+        reentry_token="token-123",  # noqa: S106 - non-secret fixture token
+        task="plan runtime entry hardening",
+    )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["bounded_return_control"].pop("reentry_token")
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     prompt = canonical_entry._resolve_effective_prompt(
         host_id="codex",
@@ -402,7 +433,7 @@ def test_canonical_entry_rejects_bounded_wrapper_reentry_without_explicit_creden
         run_id="prior-bounded-run",
         terminal_stage="xl_plan",
         allowed_followup_entry_ids=["vibe", "vibe-do"],
-        reentry_token="token-123",
+        reentry_token="token-123",  # noqa: S106 - non-secret fixture token
         task="plan runtime entry hardening",
     )
 
@@ -428,7 +459,7 @@ def test_canonical_entry_allows_bounded_wrapper_reentry_with_valid_credentials(
         run_id="prior-bounded-run",
         terminal_stage="xl_plan",
         allowed_followup_entry_ids=["vibe", "vibe-do"],
-        reentry_token="token-123",
+        reentry_token="token-123",  # noqa: S106 - non-secret fixture token
         task="plan runtime entry hardening",
     )
 
@@ -462,11 +493,35 @@ def test_canonical_entry_allows_bounded_wrapper_reentry_with_valid_credentials(
         run_id=run_id,
         artifact_root=tmp_path,
         continue_from_run_id="prior-bounded-run",
-        bounded_reentry_token="token-123",
+        bounded_reentry_token="token-123",  # noqa: S106 - non-secret fixture token
     )
 
     receipt = json.loads(result.host_launch_receipt_path.read_text(encoding="utf-8"))
     assert receipt["launch_status"] == "verified"
+
+
+def test_canonical_entry_rejects_malformed_bounded_wrapper_reentry_metadata(tmp_path: Path) -> None:
+    summary_path = _write_bounded_return_summary(
+        tmp_path,
+        run_id="prior-bounded-run",
+        terminal_stage="xl_plan",
+        allowed_followup_entry_ids=["vibe", "vibe-do"],
+        reentry_token="token-123",  # noqa: S106 - non-secret fixture token
+        task="plan runtime entry hardening",
+    )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["bounded_return_control"].pop("allowed_followup_entry_ids")
+    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="bounded wrapper continuation metadata is malformed"):
+        canonical_entry._validate_bounded_reentry(
+            artifact_root=tmp_path,
+            entry_id="vibe-do",
+            prompt="execute plan",
+            run_id="current-run",
+            continue_from_run_id="prior-bounded-run",
+            bounded_reentry_token="token-123",  # noqa: S106 - non-secret fixture token
+        )
 
 
 def test_canonical_entry_marks_receipt_failed_when_runtime_invocation_raises(

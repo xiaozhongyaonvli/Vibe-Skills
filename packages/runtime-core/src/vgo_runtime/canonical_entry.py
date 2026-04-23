@@ -255,6 +255,13 @@ def _iter_runtime_summaries(artifact_root: Path) -> list[Path]:
     )
 
 
+def _runtime_summary_path_for_run_id(artifact_root: Path, run_id: str | None) -> Path | None:
+    candidate = str(run_id or "").strip()
+    if not candidate or candidate in {".", ".."} or "/" in candidate or "\\" in candidate:
+        return None
+    return _continuation_sessions_root(artifact_root) / candidate / "runtime-summary.json"
+
+
 def _load_json_dict_if_exists(path: Path | None) -> dict[str, Any] | None:
     if path is None or not path.exists():
         return None
@@ -328,21 +335,19 @@ def _find_continuation_context(
     allow_bounded_preferred: bool = False,
 ) -> dict[str, Any] | None:
     required_artifact = "requirement_doc" if entry_id == "vibe-how" else "execution_plan"
-    preferred = str(preferred_run_id or "").strip()
-    if preferred:
-        preferred_summary = _continuation_sessions_root(artifact_root) / preferred / "runtime-summary.json"
-        if preferred_summary.is_file():
-            preferred_summary_payload = _load_json_dict_if_exists(preferred_summary)
-            preferred_is_bounded = bool(preferred_summary_payload) and bool(
-                _coerce_bounded_return_control(preferred_summary_payload)
+    preferred_summary = _runtime_summary_path_for_run_id(artifact_root, preferred_run_id)
+    if preferred_summary and preferred_summary.is_file():
+        preferred_summary_payload = _load_json_dict_if_exists(preferred_summary)
+        preferred_is_bounded = bool(preferred_summary_payload) and _has_explicit_bounded_return_control(
+            preferred_summary_payload
+        )
+        if not preferred_is_bounded or allow_bounded_preferred:
+            continuation = _load_continuation_context_from_summary(
+                preferred_summary,
+                required_artifact=required_artifact,
             )
-            if not preferred_is_bounded or allow_bounded_preferred:
-                continuation = _load_continuation_context_from_summary(
-                    preferred_summary,
-                    required_artifact=required_artifact,
-                )
-                if continuation:
-                    return continuation
+            if continuation:
+                return continuation
 
     for summary_path in _iter_runtime_summaries(artifact_root):
         if run_id and summary_path.parent.name == run_id:
@@ -350,7 +355,7 @@ def _find_continuation_context(
         summary = _load_json_dict_if_exists(summary_path)
         if not summary:
             continue
-        if _coerce_bounded_return_control(summary):
+        if _has_explicit_bounded_return_control(summary):
             # Bounded wrapper stops must not be reused implicitly as continuation context.
             continue
         continuation = _load_continuation_context_from_summary(
@@ -435,10 +440,11 @@ def _resolve_effective_prompt(
 
 
 def _coerce_bounded_return_control(summary: dict[str, Any]) -> dict[str, Any] | None:
+    if not _has_explicit_bounded_return_control(summary):
+        return None
+
     raw = summary.get("bounded_return_control")
     if not isinstance(raw, dict):
-        return None
-    if not bool(raw.get("explicit_user_reentry_required")):
         return None
 
     token = str(raw.get("reentry_token") or "").strip()
@@ -453,6 +459,8 @@ def _coerce_bounded_return_control(summary: dict[str, Any]) -> dict[str, Any] | 
         return None
 
     artifacts = summary.get("artifacts") or {}
+    if not isinstance(artifacts, dict):
+        artifacts = {}
     intent_contract = _load_json_dict_if_exists(Path(artifacts["intent_contract"])) if artifacts.get("intent_contract") else None
     return {
         "summary_path": str(summary.get("summary_path") or ""),
@@ -465,21 +473,43 @@ def _coerce_bounded_return_control(summary: dict[str, Any]) -> dict[str, Any] | 
     }
 
 
+def _has_explicit_bounded_return_control(summary: dict[str, Any]) -> bool:
+    raw = summary.get("bounded_return_control")
+    return isinstance(raw, dict) and bool(raw.get("explicit_user_reentry_required"))
+
+
+def _build_malformed_bounded_return_control(summary: dict[str, Any], summary_path: Path) -> dict[str, Any]:
+    artifacts = summary.get("artifacts") or {}
+    if not isinstance(artifacts, dict):
+        artifacts = {}
+    intent_contract = _load_json_dict_if_exists(Path(artifacts["intent_contract"])) if artifacts.get("intent_contract") else None
+    return {
+        "summary_path": str(summary_path),
+        "source_run_id": str(summary.get("run_id") or summary_path.parent.name),
+        "terminal_stage": str(summary.get("terminal_stage") or ""),
+        "allowed_followup_entry_ids": [],
+        "reentry_token": "",
+        "task": str(summary.get("task") or ""),
+        "intent_goal": str(intent_contract.get("goal") or "") if intent_contract else "",
+        "malformed": True,
+    }
+
+
 def _find_latest_bounded_return_control(
     *,
     artifact_root: Path,
     run_id: str | None,
     preferred_run_id: str | None = None,
 ) -> dict[str, Any] | None:
-    preferred = str(preferred_run_id or "").strip()
-    if preferred:
-        preferred_summary_path = _continuation_sessions_root(artifact_root) / preferred / "runtime-summary.json"
+    preferred_summary_path = _runtime_summary_path_for_run_id(artifact_root, preferred_run_id)
+    if preferred_summary_path and preferred_summary_path.is_file():
         preferred_summary = _load_json_dict_if_exists(preferred_summary_path)
-        if preferred_summary:
+        if preferred_summary and _has_explicit_bounded_return_control(preferred_summary):
             preferred_guard = _coerce_bounded_return_control(preferred_summary)
             if preferred_guard:
                 preferred_guard["summary_path"] = str(preferred_summary_path)
                 return preferred_guard
+            return _build_malformed_bounded_return_control(preferred_summary, preferred_summary_path)
 
     for summary_path in _iter_runtime_summaries(artifact_root):
         if run_id and summary_path.parent.name == run_id:
@@ -487,10 +517,13 @@ def _find_latest_bounded_return_control(
         summary = _load_json_dict_if_exists(summary_path)
         if not summary:
             continue
+        if not _has_explicit_bounded_return_control(summary):
+            continue
         guard = _coerce_bounded_return_control(summary)
         if guard:
             guard["summary_path"] = str(summary_path)
             return guard
+        return _build_malformed_bounded_return_control(summary, summary_path)
     return None
 
 
@@ -566,9 +599,16 @@ def _validate_bounded_reentry(
     )
     if not prior_guard:
         return None
+    looks_like_reentry = _looks_like_generic_reentry_prompt(prompt, entry_id=entry_id, bounded_return_control=prior_guard)
+    if bool(prior_guard.get("malformed")):
+        if str(continue_from_run_id or "").strip() or looks_like_reentry:
+            raise RuntimeError(
+                "bounded wrapper continuation metadata is malformed; rerun the prior bounded wrapper stage before re-entering"
+            )
+        return None
     if entry_id not in set(prior_guard["allowed_followup_entry_ids"]):
         return None
-    if not _looks_like_generic_reentry_prompt(prompt, entry_id=entry_id, bounded_return_control=prior_guard):
+    if not looks_like_reentry:
         return None
 
     provided_run_id = str(continue_from_run_id or "").strip()
