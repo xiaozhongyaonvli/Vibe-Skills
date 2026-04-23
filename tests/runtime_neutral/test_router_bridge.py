@@ -42,9 +42,9 @@ def run_bridge(prompt: str, grade: str, task_type: str, requested_skill: str | N
 
 
 def run_powershell_route(prompt: str, grade: str, task_type: str, requested_skill: str | None = None) -> dict:
-    powershell = shutil.which("pwsh") or shutil.which("powershell")
+    powershell = shutil.which("pwsh")
     if not powershell:
-        raise unittest.SkipTest("PowerShell host not available in PATH (checked pwsh and powershell)")
+        raise unittest.SkipTest("PowerShell 7 (pwsh) not found in PATH")
 
     command = [
         powershell,
@@ -69,7 +69,8 @@ def run_powershell_route(prompt: str, grade: str, task_type: str, requested_skil
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
-        encoding="utf-8",
+        encoding="utf-8-sig",
+        errors="replace",
         check=True,
     )
     return json.loads(completed.stdout)
