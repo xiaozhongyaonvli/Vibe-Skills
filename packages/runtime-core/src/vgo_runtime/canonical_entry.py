@@ -333,7 +333,10 @@ def _find_continuation_context(
         preferred_summary = _continuation_sessions_root(artifact_root) / preferred / "runtime-summary.json"
         if preferred_summary.is_file():
             preferred_summary_payload = _load_json_dict_if_exists(preferred_summary)
-            if not (preferred_summary_payload and _coerce_bounded_return_control(preferred_summary_payload) and not allow_bounded_preferred):
+            preferred_is_bounded = bool(preferred_summary_payload) and bool(
+                _coerce_bounded_return_control(preferred_summary_payload)
+            )
+            if not preferred_is_bounded or allow_bounded_preferred:
                 continuation = _load_continuation_context_from_summary(
                     preferred_summary,
                     required_artifact=required_artifact,

@@ -81,9 +81,9 @@ def assert_direct_routed_result(
     test_case.assertGreaterEqual(len(list(result["consultation_notes"])), 1)
     test_case.assertGreaterEqual(len(list(result["adoption_notes"])), 1)
     test_case.assertGreaterEqual(len(list(result["verification_notes"])), 1)
-    test_case.assertIsNone(result["response_json_path"])
-    test_case.assertIsNone(result["prompt_path"])
-    test_case.assertIsNone(result["schema_path"])
+    test_case.assertIsNone(result.get("response_json_path"))
+    test_case.assertIsNone(result.get("prompt_path"))
+    test_case.assertIsNone(result.get("schema_path"))
 
     native_entrypoint = Path(str(result["native_skill_entrypoint"]))
     test_case.assertTrue(native_entrypoint.is_absolute())
@@ -91,8 +91,78 @@ def assert_direct_routed_result(
     if entrypoint_path is not None:
         test_case.assertEqual(entrypoint_path.resolve(), native_entrypoint.resolve())
 
-    if "result_path" in result:
-        test_case.assertTrue(Path(str(result["result_path"])).exists())
+    result_path = result.get("result_path")
+    if result_path is not None:
+        test_case.assertTrue(Path(str(result_path)).exists())
+
+
+def assert_live_consultation_result(
+    test_case: unittest.TestCase,
+    result: dict[str, object],
+    *,
+    skill_id: str = "systematic-debugging",
+    entrypoint_path: Path | None = None,
+    expected_status: str = "completed",
+    expected_verification_passed: bool = True,
+    expected_degraded: bool = False,
+    expected_cwd: Path | None = None,
+) -> None:
+    test_case.assertEqual(skill_id, result["skill_id"])
+    test_case.assertEqual(expected_status, result["status"])
+    test_case.assertEqual(expected_verification_passed, bool(result["verification_passed"]))
+    test_case.assertTrue(bool(result["live_native_execution"]))
+    test_case.assertEqual(expected_degraded, bool(result["degraded"]))
+    test_case.assertFalse(bool(result["blocked"]))
+    test_case.assertTrue(Path(str(result["response_json_path"])).exists())
+    test_case.assertTrue(Path(str(result["prompt_path"])).exists())
+    test_case.assertTrue(Path(str(result["schema_path"])).exists())
+    test_case.assertTrue(Path(str(result["stdout_path"])).exists())
+    test_case.assertTrue(Path(str(result["stderr_path"])).exists())
+
+    native_entrypoint = Path(str(result["native_skill_entrypoint"]))
+    test_case.assertTrue(native_entrypoint.is_absolute())
+    test_case.assertTrue(native_entrypoint.exists())
+    if entrypoint_path is not None:
+        test_case.assertEqual(entrypoint_path.resolve(), native_entrypoint.resolve())
+
+    if expected_cwd is not None:
+        test_case.assertEqual(expected_cwd.resolve(), Path(str(result["cwd"])).resolve())
+
+    result_path = result.get("result_path")
+    if result_path is not None:
+        test_case.assertTrue(Path(str(result_path)).exists())
+
+
+def consultation_native_subprocess_test_overrides(timeout_seconds: int = 30) -> str:
+    return (
+        "$script:OriginalGetVibeSpecialistConsultationPolicy = ${function:Get-VibeSpecialistConsultationPolicy}; "
+        "function Get-VibeSpecialistConsultationPolicy { "
+        "param([AllowNull()] [object]$Policy = $null) "
+        "$resolved = & $script:OriginalGetVibeSpecialistConsultationPolicy -Policy $Policy; "
+        "$resolved | Add-Member -NotePropertyName mode -NotePropertyValue 'native_subprocess_test' -Force; "
+        "return $resolved "
+        "}; "
+        "function Resolve-VibeNativeSpecialistAdapter { "
+        "param([Parameter(Mandatory)] [string]$ScriptPath) "
+        "$commandPath = [Environment]::GetEnvironmentVariable('VGO_CODEX_EXECUTABLE'); "
+        "if ([string]::IsNullOrWhiteSpace($commandPath)) { "
+        "  throw 'VGO_CODEX_EXECUTABLE missing for specialist consultation subprocess test.' "
+        "} "
+        "return [pscustomobject]@{ "
+        "  enabled = $true; "
+        "  live_execution_allowed = $true; "
+        "  reason = 'native_specialist_bridge_ready'; "
+        f"  policy = [pscustomobject]@{{ default_timeout_seconds = {timeout_seconds} }}; "
+        "  runtime = $null; "
+        "  adapter = [pscustomobject]@{ id = 'codex'; arguments_prefix = @() }; "
+        "  requested_host_adapter_id = 'codex'; "
+        "  effective_host_adapter_id = 'codex'; "
+        "  command_path = [System.IO.Path]::GetFullPath($commandPath); "
+        "  invocation_arguments_prefix = @(); "
+        "  legacy_removed_mode = $null "
+        "} "
+        "}; "
+    )
 
 
 def freeze_runtime_packet(task: str, artifact_root: Path) -> dict[str, object]:
@@ -838,6 +908,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(RUNTIME_COMMON))}; "
                 f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"{consultation_native_subprocess_test_overrides()}"
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 "$consultation = [pscustomobject]@{ "
                 "skill_id = 'systematic-debugging'; "
@@ -871,7 +942,13 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             )
 
             result = json.loads(completed.stdout)
-            assert_direct_routed_result(self, result, entrypoint_path=entrypoint_path, require_receipt_metadata=False)
+            assert_live_consultation_result(
+                self,
+                result,
+                entrypoint_path=entrypoint_path,
+                expected_cwd=session_root,
+            )
+            self.assertIn("fake codex consultation ok", list(result["stdout_preview"]))
             self.assertTrue(source_artifact.exists())
 
     def test_consultation_lifecycle_projection_handles_summary_only_receipt(self) -> None:
@@ -1018,6 +1095,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(RUNTIME_COMMON))}; "
                 f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"{consultation_native_subprocess_test_overrides()}"
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                 f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot $runtime.repo_root -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
@@ -1029,7 +1107,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations) "
+                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
                 f"-Policy $runtime.specialist_consultation_policy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
@@ -1055,9 +1133,9 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             self.assertEqual("discussion", receipt["window_id"])
             self.assertEqual("deep_interview", receipt["stage"])
             self.assertGreaterEqual(len(list(receipt["approved_consultation"])), 1)
-            self.assertEqual([], list(receipt["consulted_units"]))
+            self.assertGreaterEqual(len(list(receipt["consulted_units"])), 1)
             self.assertEqual([], list(receipt["degraded"]))
-            self.assertGreaterEqual(len(list(receipt["routed_units"])), 1)
+            self.assertEqual([], list(receipt["routed_units"]))
             self.assertGreaterEqual(len(list(receipt["user_disclosures"])), 1)
             self.assertTrue(bool(receipt["freeze_gate"]["passed"]))
 
@@ -1068,8 +1146,9 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             self.assertIn("systematic-debugging", disclosure["rendered_text"])
             self.assertIn(disclosure["native_skill_entrypoint"], disclosure["rendered_text"])
 
-            routed = require_skill_entry(receipt["routed_units"], "systematic-debugging")
-            assert_direct_routed_result(self, routed)
+            consulted = require_skill_entry(receipt["consulted_units"], "systematic-debugging")
+            assert_live_consultation_result(self, consulted)
+            self.assertIn("fake codex consultation ok", list(consulted["stdout_preview"]))
 
     def test_consultation_window_bypasses_codex_repo_check_for_non_git_roots(self) -> None:
         shell = resolve_powershell()
@@ -1092,6 +1171,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(RUNTIME_COMMON))}; "
                 f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"{consultation_native_subprocess_test_overrides()}"
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                 f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot {_ps_single_quote(str(non_git_root))} -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
@@ -1103,7 +1183,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations) "
+                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
                 f"-Policy $runtime.specialist_consultation_policy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
@@ -1126,11 +1206,14 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             payload = json.loads(completed.stdout)
             receipt = load_json(payload["receipt_path"])
 
-            self.assertEqual([], list(receipt["consulted_units"]))
+            self.assertGreaterEqual(len(list(receipt["consulted_units"])), 1)
             self.assertEqual([], list(receipt["degraded"]))
             self.assertTrue(bool(receipt["freeze_gate"]["passed"]))
-            routed = require_skill_entry(receipt["routed_units"], "systematic-debugging")
-            assert_direct_routed_result(self, routed)
+            self.assertEqual([], list(receipt["routed_units"]))
+            consulted = require_skill_entry(receipt["consulted_units"], "systematic-debugging")
+            assert_live_consultation_result(self, consulted, expected_cwd=non_git_root)
+            self.assertIn("--skip-git-repo-check", list(consulted["arguments"]))
+            self.assertIn("fake codex repo-check ok", list(consulted["stdout_preview"]))
 
     def test_consultation_window_fails_verification_when_non_git_working_root_is_modified(self) -> None:
         shell = resolve_powershell()
@@ -1153,6 +1236,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(RUNTIME_COMMON))}; "
                 f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"{consultation_native_subprocess_test_overrides()}"
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                 f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot {_ps_single_quote(str(non_git_root))} -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
@@ -1164,7 +1248,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations) "
+                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
                 f"-Policy $runtime.specialist_consultation_policy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
@@ -1188,10 +1272,21 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             payload = json.loads(completed.stdout)
             receipt = load_json(payload["receipt_path"])
             self.assertEqual([], list(receipt["consulted_units"]))
-            self.assertEqual([], list(receipt["degraded"]))
-            self.assertTrue(bool(receipt["freeze_gate"]["passed"]))
-            routed = require_skill_entry(receipt["routed_units"], "systematic-debugging")
-            assert_direct_routed_result(self, routed)
+            self.assertGreaterEqual(len(list(receipt["degraded"])), 1)
+            self.assertFalse(bool(receipt["freeze_gate"]["passed"]))
+            self.assertEqual([], list(receipt["routed_units"]))
+            degraded = require_skill_entry(receipt["degraded"], "systematic-debugging")
+            assert_live_consultation_result(
+                self,
+                degraded,
+                expected_status="failed",
+                expected_verification_passed=False,
+                expected_degraded=True,
+                expected_cwd=non_git_root,
+            )
+            self.assertIn("--skip-git-repo-check", list(degraded["arguments"]))
+            self.assertEqual(["wrote-by-fake.txt"], list(degraded["observed_changed_files"]))
+            self.assertIn("live_degraded_result:systematic-debugging", list(receipt["freeze_gate"]["errors"]))
 
     def test_consultation_window_falls_back_to_writable_artifact_root_when_repo_root_is_read_only(self) -> None:
         shell = resolve_powershell()
@@ -1217,6 +1312,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                     f". {_ps_single_quote(str(RUNTIME_COMMON))}; "
                     f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                     f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                    f"{consultation_native_subprocess_test_overrides()}"
                     f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                     f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                     f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot {_ps_single_quote(str(read_only_root))} -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
@@ -1253,11 +1349,18 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
 
             payload = json.loads(completed.stdout)
             receipt = load_json(payload["receipt_path"])
-            self.assertEqual([], list(receipt["consulted_units"]))
+            self.assertGreaterEqual(len(list(receipt["consulted_units"])), 1)
             self.assertEqual([], list(receipt["degraded"]))
             self.assertTrue(bool(receipt["freeze_gate"]["passed"]))
-            routed = require_skill_entry(receipt["routed_units"], "systematic-debugging")
-            assert_direct_routed_result(self, routed)
+            self.assertEqual([], list(receipt["routed_units"]))
+            consulted = require_skill_entry(receipt["consulted_units"], "systematic-debugging")
+            assert_live_consultation_result(self, consulted)
+            resolved_cwd = Path(str(consulted["cwd"])).resolve()
+            if os.name == "nt":
+                self.assertIn(resolved_cwd, {artifact_root.resolve(), read_only_root.resolve()})
+            else:
+                self.assertEqual(artifact_root.resolve(), resolved_cwd)
+            self.assertIn("fake codex consultation ok", list(consulted["stdout_preview"]))
 
     def test_specialist_consultation_unit_uses_sidecar_codex_home_with_materialized_skill_surface(self) -> None:
         shell = resolve_powershell()
@@ -1283,6 +1386,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(RUNTIME_COMMON))}; "
                 f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"{consultation_native_subprocess_test_overrides()}"
                 "$consultation = [pscustomobject]@{ "
                 "skill_id = 'systematic-debugging'; "
                 f"native_skill_entrypoint = '{entrypoint_path.as_posix()}'; "
@@ -1317,7 +1421,16 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             )
 
             result = json.loads(completed.stdout)
-            assert_direct_routed_result(self, result, entrypoint_path=entrypoint_path, require_receipt_metadata=False)
+            assert_live_consultation_result(self, result, entrypoint_path=entrypoint_path, expected_cwd=non_git_root)
+            codex_home_line = require_preview_line(result["stdout_preview"], "CODEX_HOME=")
+            codex_home = codex_home_line.split("=", 1)[1]
+            self.assertNotIn(str(session_root), codex_home)
+            self.assertNotIn(str(artifact_root), codex_home)
+            self.assertFalse(Path(codex_home).exists())
+            skill_surface_line = require_preview_line(result["stdout_preview"], "SKILL_SURFACE=")
+            skill_surface = skill_surface_line.split("=", 1)[1]
+            self.assertFalse(Path(skill_surface).exists())
+            self.assertEqual("SKILL.md", Path(skill_surface).name)
 
     def test_specialist_consultation_unit_seeds_sidecar_codex_home_from_current_host(self) -> None:
         shell = resolve_powershell()
@@ -1350,6 +1463,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(RUNTIME_COMMON))}; "
                 f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"{consultation_native_subprocess_test_overrides()}"
                 "$consultation = [pscustomobject]@{ "
                 "skill_id = 'systematic-debugging'; "
                 f"native_skill_entrypoint = '{entrypoint_path.as_posix()}'; "
@@ -1385,7 +1499,11 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             )
 
             result = json.loads(completed.stdout)
-            assert_direct_routed_result(self, result, entrypoint_path=entrypoint_path, require_receipt_metadata=False)
+            assert_live_consultation_result(self, result, entrypoint_path=entrypoint_path, expected_cwd=non_git_root)
+            codex_home_line = require_preview_line(result["stdout_preview"], "CODEX_HOME=")
+            codex_home = codex_home_line.split("=", 1)[1]
+            self.assertIn("CODEX_HOME_SEEDED=1", list(result["stdout_preview"]))
+            self.assertFalse(Path(codex_home).exists())
 
     def test_runtime_projects_consultation_truth_into_summary_requirement_and_plan(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -1530,7 +1648,6 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tempdir:
             artifact_root = Path(tempdir)
-            fake_codex = create_incomplete_fake_codex_command(artifact_root)
             freeze_payload = freeze_runtime_packet(SPECIALIST_TASK, artifact_root)
             packet_path = Path(freeze_payload["packet_path"])
             run_id = "pytest-consult-window-invalid-" + uuid.uuid4().hex[:10]
@@ -1553,7 +1670,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations) "
+                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
                 f"-Policy $runtime.specialist_consultation_policy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
@@ -1570,7 +1687,6 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                     "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
                     "VGO_SPECIALIST_CONSULTATION_MODE": "host_subprocess",
                     "VGO_NATIVE_SPECIALIST_EXECUTION_MODE": "host_subprocess",
-                    "VGO_CODEX_EXECUTABLE": str(fake_codex),
                 },
             )
             payload = json.loads(completed.stdout)
@@ -1588,7 +1704,6 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
     def test_runtime_keeps_freeze_green_when_live_consultation_routes_directly(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             artifact_root = Path(tempdir)
-            fake_codex = create_incomplete_fake_codex_command(artifact_root)
             completed = run_runtime(
                 SPECIALIST_TASK,
                 artifact_root,
@@ -1597,7 +1712,6 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                     "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
                     "VGO_SPECIALIST_CONSULTATION_MODE": "host_subprocess",
                     "VGO_NATIVE_SPECIALIST_EXECUTION_MODE": "host_subprocess",
-                    "VGO_CODEX_EXECUTABLE": str(fake_codex),
                 },
                 check=False,
             )

@@ -442,6 +442,7 @@ def test_canonical_entry_allows_bounded_wrapper_reentry_with_valid_credentials(
         prompt = str(kwargs["prompt"])
         assert prompt.startswith("continue-vibe-do ")
         assert "plan runtime entry hardening" in prompt
+        assert Path(str(kwargs["artifact_root"])).resolve() == tmp_path.resolve()
         _write_valid_truth_artifacts(session_root, entry_intent_id="vibe-do")
         return {
             "run_id": run_id,
