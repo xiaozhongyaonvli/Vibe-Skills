@@ -53,6 +53,80 @@ function New-VibeAdviceSnapshot {
     return [pscustomobject]$snapshot
 }
 
+function Invoke-VibeFrozenRoute {
+    param(
+        [Parameter(Mandatory)] [string]$RouterScriptPath,
+        [Parameter(Mandatory)] [string[]]$BaseArgs,
+        [AllowEmptyString()] [string]$HostDecisionJson = ''
+    )
+
+    $routeArgs = @($BaseArgs)
+    if (-not [string]::IsNullOrWhiteSpace([string]$HostDecisionJson)) {
+        $routeArgs += @('-HostDecisionJson', [string]$HostDecisionJson)
+    }
+
+    $routeInvocation = Invoke-VgoPowerShellFile -ScriptPath $RouterScriptPath -ArgumentList $routeArgs -NoProfile
+    if ([int]$routeInvocation.exit_code -ne 0) {
+        throw ("Failed to freeze runtime input packet because canonical router exited with code {0}." -f [int]$routeInvocation.exit_code)
+    }
+
+    $routeJson = (@($routeInvocation.output) -join [Environment]::NewLine).Trim()
+    return ($routeJson | ConvertFrom-Json)
+}
+
+function Test-VibeSingleOptionCanonicalConfirmSurface {
+    param(
+        [AllowNull()] [object]$RouteResult,
+        [AllowEmptyString()] [string]$EntryIntentId = '',
+        [AllowEmptyString()] [string]$RuntimeSelectedSkill = ''
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace([string]$EntryIntentId)) {
+        return $false
+    }
+    if ($null -eq $RouteResult -or [string]$RouteResult.route_mode -ne 'confirm_required') {
+        return $false
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$RuntimeSelectedSkill)) {
+        return $false
+    }
+    if (-not ($RouteResult.PSObject.Properties.Name -contains 'selected') -or $null -eq $RouteResult.selected) {
+        return $false
+    }
+    $selectedSkill = [string]$RouteResult.selected.skill
+    if (-not [string]::Equals($selectedSkill, [string]$RuntimeSelectedSkill, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+    if (-not ($RouteResult.PSObject.Properties.Name -contains 'confirm_ui') -or $null -eq $RouteResult.confirm_ui) {
+        return $false
+    }
+
+    $confirmUi = $RouteResult.confirm_ui
+    $options = if ($confirmUi.PSObject.Properties.Name -contains 'options' -and $null -ne $confirmUi.options) {
+        @($confirmUi.options)
+    } else {
+        @()
+    }
+    if ($options.Count -ne 1) {
+        return $false
+    }
+
+    $onlySkill = [string]$options[0].skill
+    if (-not [string]::Equals($onlySkill, [string]$RuntimeSelectedSkill, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+
+    if (-not ($confirmUi.PSObject.Properties.Name -contains 'route_decision_contract') -or $null -eq $confirmUi.route_decision_contract) {
+        return $false
+    }
+    $contract = $confirmUi.route_decision_contract
+    if (-not ($contract.PSObject.Properties.Name -contains 'preferred_payload') -or $null -eq $contract.preferred_payload) {
+        return $false
+    }
+
+    return $true
+}
+
 function Get-VibeSkillMetadata {
     param(
         [Parameter(Mandatory)] [string]$RepoRoot,
@@ -819,7 +893,11 @@ $storageProjection = New-VibeWorkspaceArtifactProjection `
     -Runtime $runtime `
     -ArtifactRoot $ArtifactRoot `
     -RouterTargetRoot $routerTargetRoot
-$requestedSkill = $null
+$requestedSkill = if (-not [string]::IsNullOrWhiteSpace($EntryIntentId)) {
+    [string]$EntryIntentId
+} else {
+    [string]$policy.explicit_runtime_skill
+}
 $unattended = $false
 $hierarchyState = Get-VibeHierarchyState `
     -GovernanceScope $GovernanceScope `
@@ -842,21 +920,20 @@ $routeArgs = @(
 if (-not [string]::IsNullOrWhiteSpace([string]$requestedSkill)) {
     $routeArgs += @('-RequestedSkill', [string]$requestedSkill)
 }
-if (-not [string]::IsNullOrWhiteSpace([string]$HostDecisionJson)) {
-    $routeArgs += @('-HostDecisionJson', [string]$HostDecisionJson)
-}
 if ($unattended) {
     $routeArgs += '-Unattended'
 }
 
-$routeInvocation = Invoke-VgoPowerShellFile -ScriptPath $routerScriptPath -ArgumentList $routeArgs -NoProfile
+$routeResult = Invoke-VibeFrozenRoute -RouterScriptPath $routerScriptPath -BaseArgs $routeArgs -HostDecisionJson $HostDecisionJson
 
-if ([int]$routeInvocation.exit_code -ne 0) {
-    throw ("Failed to freeze runtime input packet because canonical router exited with code {0}." -f [int]$routeInvocation.exit_code)
+if (
+    [string]::IsNullOrWhiteSpace([string]$HostDecisionJson) -and
+    (Test-VibeSingleOptionCanonicalConfirmSurface -RouteResult $routeResult -EntryIntentId $EntryIntentId -RuntimeSelectedSkill ([string]$policy.explicit_runtime_skill))
+) {
+    $preferredPayload = $routeResult.confirm_ui.route_decision_contract.preferred_payload
+    $syntheticHostDecisionJson = $preferredPayload | ConvertTo-Json -Depth 20 -Compress
+    $routeResult = Invoke-VibeFrozenRoute -RouterScriptPath $routerScriptPath -BaseArgs $routeArgs -HostDecisionJson $syntheticHostDecisionJson
 }
-
-$routeJson = (@($routeInvocation.output) -join [Environment]::NewLine).Trim()
-$routeResult = $routeJson | ConvertFrom-Json
 
 $overlayDecisions = @()
 foreach ($overlayField in @($policy.overlay_fields)) {
