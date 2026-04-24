@@ -340,6 +340,49 @@ def _resolve_ledger_path_within_target(target_root: Path, raw_path: str | Path) 
     return candidate
 
 
+def _path_is_within(candidate: Path, ancestor: Path) -> bool:
+    try:
+        candidate.relative_to(ancestor)
+    except ValueError:
+        return False
+    return True
+
+
+def _iter_previous_install_owned_wrapper_paths(
+    target_root: Path,
+    previous_install_ledger: dict | None,
+) -> list[Path]:
+    if not isinstance(previous_install_ledger, dict):
+        return []
+
+    resolved_paths: list[Path] = []
+    seen: set[Path] = set()
+    for ledger_key in ("specialist_wrapper_paths", "created_paths", "owned_tree_roots"):
+        for raw_path in previous_install_ledger.get(ledger_key) or []:
+            candidate = _resolve_ledger_path_within_target(target_root, raw_path)
+            if candidate is None or candidate in seen:
+                continue
+            seen.add(candidate)
+            resolved_paths.append(candidate)
+    return resolved_paths
+
+
+def _is_installer_owned_wrapper_cleanup_candidate(
+    target_root: Path,
+    candidate: Path,
+    previous_install_ledger: dict | None,
+) -> bool:
+    resolved_candidate = candidate.resolve(strict=False)
+    for owned_path in _iter_previous_install_owned_wrapper_paths(target_root, previous_install_ledger):
+        if resolved_candidate == owned_path:
+            return True
+        if owned_path.name == "SKILL.md" and owned_path.parent == resolved_candidate:
+            return True
+        if _path_is_within(resolved_candidate, owned_path) or _path_is_within(owned_path, resolved_candidate):
+            return True
+    return False
+
+
 def _remove_path_and_empty_parents(
     candidate: Path,
     *,
@@ -405,6 +448,7 @@ def prune_known_legacy_wrapper_paths(
     target_root: Path,
     host_id: str,
     current_wrapper_paths: list[Path],
+    previous_install_ledger: dict | None = None,
 ) -> None:
     current_paths = {
         path.resolve(strict=False)
@@ -419,6 +463,8 @@ def prune_known_legacy_wrapper_paths(
         resolved = candidate.resolve(strict=False)
         if resolved in current_paths or not resolved.exists():
             continue
+        if not _is_installer_owned_wrapper_cleanup_candidate(target_root, resolved, previous_install_ledger):
+            continue
         record_legacy_cleanup_candidate(resolved)
         _remove_path_and_empty_parents(
             resolved,
@@ -431,6 +477,7 @@ def prune_retired_discoverable_wrapper_paths(
     target_root: Path,
     entry_surface,
     current_wrapper_paths: list[Path],
+    previous_install_ledger: dict | None = None,
 ) -> None:
     retired_entry_ids = [
         str(entry.id).strip()
@@ -452,6 +499,8 @@ def prune_retired_discoverable_wrapper_paths(
     for candidate in _retired_discoverable_wrapper_cleanup_paths(target_root, retired_entry_ids):
         resolved = candidate.resolve(strict=False)
         if resolved in current_paths or not resolved.exists():
+            continue
+        if not _is_installer_owned_wrapper_cleanup_candidate(target_root, resolved, previous_install_ledger):
             continue
         record_legacy_cleanup_candidate(resolved)
         _remove_path_and_empty_parents(
@@ -778,9 +827,14 @@ def main(argv: list[str] | None = None):
         surface=dict(packaging.get("public_skill_surface") or {}),
     )
     prune_previously_managed_wrapper_paths(target_root, previous_install_ledger, wrapper_paths)
-    prune_known_legacy_wrapper_paths(target_root, adapter["id"], wrapper_paths)
+    prune_known_legacy_wrapper_paths(target_root, adapter["id"], wrapper_paths, previous_install_ledger)
     if entry_surface is not None:
-        prune_retired_discoverable_wrapper_paths(target_root, entry_surface, wrapper_paths)
+        prune_retired_discoverable_wrapper_paths(
+            target_root,
+            entry_surface,
+            wrapper_paths,
+            previous_install_ledger,
+        )
     if discoverable_entry_surface and adapter.get("discoverable_entries") and not wrapper_paths:
         raise SystemExit(
             "Discoverable wrapper projection for "

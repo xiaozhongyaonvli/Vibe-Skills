@@ -14,8 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "runti
 from vgo_runtime.router_contract_presentation import (
     CONFIRM_UI_BATCH_PROMPT,
     DEEP_DISCOVERY_FIRST_QUESTION,
+    build_confirm_ui,
 )
 from vgo_runtime.router_contract_runtime import route_prompt
+from vgo_runtime.router_contract_support import RepoContext
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -86,6 +88,42 @@ def run_powershell_route(prompt: str, grade: str, task_type: str, requested_skil
 
 
 class RouterBridgeTests(unittest.TestCase):
+    def test_build_confirm_ui_keeps_selected_skill_visible_when_ranking_is_truncated(self) -> None:
+        repo = RepoContext(
+            repo_root=REPO_ROOT,
+            config_root=REPO_ROOT / "config",
+            bundled_skills_root=REPO_ROOT / "bundled" / "skills",
+        )
+        route_result = {
+            "route_mode": "confirm_required",
+            "selected": {
+                "pack_id": "synthetic-pack",
+                "skill": "selected-skill",
+                "selection_score": 0.42,
+            },
+            "ranked": [
+                {
+                    "pack_id": "synthetic-pack",
+                    "candidate_ranking": [
+                        {"skill": "skill-a", "score": 0.91},
+                        {"skill": "skill-b", "score": 0.81},
+                        {"skill": "skill-c", "score": 0.71},
+                        {"skill": "skill-d", "score": 0.61},
+                        {"skill": "skill-e", "score": 0.51},
+                        {"skill": "selected-skill", "score": 0.42},
+                    ],
+                    "stage_assistant_candidates": [],
+                }
+            ],
+        }
+
+        confirm_ui = build_confirm_ui(repo, route_result, None)
+
+        self.assertIsNotNone(confirm_ui)
+        self.assertEqual("selected-skill", confirm_ui["options"][0]["skill"])
+        self.assertTrue(confirm_ui["options"][0]["is_primary"])
+        self.assertIn("selected-skill", confirm_ui["route_decision_contract"]["allowed_skill_ids"])
+
     def test_linux_without_pwsh_fixture_points_to_bridge_contract(self) -> None:
         platform = json.loads(PLATFORM_FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual("linux_without_pwsh", platform["lane"])
@@ -169,6 +207,16 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("pack_overlay", result["route_mode"])
         self.assertEqual("data-ml", result["selected"]["pack_id"])
         self.assertEqual("LQF_Machine_Learning_Expert_Guide", result["selected"]["skill"])
+
+    def test_ml_threshold_question_does_not_false_positive_to_vibe(self) -> None:
+        result = run_bridge(
+            "Please help me choose a confidence threshold and fallback threshold for a scikit-learn binary classifier using ROC and precision-recall tradeoffs.",
+            "L",
+            "research",
+        )
+
+        self.assertNotEqual("vibe", result["selected"]["skill"])
+        self.assertEqual("data-ml", result["selected"]["pack_id"])
 
     def test_requested_mixed_case_skill_routes_authoritatively_in_runtime_neutral_lane(self) -> None:
         result = run_bridge(

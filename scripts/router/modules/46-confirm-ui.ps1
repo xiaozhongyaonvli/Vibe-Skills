@@ -376,9 +376,10 @@ function Build-ConfirmSkillOptions {
             }
         )
     }
-    if ($selectedSkill -and -not (@($ranking | ForEach-Object { [string]$_.skill }) -contains $selectedSkill)) {
-        $selectedRow = $null
-        if ($packRow -and $packRow.stage_assistant_candidates) {
+    $selectedRow = $null
+    if ($selectedSkill) {
+        $selectedRow = @($ranking | Where-Object { [string]$_.skill -eq $selectedSkill } | Select-Object -First 1)
+        if (-not $selectedRow -and $packRow -and $packRow.stage_assistant_candidates) {
             $selectedRow = @($packRow.stage_assistant_candidates | Where-Object { [string]$_.skill -eq $selectedSkill } | Select-Object -First 1)
         }
         if (-not $selectedRow -and $packRow -and $packRow.candidate_ranking) {
@@ -390,8 +391,26 @@ function Build-ConfirmSkillOptions {
                 score = if ($Result.selected.selection_score -ne $null) { [double]$Result.selected.selection_score } else { 0.0 }
             }
         }
-        $ranking = @($selectedRow) + @($ranking)
     }
+
+    $orderedRanking = @()
+    $seenSkills = @{}
+    if ($selectedRow) {
+        $selectedRowSkill = [string]$selectedRow.skill
+        if (-not [string]::IsNullOrWhiteSpace($selectedRowSkill)) {
+            $orderedRanking += $selectedRow
+            $seenSkills[$selectedRowSkill] = $true
+        }
+    }
+    foreach ($row in @($ranking)) {
+        $skillId = [string]$row.skill
+        if ([string]::IsNullOrWhiteSpace($skillId) -or $seenSkills.ContainsKey($skillId)) {
+            continue
+        }
+        $orderedRanking += $row
+        $seenSkills[$skillId] = $true
+    }
+    $ranking = @($orderedRanking)
 
     $limit = [Math]::Max(1, [int]$policy.options.max_skill_options)
     $rows = @($ranking | Select-Object -First $limit)

@@ -22,6 +22,24 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _write_host_launch_receipt(session_root: Path, *, run_id: str, launch_status: str = "verified") -> None:
+    _write_json(
+        session_root / "host-launch-receipt.json",
+        {
+            "host_id": "codex",
+            "entry_id": "vibe",
+            "launch_mode": "canonical-entry",
+            "launcher_path": str((session_root / "launcher.ps1").resolve()),
+            "requested_stage_stop": "phase_cleanup",
+            "requested_grade_floor": None,
+            "runtime_entrypoint": str((session_root / "runtime.ps1").resolve()),
+            "run_id": run_id,
+            "created_at": "2026-04-24T00:00:00Z",
+            "launch_status": launch_status,
+        },
+    )
+
+
 def _write_valid_truth_artifacts(
     session_root: Path,
     *,
@@ -144,6 +162,7 @@ def _write_bounded_return_summary(
             },
         },
     )
+    _write_host_launch_receipt(session_root, run_id=run_id)
     return summary_path
 
 
@@ -345,6 +364,7 @@ def test_resolve_effective_prompt_enriches_short_vibe_do_prompt_with_prior_inten
             },
         },
     )
+    _write_host_launch_receipt(previous_run, run_id="prior-run")
 
     prompt = canonical_entry._resolve_effective_prompt(
         host_id="codex",
@@ -501,7 +521,8 @@ def test_runtime_summary_path_for_run_id_rejects_invalid_path_segments(tmp_path:
 
 
 def test_load_continuation_context_from_summary_ignores_non_string_artifact_paths(tmp_path: Path) -> None:
-    summary_path = tmp_path / "runtime-summary.json"
+    session_root = tmp_path / "outputs" / "runtime" / "vibe-sessions" / "prior-run"
+    summary_path = session_root / "runtime-summary.json"
     _write_json(
         summary_path,
         {
@@ -513,6 +534,37 @@ def test_load_continuation_context_from_summary_ignores_non_string_artifact_path
             },
         },
     )
+    _write_host_launch_receipt(session_root, run_id="prior-run")
+
+    continuation = canonical_entry._load_continuation_context_from_summary(
+        summary_path,
+        required_artifact="execution_plan",
+    )
+
+    assert continuation is None
+
+
+def test_load_continuation_context_from_summary_requires_verified_host_launch_receipt(tmp_path: Path) -> None:
+    session_root = tmp_path / "outputs" / "runtime" / "vibe-sessions" / "prior-run"
+    intent_contract_path = session_root / "artifacts" / "intent-contract.json"
+    execution_plan_path = session_root / "artifacts" / "execution-plan.md"
+    summary_path = session_root / "runtime-summary.json"
+
+    _write_json(intent_contract_path, {"goal": "goal", "deliverable": "report"})
+    execution_plan_path.parent.mkdir(parents=True, exist_ok=True)
+    execution_plan_path.write_text("# execution plan\n", encoding="utf-8")
+    _write_json(
+        summary_path,
+        {
+            "run_id": "prior-run",
+            "terminal_stage": "xl_plan",
+            "artifacts": {
+                "intent_contract": str(intent_contract_path),
+                "execution_plan": str(execution_plan_path),
+            },
+        },
+    )
+    _write_host_launch_receipt(session_root, run_id="prior-run", launch_status="launched")
 
     continuation = canonical_entry._load_continuation_context_from_summary(
         summary_path,

@@ -89,6 +89,27 @@ function Test-VibeObjectHasProperty {
     return ($propertyNames -contains $PropertyName)
 }
 
+function Test-VibeStructuredObject {
+    param(
+        [AllowNull()] [object]$InputObject
+    )
+
+    if ($null -eq $InputObject) {
+        return $false
+    }
+    if ($InputObject -is [string] -or $InputObject -is [System.ValueType]) {
+        return $false
+    }
+    if ($InputObject -is [System.Array] -or $InputObject -is [System.Collections.IList]) {
+        return $false
+    }
+
+    return (
+        ($InputObject -is [System.Management.Automation.PSCustomObject]) -or
+        ($InputObject -is [System.Collections.IDictionary])
+    )
+}
+
 function Get-VibePropertySafe {
     param(
         [AllowNull()] [object]$InputObject,
@@ -197,10 +218,16 @@ function ConvertFrom-VibeHostDecisionJson {
     }
 
     try {
-        return ($HostDecisionJson | ConvertFrom-Json -ErrorAction Stop)
+        $parsed = ($HostDecisionJson | ConvertFrom-Json -ErrorAction Stop)
     } catch {
         throw "invalid JSON in -HostDecisionJson"
     }
+
+    if (-not (Test-VibeStructuredObject -InputObject $parsed)) {
+        throw "structured host decision must be a JSON object"
+    }
+
+    return $parsed
 }
 
 function Get-VibeHostContinuationContext {
@@ -216,7 +243,7 @@ function Get-VibeHostContinuationContext {
     }
 
     $context = $HostDecision.continuation_context
-    if ($null -eq $context -or -not $context.PSObject) {
+    if (-not (Test-VibeStructuredObject -InputObject $context)) {
         return $null
     }
 
@@ -372,7 +399,7 @@ function Resolve-VibeHostPhaseDecomposition {
     if ($null -eq $phaseDecomposition) {
         return $null
     }
-    if (-not $phaseDecomposition.PSObject) {
+    if (-not (Test-VibeStructuredObject -InputObject $phaseDecomposition)) {
         throw 'structured host phase decomposition must be a JSON object'
     }
     if (-not (Test-VibeObjectHasProperty -InputObject $phaseDecomposition -PropertyName 'phases')) {
@@ -392,7 +419,7 @@ function Resolve-VibeHostPhaseDecomposition {
     $phaseIndex = 0
     foreach ($phase in @($rawPhases)) {
         $phaseIndex += 1
-        if ($null -eq $phase -or -not $phase.PSObject) {
+        if (-not (Test-VibeStructuredObject -InputObject $phase)) {
             throw 'each execution phase must be a JSON object'
         }
 
@@ -520,7 +547,7 @@ function Resolve-VibeHostSpecialistDispatchDecision {
     if ($null -eq $decision) {
         return $null
     }
-    if (-not $decision.PSObject) {
+    if (-not (Test-VibeStructuredObject -InputObject $decision)) {
         throw 'structured host specialist dispatch decision must be a JSON object'
     }
     if ([string]$contract.scope -eq 'root_only' -and -not [string]::Equals([string]$GovernanceScope, 'root', [System.StringComparison]::OrdinalIgnoreCase)) {

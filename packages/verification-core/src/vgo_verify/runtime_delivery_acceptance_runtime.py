@@ -222,6 +222,7 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
     direct_routed_skill_ids = _normalize_skill_id_list(direct_routed_specialist_units)
 
     specialist_execution_source_path = str(specialist_execution_payload.get("source_path") or "").strip()
+    specialist_execution_resolution_mode = str(specialist_execution_payload.get("resolution_mode") or "").strip().lower()
     specialist_execution_evidence = _normalize_string_list(specialist_execution_payload.get("evidence_paths"))
     if specialist_execution_source_path:
         specialist_execution_evidence = [specialist_execution_source_path, *specialist_execution_evidence]
@@ -229,6 +230,17 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
     raw_specialist_execution_units = specialist_execution_payload.get("units") or []
     if not isinstance(raw_specialist_execution_units, list):
         raw_specialist_execution_units = [raw_specialist_execution_units] if raw_specialist_execution_units else []
+    if (
+        not runtime_specialist_execution_status
+        and approved_dispatch_skill_ids
+        and (
+            direct_routed_unit_ids
+            or raw_specialist_execution_units
+            or specialist_execution_resolution_mode == "current_session_host_execution"
+        )
+    ):
+        runtime_specialist_execution_status = "direct_current_session_routed"
+        effective_specialist_execution_status = runtime_specialist_execution_status
 
     specialist_execution_notes: list[str] = []
     specialist_execution_payload_valid = True

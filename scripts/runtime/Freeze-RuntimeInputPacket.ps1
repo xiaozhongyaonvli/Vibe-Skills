@@ -943,6 +943,9 @@ if (
     $preferredPayload = $routeResult.confirm_ui.route_decision_contract.preferred_payload
     $syntheticHostDecisionJson = $preferredPayload | ConvertTo-Json -Depth 20 -Compress
     $routeResult = Invoke-VibeFrozenRoute -RouterScriptPath $routerScriptPath -BaseArgs $routeArgs -HostDecisionJson $syntheticHostDecisionJson
+    $hostDecision = ConvertFrom-VibeHostDecisionJson -HostDecisionJson $syntheticHostDecisionJson
+    $continuationContext = Get-VibeHostContinuationContext -HostDecision $hostDecision
+    $executionPhaseDecomposition = Resolve-VibeHostPhaseDecomposition -HostDecision $hostDecision -Task $Task -Policy $policy
 }
 
 $overlayDecisions = @()

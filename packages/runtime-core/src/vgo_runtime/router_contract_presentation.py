@@ -90,6 +90,52 @@ def _collect_clarification_questions(route_result: dict[str, Any], max_items: in
     return questions[:cap]
 
 
+def _order_confirm_ranking(
+    *,
+    route_result: dict[str, Any],
+    selected_pack: str,
+    selected_skill: str,
+    ranking: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if not selected_skill:
+        return [row for row in ranking if isinstance(row, dict)]
+
+    selected_row: dict[str, Any] | None = None
+    normalized_ranking: list[dict[str, Any]] = []
+    seen_skills: set[str] = set()
+
+    for row in ranking:
+        if not isinstance(row, dict):
+            continue
+        skill = str(row.get("skill") or "").strip()
+        if not skill or skill in seen_skills:
+            continue
+        if skill == selected_skill and selected_row is None:
+            selected_row = row
+        normalized_ranking.append(row)
+        seen_skills.add(skill)
+
+    if selected_row is None:
+        for pack_row in route_result.get("ranked", []):
+            if str(pack_row.get("pack_id") or "").strip() != selected_pack:
+                continue
+            for candidate in pack_row.get("stage_assistant_candidates", []) or []:
+                if str(candidate.get("skill") or "").strip() == selected_skill:
+                    selected_row = candidate
+                    break
+            if selected_row is not None:
+                break
+
+    if selected_row is None:
+        selected_row = {"skill": selected_skill, "score": route_result["selected"].get("selection_score")}
+
+    ordered = [selected_row]
+    ordered.extend(
+        row for row in normalized_ranking if str(row.get("skill") or "").strip() != selected_skill
+    )
+    return ordered
+
+
 def build_confirm_ui(repo: RepoContext, route_result: dict[str, Any], target_root: str | None, host_id: str | None = None) -> dict[str, Any] | None:
     if route_result.get("route_mode") not in {"confirm_required", "pack_overlay"} or not route_result.get("selected"):
         return None
@@ -103,18 +149,12 @@ def build_confirm_ui(repo: RepoContext, route_result: dict[str, Any], target_roo
             break
     if not ranking:
         ranking = [{"skill": selected["skill"], "score": selected["selection_score"]}]
-    elif selected["skill"] not in {str(item.get("skill") or "").strip() for item in ranking}:
-        selected_row = None
-        for row in route_result.get("ranked", []):
-            if row["pack_id"] != selected["pack_id"]:
-                continue
-            for candidate in row.get("stage_assistant_candidates", []):
-                if str(candidate.get("skill") or "").strip() == selected["skill"]:
-                    selected_row = candidate
-                    break
-            if selected_row:
-                break
-        ranking = [selected_row or {"skill": selected["skill"], "score": selected["selection_score"]}, *ranking]
+    ranking = _order_confirm_ranking(
+        route_result=route_result,
+        selected_pack=str(selected["pack_id"]),
+        selected_skill=str(selected["skill"] or ""),
+        ranking=list(ranking),
+    )
 
     options = []
     for index, row in enumerate(ranking[:5], start=1):

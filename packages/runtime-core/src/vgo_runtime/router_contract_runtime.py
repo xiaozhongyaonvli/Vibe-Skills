@@ -35,6 +35,37 @@ def _dedupe_strings(values: list[str]) -> list[str]:
     return deduped
 
 
+def _optional_text(value: object | None) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _pack_intent_score(prompt_lower: str, pack_id: str, candidates: list[str]) -> float:
+    score = 0.0
+    normalized_pack = normalize_text(pack_id).replace("_", " ")
+    for token in normalized_pack.split():
+        if len(token) >= 3 and keyword_ratio(prompt_lower, [token]) > 0:
+            score += 0.35
+    for candidate in candidates:
+        if keyword_ratio(prompt_lower, [candidate]) > 0:
+            score += 0.25
+    return min(1.0, score)
+
+
+def _workspace_signal_score(prompt_lower: str, requested_canonical: str | None, candidates: list[str]) -> float:
+    normalized_requested = normalize_text(requested_canonical or "")
+    normalized_candidates = [normalize_text(candidate) for candidate in candidates if normalize_text(candidate)]
+    if normalized_requested and normalized_requested in normalized_candidates:
+        return 1.0
+
+    for candidate in candidates:
+        if keyword_ratio(prompt_lower, [candidate]) > 0:
+            return 0.6
+    return 0.0
+
+
 def _build_deep_discovery_advice(repo: RepoContext, prompt_lower: str, grade: str, task_type: str) -> dict[str, object] | None:
     policy_path = repo.config_root / "deep-discovery-policy.json"
     catalog_path = repo.config_root / "capability-catalog.json"
@@ -470,6 +501,12 @@ def route_prompt(
             candidate_selection_config=candidate_selection_cfg,
         )
         trigger_ratio = keyword_ratio(prompt_lower, pack.get("trigger_keywords") or [])
+        intent_score = _pack_intent_score(prompt_lower, str(pack.get("id") or ""), list(pack.get("skill_candidates") or []))
+        workspace_score = _workspace_signal_score(
+            prompt_lower,
+            requested_canonical,
+            list(pack.get("skill_candidates") or []),
+        )
         priority_signal = min(max(float(pack.get("priority", 0)) / 100.0, 0.0), 1.0)
         relevance_score = float(selection.get("relevance_score", selection["score"]))
         score = ((0.5 * trigger_ratio) + (0.4 * relevance_score) + (0.1 * priority_signal))
@@ -479,6 +516,8 @@ def route_prompt(
             and not requested_canonical
             and trigger_ratio < 0.5
             and relevance_score < 0.15
+            and intent_score < 0.2
+            and workspace_score < 0.1
         )
         if fallback_selected and not requested_canonical:
             score *= 0.35 if weak_fallback else 0.65
@@ -497,6 +536,8 @@ def route_prompt(
             {
                 "pack_id": normalize_text(pack.get("id")),
                 "score": score,
+                "intent": round(intent_score, 4),
+                "workspace": round(workspace_score, 4),
                 "selected_candidate": selection["selected"],
                 "candidate_selection_reason": selection["reason"],
                 "candidate_selection_score": round(float(selection["score"]), 4),
@@ -586,7 +627,7 @@ def route_prompt(
     selected_skill = (
         str(preferred_selection["skill"])
         if preferred_selection
-        else str(top["selected_candidate"])
+        else _optional_text(top.get("selected_candidate"))
         if top
         else None
     )

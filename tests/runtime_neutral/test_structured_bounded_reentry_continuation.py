@@ -133,6 +133,44 @@ def run_runtime(
 
 
 class StructuredBoundedReentryContinuationTests(unittest.TestCase):
+    def test_phase_decomposition_rejects_non_object_phase_records(self) -> None:
+        shell = resolve_powershell()
+        if shell is None:
+            raise unittest.SkipTest("PowerShell executable not available in PATH")
+
+        command = [
+            shell,
+            "-NoLogo",
+            "-NoProfile",
+            "-Command",
+            (
+                "& { "
+                f". {ps_quote(str(REPO_ROOT / 'scripts' / 'runtime' / 'VibeRuntime.Common.ps1'))}; "
+                "try { "
+                "$decision = [pscustomobject]@{ "
+                "  phase_decomposition = [pscustomobject]@{ phases = @('oops') } "
+                "}; "
+                "Resolve-VibeHostPhaseDecomposition -HostDecision $decision -Task 'demo task' | Out-Null; "
+                "@{ ok = $true } | ConvertTo-Json -Compress "
+                "} catch { "
+                "@{ ok = $false; error = $_.Exception.Message } | ConvertTo-Json -Compress "
+                "} "
+                "}"
+            ),
+        ]
+        completed = subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        payload = json.loads(completed.stdout)
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("each execution phase must be a JSON object", payload["error"])
+
     def test_freeze_reuses_prior_task_type_for_control_only_structured_reentry(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             artifact_root = Path(tempdir) / "artifacts"

@@ -28,7 +28,7 @@ if str(CONTRACTS_SRC) not in sys.path:
 
 from vgo_contracts.canonical_vibe_contract import resolve_canonical_vibe_contract
 from vgo_contracts.discoverable_entry_surface import load_discoverable_entry_surface
-from vgo_contracts.host_launch_receipt import HostLaunchReceipt, write_host_launch_receipt
+from vgo_contracts.host_launch_receipt import HostLaunchReceipt, read_host_launch_receipt, write_host_launch_receipt
 from vgo_runtime.powershell_bridge import run_powershell_json_command
 from vgo_runtime.router import load_allowed_vibe_entry_ids
 
@@ -338,6 +338,20 @@ def _artifact_path_value(artifacts: dict[str, Any], key: str) -> str | None:
         return None
     candidate = value.strip()
     return candidate or None
+
+
+def _has_verified_host_launch_receipt(summary_path: Path) -> bool:
+    receipt_path = summary_path.parent / "host-launch-receipt.json"
+    try:
+        receipt = read_host_launch_receipt(receipt_path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return False
+    if str(receipt.launch_status or "").strip() != "verified":
+        return False
+    expected_run_id = summary_path.parent.name
+    if expected_run_id and str(receipt.run_id or "").strip() != expected_run_id:
+        return False
+    return True
 
 
 def _load_intent_contract_from_artifacts(artifacts: dict[str, Any]) -> dict[str, Any] | None:
@@ -729,6 +743,8 @@ def _load_continuation_context_from_summary(
 ) -> dict[str, Any] | None:
     summary = _load_json_dict_if_exists(summary_path)
     if not summary:
+        return None
+    if not _has_verified_host_launch_receipt(summary_path):
         return None
     artifacts = _artifact_paths(summary)
     required_path = _artifact_path_value(artifacts, required_artifact)
