@@ -51,12 +51,16 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         governance_scope: str = "root",
         completion_claim_allowed: bool = True,
         cleanup_mode: str = "bounded_cleanup_executed",
+        run_id: str = "pytest-runtime-delivery-run",
         approved_dispatch: list[dict[str, object]] | None = None,
         phase_execute_specialist_user_disclosure: dict[str, object] | None = None,
         specialist_accounting: dict[str, object] | None = None,
         phase_execute_specialist_decision: dict[str, object] | None = None,
+        phase_execute_specialist_execution: dict[str, object] | None = None,
         sidecar_specialist_decision: dict[str, object] | None = None,
+        sidecar_specialist_execution: dict[str, object] | None = None,
         specialist_decision_path: str | None = None,
+        specialist_execution_path: str | None = None,
         omit_default_specialist_decision: bool = False,
     ) -> Path:
         tempdir = tempfile.TemporaryDirectory()
@@ -150,6 +154,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         )
 
         execution_manifest_payload = {
+            "run_id": run_id,
             "status": execution_status,
             "governance_scope": governance_scope,
             "executed_unit_count": 3,
@@ -201,6 +206,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             }
         write_json(runtime_input_packet_path, runtime_input_packet_payload)
         phase_execute_payload = {
+            "run_id": run_id,
             "requirement_doc_path": str(requirement_doc_path),
             "execution_plan_path": str(execution_plan_path),
             "execution_manifest_path": str(execution_manifest_path),
@@ -239,12 +245,16 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                         "traceability_basis": [],
                     },
                 }
+        if phase_execute_specialist_execution is not None:
+            phase_execute_payload["specialist_execution"] = phase_execute_specialist_execution
         if artifact_review_path:
             phase_execute_payload["artifact_review_path"] = artifact_review_path
         if tdd_evidence_path:
             phase_execute_payload["tdd_evidence_path"] = tdd_evidence_path
         if specialist_decision_path:
             phase_execute_payload["specialist_decision_path"] = specialist_decision_path
+        if specialist_execution_path:
+            phase_execute_payload["specialist_execution_path"] = specialist_execution_path
         write_json(
             session_root / "phase-execute.json",
             phase_execute_payload,
@@ -261,6 +271,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             write_json(session_root / "tdd-evidence.json", sidecar_tdd_evidence)
         if sidecar_specialist_decision is not None:
             write_json(session_root / "specialist-decision.json", sidecar_specialist_decision)
+        if sidecar_specialist_execution is not None:
+            write_json(session_root / "specialist-execution.json", sidecar_specialist_execution)
         return session_root
 
     def test_runtime_delivery_acceptance_passes_for_clean_root_run(self) -> None:
@@ -453,6 +465,137 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         self.assertTrue(report["execution_context"]["specialist_host_continuation_pending"])
         self.assertIn(
             "Approved execution is still waiting on direct current-session host continuation.",
+            report["residual_risks"],
+        )
+
+    def test_runtime_delivery_acceptance_passes_when_current_session_specialist_execution_is_recorded(self) -> None:
+        approved_dispatch = [
+            {
+                "skill_id": "systematic-debugging",
+                "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+            }
+        ]
+        session_root = self._build_session(
+            run_id="pytest-host-specialist-pass",
+            approved_dispatch=approved_dispatch,
+            phase_execute_specialist_user_disclosure={
+                "scope": "approved_dispatch_only",
+                "timing": "before_execution",
+                "path_source": "native_skill_entrypoint",
+                "routed_skills": [
+                    {
+                        "skill_id": "systematic-debugging",
+                        "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+                        "entrypoint_requirement_satisfied": True,
+                    }
+                ],
+            },
+            specialist_accounting={
+                "approved_dispatch": approved_dispatch,
+                "approved_dispatch_count": 1,
+                "effective_execution_status": "direct_current_session_routed",
+                "direct_routed_specialist_units": [
+                    {
+                        "unit_id": "unit-1",
+                        "skill_id": "systematic-debugging",
+                        "result_path": "specialist-results/systematic-debugging.json",
+                    }
+                ],
+            },
+            sidecar_specialist_execution={
+                "protocol_version": "v1",
+                "source_run_id": "pytest-host-specialist-pass",
+                "resolution_mode": "current_session_host_execution",
+                "evidence_paths": [
+                    "/tmp/pytest-specialist-execution.md"
+                ],
+                "units": [
+                    {
+                        "unit_id": "unit-1",
+                        "skill_id": "systematic-debugging",
+                        "resolution_state": "executed",
+                        "evidence_paths": [
+                            "/tmp/pytest-specialist-systematic-debugging.txt"
+                        ],
+                    }
+                ],
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertTrue(report["summary"]["completion_language_allowed"])
+        self.assertEqual("passing", report["truth_results"]["workflow_completion_truth"]["state"])
+        self.assertFalse(report["execution_context"]["specialist_host_continuation_pending"])
+        self.assertEqual("executed", report["execution_context"]["specialist_host_resolution_state"])
+        self.assertEqual(1, report["execution_context"]["specialist_host_executed_unit_count"])
+        self.assertEqual("host_current_session_executed", report["execution_context"]["specialist_effective_execution_status"])
+        self.assertIn(
+            str(session_root / "specialist-execution.json"),
+            report["truth_results"]["workflow_completion_truth"]["evidence"],
+        )
+
+    def test_runtime_delivery_acceptance_reports_pass_degraded_when_current_session_specialist_execution_is_degraded(self) -> None:
+        approved_dispatch = [
+            {
+                "skill_id": "systematic-debugging",
+                "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+            }
+        ]
+        session_root = self._build_session(
+            run_id="pytest-host-specialist-degraded",
+            approved_dispatch=approved_dispatch,
+            phase_execute_specialist_user_disclosure={
+                "scope": "approved_dispatch_only",
+                "timing": "before_execution",
+                "path_source": "native_skill_entrypoint",
+                "routed_skills": [
+                    {
+                        "skill_id": "systematic-debugging",
+                        "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+                        "entrypoint_requirement_satisfied": True,
+                    }
+                ],
+            },
+            specialist_accounting={
+                "approved_dispatch": approved_dispatch,
+                "approved_dispatch_count": 1,
+                "effective_execution_status": "direct_current_session_routed",
+                "direct_routed_specialist_units": [
+                    {
+                        "unit_id": "unit-1",
+                        "skill_id": "systematic-debugging",
+                        "result_path": "specialist-results/systematic-debugging.json",
+                    }
+                ],
+            },
+            sidecar_specialist_execution={
+                "protocol_version": "v1",
+                "source_run_id": "pytest-host-specialist-degraded",
+                "resolution_mode": "current_session_host_execution",
+                "units": [
+                    {
+                        "unit_id": "unit-1",
+                        "skill_id": "systematic-debugging",
+                        "resolution_state": "degraded",
+                        "evidence_paths": [
+                            "/tmp/pytest-specialist-systematic-debugging-degraded.txt"
+                        ],
+                    }
+                ],
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS_DEGRADED", report["summary"]["gate_result"])
+        self.assertFalse(report["summary"]["completion_language_allowed"])
+        self.assertEqual("degraded", report["truth_results"]["workflow_completion_truth"]["state"])
+        self.assertFalse(report["execution_context"]["specialist_host_continuation_pending"])
+        self.assertEqual("degraded", report["execution_context"]["specialist_host_resolution_state"])
+        self.assertEqual(1, report["execution_context"]["specialist_host_degraded_unit_count"])
+        self.assertEqual("host_current_session_degraded", report["execution_context"]["specialist_effective_execution_status"])
+        self.assertIn(
+            "Approved execution finished current-session continuation with degraded specialist outcomes.",
             report["residual_risks"],
         )
 

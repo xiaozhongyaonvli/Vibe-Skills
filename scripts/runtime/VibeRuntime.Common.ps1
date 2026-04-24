@@ -1323,6 +1323,14 @@ function Get-VibeSpecialistDecisionSidecarPath {
     return Join-Path $SessionRoot 'specialist-decision.json'
 }
 
+function Get-VibeSpecialistExecutionSidecarPath {
+    param(
+        [Parameter(Mandatory)] [string]$SessionRoot
+    )
+
+    return Join-Path $SessionRoot 'specialist-execution.json'
+}
+
 function Get-VibeOptionalSpecialistDecisionOverride {
     param(
         [AllowEmptyString()] [string]$SessionRoot
@@ -3312,7 +3320,88 @@ function New-VibeHostUserBriefingProjection {
         $deliveryGateResult = [string](Get-VibeNestedPropertySafe -InputObject $deliverySummary -PropertyPath @('gate_result') -DefaultValue '')
         $deliveryReadinessState = [string](Get-VibeNestedPropertySafe -InputObject $deliverySummary -PropertyPath @('readiness_state') -DefaultValue '')
         $deliveryCompletionAllowed = [bool](Get-VibeNestedPropertySafe -InputObject $deliverySummary -PropertyPath @('completion_language_allowed') -DefaultValue $false)
+        $sourceRunId = [string](Get-VibeNestedPropertySafe -InputObject $deliveryExecutionContext -PropertyPath @('run_id') -DefaultValue '')
+        $sessionRoot = [string](Get-VibeNestedPropertySafe -InputObject $deliveryExecutionContext -PropertyPath @('session_root') -DefaultValue '')
         $effectiveExecutionStatus = [string](Get-VibeNestedPropertySafe -InputObject $deliveryExecutionContext -PropertyPath @('specialist_effective_execution_status') -DefaultValue '')
+        $sidecarPath = [string](Get-VibeNestedPropertySafe -InputObject $deliveryExecutionContext -PropertyPath @('specialist_execution_sidecar_path') -DefaultValue '')
+        if ([string]::IsNullOrWhiteSpace($sidecarPath) -and -not [string]::IsNullOrWhiteSpace($sessionRoot)) {
+            $sidecarPath = Get-VibeSpecialistExecutionSidecarPath -SessionRoot $sessionRoot
+        }
+        $directRoutedUnitIds = if (
+            $deliveryExecutionContext -and
+            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_specialist_unit_ids') -and
+            $null -ne $deliveryExecutionContext.direct_routed_specialist_unit_ids
+        ) {
+            @($deliveryExecutionContext.direct_routed_specialist_unit_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        } else {
+            @()
+        }
+        $directRoutedSkillIds = if (
+            $deliveryExecutionContext -and
+            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_specialist_skill_ids') -and
+            $null -ne $deliveryExecutionContext.direct_routed_specialist_skill_ids
+        ) {
+            @($deliveryExecutionContext.direct_routed_specialist_skill_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        } else {
+            @()
+        }
+        $rawDirectRoutedUnits = if (
+            $deliveryExecutionContext -and
+            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_specialist_units') -and
+            $null -ne $deliveryExecutionContext.direct_routed_specialist_units
+        ) {
+            @($deliveryExecutionContext.direct_routed_specialist_units)
+        } else {
+            @()
+        }
+        $requiredUnits = New-Object System.Collections.Generic.List[object]
+        foreach ($unit in $rawDirectRoutedUnits) {
+            if ($null -eq $unit) {
+                continue
+            }
+            $requiredUnits.Add([pscustomobject]@{
+                unit_id = [string](Get-VibePropertySafe -InputObject $unit -PropertyName 'unit_id')
+                skill_id = [string](Get-VibePropertySafe -InputObject $unit -PropertyName 'skill_id')
+                native_skill_entrypoint = [string](Get-VibePropertySafe -InputObject $unit -PropertyName 'native_skill_entrypoint')
+                result_path = [string](Get-VibePropertySafe -InputObject $unit -PropertyName 'result_path')
+            }) | Out-Null
+        }
+        $requiredUnitArray = [object[]]$requiredUnits.ToArray()
+        $refreshCommandHint = if (-not [string]::IsNullOrWhiteSpace($sessionRoot)) {
+            'py -3 scripts/verify/runtime_neutral/runtime_delivery_acceptance.py --session-root "{0}" --write-artifacts' -f $sessionRoot
+        } else {
+            'py -3 scripts/verify/runtime_neutral/runtime_delivery_acceptance.py --session-root <session_root> --write-artifacts'
+        }
+        $executionHandoffContract = [pscustomobject]@{
+            protocol_version = 'v1'
+            decision_kind = 'specialist_execution_resolution'
+            decision_context = 'execution_handoff'
+            source_run_id = if ([string]::IsNullOrWhiteSpace($sourceRunId)) { $null } else { $sourceRunId }
+            session_root = if ([string]::IsNullOrWhiteSpace($sessionRoot)) { $null } else { $sessionRoot }
+            sidecar_path = if ([string]::IsNullOrWhiteSpace($sidecarPath)) { $null } else { $sidecarPath }
+            verification_refresh_command = [string]$refreshCommandHint
+            allowed_resolution_states = @('executed', 'degraded', 'blocked')
+            direct_routed_unit_ids = @($directRoutedUnitIds)
+            direct_routed_skill_ids = @($directRoutedSkillIds)
+            required_units = $requiredUnitArray
+            preferred_payload = [pscustomobject]@{
+                protocol_version = 'v1'
+                source_run_id = if ([string]::IsNullOrWhiteSpace($sourceRunId)) { $null } else { $sourceRunId }
+                resolution_mode = 'current_session_host_execution'
+                units = @(
+                    foreach ($requiredUnit in $requiredUnitArray) {
+                        [pscustomobject]@{
+                            unit_id = [string](Get-VibePropertySafe -InputObject $requiredUnit -PropertyName 'unit_id')
+                            skill_id = [string](Get-VibePropertySafe -InputObject $requiredUnit -PropertyName 'skill_id')
+                            resolution_state = 'executed'
+                            native_skill_entrypoint = [string](Get-VibePropertySafe -InputObject $requiredUnit -PropertyName 'native_skill_entrypoint')
+                            evidence_paths = @('<host evidence path>')
+                            notes = ''
+                        }
+                    }
+                )
+            }
+        }
         $incompleteLayers = if (
             $deliverySummary -and
             (Test-VibeObjectHasProperty -InputObject $deliverySummary -PropertyName 'incomplete_layers') -and
@@ -3327,9 +3416,14 @@ function New-VibeHostUserBriefingProjection {
             ('- gate_result: `{0}`' -f $(if ([string]::IsNullOrWhiteSpace($deliveryGateResult)) { 'unknown' } else { $deliveryGateResult })),
             ('- readiness_state: `{0}`' -f $(if ([string]::IsNullOrWhiteSpace($deliveryReadinessState)) { 'unknown' } else { $deliveryReadinessState })),
             ('- completion_language_allowed: `{0}`' -f $deliveryCompletionAllowed),
+            ('- source_run_id: `{0}`' -f $(if ([string]::IsNullOrWhiteSpace($sourceRunId)) { 'unknown' } else { $sourceRunId })),
             ('- specialist_effective_execution_status: `{0}`' -f $(if ([string]::IsNullOrWhiteSpace($effectiveExecutionStatus)) { 'unknown' } else { $effectiveExecutionStatus })),
-            '- approved specialist execution has not been performed inside the governed runtime yet.',
-            '- next required action: load each disclosed `native_skill_entrypoint` in the current host session, execute the bounded specialist work there, then refresh governed verification before claiming completion.'
+            ('- direct_routed_unit_ids: `{0}`' -f $(if (@($directRoutedUnitIds).Count -gt 0) { @($directRoutedUnitIds) -join '`, `' } else { 'none recorded' })),
+            ('- direct_routed_skill_ids: `{0}`' -f $(if (@($directRoutedSkillIds).Count -gt 0) { @($directRoutedSkillIds) -join '`, `' } else { 'none recorded' })),
+            ('- specialist_execution_sidecar_path: `{0}`' -f $(if ([string]::IsNullOrWhiteSpace($sidecarPath)) { 'unknown' } else { $sidecarPath })),
+            '- approved specialist execution has not been formally resolved inside the governed runtime yet.',
+            '- next required action: load each disclosed `native_skill_entrypoint` in the current host session, execute the bounded specialist work there, write `specialist-execution.json`, then refresh governed verification before claiming completion.',
+            ('- verification refresh command: `{0}`' -f [string]$refreshCommandHint)
         )
         if (@($incompleteLayers).Count -gt 0) {
             $continuationLines += ('- blocking truth layers: `{0}`' -f (@($incompleteLayers) -join '`, `'))
@@ -3341,9 +3435,10 @@ function New-VibeHostUserBriefingProjection {
             truth_layer = 'workflow_completion_truth'
             status = 'current_session_continuation_required'
             gate_status = $deliveryGateResult
-            skill_count = 0
-            skills = @()
+            skill_count = @($directRoutedSkillIds).Count
+            skills = @($directRoutedSkillIds)
             rendered_text = (@($continuationLines) -join "`n")
+            host_decision_contract = $executionHandoffContract
         }
         $segments.Add($continuationSegment) | Out-Null
         $renderedSections += 'Governed runtime handoff status:'

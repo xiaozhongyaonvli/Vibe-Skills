@@ -1087,8 +1087,20 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                     incomplete_layers = @('workflow_completion_truth')
                 }
                 execution_context = [pscustomobject]@{
+                    run_id = 'pytest-host-specialist-handoff'
+                    session_root = 'F:\\repo\\outputs\\runtime\\vibe-sessions\\pytest-host-specialist-handoff'
                     specialist_host_continuation_pending = $true
                     specialist_effective_execution_status = 'direct_current_session_routed'
+                    direct_routed_specialist_unit_ids = @('unit-1')
+                    direct_routed_specialist_skill_ids = @('systematic-debugging')
+                    direct_routed_specialist_units = @(
+                        [pscustomobject]@{
+                            unit_id = 'unit-1'
+                            skill_id = 'systematic-debugging'
+                            native_skill_entrypoint = 'C:\\skills\\systematic-debugging\\SKILL.md'
+                            result_path = 'F:\\repo\\outputs\\runtime\\vibe-sessions\\pytest-host-specialist-handoff\\specialist-results\\unit-1.json'
+                        }
+                    )
                 }
             }
             $result = New-VibeHostUserBriefingProjection -DeliveryAcceptanceReport $deliveryAcceptanceReport
@@ -1099,6 +1111,23 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
         self.assertEqual("execution_handoff_host_briefing", result["mode"])
         self.assertEqual(["execution_handoff"], [str(segment["segment_id"]) for segment in list(result["segments"])])
         self.assertIn("Execution handoff is still pending under governed vibe.", result["rendered_text"])
+        segment = list(result["segments"])[0]
+        self.assertEqual(1, segment["skill_count"])
+        self.assertEqual(["systematic-debugging"], list(segment["skills"]))
+        self.assertIn("specialist-execution.json", segment["rendered_text"])
+        self.assertIn("runtime_delivery_acceptance.py", segment["rendered_text"])
+        contract = segment["host_decision_contract"]
+        self.assertEqual("specialist_execution_resolution", contract["decision_kind"])
+        self.assertEqual("execution_handoff", contract["decision_context"])
+        self.assertEqual(
+            "F:\\repo\\outputs\\runtime\\vibe-sessions\\pytest-host-specialist-handoff\\specialist-execution.json",
+            contract["sidecar_path"],
+        )
+        self.assertEqual(["executed", "degraded", "blocked"], list(contract["allowed_resolution_states"]))
+        self.assertEqual(["unit-1"], list(contract["direct_routed_unit_ids"]))
+        self.assertEqual(["systematic-debugging"], list(contract["direct_routed_skill_ids"]))
+        self.assertEqual("unit-1", contract["required_units"][0]["unit_id"])
+        self.assertEqual("executed", contract["preferred_payload"]["units"][0]["resolution_state"])
 
     def test_consultation_window_invokes_specialist_and_emits_progressive_disclosure(self) -> None:
         shell = resolve_powershell()
@@ -1640,9 +1669,10 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             self.assertTrue(bool(host_user_briefing["enabled"]))
             self.assertTrue(bool(host_user_briefing["freeze_gate_passed"]))
             self.assertEqual(
-                ["discussion_routing", "discussion_consultation", "planning_consultation", "execution_dispatch"],
+                ["execution_handoff", "discussion_routing", "discussion_consultation", "planning_consultation", "execution_dispatch"],
                 [str(segment["segment_id"]) for segment in list(host_user_briefing["segments"])],
             )
+            self.assertIn("Execution handoff is still pending under governed vibe.", host_user_briefing["rendered_text"])
             self.assertIn("Vibe routed these Skills", host_user_briefing["rendered_text"])
             self.assertIn(
                 "Vibe routed these Skills for direct current-session consultation during discussion",

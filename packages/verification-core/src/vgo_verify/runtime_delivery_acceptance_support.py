@@ -160,6 +160,17 @@ def _resolve_specialist_decision_payload(session_root: Path, execute_receipt: di
     )
 
 
+def _resolve_specialist_execution_payload(session_root: Path, execute_receipt: dict[str, Any]) -> dict[str, Any]:
+    return _resolve_optional_payload(
+        session_root,
+        execute_receipt,
+        inline_key="specialist_execution",
+        explicit_path_key="specialist_execution_path",
+        sidecar_filename="specialist-execution.json",
+        inline_presence_keys=("units", "source_run_id", "resolution_mode", "notes"),
+    )
+
+
 def _resolve_optional_payload(
     session_root: Path,
     execute_receipt: dict[str, Any],
