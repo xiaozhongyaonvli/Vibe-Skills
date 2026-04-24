@@ -579,6 +579,23 @@ if ($runtimeInputPacket) {
         "- Confirm required: $([bool]$runtimeInputPacket.route_snapshot.confirm_required)"
     )
 
+    $executionPhaseDecomposition = if (
+        $runtimeInputPacket.PSObject.Properties.Name -contains 'execution_phase_decomposition' -and
+        $null -ne $runtimeInputPacket.execution_phase_decomposition
+    ) {
+        $runtimeInputPacket.execution_phase_decomposition
+    } else {
+        $null
+    }
+    $executionPhaseLines = @(Get-VibeExecutionPhaseMarkdownLines -PhaseDecomposition $executionPhaseDecomposition)
+    if (@($executionPhaseLines).Count -gt 0) {
+        $lines += @(
+            '',
+            '## Execution Phase Decomposition'
+        )
+        $lines += @($executionPhaseLines)
+    }
+
     $specialistDecision = if (
         $runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_decision' -and
         $null -ne $runtimeInputPacket.specialist_decision

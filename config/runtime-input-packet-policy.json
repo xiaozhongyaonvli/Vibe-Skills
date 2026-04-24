@@ -100,6 +100,33 @@
     "include_description": true,
     "header": "Pre-dispatch specialist disclosure:"
   },
+  "host_phase_decomposition_contract": {
+    "enabled": true,
+    "max_phase_count": 6,
+    "default_stage_type": "implementation",
+    "stage_types": {
+      "discovery": {
+        "dispatch_phase": "pre_execution",
+        "default_stage_label": "Discovery",
+        "default_execution_priority": 10
+      },
+      "implementation": {
+        "dispatch_phase": "in_execution",
+        "default_stage_label": "Implementation",
+        "default_execution_priority": 50
+      },
+      "deliverable": {
+        "dispatch_phase": "post_execution",
+        "default_stage_label": "Deliverable",
+        "default_execution_priority": 70
+      },
+      "verification": {
+        "dispatch_phase": "verification",
+        "default_stage_label": "Verification",
+        "default_execution_priority": 90
+      }
+    }
+  },
   "specialist_binding_profiles": {
     "planning": {
       "match_skill_patterns": [
@@ -138,6 +165,11 @@
     },
     "deliverable": {
       "match_skill_patterns": [
+        "latex",
+        "tex",
+        "paper",
+        "submission",
+        "publication",
         "writing",
         "report",
         "publish",

@@ -2038,19 +2038,28 @@ function New-VibeSpecialistLaneEntry {
     } else {
         "specialist:{0}" -f [string]$Dispatch.skill_id
     }
+    $dispatchPhase = if ($Dispatch.PSObject.Properties.Name -contains 'dispatch_phase' -and -not [string]::IsNullOrWhiteSpace([string]$Dispatch.dispatch_phase)) { [string]$Dispatch.dispatch_phase } else { 'in_execution' }
+    $phaseId = if ($Dispatch.PSObject.Properties.Name -contains 'phase_id' -and -not [string]::IsNullOrWhiteSpace([string]$Dispatch.phase_id)) { [string]$Dispatch.phase_id } else { 'ungrouped' }
+    $stageOrder = if ($Dispatch.PSObject.Properties.Name -contains 'stage_order' -and $null -ne $Dispatch.stage_order) { [int]$Dispatch.stage_order } else { 9999 }
+    $stageType = if ($Dispatch.PSObject.Properties.Name -contains 'stage_type' -and -not [string]::IsNullOrWhiteSpace([string]$Dispatch.stage_type)) { [string]$Dispatch.stage_type } else { $null }
+    $stageLabel = if ($Dispatch.PSObject.Properties.Name -contains 'stage_label' -and -not [string]::IsNullOrWhiteSpace([string]$Dispatch.stage_label)) { [string]$Dispatch.stage_label } else { $null }
 
     return [pscustomobject]@{
-        lane_id = "specialist-{0}-{1}" -f [string]$Dispatch.dispatch_phase, [string]$Dispatch.skill_id
+        lane_id = "specialist-{0}-{1}-{2}" -f $dispatchPhase, $phaseId, [string]$Dispatch.skill_id
         lane_kind = 'specialist_dispatch'
         source_unit_id = [string]$Dispatch.skill_id
         specialist_skill_id = [string]$Dispatch.skill_id
-        dispatch_phase = if ($Dispatch.PSObject.Properties.Name -contains 'dispatch_phase') { [string]$Dispatch.dispatch_phase } else { 'in_execution' }
+        dispatch_phase = $dispatchPhase
         binding_profile = if ($Dispatch.PSObject.Properties.Name -contains 'binding_profile') { [string]$Dispatch.binding_profile } else { 'default' }
         lane_policy = $lanePolicy
         execution_priority = if ($Dispatch.PSObject.Properties.Name -contains 'execution_priority') { [int]$Dispatch.execution_priority } else { 50 }
         parallelizable = [bool]$parallelizable
         write_scope = $writeScope
         review_mode = if ($Dispatch.PSObject.Properties.Name -contains 'review_mode' -and -not [string]::IsNullOrWhiteSpace([string]$Dispatch.review_mode)) { [string]$Dispatch.review_mode } else { 'native_contract' }
+        phase_id = $phaseId
+        stage_order = $stageOrder
+        stage_type = $stageType
+        stage_label = $stageLabel
         dispatch = $Dispatch
     }
 }
@@ -2070,6 +2079,8 @@ function New-VibeSpecialistPhaseSteps {
         $Dispatches |
             Sort-Object `
                 @{ Expression = { Get-VibeSpecialistDispatchPhaseSortOrder -DispatchPhase ([string]$_.dispatch_phase) } }, `
+                @{ Expression = { if ($_.PSObject.Properties.Name -contains 'stage_order' -and $null -ne $_.stage_order) { [int]$_.stage_order } else { 9999 } } }, `
+                @{ Expression = { if ($_.PSObject.Properties.Name -contains 'phase_id' -and -not [string]::IsNullOrWhiteSpace([string]$_.phase_id)) { [string]$_.phase_id } else { 'ungrouped' } } }, `
                 @{ Expression = { if ($_.PSObject.Properties.Name -contains 'execution_priority') { [int]$_.execution_priority } else { 50 } } }, `
                 @{ Expression = { [string]$_.skill_id } }
     )
@@ -2077,32 +2088,55 @@ function New-VibeSpecialistPhaseSteps {
         return @()
     }
 
-    $units = @()
+    $groupedUnits = [ordered]@{}
     foreach ($dispatch in @($orderedDispatches)) {
-        $units += New-VibeSpecialistLaneEntry -Dispatch $dispatch -Grade $Grade -GovernanceScope $GovernanceScope
-    }
-
-    $parallelUnits = @($units | Where-Object { $_.parallelizable })
-    $serialUnits = @($units | Where-Object { -not $_.parallelizable })
-    if (@($parallelUnits).Count -gt 0) {
-        $steps += [pscustomobject]@{
-            step_id = "{0}-specialist-{1}-parallel" -f $WaveId, $Phase
-            execution_mode = 'bounded_parallel'
-            review_mode = [string]$parallelUnits[0].review_mode
-            max_parallel_units = [int]$ProfileDef.max_parallel_units
-            units = @($parallelUnits)
+        $entry = New-VibeSpecialistLaneEntry -Dispatch $dispatch -Grade $Grade -GovernanceScope $GovernanceScope
+        $groupKey = '{0}:{1}' -f [int]$entry.stage_order, [string]$entry.phase_id
+        if (-not $groupedUnits.Contains($groupKey)) {
+            $groupedUnits[$groupKey] = [pscustomobject]@{
+                phase_id = [string]$entry.phase_id
+                stage_order = [int]$entry.stage_order
+                stage_type = [string]$entry.stage_type
+                stage_label = [string]$entry.stage_label
+                units = @()
+            }
         }
+        $groupedUnits[$groupKey].units += $entry
     }
 
-    $serialIndex = 0
-    foreach ($entry in @($serialUnits)) {
-        $serialIndex += 1
-        $steps += [pscustomobject]@{
-            step_id = "{0}-specialist-{1}-serial-{2}" -f $WaveId, $Phase, $serialIndex
-            execution_mode = 'sequential'
-            review_mode = [string]$entry.review_mode
-            max_parallel_units = 1
-            units = @($entry)
+    $groupIndex = 0
+    foreach ($group in @($groupedUnits.Values)) {
+        $groupIndex += 1
+        $parallelUnits = @($group.units | Where-Object { $_.parallelizable })
+        $serialUnits = @($group.units | Where-Object { -not $_.parallelizable })
+        if (@($parallelUnits).Count -gt 0) {
+            $steps += [pscustomobject]@{
+                step_id = "{0}-specialist-{1}-group-{2}-parallel" -f $WaveId, $Phase, $groupIndex
+                execution_mode = 'bounded_parallel'
+                review_mode = [string]$parallelUnits[0].review_mode
+                max_parallel_units = [int]$ProfileDef.max_parallel_units
+                phase_id = [string]$group.phase_id
+                stage_order = [int]$group.stage_order
+                stage_type = [string]$group.stage_type
+                stage_label = [string]$group.stage_label
+                units = @($parallelUnits)
+            }
+        }
+
+        $serialIndex = 0
+        foreach ($entry in @($serialUnits)) {
+            $serialIndex += 1
+            $steps += [pscustomobject]@{
+                step_id = "{0}-specialist-{1}-group-{2}-serial-{3}" -f $WaveId, $Phase, $groupIndex, $serialIndex
+                execution_mode = 'sequential'
+                review_mode = [string]$entry.review_mode
+                max_parallel_units = 1
+                phase_id = [string]$group.phase_id
+                stage_order = [int]$group.stage_order
+                stage_type = [string]$group.stage_type
+                stage_label = [string]$group.stage_label
+                units = @($entry)
+            }
         }
     }
 

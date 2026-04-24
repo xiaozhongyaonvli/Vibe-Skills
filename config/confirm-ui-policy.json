@@ -24,8 +24,11 @@
         "进入无人值守",
         "开启无人值守",
         "无人值守模式",
+        "enter\\s+unattended\\s+mode",
+        "enable\\s+unattended",
         "unattended\\s*(on|true|1)",
         "auto\\s*-?\\s*route",
+        "skip\\s+confirmation",
         "自动路由",
         "跳过确认",
         "无需确认"
@@ -34,6 +37,8 @@
         "退出无人值守",
         "关闭无人值守",
         "取消无人值守",
+        "exit\\s+unattended\\s+mode",
+        "disable\\s+unattended",
         "unattended\\s*(off|false|0)"
       ]
     },

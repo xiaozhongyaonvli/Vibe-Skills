@@ -136,13 +136,13 @@ def _build_deep_discovery_advice(repo: RepoContext, prompt_lower: str, grade: st
     question_templates = [str(item) for item in interview_cfg.get("question_templates") or [] if str(item).strip()]
     if not question_templates:
         question_templates = [
-            "你希望这次任务最终交付什么形式（脚本、报告、文档、可运行流程）？",
-            "你最优先的两个能力域是什么：{capabilities}？",
-            "你希望我先做方案确认，再执行，还是直接按当前描述执行？",
+            "What final deliverable shape do you want for this task (script, report, document, page, or runnable workflow)?",
+            "What are the top two capability areas you want me to prioritize: {capabilities}?",
+            "Do you want me to confirm the plan first, or execute directly from the current description?",
         ]
 
     capability_names = [str(item.get("display_name") or "").strip() for item in capability_hits if str(item.get("display_name") or "").strip()]
-    capability_name_text = " / ".join(capability_names) if capability_names else "需求澄清与方案规划 / 工程实现与落地执行"
+    capability_name_text = " / ".join(capability_names) if capability_names else "Requirement clarification and planning / Implementation and execution"
 
     questions: list[str] = []
     for template in question_templates:

@@ -187,6 +187,358 @@ function Get-VibeNestedPropertySafe {
     return $current
 }
 
+function ConvertFrom-VibeHostDecisionJson {
+    param(
+        [AllowEmptyString()] [string]$HostDecisionJson = ''
+    )
+
+    if ([string]::IsNullOrWhiteSpace($HostDecisionJson)) {
+        return $null
+    }
+
+    try {
+        return ($HostDecisionJson | ConvertFrom-Json -ErrorAction Stop)
+    } catch {
+        throw "invalid JSON in -HostDecisionJson"
+    }
+}
+
+function Copy-VibeRecordObject {
+    param(
+        [Parameter(Mandatory)] [object]$InputObject
+    )
+
+    $copy = [pscustomobject]@{}
+    foreach ($property in @($InputObject.PSObject.Properties)) {
+        $copy | Add-Member -NotePropertyName $property.Name -NotePropertyValue $property.Value -Force
+    }
+    return $copy
+}
+
+function Get-VibeNormalizedStringList {
+    param(
+        [AllowNull()] [object]$Values = $null
+    )
+
+    $result = New-Object System.Collections.ArrayList
+    $seen = @{}
+    foreach ($value in @($Values)) {
+        $text = [string]$value
+        if ([string]::IsNullOrWhiteSpace($text)) {
+            continue
+        }
+        if ($seen.ContainsKey($text)) {
+            continue
+        }
+        [void]$result.Add($text)
+        $seen[$text] = $true
+    }
+    return [string[]]$result.ToArray()
+}
+
+function Get-VibeExecutionPhaseContract {
+    param(
+        [AllowNull()] [object]$Policy = $null
+    )
+
+    $phasePolicy = $null
+    if ($null -ne $Policy -and (Test-VibeObjectHasProperty -InputObject $Policy -PropertyName 'host_phase_decomposition_contract')) {
+        $phasePolicy = $Policy.host_phase_decomposition_contract
+    }
+
+    $stageTypeDefaults = [ordered]@{
+        discovery = [pscustomobject]@{
+            dispatch_phase = 'pre_execution'
+            default_stage_label = 'Discovery'
+            default_execution_priority = 10
+        }
+        implementation = [pscustomobject]@{
+            dispatch_phase = 'in_execution'
+            default_stage_label = 'Implementation'
+            default_execution_priority = 50
+        }
+        deliverable = [pscustomobject]@{
+            dispatch_phase = 'post_execution'
+            default_stage_label = 'Deliverable'
+            default_execution_priority = 70
+        }
+        verification = [pscustomobject]@{
+            dispatch_phase = 'verification'
+            default_stage_label = 'Verification'
+            default_execution_priority = 90
+        }
+    }
+
+    $stageTypeLookup = [ordered]@{}
+    $stageTypePolicy = if ($null -ne $phasePolicy -and (Test-VibeObjectHasProperty -InputObject $phasePolicy -PropertyName 'stage_types')) { $phasePolicy.stage_types } else { $null }
+    foreach ($stageTypeName in @($stageTypeDefaults.Keys)) {
+        $defaults = $stageTypeDefaults[$stageTypeName]
+        $override = if ($null -ne $stageTypePolicy -and (Test-VibeObjectHasProperty -InputObject $stageTypePolicy -PropertyName $stageTypeName)) { $stageTypePolicy.$stageTypeName } else { $null }
+        $stageTypeLookup[$stageTypeName] = [pscustomobject]@{
+            stage_type = [string]$stageTypeName
+            dispatch_phase = if ($null -ne $override -and (Test-VibeObjectHasProperty -InputObject $override -PropertyName 'dispatch_phase') -and -not [string]::IsNullOrWhiteSpace([string]$override.dispatch_phase)) { [string]$override.dispatch_phase } else { [string]$defaults.dispatch_phase }
+            default_stage_label = if ($null -ne $override -and (Test-VibeObjectHasProperty -InputObject $override -PropertyName 'default_stage_label') -and -not [string]::IsNullOrWhiteSpace([string]$override.default_stage_label)) { [string]$override.default_stage_label } else { [string]$defaults.default_stage_label }
+            default_execution_priority = if ($null -ne $override -and (Test-VibeObjectHasProperty -InputObject $override -PropertyName 'default_execution_priority') -and $null -ne $override.default_execution_priority) { [int]$override.default_execution_priority } else { [int]$defaults.default_execution_priority }
+        }
+    }
+
+    $defaultStageType = if ($null -ne $phasePolicy -and (Test-VibeObjectHasProperty -InputObject $phasePolicy -PropertyName 'default_stage_type') -and -not [string]::IsNullOrWhiteSpace([string]$phasePolicy.default_stage_type)) {
+        [string]$phasePolicy.default_stage_type
+    } else {
+        'implementation'
+    }
+    if (-not $stageTypeLookup.Contains($defaultStageType)) {
+        $defaultStageType = 'implementation'
+    }
+
+    return [pscustomobject]@{
+        enabled = if ($null -ne $phasePolicy -and (Test-VibeObjectHasProperty -InputObject $phasePolicy -PropertyName 'enabled')) { [bool]$phasePolicy.enabled } else { $true }
+        max_phase_count = if ($null -ne $phasePolicy -and (Test-VibeObjectHasProperty -InputObject $phasePolicy -PropertyName 'max_phase_count') -and $null -ne $phasePolicy.max_phase_count) { [int]$phasePolicy.max_phase_count } else { 6 }
+        default_stage_type = [string]$defaultStageType
+        stage_types = [pscustomobject]$stageTypeLookup
+    }
+}
+
+function Get-VibeExecutionPhaseTypeDefinition {
+    param(
+        [AllowEmptyString()] [string]$StageType = '',
+        [AllowNull()] [object]$Policy = $null
+    )
+
+    $contract = Get-VibeExecutionPhaseContract -Policy $Policy
+    $requestedType = [string]$StageType
+    if ([string]::IsNullOrWhiteSpace($requestedType)) {
+        $requestedType = [string]$contract.default_stage_type
+    }
+    $requestedType = $requestedType.Trim().ToLowerInvariant()
+    if (-not (Test-VibeObjectHasProperty -InputObject $contract.stage_types -PropertyName $requestedType)) {
+        $requestedType = [string]$contract.default_stage_type
+    }
+
+    return $contract.stage_types.$requestedType
+}
+
+function Resolve-VibeHostPhaseDecomposition {
+    param(
+        [AllowNull()] [object]$HostDecision = $null,
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowNull()] [object]$Policy = $null
+    )
+
+    $contract = Get-VibeExecutionPhaseContract -Policy $Policy
+    if (-not [bool]$contract.enabled) {
+        return $null
+    }
+    if ($null -eq $HostDecision -or -not (Test-VibeObjectHasProperty -InputObject $HostDecision -PropertyName 'phase_decomposition')) {
+        return $null
+    }
+
+    $phaseDecomposition = $HostDecision.phase_decomposition
+    if ($null -eq $phaseDecomposition) {
+        return $null
+    }
+    if (-not $phaseDecomposition.PSObject) {
+        throw 'structured host phase decomposition must be a JSON object'
+    }
+    if (-not (Test-VibeObjectHasProperty -InputObject $phaseDecomposition -PropertyName 'phases')) {
+        throw 'structured host phase decomposition must include phases'
+    }
+
+    $rawPhases = @($phaseDecomposition.phases)
+    if (@($rawPhases).Count -eq 0) {
+        throw 'structured host phase decomposition must include at least one phase'
+    }
+    if (@($rawPhases).Count -gt [int]$contract.max_phase_count) {
+        throw ('structured host phase decomposition exceeds max_phase_count `{0}`' -f [int]$contract.max_phase_count)
+    }
+
+    $normalized = @()
+    $seenPhaseIds = @{}
+    $phaseIndex = 0
+    foreach ($phase in @($rawPhases)) {
+        $phaseIndex += 1
+        if ($null -eq $phase -or -not $phase.PSObject) {
+            throw 'each execution phase must be a JSON object'
+        }
+
+        $typeDef = Get-VibeExecutionPhaseTypeDefinition `
+            -StageType $(if (Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'stage_type') { [string]$phase.stage_type } else { '' }) `
+            -Policy $Policy
+        $phaseId = if ((Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'phase_id') -and -not [string]::IsNullOrWhiteSpace([string]$phase.phase_id)) {
+            [string]$phase.phase_id
+        } else {
+            'phase-{0}' -f $phaseIndex
+        }
+        if ($seenPhaseIds.ContainsKey($phaseId)) {
+            throw ('structured host phase decomposition contains duplicate phase_id `{0}`' -f $phaseId)
+        }
+        $seenPhaseIds[$phaseId] = $true
+
+        $stageOrder = if ((Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'stage_order') -and $null -ne $phase.stage_order) {
+            [int]$phase.stage_order
+        } else {
+            [int]($phaseIndex * 10)
+        }
+        $stageLabel = if ((Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'stage_label') -and -not [string]::IsNullOrWhiteSpace([string]$phase.stage_label)) {
+            [string]$phase.stage_label
+        } else {
+            [string]$typeDef.default_stage_label
+        }
+        $goal = if ((Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'goal') -and -not [string]::IsNullOrWhiteSpace([string]$phase.goal)) {
+            [string]$phase.goal
+        } else {
+            [string]$Task
+        }
+
+        $normalized += [pscustomobject]@{
+            phase_id = $phaseId
+            stage_order = [int]$stageOrder
+            stage_type = [string]$typeDef.stage_type
+            stage_label = $stageLabel
+            goal = $goal
+            depends_on = @(Get-VibeNormalizedStringList -Values $(if (Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'depends_on') { $phase.depends_on } else { @() }))
+            artifacts_in = @(Get-VibeNormalizedStringList -Values $(if (Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'artifacts_in') { $phase.artifacts_in } else { @() }))
+            artifacts_out = @(Get-VibeNormalizedStringList -Values $(if (Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'artifacts_out') { $phase.artifacts_out } else { @() }))
+            acceptance_checks = @(Get-VibeNormalizedStringList -Values $(if (Test-VibeObjectHasProperty -InputObject $phase -PropertyName 'acceptance_checks') { $phase.acceptance_checks } else { @() }))
+            dispatch_phase = [string]$typeDef.dispatch_phase
+            default_execution_priority = [int]$typeDef.default_execution_priority
+        }
+    }
+
+    $orderedPhases = @(
+        $normalized |
+            Sort-Object `
+                @{ Expression = { [int]$_.stage_order } }, `
+                @{ Expression = { [string]$_.phase_id } }
+    )
+
+    return [pscustomobject]@{
+        protocol_version = if ((Test-VibeObjectHasProperty -InputObject $phaseDecomposition -PropertyName 'protocol_version') -and -not [string]::IsNullOrWhiteSpace([string]$phaseDecomposition.protocol_version)) { [string]$phaseDecomposition.protocol_version } else { 'v1' }
+        derived_by = if ((Test-VibeObjectHasProperty -InputObject $phaseDecomposition -PropertyName 'derived_by') -and -not [string]::IsNullOrWhiteSpace([string]$phaseDecomposition.derived_by)) { [string]$phaseDecomposition.derived_by } else { 'host' }
+        mode = if ((Test-VibeObjectHasProperty -InputObject $phaseDecomposition -PropertyName 'mode') -and -not [string]::IsNullOrWhiteSpace([string]$phaseDecomposition.mode)) { [string]$phaseDecomposition.mode } elseif (@($orderedPhases).Count -gt 1) { 'multi_phase' } else { 'single_phase' }
+        phase_count = @($orderedPhases).Count
+        phases = @($orderedPhases)
+    }
+}
+
+function Get-VibeExecutionPhaseBindingForRecord {
+    param(
+        [AllowNull()] [object]$PhaseDecomposition = $null,
+        [AllowNull()] [object]$Record = $null
+    )
+
+    if (
+        $null -eq $PhaseDecomposition -or
+        -not (Test-VibeObjectHasProperty -InputObject $PhaseDecomposition -PropertyName 'phases') -or
+        @($PhaseDecomposition.phases).Count -eq 0 -or
+        $null -eq $Record
+    ) {
+        return $null
+    }
+
+    $phaseId = if ((Test-VibeObjectHasProperty -InputObject $Record -PropertyName 'phase_id') -and -not [string]::IsNullOrWhiteSpace([string]$Record.phase_id)) {
+        [string]$Record.phase_id
+    } else {
+        $null
+    }
+    if (-not [string]::IsNullOrWhiteSpace($phaseId)) {
+        foreach ($phase in @($PhaseDecomposition.phases)) {
+            if ([string]$phase.phase_id -eq $phaseId) {
+                return $phase
+            }
+        }
+    }
+
+    $dispatchPhase = if ((Test-VibeObjectHasProperty -InputObject $Record -PropertyName 'dispatch_phase') -and -not [string]::IsNullOrWhiteSpace([string]$Record.dispatch_phase)) {
+        [string]$Record.dispatch_phase
+    } else {
+        'in_execution'
+    }
+    $matchingPhases = @($PhaseDecomposition.phases | Where-Object { [string]$_.dispatch_phase -eq $dispatchPhase })
+    if (@($matchingPhases).Count -eq 0) {
+        $matchingPhases = @($PhaseDecomposition.phases)
+    }
+    if (@($matchingPhases).Count -eq 0) {
+        return $null
+    }
+
+    return @(
+        $matchingPhases |
+            Sort-Object `
+                @{ Expression = { [int]$_.stage_order } }, `
+                @{ Expression = { [string]$_.phase_id } }
+    )[0]
+}
+
+function Add-VibeExecutionPhaseMetadataToRecords {
+    param(
+        [AllowNull()] [object[]]$Records = @(),
+        [AllowNull()] [object]$PhaseDecomposition = $null
+    )
+
+    if ($null -eq $PhaseDecomposition -or @($Records).Count -eq 0) {
+        return @($Records)
+    }
+
+    $annotated = @()
+    foreach ($record in @($Records)) {
+        if ($null -eq $record) {
+            continue
+        }
+
+        $copy = Copy-VibeRecordObject -InputObject $record
+        $phase = Get-VibeExecutionPhaseBindingForRecord -PhaseDecomposition $PhaseDecomposition -Record $copy
+        if ($null -ne $phase) {
+            $copy | Add-Member -NotePropertyName phase_id -NotePropertyValue ([string]$phase.phase_id) -Force
+            $copy | Add-Member -NotePropertyName stage_order -NotePropertyValue ([int]$phase.stage_order) -Force
+            $copy | Add-Member -NotePropertyName stage_type -NotePropertyValue ([string]$phase.stage_type) -Force
+            $copy | Add-Member -NotePropertyName stage_label -NotePropertyValue ([string]$phase.stage_label) -Force
+            if (-not ((Test-VibeObjectHasProperty -InputObject $copy -PropertyName 'dispatch_phase') -and -not [string]::IsNullOrWhiteSpace([string]$copy.dispatch_phase))) {
+                $copy | Add-Member -NotePropertyName dispatch_phase -NotePropertyValue ([string]$phase.dispatch_phase) -Force
+            }
+        }
+        $annotated += $copy
+    }
+
+    return @($annotated)
+}
+
+function Get-VibeExecutionPhaseMarkdownLines {
+    param(
+        [AllowNull()] [object]$PhaseDecomposition = $null
+    )
+
+    if (
+        $null -eq $PhaseDecomposition -or
+        -not (Test-VibeObjectHasProperty -InputObject $PhaseDecomposition -PropertyName 'phases') -or
+        @($PhaseDecomposition.phases).Count -eq 0
+    ) {
+        return @()
+    }
+
+    $lines = @(
+        '- Host execution-phase decomposition remains subordinate to the single governed requirement and plan surfaces.',
+        '- These phases guide specialist ordering inside `plan_execute`; they do not create a second runtime, second plan, or second approval ladder.'
+    )
+    foreach ($phase in @($PhaseDecomposition.phases)) {
+        $goal = if ([string]::IsNullOrWhiteSpace([string]$phase.goal)) { 'No explicit phase goal recorded.' } else { [string]$phase.goal }
+        $dependsOn = if (@($phase.depends_on).Count -gt 0) { [string]::Join(', ', @($phase.depends_on)) } else { 'none' }
+        $artifactsIn = if (@($phase.artifacts_in).Count -gt 0) { [string]::Join(', ', @($phase.artifacts_in)) } else { 'none' }
+        $artifactsOut = if (@($phase.artifacts_out).Count -gt 0) { [string]::Join(', ', @($phase.artifacts_out)) } else { 'none' }
+        $acceptanceChecks = if (@($phase.acceptance_checks).Count -gt 0) { [string]::Join(', ', @($phase.acceptance_checks)) } else { 'none' }
+        $lines += @(
+            ('- Phase `{0}` [{1} -> {2}] order `{3}`: {4}' -f [string]$phase.phase_id, [string]$phase.stage_type, [string]$phase.dispatch_phase, [int]$phase.stage_order, [string]$phase.stage_label),
+            ('  Goal: {0}' -f $goal),
+            ('  Depends on: {0}' -f $dependsOn),
+            ('  Artifacts in: {0}' -f $artifactsIn),
+            ('  Artifacts out: {0}' -f $artifactsOut),
+            ('  Acceptance checks: {0}' -f $acceptanceChecks)
+        )
+    }
+
+    return @($lines)
+}
+
 function New-VibeHostAdapterIdentityProjection {
     param(
         [AllowNull()] [object]$HostAdapter,
@@ -1095,6 +1447,7 @@ function New-VibeRuntimeInputPacketProjection {
         [bool]$Unattended = $false,
         [AllowEmptyString()] [string]$RouterScriptPath = '',
         [AllowEmptyString()] [string]$RuntimeSelectedSkill = 'vibe',
+        [AllowNull()] [object]$ExecutionPhaseDecomposition = $null,
         [AllowNull()] [object[]]$SpecialistRecommendations = @(),
         [Parameter(Mandatory)] [object]$SpecialistDispatch,
         [AllowNull()] [object[]]$OverlayDecisions = @(),
@@ -1151,6 +1504,9 @@ function New-VibeRuntimeInputPacketProjection {
             host_id = if ([string]::IsNullOrWhiteSpace($RouterHostId)) { $null } else { [string]$RouterHostId }
             target_root = if ([string]::IsNullOrWhiteSpace($RouterTargetRoot)) { $null } else { [string]$RouterTargetRoot }
             unattended = [bool]$Unattended
+            host_decision_applied = if ($RouteResult.PSObject.Properties.Name -contains 'structured_host_route_decision' -and $RouteResult.structured_host_route_decision) { [bool]$RouteResult.structured_host_route_decision.applied } else { $false }
+            host_decision_kind = if ($RouteResult.PSObject.Properties.Name -contains 'structured_host_route_decision' -and $RouteResult.structured_host_route_decision) { [string]$RouteResult.structured_host_route_decision.decision_kind } else { $null }
+            host_decision_action = if ($RouteResult.PSObject.Properties.Name -contains 'structured_host_route_decision' -and $RouteResult.structured_host_route_decision) { [string]$RouteResult.structured_host_route_decision.decision_action } else { $null }
             route_script_path = if ([string]::IsNullOrWhiteSpace($RouterScriptPath)) { $null } else { [string]$RouterScriptPath }
         }
         host_adapter = (New-VibeRuntimeHostAdapterProjection -Runtime $Runtime -FallbackHostId $RouterHostId -TargetRoot $RouterTargetRoot)
@@ -1167,9 +1523,13 @@ function New-VibeRuntimeInputPacketProjection {
             fallback_active = [bool]$RouteResult.fallback_active
             hazard_alert_required = [bool]$RouteResult.hazard_alert_required
             unattended_override_applied = [bool]$RouteResult.unattended_override_applied
+            host_decision_applied = if ($RouteResult.PSObject.Properties.Name -contains 'structured_host_route_decision' -and $RouteResult.structured_host_route_decision) { [bool]$RouteResult.structured_host_route_decision.applied } else { $false }
+            host_decision_action = if ($RouteResult.PSObject.Properties.Name -contains 'structured_host_route_decision' -and $RouteResult.structured_host_route_decision) { [string]$RouteResult.structured_host_route_decision.decision_action } else { $null }
+            host_selected_skill = if ($RouteResult.PSObject.Properties.Name -contains 'structured_host_route_decision' -and $RouteResult.structured_host_route_decision) { [string]$RouteResult.structured_host_route_decision.selected_skill } else { $null }
             custom_admission_status = if ($RouteResult.PSObject.Properties.Name -contains 'custom_admission' -and $RouteResult.custom_admission) { [string]$RouteResult.custom_admission.status } else { $null }
         }
         custom_admission = $customAdmission
+        execution_phase_decomposition = $ExecutionPhaseDecomposition
         specialist_recommendations = @($SpecialistRecommendations)
         specialist_dispatch = [pscustomobject]@{
             approved_dispatch = [object[]]@($SpecialistDispatch.approved_dispatch)
@@ -1429,6 +1789,16 @@ function New-VibeBoundedReturnControlProjection {
         'xl_plan' { 'plan_confirmation' }
         default { 'user_reentry_confirmation' }
     }
+    $allowedDecisionActions = switch ([string]$terminalStage) {
+        'requirement_doc' { @('approve', 'approve_requirement', 'approve_requirement_doc', 'approve_requirements') }
+        'xl_plan' { @('approve', 'approve_plan', 'approve_execution_plan', 'request_execute') }
+        default { @('approve') }
+    }
+    $preferredDecisionAction = switch ([string]$terminalStage) {
+        'requirement_doc' { 'approve_requirement' }
+        'xl_plan' { 'approve_plan' }
+        default { 'approve' }
+    }
     $approvalPrompt = switch ([string]$terminalStage) {
         'requirement_doc' {
             'Review the frozen requirement document with the user and wait for an explicit approve/revise reply before planning. Do not auto-continue into `xl_plan` in the same assistant turn.'
@@ -1441,17 +1811,19 @@ function New-VibeBoundedReturnControlProjection {
         }
     }
     $token = [guid]::NewGuid().ToString('N')
-    $renderedLines = @(
-        'Bounded governed stop reached. Return control to the user now.',
-        ('- terminal stage: `{0}`' -f [string]$terminalStage),
-        ('- source run id: `{0}`' -f [string]$RunId),
-        ('- explicit user re-entry required before later stages: `true`'),
-        ('- allowed follow-up entries: `{0}`' -f (@($allowedFollowupEntryIds) -join '`, `')),
-        ('- next governed stage after approval: `{0}`' -f $(if ([string]::IsNullOrWhiteSpace($nextStage)) { 'none' } else { [string]$nextStage })),
-        ('- approval kind: `{0}`' -f [string]$approvalKind),
-        ('- approval instruction: {0}' -f [string]$approvalPrompt),
-        ('- continuation token: `{0}`' -f [string]$token)
-    )
+        $renderedLines = @(
+            'Bounded governed stop reached. Return control to the user now.',
+            ('- terminal stage: `{0}`' -f [string]$terminalStage),
+            ('- source run id: `{0}`' -f [string]$RunId),
+            ('- explicit user re-entry required before later stages: `true`'),
+            ('- allowed follow-up entries: `{0}`' -f (@($allowedFollowupEntryIds) -join '`, `')),
+            ('- next governed stage after approval: `{0}`' -f $(if ([string]::IsNullOrWhiteSpace($nextStage)) { 'none' } else { [string]$nextStage })),
+            ('- approval kind: `{0}`' -f [string]$approvalKind),
+            ('- preferred structured approval action: `{0}`' -f [string]$preferredDecisionAction),
+            ('- approval instruction: {0}' -f [string]$approvalPrompt),
+            '- the host may translate the user''s natural-language approval into a structured decision; exact keywords are not required',
+            ('- continuation token: `{0}`' -f [string]$token)
+        )
 
     return [pscustomobject]@{
         protocol_version = 'v1'
@@ -1465,6 +1837,21 @@ function New-VibeBoundedReturnControlProjection {
         next_stage = if ([string]::IsNullOrWhiteSpace($nextStage)) { $null } else { [string]$nextStage }
         approval_kind = [string]$approvalKind
         approval_prompt = [string]$approvalPrompt
+        host_decision_contract = [pscustomobject]@{
+            protocol_version = 'v1'
+            decision_kind = 'approval_response'
+            decision_context = 'bounded_stage_reentry'
+            pending_terminal_stage = [string]$terminalStage
+            next_stage = if ([string]::IsNullOrWhiteSpace($nextStage)) { $null } else { [string]$nextStage }
+            approval_kind = [string]$approvalKind
+            allowed_decision_actions = @($allowedDecisionActions)
+            preferred_decision_action = [string]$preferredDecisionAction
+            preferred_payload = [pscustomobject]@{
+                decision_kind = 'approval_response'
+                decision_action = [string]$preferredDecisionAction
+                approval_decision = 'approve'
+            }
+        }
         allowed_followup_entry_ids = @($allowedFollowupEntryIds)
         reentry_token = $token
         rendered_text = (@($renderedLines) -join "`n")
@@ -2894,6 +3281,23 @@ function New-VibeHostUserBriefingProjection {
         } else {
             'Return control to the user and wait for an explicit follow-up before continuing.'
         }
+        $hostDecisionContract = if (
+            (Test-VibeObjectHasProperty -InputObject $BoundedReturnControl -PropertyName 'host_decision_contract') -and
+            $null -ne $BoundedReturnControl.host_decision_contract
+        ) {
+            $BoundedReturnControl.host_decision_contract
+        } else {
+            $null
+        }
+        $preferredDecisionAction = if (
+            $hostDecisionContract -and
+            $hostDecisionContract.PSObject.Properties.Name -contains 'preferred_decision_action' -and
+            -not [string]::IsNullOrWhiteSpace([string]$hostDecisionContract.preferred_decision_action)
+        ) {
+            [string]$hostDecisionContract.preferred_decision_action
+        } else {
+            'approve'
+        }
         $boundedLines = @(
             'Bounded governed stop reached. Return control to the user now.',
             ('- terminal stage: `{0}`' -f [string]$BoundedReturnControl.terminal_stage),
@@ -2901,6 +3305,7 @@ function New-VibeHostUserBriefingProjection {
             ('- allowed follow-up entries: `{0}`' -f (@($allowedFollowupEntryIds) -join '`, `')),
             ('- next governed stage after approval: `{0}`' -f $(if ($nextStage) { $nextStage } else { 'none' })),
             ('- approval kind: `{0}`' -f [string]$approvalKind),
+            ('- preferred structured approval action: `{0}`' -f [string]$preferredDecisionAction),
             ('- approval instruction: {0}' -f [string]$approvalPrompt),
             '- do not continue in the same assistant turn; wait for a new user message before consuming re-entry credentials',
             '- if you intentionally continue, forward `--continue-from-run-id <source_run_id>` and `--bounded-reentry-token <reentry_token>` from the latest runtime summary'
@@ -2921,6 +3326,7 @@ function New-VibeHostUserBriefingProjection {
             next_stage = $nextStage
             approval_kind = $approvalKind
             approval_prompt = $approvalPrompt
+            host_decision_contract = $hostDecisionContract
             allowed_followup_entry_ids = @($allowedFollowupEntryIds)
         }
         $segments.Add($boundedSegment) | Out-Null

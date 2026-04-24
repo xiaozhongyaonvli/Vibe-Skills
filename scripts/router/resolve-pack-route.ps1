@@ -8,6 +8,8 @@
     [string]$RequestedSkill,
     [string]$HostId,
     [string]$TargetRoot,
+    [AllowEmptyString()]
+    [string]$HostDecisionJson = "",
     [switch]$Probe,
     [string]$ProbeLabel,
     [string]$ProbeOutputDir,
@@ -1394,8 +1396,8 @@ $hazardAlert = if ($hazardAlertRequired) {
         title = if ($fallbackGovernance -and $fallbackGovernance.hazard_alert_title) { [string]$fallbackGovernance.hazard_alert_title } else { 'FALLBACK HAZARD ALERT' }
         severity = if ($fallbackGovernance -and $fallbackGovernance.hazard_alert_severity) { [string]$fallbackGovernance.hazard_alert_severity } else { 'critical' }
         reason = $hazardReason
-        message = if ($fallbackGovernance -and $fallbackGovernance.hazard_summary) { [string]$fallbackGovernance.hazard_summary } else { '当前结果来自回退或退化路径，不等价于标准成功。继续使用可能在不自知的情况下承受功能退化、验证强度下降或可靠性下降。' }
-        recovery_action = if ($fallbackGovernance -and $fallbackGovernance.hazard_recovery_action) { [string]$fallbackGovernance.hazard_recovery_action } else { '如需 authoritative 结果，请先修复主路径能力或补齐依赖后重新执行。' }
+        message = if ($fallbackGovernance -and $fallbackGovernance.hazard_summary) { [string]$fallbackGovernance.hazard_summary } else { 'This result came from a fallback or degraded path and is not equivalent to standard success. Continuing may expose you to reduced functionality, weaker verification, or lower reliability without an obvious warning.' }
+        recovery_action = if ($fallbackGovernance -and $fallbackGovernance.hazard_recovery_action) { [string]$fallbackGovernance.hazard_recovery_action } else { 'If you need an authoritative result, restore the primary path capability or missing dependency first, then rerun.' }
         manual_review_required = if ($fallbackGovernance -and $fallbackGovernance.truth_contract -and $fallbackGovernance.truth_contract.manual_review_required -ne $null) { [bool]$fallbackGovernance.truth_contract.manual_review_required } else { $true }
     }
 } else {
@@ -1536,6 +1538,40 @@ $confirmSkillOptions = Build-ConfirmSkillOptions `
     -SkillPromotionPolicy $skillPromotionPolicy `
     -TargetRoot $resolvedTargetRoot `
     -HostId $HostId
+$structuredRouteDecision = Resolve-StructuredRouteDecision -HostDecisionJson $HostDecisionJson -ConfirmSkillOptions $confirmSkillOptions
+if ($structuredRouteDecision -and [bool]$structuredRouteDecision.applied) {
+    if ($result.selected) {
+        $result.selected.pack_id = [string]$structuredRouteDecision.selected_pack
+        $result.selected.skill = [string]$structuredRouteDecision.selected_skill
+        $result.selected.selection_reason = "structured_host_route_selection"
+        if (
+            $structuredRouteDecision.selected_option -and
+            $structuredRouteDecision.selected_option.PSObject.Properties.Name -contains 'score' -and
+            $null -ne $structuredRouteDecision.selected_option.score
+        ) {
+            $result.selected.selection_score = [double]$structuredRouteDecision.selected_option.score
+        }
+    }
+    if ([string]$result.route_mode -in @('confirm_required', 'pack_overlay')) {
+        $result.route_mode = 'pack_overlay'
+        $result.route_reason = 'structured_host_route_selection'
+    }
+    $result | Add-Member -NotePropertyName "structured_host_route_decision" -NotePropertyValue ([pscustomobject]@{
+        applied = $true
+        decision_kind = [string]$structuredRouteDecision.decision_kind
+        decision_action = [string]$structuredRouteDecision.decision_action
+        selected_pack = [string]$structuredRouteDecision.selected_pack
+        selected_skill = [string]$structuredRouteDecision.selected_skill
+    }) -Force
+    $confirmSkillOptions = Build-ConfirmSkillOptions `
+        -Result $result `
+        -ConfirmUiPolicy $confirmUiPolicyResolved `
+        -RepoRoot ([string]$repoRoot) `
+        -PromptText $Prompt `
+        -SkillPromotionPolicy $skillPromotionPolicy `
+        -TargetRoot $resolvedTargetRoot `
+        -HostId $HostId
+}
 if ($confirmSkillOptions) {
     $confirmText = Build-ConfirmUiText -ConfirmSkillOptions $confirmSkillOptions -UnattendedDecision $unattendedDecision -Result $result
     $confirmClarificationQuestions = @(Get-ConfirmUiClarificationQuestions -Result $result)
@@ -1544,6 +1580,7 @@ if ($confirmSkillOptions) {
         pack_id = [string]$confirmSkillOptions.selected_pack
         selected_skill = [string]$confirmSkillOptions.selected_skill
         options = @($confirmSkillOptions.options)
+        route_decision_contract = $confirmSkillOptions.route_decision_contract
         clarification_questions = @($confirmClarificationQuestions)
         rendered_text = $confirmText
         hazard_alert_required = [bool]$result.hazard_alert_required

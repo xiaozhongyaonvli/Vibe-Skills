@@ -168,6 +168,14 @@ Runtime mode: only `interactive_governed` is supported. The system asks high-val
 
 If a canonical run returns `bounded_return_control.explicit_user_reentry_required = true`, stop in the current assistant turn and hand control back to the user. Do not consume the returned re-entry credentials until a later user message explicitly approves or revises the frozen requirement/plan boundary.
 
+Structured host decision SOP:
+- Do not ask the user to repeat magic words such as `approve`, `continue`, `1`, or `enter unattended mode` just to satisfy routing or bounded re-entry.
+- For complex or obviously multi-part work, the host should decompose the task into execution phases before launch. Keep that decomposition inside `--host-decision-json -> phase_decomposition` so canonical `vibe` can freeze it under the single requirement/plan surface. Do not create a second runtime, second requirement doc, or second plan.
+- For routing confirmation, inspect the returned machine-readable route contract under `runtime-summary.json -> host_user_briefing.route_decision_contract` when present. Convert the user's natural-language reply into a structured route decision and relaunch canonical `vibe` with `--host-decision-json`.
+- For bounded stage re-entry, inspect `runtime-summary.json -> bounded_return_control.host_decision_contract` when present. Convert the user's natural-language approval or revision into a structured decision and relaunch canonical `vibe` with `--host-decision-json`, `--continue-from-run-id`, and `--bounded-reentry-token`.
+- Route decisions must stay inside the surfaced confirm options. Bounded stage approvals must stay inside the surfaced approval action contract. Runtime validation remains authoritative.
+- Keep the task context stable across re-entry. Do not reduce the next canonical launch prompt to the user's short approval text alone when the governed task context is already known.
+
 Discoverable wrapper labels may request an earlier terminal stage (that changes where the run stops, not which runtime owns authority):
 - `Vibe: What Do I Want?` -> `requirement_doc`
 - `Vibe: How Do We Do It?` -> `xl_plan`

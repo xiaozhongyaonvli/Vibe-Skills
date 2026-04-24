@@ -6,6 +6,7 @@
     [AllowEmptyString()] [string]$EntryIntentId = '',
     [AllowEmptyString()] [string]$RequestedStageStop = '',
     [AllowEmptyString()] [string]$RequestedGradeFloor = '',
+    [AllowEmptyString()] [string]$HostDecisionJson = '',
     [AllowEmptyString()] [string]$GovernanceScope = '',
     [AllowEmptyString()] [string]$RootRunId = '',
     [AllowEmptyString()] [string]$ParentRunId = '',
@@ -181,21 +182,36 @@ function Get-VibeSpecialistBindingProfile {
     }
 
     if ($profiles) {
+        $profilePriority = @{
+            planning = 40
+            deliverable = 30
+            verification = 20
+            implementation = 10
+        }
+        $bestMatchScore = 0
+        $bestPriority = -1
         foreach ($profileName in @('planning', 'implementation', 'deliverable', 'verification')) {
             if (-not ($profiles.PSObject.Properties.Name -contains $profileName)) {
                 continue
             }
             $profile = $profiles.$profileName
+            $matchScore = 0
             foreach ($pattern in @($profile.match_skill_patterns)) {
                 $regex = [string]$pattern
                 if (-not [string]::IsNullOrWhiteSpace($regex) -and $SkillId -match $regex) {
-                    $selectedProfileName = $profileName
-                    $selectedProfile = $profile
-                    break
+                    $matchScore += 1
                 }
             }
-            if ($selectedProfileName -ne 'default') {
-                break
+            if ($matchScore -le 0) {
+                continue
+            }
+
+            $priority = if ($profilePriority.ContainsKey($profileName)) { [int]$profilePriority[$profileName] } else { 0 }
+            if ($matchScore -gt $bestMatchScore -or ($matchScore -eq $bestMatchScore -and $priority -gt $bestPriority)) {
+                $selectedProfileName = $profileName
+                $selectedProfile = $profile
+                $bestMatchScore = $matchScore
+                $bestPriority = $priority
             }
         }
     }
@@ -714,6 +730,8 @@ if ([string]::IsNullOrWhiteSpace($RunId)) {
 
 $sessionRoot = Ensure-VibeSessionRoot -RepoRoot $runtime.repo_root -RunId $RunId -Runtime $runtime -ArtifactRoot $ArtifactRoot
 $policy = $runtime.runtime_input_packet_policy
+$hostDecision = ConvertFrom-VibeHostDecisionJson -HostDecisionJson $HostDecisionJson
+$executionPhaseDecomposition = Resolve-VibeHostPhaseDecomposition -HostDecision $hostDecision -Task $Task -Policy $policy
 $effectiveRequestedStageStop = Resolve-VibeEntryRequestedStageStop `
     -RepoRoot $runtime.repo_root `
     -EntryIntentId $EntryIntentId `
@@ -750,6 +768,9 @@ $routeArgs = @(
 )
 if (-not [string]::IsNullOrWhiteSpace([string]$requestedSkill)) {
     $routeArgs += @('-RequestedSkill', [string]$requestedSkill)
+}
+if (-not [string]::IsNullOrWhiteSpace([string]$HostDecisionJson)) {
+    $routeArgs += @('-HostDecisionJson', [string]$HostDecisionJson)
 }
 if ($unattended) {
     $routeArgs += '-Unattended'
@@ -789,6 +810,9 @@ $specialistRecommendations = @(Get-VibeSpecialistRecommendations `
     -PromotionPolicy $runtime.skill_promotion_policy `
     -TargetRoot $routerTargetRoot `
     -HostId $routerHostId)
+$specialistRecommendations = @(Add-VibeExecutionPhaseMetadataToRecords `
+    -Records @($specialistRecommendations) `
+    -PhaseDecomposition $executionPhaseDecomposition)
 $matchedSkillIds = @()
 if (-not [string]::IsNullOrWhiteSpace($routerSelectedSkill) -and -not [string]::Equals($routerSelectedSkill, $runtimeSelectedSkill, [System.StringComparison]::OrdinalIgnoreCase)) {
     $matchedSkillIds += [string]$routerSelectedSkill
@@ -828,6 +852,7 @@ $packet = New-VibeRuntimeInputPacketProjection `
     -Unattended ([bool]$unattended) `
     -RouterScriptPath $routerScriptPath `
     -RuntimeSelectedSkill $runtimeSelectedSkill `
+    -ExecutionPhaseDecomposition $executionPhaseDecomposition `
     -SpecialistRecommendations @($specialistRecommendations) `
     -SpecialistDispatch $specialistDispatch `
     -OverlayDecisions @($overlayDecisions) `

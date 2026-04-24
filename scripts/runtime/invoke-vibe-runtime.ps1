@@ -6,6 +6,7 @@ param(
     [AllowEmptyString()] [string]$EntryIntentId = '',
     [AllowEmptyString()] [string]$RequestedStageStop = '',
     [AllowEmptyString()] [string]$RequestedGradeFloor = '',
+    [AllowEmptyString()] [string]$HostDecisionJson = '',
     [AllowEmptyString()] [string]$GovernanceScope = '',
     [AllowEmptyString()] [string]$RootRunId = '',
     [AllowEmptyString()] [string]$ParentRunId = '',
@@ -311,6 +312,7 @@ $freezeArgs = @{
     EntryIntentId = $EntryIntentId
     RequestedStageStop = $RequestedStageStop
     RequestedGradeFloor = $RequestedGradeFloor
+    HostDecisionJson = $HostDecisionJson
     ApprovedSpecialistSkillIds = $ApprovedSpecialistSkillIds
 }
 foreach ($key in @($hierarchyArgs.Keys)) {
@@ -399,6 +401,7 @@ if ($confirmRequired) {
         selected_skill = Get-VibeNestedPropertySafe -InputObject $runtimeInputPacket -PropertyPath @('route_snapshot', 'selected_skill') -DefaultValue $null
         clarification_questions = if ($confirmUi -and $confirmUi.PSObject.Properties.Name -contains 'clarification_questions') { @($confirmUi.clarification_questions) } else { @() }
         options = if ($confirmUi -and $confirmUi.PSObject.Properties.Name -contains 'options') { @($confirmUi.options) } else { @() }
+        route_decision_contract = if ($confirmUi -and $confirmUi.PSObject.Properties.Name -contains 'route_decision_contract') { $confirmUi.route_decision_contract } else { $null }
         rendered_text = $confirmRenderedText
     }
     $hostUserBriefingPath = Get-VibeHostUserBriefingPath -SessionRoot ([string]$skeleton.session_root)

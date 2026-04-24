@@ -6,14 +6,56 @@ from .router_contract_support import RepoContext, read_skill_descriptor
 
 
 # UI string constants for confirm UI rendering
-CONFIRM_UI_BATCH_PROMPT = "请尽量一次性回答下面问题；能合并回答的内容可以放在同一条消息里："  # noqa: RUF001
-CONFIRM_UI_ROUTE_PREFIX = "路由需要确认：当前命中候选包"  # noqa: RUF001
-CONFIRM_UI_ROUTE_OVERLAY_PREFIX = "路由已生成候选技能：当前主选包"  # noqa: RUF001
-CONFIRM_UI_COMBINED_INSTRUCTION = "你可以在同一条回复里同时回答上面的问题，并输入序号或 `$<skill>` 来指定技能。若不指定，宿主可采用当前主选。"  # noqa: RUF001
-CONFIRM_UI_SIMPLE_INSTRUCTION = "回复序号或 `$<skill>` 来明确选择。若不指定，宿主可采用当前主选。"
+CONFIRM_UI_BATCH_PROMPT = "Please answer the following questions in one reply when possible:"  # noqa: RUF001
+CONFIRM_UI_ROUTE_PREFIX = "Routing confirmation required: current candidate pack"  # noqa: RUF001
+CONFIRM_UI_ROUTE_OVERLAY_PREFIX = "Routing suggested candidate skills: current primary pack"  # noqa: RUF001
+CONFIRM_UI_COMBINED_INSTRUCTION = "You can answer the questions above and select a skill in the same reply by entering an option number or `$<skill>`. If you do not specify one, the host may use the current primary choice."  # noqa: RUF001
+CONFIRM_UI_SIMPLE_INSTRUCTION = "Reply with an option number or `$<skill>` to make the selection explicit. If you do not specify one, the host may use the current primary choice."
 
 # Deep discovery first question template (from deep-discovery-policy.json)
-DEEP_DISCOVERY_FIRST_QUESTION = "你希望这次任务最终交付什么形式"
+DEEP_DISCOVERY_FIRST_QUESTION = "What final deliverable shape do you want"
+
+
+def _build_route_decision_contract(
+    *,
+    selected_pack: str,
+    selected_skill: str,
+    options: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "protocol_version": "v1",
+        "decision_kind": "route_selection",
+        "decision_context": "routing_confirmation",
+        "selected_pack": selected_pack,
+        "primary_skill": selected_skill,
+        "allowed_decision_actions": ["accept_primary", "select_skill"],
+        "allowed_skill_ids": [
+            str(option.get("skill") or "").strip()
+            for option in options
+            if str(option.get("skill") or "").strip()
+        ],
+        "options": [
+            {
+                "option_id": option.get("option_id"),
+                "skill": option.get("skill"),
+                "pack_id": option.get("pack_id"),
+                "is_primary": bool(option.get("is_primary")),
+            }
+            for option in options
+        ],
+        "preferred_payload": {
+            "decision_kind": "route_selection",
+            "decision_action": "accept_primary",
+            "selected_pack": selected_pack,
+            "selected_skill": selected_skill,
+        },
+        "selection_payload_template": {
+            "decision_kind": "route_selection",
+            "decision_action": "select_skill",
+            "selected_pack": selected_pack,
+            "selected_skill": "<allowed-skill>",
+        },
+    }
 
 
 def _collect_clarification_questions(route_result: dict[str, Any], max_items: int = 6) -> list[str]:
@@ -82,6 +124,7 @@ def build_confirm_ui(repo: RepoContext, route_result: dict[str, Any], target_roo
                 "option_id": index,
                 "skill": row["skill"],
                 "pack_id": selected["pack_id"],
+                "is_primary": str(row["skill"] or "").strip() == str(selected["skill"] or "").strip(),
                 "score": row.get("score"),
                 "description": descriptor["description"],
                 "skill_md_path": descriptor["skill_md_path"],
@@ -94,7 +137,7 @@ def build_confirm_ui(repo: RepoContext, route_result: dict[str, Any], target_roo
         rendered.append(str(hazard.get("title") or "FALLBACK HAZARD ALERT"))
         rendered.append(str(hazard.get("message") or "This result came from a fallback or degraded path and is not equivalent to standard success."))
         if hazard.get("reason"):
-            rendered.append(f"触发原因：`{hazard['reason']}`。")  # noqa: RUF001
+            rendered.append(f"Trigger reason: `{hazard['reason']}`.")  # noqa: RUF001
         if hazard.get("recovery_action"):
             rendered.append(str(hazard["recovery_action"]))
         rendered.append("")
@@ -104,7 +147,7 @@ def build_confirm_ui(repo: RepoContext, route_result: dict[str, Any], target_roo
             rendered.append(f"Q{index}. {question}")
         rendered.append("")
     route_prefix = CONFIRM_UI_ROUTE_PREFIX if route_result.get("route_mode") == "confirm_required" else CONFIRM_UI_ROUTE_OVERLAY_PREFIX
-    rendered.append(f"{route_prefix} `{selected['pack_id']}`。")
+    rendered.append(f"{route_prefix} `{selected['pack_id']}`.")
     for option in options:
         score = option["score"]
         score_text = f" (score={round(float(score), 4)})" if score is not None else ""
@@ -116,12 +159,18 @@ def build_confirm_ui(repo: RepoContext, route_result: dict[str, Any], target_roo
         rendered.append(CONFIRM_UI_COMBINED_INSTRUCTION)
     else:
         rendered.append(CONFIRM_UI_SIMPLE_INSTRUCTION)
+    rendered.append("The host may translate your natural-language reply into a structured route decision. Fixed keywords are not required.")
 
     return {
         "enabled": True,
         "pack_id": selected["pack_id"],
         "selected_skill": selected["skill"],
         "options": options,
+        "route_decision_contract": _build_route_decision_contract(
+            selected_pack=str(selected["pack_id"]),
+            selected_skill=str(selected["skill"]),
+            options=options,
+        ),
         "clarification_questions": clarification_questions,
         "rendered_text": "\n".join(rendered),
         "hazard_alert_required": bool(route_result.get("hazard_alert_required")),

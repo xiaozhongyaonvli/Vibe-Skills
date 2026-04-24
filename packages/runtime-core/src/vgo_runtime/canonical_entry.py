@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import json
@@ -46,6 +47,24 @@ REQUIRED_TRUTH_PACKET_FIELDS = (
     "specialist_dispatch",
     "divergence_shadow",
 )
+STRUCTURED_REENTRY_APPROVAL_ACTIONS: dict[str, frozenset[str]] = {
+    "requirement_doc": frozenset(
+        {
+            "approve",
+            "approve_requirement",
+            "approve_requirement_doc",
+            "approve_requirements",
+        }
+    ),
+    "xl_plan": frozenset(
+        {
+            "approve",
+            "approve_plan",
+            "approve_execution_plan",
+            "request_execute",
+        }
+    ),
+}
 
 
 @dataclass(slots=True)
@@ -296,6 +315,64 @@ def _load_intent_contract_from_artifacts(artifacts: dict[str, Any]) -> dict[str,
     return _load_json_dict_if_exists(Path(intent_contract_path))
 
 
+def _load_runtime_input_packet_from_summary(summary_path: Path | None) -> dict[str, Any] | None:
+    """Best-effort load of the prior runtime packet from a bounded summary."""
+    if summary_path is None or not summary_path.exists():
+        return None
+    summary = _load_json_dict_if_exists(summary_path)
+    if not summary:
+        return None
+
+    candidate_paths: list[Path] = []
+    artifacts = _artifact_paths(summary)
+    runtime_packet_path = _artifact_path_value(artifacts, "runtime_input_packet")
+    if runtime_packet_path:
+        packet_path = Path(runtime_packet_path)
+        if not packet_path.is_absolute():
+            packet_path = (summary_path.parent / packet_path).resolve()
+        candidate_paths.append(packet_path)
+    candidate_paths.append((summary_path.parent / "runtime-input-packet.json").resolve())
+
+    seen: set[Path] = set()
+    for candidate_path in candidate_paths:
+        if candidate_path in seen:
+            continue
+        seen.add(candidate_path)
+        runtime_packet = _load_json_dict_if_exists(candidate_path)
+        if runtime_packet:
+            return runtime_packet
+    return None
+
+
+def _inherit_phase_decomposition_from_bounded_reentry(
+    *,
+    host_decision: dict[str, Any] | None,
+    bounded_reentry: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Preserve frozen execution-phase decomposition across bounded re-entry."""
+    decision = _normalize_host_decision(host_decision)
+    if bounded_reentry is None:
+        return decision
+    if decision and decision.get("phase_decomposition") is not None:
+        return decision
+
+    summary_path_raw = str(bounded_reentry.get("summary_path") or "").strip()
+    if not summary_path_raw:
+        return decision
+
+    runtime_packet = _load_runtime_input_packet_from_summary(Path(summary_path_raw))
+    if not runtime_packet:
+        return decision
+
+    prior_phase_decomposition = runtime_packet.get("execution_phase_decomposition")
+    if not isinstance(prior_phase_decomposition, dict):
+        return decision
+
+    effective_decision = copy.deepcopy(decision) if decision else {}
+    effective_decision["phase_decomposition"] = copy.deepcopy(prior_phase_decomposition)
+    return effective_decision
+
+
 def _normalize_prompt_token(text: str) -> str:
     lowered = text.strip().lower()
     lowered = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "-", lowered)
@@ -303,6 +380,32 @@ def _normalize_prompt_token(text: str) -> str:
     if len(lowered) > 64:
         lowered = lowered[:64].rstrip("-")
     return lowered
+
+
+def _normalize_host_decision(host_decision: dict[str, Any] | None) -> dict[str, Any] | None:
+    if host_decision is None:
+        return None
+    if not isinstance(host_decision, dict):
+        raise RuntimeError("structured host decision must be a JSON object")
+    return host_decision
+
+
+def _parse_host_decision_json(host_decision_json: str | None) -> dict[str, Any] | None:
+    raw = str(host_decision_json or "").strip()
+    if not raw:
+        return None
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("invalid JSON in --host-decision-json") from exc
+    return _normalize_host_decision(payload)
+
+
+def _serialize_host_decision_json(host_decision: dict[str, Any] | None) -> str | None:
+    decision = _normalize_host_decision(host_decision)
+    if not decision:
+        return None
+    return json.dumps(decision, ensure_ascii=False, separators=(",", ":"))
 
 
 def _extract_continuation_keywords(intent_contract: dict[str, Any]) -> list[str]:
@@ -670,6 +773,36 @@ def _looks_like_generic_reentry_prompt(
     return False
 
 
+def _structured_host_decision_allows_bounded_reentry(
+    host_decision: dict[str, Any] | None,
+    *,
+    bounded_return_control: dict[str, Any],
+) -> bool:
+    decision = _normalize_host_decision(host_decision)
+    if not decision:
+        return False
+
+    terminal_stage = str(bounded_return_control.get("terminal_stage") or "").strip()
+    if not terminal_stage:
+        return False
+
+    allowed_actions = STRUCTURED_REENTRY_APPROVAL_ACTIONS.get(terminal_stage)
+    if not allowed_actions:
+        return False
+
+    decision_kind = str(decision.get("decision_kind") or "").strip().lower()
+    decision_action = str(decision.get("decision_action") or "").strip().lower()
+    approval_decision = str(decision.get("approval_decision") or "").strip().lower()
+
+    if approval_decision == "approve":
+        return True
+    if decision_action in allowed_actions:
+        return True
+    if decision_kind == "approval_response" and decision_action == "approve":
+        return True
+    return False
+
+
 def _validate_bounded_reentry(
     *,
     artifact_root: Path | None,
@@ -678,6 +811,7 @@ def _validate_bounded_reentry(
     run_id: str | None,
     continue_from_run_id: str | None,
     bounded_reentry_token: str | None,
+    host_decision: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     provided_run_id = str(continue_from_run_id or "").strip()
     provided_token = str(bounded_reentry_token or "").strip()
@@ -702,16 +836,30 @@ def _validate_bounded_reentry(
                 "verify --continue-from-run-id, --bounded-reentry-token, and artifact root"
             )
         return None
-    looks_like_reentry = _looks_like_generic_reentry_prompt(prompt, entry_id=entry_id, bounded_return_control=prior_guard)
+    fallback_prompt_reentry = _looks_like_generic_reentry_prompt(prompt, entry_id=entry_id, bounded_return_control=prior_guard)
     if bool(prior_guard.get("malformed")):
-        if str(continue_from_run_id or "").strip() or looks_like_reentry:
+        if str(continue_from_run_id or "").strip() or fallback_prompt_reentry or host_decision is not None:
             raise RuntimeError(
                 "bounded wrapper continuation metadata is malformed; rerun the prior bounded wrapper stage before re-entering"
             )
         return None
     if entry_id not in set(prior_guard["allowed_followup_entry_ids"]):
         return None
+    structured_reentry = _structured_host_decision_allows_bounded_reentry(
+        host_decision,
+        bounded_return_control=prior_guard,
+    )
+    if host_decision is not None:
+        looks_like_reentry = structured_reentry
+    else:
+        looks_like_reentry = fallback_prompt_reentry
     if not looks_like_reentry:
+        if host_decision is not None and explicit_reentry_credentials_supplied:
+            expected_stage = str(prior_guard.get("terminal_stage") or "pending_bounded_stop")
+            raise RuntimeError(
+                "structured host decision does not authorize bounded re-entry for "
+                f"{expected_stage}; send an explicit approval decision for the pending governed stop"
+            )
         return None
 
     if not provided_run_id or not provided_token:
@@ -762,6 +910,7 @@ def invoke_vibe_runtime_entrypoint(
     requested_grade_floor: str | None,
     run_id: str | None,
     artifact_root: str | Path | None,
+    host_decision: dict[str, Any] | None = None,
     force_runtime_neutral: bool = False,
 ) -> dict[str, Any]:
     """Invoke the PowerShell canonical entry bridge and return its JSON payload."""
@@ -815,6 +964,9 @@ def invoke_vibe_runtime_entrypoint(
         command.extend(["-RunId", run_id])
     if artifact_root:
         command.extend(["-ArtifactRoot", str(Path(artifact_root))])
+    serialized_host_decision = _serialize_host_decision_json(host_decision)
+    if serialized_host_decision:
+        command.extend(["-HostDecisionJson", serialized_host_decision])
 
     env = dict(os.environ)
     env["VCO_HOST_ID"] = host_id
@@ -979,12 +1131,14 @@ def launch_canonical_vibe(
     artifact_root: str | Path | None = None,
     continue_from_run_id: str | None = None,
     bounded_reentry_token: str | None = None,
+    host_decision: dict[str, Any] | None = None,
     force_runtime_neutral: bool = False,
 ) -> CanonicalLaunchResult:
     """Launch canonical vibe, verify its artifacts, and return launch metadata."""
     repo_root_path = Path(repo_root).resolve()
     requested_entry_id = _normalize_requested_entry_id(entry_id)
     resolved_artifact_root = _resolve_artifact_root(repo_root_path, artifact_root)
+    normalized_host_decision = _normalize_host_decision(host_decision)
     validated_reentry = _validate_bounded_reentry(
         artifact_root=resolved_artifact_root,
         entry_id=requested_entry_id,
@@ -992,6 +1146,11 @@ def launch_canonical_vibe(
         run_id=run_id,
         continue_from_run_id=continue_from_run_id,
         bounded_reentry_token=bounded_reentry_token,
+        host_decision=normalized_host_decision,
+    )
+    effective_host_decision = _inherit_phase_decomposition_from_bounded_reentry(
+        host_decision=normalized_host_decision,
+        bounded_reentry=validated_reentry,
     )
     effective_requested_stage_stop = _resolve_progressive_requested_stage_stop(
         repo_root=repo_root_path,
@@ -1042,6 +1201,7 @@ def launch_canonical_vibe(
             requested_grade_floor=requested_grade_floor,
             run_id=resolved_run_id,
             artifact_root=resolved_artifact_root,
+            host_decision=effective_host_decision,
             force_runtime_neutral=force_runtime_neutral,
         )
     except Exception:
@@ -1102,8 +1262,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--artifact-root")
     parser.add_argument("--continue-from-run-id")
     parser.add_argument("--bounded-reentry-token")
+    parser.add_argument("--host-decision-json")
     parser.add_argument("--force-runtime-neutral", action="store_true")
     args = parser.parse_args(argv)
+    host_decision = _parse_host_decision_json(args.host_decision_json)
 
     result = launch_canonical_vibe(
         repo_root=args.repo_root,
@@ -1116,6 +1278,7 @@ def main(argv: list[str] | None = None) -> int:
         artifact_root=args.artifact_root,
         continue_from_run_id=args.continue_from_run_id,
         bounded_reentry_token=args.bounded_reentry_token,
+        host_decision=host_decision,
         force_runtime_neutral=bool(args.force_runtime_neutral),
     )
     json.dump(result.to_dict(), sys.stdout, ensure_ascii=False, indent=2)

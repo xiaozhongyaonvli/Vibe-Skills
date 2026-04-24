@@ -41,6 +41,37 @@ function Get-VibeSelectedCapsuleList {
     return @($ContextPack.selected_capsules | Where-Object { $null -ne $_ })
 }
 
+function Get-VibeDispatchPlanLines {
+    param(
+        [Parameter(Mandatory)] [AllowEmptyCollection()] [object[]]$Recommendations,
+        [switch]$SuggestionMode
+    )
+
+    $lines = @()
+    foreach ($recommendation in @($Recommendations)) {
+        if ($SuggestionMode) {
+            $lines += @(
+                ('- Suggest {0}.' -f [string]$recommendation.skill_id),
+                ('  Proposed phase: {0}; lane policy: {1}; write scope: {2}' -f [string]$recommendation.dispatch_phase, [string]$recommendation.lane_policy, [string]$recommendation.write_scope),
+                ('  Reason: {0}' -f [string]$recommendation.reason),
+                '  Escalation required: true'
+            )
+        } else {
+            $lines += @(
+                ('- Dispatch {0} as {1}.' -f [string]$recommendation.skill_id, [string]$recommendation.bounded_role),
+                ('  Binding profile: {0}; dispatch phase: {1}; lane policy: {2}; parallel in XL: {3}' -f [string]$recommendation.binding_profile, [string]$recommendation.dispatch_phase, [string]$recommendation.lane_policy, [bool]$recommendation.parallelizable_in_root_xl),
+                ('  Write scope: {0}; review mode: {1}; execution priority: {2}' -f [string]$recommendation.write_scope, [string]$recommendation.review_mode, [int]$recommendation.execution_priority),
+                ('  Reason: {0}' -f [string]$recommendation.reason),
+                ('  Required inputs: {0}' -f [string]::Join(', ', @($recommendation.required_inputs))),
+                ('  Expected outputs: {0}' -f [string]::Join(', ', @($recommendation.expected_outputs))),
+                ('  Verification: {0}' -f [string]$recommendation.verification_expectation)
+            )
+        }
+    }
+
+    return @($lines)
+}
+
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath
 if ([string]::IsNullOrWhiteSpace($RunId)) {
     $RunId = New-VibeRunId
@@ -165,6 +196,15 @@ $stageLifecycleDisclosure = New-VibeSpecialistLifecycleDisclosureProjection `
     -PlanningConsultationReceipt $planningConsultation
 $approvedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.approved_dispatch) } else { @() }
 $localSuggestions = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.local_specialist_suggestions) } else { @() }
+$executionPhaseDecomposition = if (
+    $runtimeInputPacket -and
+    $runtimeInputPacket.PSObject.Properties.Name -contains 'execution_phase_decomposition' -and
+    $null -ne $runtimeInputPacket.execution_phase_decomposition
+) {
+    $runtimeInputPacket.execution_phase_decomposition
+} else {
+    $null
+}
 $executionTopology = New-VibeExecutionTopology `
     -RunId $RunId `
     -Grade $grade `
@@ -237,6 +277,14 @@ $lines += @(
     '## Wave Plan'
 )
 $lines += $waveLines
+$executionPhaseLines = @(Get-VibeExecutionPhaseMarkdownLines -PhaseDecomposition $executionPhaseDecomposition)
+if (@($executionPhaseLines).Count -gt 0) {
+    $lines += @(
+        '',
+        '## Execution Phase Plan'
+    )
+    $lines += @($executionPhaseLines)
+}
 $deliveryAcceptanceReportPath = Join-Path $sessionRoot 'delivery-acceptance-report.json'
 $lines += @(
     '',
@@ -317,16 +365,30 @@ if (@($approvedDispatch).Count -gt 0 -or @($localSuggestions).Count -gt 0) {
         '- Each specialist must be invoked through its native workflow, input contract, and validation style.',
         '- Specialist outputs remain subordinate to the frozen requirement and the governed plan.'
     )
-        foreach ($recommendation in @($approvedDispatch)) {
+    if ($executionPhaseDecomposition -and @($executionPhaseDecomposition.phases).Count -gt 0) {
+        foreach ($phase in @($executionPhaseDecomposition.phases)) {
+            $phaseDispatches = @($approvedDispatch | Where-Object { [string]$_.phase_id -eq [string]$phase.phase_id })
+            if (@($phaseDispatches).Count -eq 0) {
+                continue
+            }
+
             $lines += @(
-                ('- Dispatch {0} as {1}.' -f [string]$recommendation.skill_id, [string]$recommendation.bounded_role),
-                ('  Binding profile: {0}; dispatch phase: {1}; lane policy: {2}; parallel in XL: {3}' -f [string]$recommendation.binding_profile, [string]$recommendation.dispatch_phase, [string]$recommendation.lane_policy, [bool]$recommendation.parallelizable_in_root_xl),
-                ('  Write scope: {0}; review mode: {1}; execution priority: {2}' -f [string]$recommendation.write_scope, [string]$recommendation.review_mode, [int]$recommendation.execution_priority),
-                ('  Reason: {0}' -f [string]$recommendation.reason),
-                ('  Required inputs: {0}' -f [string]::Join(', ', @($recommendation.required_inputs))),
-                ('  Expected outputs: {0}' -f [string]::Join(', ', @($recommendation.expected_outputs))),
-                ('  Verification: {0}' -f [string]$recommendation.verification_expectation)
+                '',
+                ('### Phase `{0}` [{1} -> {2}] order `{3}`: {4}' -f [string]$phase.phase_id, [string]$phase.stage_type, [string]$phase.dispatch_phase, [int]$phase.stage_order, [string]$phase.stage_label)
             )
+            $lines += @(Get-VibeDispatchPlanLines -Recommendations @($phaseDispatches))
+        }
+
+        $ungroupedApprovedDispatch = @($approvedDispatch | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.phase_id) })
+        if (@($ungroupedApprovedDispatch).Count -gt 0) {
+            $lines += @(
+                '',
+                '### Phase `ungrouped`: fallback specialist dispatch'
+            )
+            $lines += @(Get-VibeDispatchPlanLines -Recommendations @($ungroupedApprovedDispatch))
+        }
+    } else {
+        $lines += @(Get-VibeDispatchPlanLines -Recommendations @($approvedDispatch))
     }
     if (@($localSuggestions).Count -gt 0) {
         $lines += @(
@@ -334,13 +396,30 @@ if (@($approvedDispatch).Count -gt 0 -or @($localSuggestions).Count -gt 0) {
             '## Child Specialist Escalation Suggestions',
             '- These are residual suggestions only after same-round safe auto-promotion; anything still listed here requires explicit escalation.'
         )
-        foreach ($recommendation in @($localSuggestions)) {
-            $lines += @(
-                ('- Suggest {0}.' -f [string]$recommendation.skill_id),
-                ('  Proposed phase: {0}; lane policy: {1}; write scope: {2}' -f [string]$recommendation.dispatch_phase, [string]$recommendation.lane_policy, [string]$recommendation.write_scope),
-                ('  Reason: {0}' -f [string]$recommendation.reason),
-                '  Escalation required: true'
-            )
+        if ($executionPhaseDecomposition -and @($executionPhaseDecomposition.phases).Count -gt 0) {
+            foreach ($phase in @($executionPhaseDecomposition.phases)) {
+                $phaseSuggestions = @($localSuggestions | Where-Object { [string]$_.phase_id -eq [string]$phase.phase_id })
+                if (@($phaseSuggestions).Count -eq 0) {
+                    continue
+                }
+
+                $lines += @(
+                    '',
+                    ('### Phase `{0}` [{1} -> {2}] order `{3}`: {4}' -f [string]$phase.phase_id, [string]$phase.stage_type, [string]$phase.dispatch_phase, [int]$phase.stage_order, [string]$phase.stage_label)
+                )
+                $lines += @(Get-VibeDispatchPlanLines -Recommendations @($phaseSuggestions) -SuggestionMode)
+            }
+
+            $ungroupedSuggestions = @($localSuggestions | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.phase_id) })
+            if (@($ungroupedSuggestions).Count -gt 0) {
+                $lines += @(
+                    '',
+                    '### Phase `ungrouped`: fallback escalation suggestions'
+                )
+                $lines += @(Get-VibeDispatchPlanLines -Recommendations @($ungroupedSuggestions) -SuggestionMode)
+            }
+        } else {
+            $lines += @(Get-VibeDispatchPlanLines -Recommendations @($localSuggestions) -SuggestionMode)
         }
     }
 }

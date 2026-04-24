@@ -155,6 +155,8 @@ def canonical_entry_command(args: argparse.Namespace) -> int:
         command.extend(['--continue-from-run-id', args.continue_from_run_id])
     if getattr(args, 'bounded_reentry_token', None):
         command.extend(['--bounded-reentry-token', args.bounded_reentry_token])
+    if getattr(args, 'host_decision_json', None):
+        command.extend(['--host-decision-json', args.host_decision_json])
     if args.force_runtime_neutral:
         command.append('--force-runtime-neutral')
     result = run_canonical_entry_core(repo_root, command)
