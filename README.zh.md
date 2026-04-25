@@ -7,7 +7,7 @@
 <div align="center">
 
 <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=45&pause=1000&color=7B61FF&center=true&vCenter=true&width=600&height=100&lines=Vibe+Skills;Agent+Harness" alt="VibeSkills Typing Logo" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=45&pause=1000&color=7B61FF&center=true&vCenter=true&width=700&height=100&lines=Vibe+Skills;Super+Skill+Harness;Agent+Orchestration+Layer" alt="VibeSkills Typing Logo" />
 </a>
 
 <br/>
@@ -23,6 +23,24 @@
 &nbsp;
 *它不只是“更多工具”，而是一种新的 Super Skill：让 harness 成为 Skill 管理者。你不需要背技能表，不需要一步步盯着 AI，也不需要反复提醒它工作应该怎么推进。*
 
+<br/>
+
+<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=19&pause=650&color=32CD32&center=true&vCenter=true&width=780&height=72&lines=%3E+vibe;%3E+freeze+intent;%3E+orchestrate+expert+Skills;%3E+verify+evidence;%3E+preserve+workspace+context" alt="Vibe runtime terminal animation" />
+</a>
+
+<table align="center">
+<tr>
+<td align="left">
+<pre><code>&gt; vibe
+  intent.freeze()        -> requirement_doc
+  plan.stage()           -> xl_plan
+  skills.orchestrate()   -> expert Skills by phase
+  evidence.verify()      -> tests, checks, artifacts
+  memory.preserve()      -> next-session context</code></pre>
+</td>
+</tr>
+</table>
 
 <br/>
 
@@ -46,6 +64,10 @@
 <img src="https://img.shields.io/badge/Architecture-VCO_Runtime-orange?style=for-the-badge" alt="Arch">
 &nbsp;
 <img src="https://img.shields.io/badge/Skills-340%2B-blueviolet?style=for-the-badge" alt="Skills Count">
+&nbsp;
+<img src="https://img.shields.io/badge/Harness-Automatic_Orchestration-32CD32?style=for-the-badge" alt="Automatic Orchestration">
+&nbsp;
+<img src="https://img.shields.io/badge/Package-Portable_Skills_Bundle-45a1ff?style=for-the-badge" alt="Portable Skills Bundle">
 
 <br/><br/>
 
@@ -78,6 +100,7 @@
 
 ## 📋 目录
 
+- [运行时一眼看懂](#-运行时一眼看懂)
 - [一种新的 Super Skill 范式](#-一种新的-super-skill-范式)
 - [为什么与众不同](#-为什么它与众不同)
 - [适合你吗](#-适用人群)
@@ -118,6 +141,51 @@
 
 <img width="1376" height="768" alt="Generated Image April 21, 2026 - 8_51PM" src="https://github.com/user-attachments/assets/de9f1d20-3976-40b9-bc7c-37bb308a3591" />
 
+
+---
+
+## 🛰️ 运行时一眼看懂
+
+VibeSkills 的高级感不应该只是视觉装饰，而是它的工作方式本身很清楚：用户给出意图，`vibe` 把意图变成阶段化工作，在合适阶段路由专家 Skills，并把验证证据和上下文留到下一次。
+
+```mermaid
+flowchart LR
+    accTitle: VibeSkills Harness Flow
+    accDescr: User intent enters the vibe harness. The harness freezes intent, plans stages, routes expert Skills, verifies evidence, and preserves workspace context.
+
+    user["User Intent"]
+    vibe["vibe<br/>Super Skill Harness"]
+    freeze["Freeze<br/>Requirement"]
+    plan["Plan<br/>Stages"]
+    route["Route<br/>Expert Skills"]
+    skills["340+ Skills<br/>bounded by phase"]
+    verify["Verify<br/>Tests + Evidence"]
+    memory["Remember<br/>Workspace Context"]
+
+    user --> vibe --> freeze --> plan --> route --> verify --> memory
+    route --> skills --> verify
+
+    classDef core fill:#ede9fe,stroke:#7B61FF,stroke-width:2px,color:#1f1147
+    classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e
+    classDef proof fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+    classDef user fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#7c2d12
+
+    class vibe core
+    class freeze,plan,route,skills stage
+    class verify,memory proof
+    class user user
+```
+
+<div align="center">
+
+| 信号 | 它代表什么 |
+|:---|:---|
+| `one entry` | 从 `vibe` 开始，用 `vibe-upgrade` 更新。 |
+| `stage router` | 不同阶段自动调用不同 Skills。 |
+| `proof trail` | 测试、检查、产物证据或人工复核状态支撑交付声明。 |
+| `memory plane` | 需求、计划、决策和证据不会随着聊天窗口消失。 |
+
+</div>
 
 ---
 

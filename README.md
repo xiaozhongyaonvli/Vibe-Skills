@@ -7,7 +7,7 @@
 <div align="center">
 
 <a href="https://github.com/foryourhealth111-pixel/Vibe-Skills">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=45&pause=1000&color=7B61FF&center=true&vCenter=true&width=600&height=100&lines=Vibe+Skills;Agent+Harness" alt="VibeSkills Typing Logo" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=45&pause=1000&color=7B61FF&center=true&vCenter=true&width=700&height=100&lines=Vibe+Skills;Super+Skill+Harness;Agent+Orchestration+Layer" alt="VibeSkills Typing Logo" />
 </a>
 
 <br/>
@@ -23,6 +23,24 @@ Install the Skills package, call `vibe`, and let the harness do the heavy liftin
 &nbsp;
 *This is not just more tools. It is a new kind of Super Skill: the harness becomes the skill manager, so you do not have to memorize a catalog, babysit every step, or keep reminding the agent how work should move.*
 
+<br/>
+
+<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=19&pause=650&color=32CD32&center=true&vCenter=true&width=780&height=72&lines=%3E+vibe;%3E+freeze+intent;%3E+orchestrate+expert+Skills;%3E+verify+evidence;%3E+preserve+workspace+context" alt="Vibe runtime terminal animation" />
+</a>
+
+<table align="center">
+<tr>
+<td align="left">
+<pre><code>&gt; vibe
+  intent.freeze()        -> requirement_doc
+  plan.stage()           -> xl_plan
+  skills.orchestrate()   -> expert Skills by phase
+  evidence.verify()      -> tests, checks, artifacts
+  memory.preserve()      -> next-session context</code></pre>
+</td>
+</tr>
+</table>
 
 <br/>
 
@@ -46,6 +64,10 @@ Install the Skills package, call `vibe`, and let the harness do the heavy liftin
 <img src="https://img.shields.io/badge/Architecture-VCO_Runtime-orange?style=for-the-badge" alt="Arch">
 &nbsp;
 <img src="https://img.shields.io/badge/Skills-340%2B-blueviolet?style=for-the-badge" alt="Skills Count">
+&nbsp;
+<img src="https://img.shields.io/badge/Harness-Automatic_Orchestration-32CD32?style=for-the-badge" alt="Automatic Orchestration">
+&nbsp;
+<img src="https://img.shields.io/badge/Package-Portable_Skills_Bundle-45a1ff?style=for-the-badge" alt="Portable Skills Bundle">
 
 <br/><br/>
 
@@ -78,6 +100,7 @@ Install the Skills package, call `vibe`, and let the harness do the heavy liftin
 
 ## 📋 Table of Contents
 
+- [Runtime at a Glance](#-runtime-at-a-glance)
 - [A New Kind of Super Skill](#-a-new-kind-of-super-skill)
 - [What makes it different](#-what-makes-it-different)
 - [Who is it for](#-who-is-it-for)
@@ -119,6 +142,51 @@ Install the Skills package, call `vibe`, and let the harness do the heavy liftin
 <img width="1376" height="768" alt="Generated Image April 21, 2026 - 8_49PM" src="https://github.com/user-attachments/assets/82c6e1f2-23fb-46de-b4c6-2f73b5350d4c" />
 
 
+
+---
+
+## 🛰️ Runtime at a Glance
+
+VibeSkills feels different because the harness owns the sequence. The user brings intent; `vibe` turns that intent into staged work, routes expert Skills where they belong, and keeps the proof trail alive for the next session.
+
+```mermaid
+flowchart LR
+    accTitle: VibeSkills Harness Flow
+    accDescr: User intent enters the vibe harness. The harness freezes intent, plans stages, routes expert Skills, verifies evidence, and preserves workspace context.
+
+    user["User Intent"]
+    vibe["vibe<br/>Super Skill Harness"]
+    freeze["Freeze<br/>Requirement"]
+    plan["Plan<br/>Stages"]
+    route["Route<br/>Expert Skills"]
+    skills["340+ Skills<br/>bounded by phase"]
+    verify["Verify<br/>Tests + Evidence"]
+    memory["Remember<br/>Workspace Context"]
+
+    user --> vibe --> freeze --> plan --> route --> verify --> memory
+    route --> skills --> verify
+
+    classDef core fill:#ede9fe,stroke:#7B61FF,stroke-width:2px,color:#1f1147
+    classDef stage fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0c4a6e
+    classDef proof fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+    classDef user fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#7c2d12
+
+    class vibe core
+    class freeze,plan,route,skills stage
+    class verify,memory proof
+    class user user
+```
+
+<div align="center">
+
+| Signal | What it means |
+|:---|:---|
+| `one entry` | Start with `vibe`; keep `vibe-upgrade` for updates. |
+| `stage router` | Different moments get different Skills. |
+| `proof trail` | Tests, checks, artifacts, or manual-review state back delivery claims. |
+| `memory plane` | Requirements, plans, decisions, and evidence survive the chat window. |
+
+</div>
 
 ---
 
