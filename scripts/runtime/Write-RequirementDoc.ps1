@@ -157,10 +157,11 @@ function Test-VibeTaskNeedsCodeTaskTddEvidence {
 
     $text = Get-VibeCodeTaskSignalText -Task $Task -Deliverable $Deliverable
     $testFirstSignals = '\btdd\b|red green refactor|test[- ]first|failing[- ]first'
-    $defectCorrectionSignals = 'failing test|stack trace|debug|bug|fix|repair|\bpatch\b|regression|compile|syntax error|exception'
+    $defectCorrectionSignals = 'failing test|stack trace|\bdebug\b|\bbug\b|\bfix\b|\brepair\b|\bpatch\b|regression|compile|syntax error|exception'
     $implementationSignals = '\bimplement\b|\bbuild\b|\bwire\b|\bintegrate\b|\bpatch\b|\bmodify\b|\bchange\b|\badd\b|\brefactor\b'
     $implementationTargetSignals = 'script|function|class|endpoint|api|component|module|frontend|backend|dashboard|page|screen|parser|exporter|renderer|service|library|cli|runtime|router|wrapper|installer|plugin'
     $reviewOnlySignals = '\breview\b|code review|pull request|\bpr\b|audit|assess'
+    $hasImplementationActionAndTarget = ($text -match $implementationSignals) -and ($text -match $implementationTargetSignals)
 
     if ((Test-VibeTaskNeedsDocumentArtifactBaseline -Task $Task -Deliverable $Deliverable) -or ($text -match 'image|logo|illustration|diagram')) {
         return $false
@@ -170,7 +171,7 @@ function Test-VibeTaskNeedsCodeTaskTddEvidence {
         return $true
     }
 
-    if (($text -match $reviewOnlySignals) -and -not ($text -match $defectCorrectionSignals) -and -not (($text -match $implementationSignals) -and ($text -match $implementationTargetSignals))) {
+    if (($text -match $reviewOnlySignals) -and -not $hasImplementationActionAndTarget) {
         return $false
     }
 
@@ -178,7 +179,7 @@ function Test-VibeTaskNeedsCodeTaskTddEvidence {
         return $true
     }
 
-    return ($text -match $implementationSignals) -and ($text -match $implementationTargetSignals)
+    return $hasImplementationActionAndTarget
 }
 
 function Get-VibeDefaultCodeTaskTddEvidenceRequirements {

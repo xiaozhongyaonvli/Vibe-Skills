@@ -434,6 +434,10 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             self.assertEqual("requirement_doc", summary["bounded_return_control"]["terminal_stage"])
             self.assertEqual("xl_plan", summary["bounded_return_control"]["next_stage"])
             self.assertEqual("requirement_confirmation", summary["bounded_return_control"]["approval_kind"])
+            self.assertIn(
+                "revise_requirement",
+                summary["bounded_return_control"]["host_decision_contract"]["allowed_decision_actions"],
+            )
             self.assertEqual(["vibe"], list(summary["bounded_return_control"]["allowed_followup_entry_ids"]))
             self.assertTrue(bool(summary["bounded_return_control"]["explicit_new_user_message_required"]))
             self.assertIn("Do not auto-continue into `xl_plan`", summary["bounded_return_control"]["approval_prompt"])
@@ -514,6 +518,10 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             self.assertEqual("xl_plan", summary["bounded_return_control"]["terminal_stage"])
             self.assertEqual(payload["run_id"], summary["bounded_return_control"]["source_run_id"])
             self.assertTrue(bool(summary["bounded_return_control"]["explicit_user_reentry_required"]))
+            self.assertIn(
+                "revise_plan",
+                summary["bounded_return_control"]["host_decision_contract"]["allowed_decision_actions"],
+            )
             self.assertEqual(
                 ["vibe", "vibe-do-it"],
                 list(summary["bounded_return_control"]["allowed_followup_entry_ids"]),

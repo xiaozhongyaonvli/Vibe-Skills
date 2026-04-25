@@ -35,6 +35,7 @@ from vgo_runtime.router import load_allowed_vibe_entry_ids
 RUNTIME_ENTRYPOINT_RELPATH = "scripts/runtime/invoke-vibe-runtime.ps1"
 CANONICAL_ENTRY_BRIDGE_RELPATH = "scripts/runtime/Invoke-VibeCanonicalEntry.ps1"
 CANONICAL_RUNTIME_ENTRY_ID = "vibe"
+CANONICAL_VIBE_PROGRESSIVE_STAGE_STOPS = ("requirement_doc", "xl_plan", "phase_cleanup")
 MINIMUM_TRUTH_ARTIFACTS = {
     "runtime_input_packet": "runtime-input-packet.json",
     "governance_capsule": "governance-capsule.json",
@@ -621,19 +622,17 @@ def _attach_bounded_continuation_context_to_host_decision(
 
 
 def _progressive_stage_stops(repo_root: Path, entry_id: str) -> tuple[str, ...]:
-    candidates: list[Path] = [repo_root]
-    resolved_repo_root = repo_root.resolve()
-    if resolved_repo_root != REPO_ROOT.resolve():
-        candidates.append(REPO_ROOT)
-
-    for candidate in candidates:
-        try:
-            surface = load_discoverable_entry_surface(candidate)
-        except RuntimeError:
-            continue
-        entry = surface.entry_by_id.get(entry_id)
-        if entry is not None:
-            return tuple(entry.progressive_stage_stops)
+    try:
+        surface = load_discoverable_entry_surface(repo_root)
+    except RuntimeError:
+        if entry_id == CANONICAL_RUNTIME_ENTRY_ID:
+            return CANONICAL_VIBE_PROGRESSIVE_STAGE_STOPS
+        return ()
+    entry = surface.entry_by_id.get(entry_id)
+    if entry is not None:
+        return tuple(entry.progressive_stage_stops)
+    if entry_id == CANONICAL_RUNTIME_ENTRY_ID:
+        return CANONICAL_VIBE_PROGRESSIVE_STAGE_STOPS
     return ()
 
 

@@ -468,6 +468,97 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             report["residual_risks"],
         )
 
+    def test_runtime_delivery_acceptance_marks_present_invalid_specialist_sidecar_invalid(self) -> None:
+        approved_dispatch = [
+            {
+                "skill_id": "systematic-debugging",
+                "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+            }
+        ]
+        session_root = self._build_session(
+            approved_dispatch=approved_dispatch,
+            phase_execute_specialist_user_disclosure={
+                "scope": "approved_dispatch_only",
+                "timing": "before_execution",
+                "path_source": "native_skill_entrypoint",
+                "routed_skills": [
+                    {
+                        "skill_id": "systematic-debugging",
+                        "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+                        "entrypoint_requirement_satisfied": True,
+                    }
+                ],
+            },
+            specialist_accounting={
+                "approved_dispatch": approved_dispatch,
+                "approved_dispatch_count": 1,
+                "effective_execution_status": "direct_current_session_routed",
+                "direct_routed_specialist_units": [
+                    {
+                        "unit_id": "unit-1",
+                        "skill_id": "systematic-debugging",
+                        "result_path": "specialist-results/systematic-debugging.json",
+                    }
+                ],
+            },
+        )
+        write_text(session_root / "specialist-execution.json", "[1]\n")
+
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("invalid", report["execution_context"]["specialist_host_resolution_state"])
+        self.assertFalse(report["execution_context"]["specialist_host_continuation_pending"])
+        self.assertIn(
+            "Specialist execution sidecar was present but invalid",
+            "\n".join(report["execution_context"]["specialist_execution_notes"]),
+        )
+
+    def test_runtime_delivery_acceptance_marks_unparseable_specialist_sidecar_invalid(self) -> None:
+        approved_dispatch = [
+            {
+                "skill_id": "systematic-debugging",
+                "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+            }
+        ]
+        session_root = self._build_session(
+            approved_dispatch=approved_dispatch,
+            phase_execute_specialist_user_disclosure={
+                "scope": "approved_dispatch_only",
+                "timing": "before_execution",
+                "path_source": "native_skill_entrypoint",
+                "routed_skills": [
+                    {
+                        "skill_id": "systematic-debugging",
+                        "native_skill_entrypoint": "/tmp/systematic-debugging/SKILL.md",
+                        "entrypoint_requirement_satisfied": True,
+                    }
+                ],
+            },
+            specialist_accounting={
+                "approved_dispatch": approved_dispatch,
+                "approved_dispatch_count": 1,
+                "effective_execution_status": "direct_current_session_routed",
+                "direct_routed_specialist_units": [
+                    {
+                        "unit_id": "unit-1",
+                        "skill_id": "systematic-debugging",
+                        "result_path": "specialist-results/systematic-debugging.json",
+                    }
+                ],
+            },
+        )
+        write_text(session_root / "specialist-execution.json", "{not-json\n")
+
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("MANUAL_REVIEW_REQUIRED", report["summary"]["gate_result"])
+        self.assertEqual("invalid", report["execution_context"]["specialist_host_resolution_state"])
+        self.assertIn(
+            "Unable to parse JSON payload",
+            "\n".join(report["execution_context"]["specialist_execution_notes"]),
+        )
+
     def test_runtime_delivery_acceptance_prefers_explicit_empty_manifest_dispatch_over_stale_runtime_packet(self) -> None:
         stale_runtime_dispatch = [
             {

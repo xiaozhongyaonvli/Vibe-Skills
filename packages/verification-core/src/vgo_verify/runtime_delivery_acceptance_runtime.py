@@ -213,7 +213,7 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
 
     direct_routed_units_key_present = "direct_routed_specialist_units" in specialist_accounting
     raw_direct_routed_specialist_units = specialist_accounting.get("direct_routed_specialist_units") or []
-    if not direct_routed_units_key_present and not raw_direct_routed_specialist_units and raw_specialist_execution_units:
+    if not direct_routed_units_key_present and raw_specialist_execution_units:
         raw_direct_routed_specialist_units = [
             {
                 "unit_id": str(record.get("unit_id") or "").strip(),
@@ -270,7 +270,16 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
         effective_specialist_execution_status = runtime_specialist_execution_status
 
     specialist_execution_notes: list[str] = []
-    specialist_execution_payload_valid = True
+    specialist_execution_payload_invalid = str(
+        specialist_execution_payload.get("__vgo_payload_state") or ""
+    ).strip().lower() == "invalid"
+    specialist_execution_payload_valid = not specialist_execution_payload_invalid
+    if specialist_execution_payload_invalid:
+        invalid_reason = str(specialist_execution_payload.get("invalid_reason") or "").strip()
+        specialist_execution_notes.append(
+            "Specialist execution sidecar was present but invalid"
+            + (f": {invalid_reason}" if invalid_reason else ".")
+        )
     specialist_host_resolution_state = "not_applicable"
     specialist_host_executed_unit_count = 0
     specialist_host_degraded_unit_count = 0
@@ -394,6 +403,8 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
             specialist_execution_notes.append(
                 "Approved execution stayed current-session routed but no direct-routed specialist units were recorded."
             )
+        elif specialist_execution_payload_invalid:
+            specialist_host_resolution_state = "invalid"
         elif not specialist_execution_payload:
             specialist_host_continuation_pending = True
             specialist_host_resolution_state = "pending"

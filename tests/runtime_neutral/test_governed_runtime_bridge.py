@@ -853,6 +853,69 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
             self.assertIn("## Baseline Document Quality Dimensions", requirement_doc)
             self.assertIn("- Structure Integrity", requirement_doc)
 
+    def test_write_requirement_doc_does_not_require_tdd_for_review_only_bug_audit(self) -> None:
+        script_path = REPO_ROOT / "scripts" / "runtime" / "Write-RequirementDoc.ps1"
+        shell = resolve_powershell()
+        if shell is None:
+            self.skipTest("PowerShell executable not available in PATH")
+
+        cases = [
+            (
+                "pytest-requirement-doc-review-bug-audit",
+                "Review CodeRabbit PR bug comments and audit which findings are real bugs.",
+                False,
+            ),
+            (
+                "pytest-requirement-doc-fix-parser-bug",
+                "Fix bug in parser module and add targeted verification.",
+                True,
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            artifact_root = Path(tempdir)
+            for run_id, task, should_require_tdd in cases:
+                command = [
+                    shell,
+                    "-NoLogo",
+                    "-NoProfile",
+                    "-Command",
+                    (
+                        "& { "
+                        f"$result = & '{script_path}' "
+                        f"-Task {_ps_single_quote(task)} "
+                        "-Mode interactive_governed "
+                        f"-RunId '{run_id}' "
+                        f"-ArtifactRoot '{artifact_root}'; "
+                        "$result | ConvertTo-Json -Depth 20 }"
+                    ),
+                ]
+                completed = subprocess.run(
+                    command,
+                    cwd=REPO_ROOT,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    check=True,
+                )
+                payload = json.loads(completed.stdout)
+                requirement_doc = Path(payload["requirement_doc_path"]).read_text(encoding="utf-8")
+
+                if should_require_tdd:
+                    self.assertIn("TDD mode: required", requirement_doc)
+                    self.assertIn(
+                        "- Record failing-first evidence for the changed behavior before implementation or defect correction.",
+                        requirement_doc,
+                    )
+                else:
+                    self.assertIn("TDD mode: not_applicable", requirement_doc)
+                    self.assertIn("No code-task TDD evidence requirements were frozen for this run.", requirement_doc)
+                    self.assertNotIn(
+                        "- Record failing-first evidence for the changed behavior before implementation or defect correction.",
+                        requirement_doc,
+                    )
+
     def test_resolve_vgo_python_command_spec_falls_back_to_python3(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             fake_dir = Path(tempdir)

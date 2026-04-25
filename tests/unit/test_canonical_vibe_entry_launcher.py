@@ -1041,6 +1041,51 @@ def test_resolve_progressive_requested_stage_stop_preserves_explicit_intermediat
     ) == "xl_plan"
 
 
+def test_progressive_stage_stops_do_not_fallback_to_launcher_repo_for_external_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class Entry:
+        progressive_stage_stops = ("requirement_doc", "xl_plan", "phase_cleanup")
+
+    def fake_load_surface(repo_root: Path) -> object:
+        if repo_root.resolve() == tmp_path.resolve():
+            raise RuntimeError("external workspace has no discoverable surface")
+        return type("Surface", (), {"entry_by_id": {"vibe-do-it": Entry()}})()
+
+    monkeypatch.setattr(canonical_entry, "load_discoverable_entry_surface", fake_load_surface)
+
+    assert canonical_entry._progressive_stage_stops(tmp_path, "vibe-do-it") == ()
+
+
+def test_progressive_stage_stops_use_canonical_vibe_safe_default_for_external_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        canonical_entry,
+        "load_discoverable_entry_surface",
+        lambda repo_root: (_ for _ in ()).throw(RuntimeError("no discoverable surface")),
+    )
+
+    assert canonical_entry._progressive_stage_stops(tmp_path, "vibe") == (
+        "requirement_doc",
+        "xl_plan",
+        "phase_cleanup",
+    )
+
+
+def test_structured_revise_decision_does_not_authorize_bounded_reentry() -> None:
+    assert not canonical_entry._structured_host_decision_allows_bounded_reentry(
+        {
+            "decision_kind": "approval_response",
+            "decision_action": "revise_requirement",
+            "approval_decision": "revise",
+        },
+        bounded_return_control={"terminal_stage": "requirement_doc"},
+    )
+
+
 def test_canonical_entry_marks_receipt_failed_when_runtime_invocation_raises(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

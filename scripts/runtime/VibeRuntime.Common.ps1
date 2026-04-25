@@ -2173,9 +2173,34 @@ function New-VibeBoundedReturnControlProjection {
         default { 'user_reentry_confirmation' }
     }
     $allowedDecisionActions = switch ([string]$terminalStage) {
-        'requirement_doc' { @('approve', 'approve_requirement', 'approve_requirement_doc', 'approve_requirements') }
-        'xl_plan' { @('approve', 'approve_plan', 'approve_execution_plan', 'request_execute') }
-        default { @('approve') }
+        'requirement_doc' {
+            @(
+                'approve',
+                'approve_requirement',
+                'approve_requirement_doc',
+                'approve_requirements',
+                'revise',
+                'request_changes',
+                'request_revise',
+                'revise_requirement',
+                'revise_requirement_doc',
+                'revise_requirements'
+            )
+        }
+        'xl_plan' {
+            @(
+                'approve',
+                'approve_plan',
+                'approve_execution_plan',
+                'request_execute',
+                'revise',
+                'request_changes',
+                'request_revise',
+                'revise_plan',
+                'revise_execution_plan'
+            )
+        }
+        default { @('approve', 'revise', 'request_changes', 'request_revise') }
     }
     $preferredDecisionAction = switch ([string]$terminalStage) {
         'requirement_doc' { 'approve_requirement' }

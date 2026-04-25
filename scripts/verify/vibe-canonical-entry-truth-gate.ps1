@@ -129,9 +129,7 @@ if ($hasReceipt -and $hasRuntimePacket -and $hasGovernanceCapsule -and $hasStage
         )
         Add-Assertion -Assertions $assertions -Pass $canonicalRouterAuthorityPreserved -Message 'runtime packet canonical_router keeps routing authority on canonical vibe'
     }
-    if (-not [string]::IsNullOrWhiteSpace($entryIntentId)) {
-        Add-Assertion -Assertions $assertions -Pass $true -Message 'runtime packet preserves entry_intent_id independently from router authority'
-    }
+    Add-Assertion -Assertions $assertions -Pass (-not [string]::IsNullOrWhiteSpace($entryIntentId)) -Message 'runtime packet preserves entry_intent_id independently from router authority'
 
     $selectedSkill = ''
     if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'route_snapshot') {
@@ -176,12 +174,10 @@ if ($hasReceipt -and $hasRuntimePacket -and $hasGovernanceCapsule -and $hasStage
     Add-Assertion -Assertions $assertions -Pass ($stageCount -ge 1) -Message 'stage lineage records at least one stage'
     $lastStageName = if (Test-ObjectHasProperty -InputObject $stageLineage -PropertyName 'last_stage_name') { [string]$stageLineage.last_stage_name } else { '' }
     Add-Assertion -Assertions $assertions -Pass (-not [string]::IsNullOrWhiteSpace($lastStageName)) -Message 'stage lineage records terminal stage name'
-    if (-not [string]::IsNullOrWhiteSpace([string]$receipt.requested_stage_stop)) {
-        if ($confirmRequired) {
-            Add-Assertion -Assertions $assertions -Pass ([string]$lastStageName -eq 'skeleton_check') -Message 'confirm-required routing stops before governed stage progression'
-        } else {
-            Add-Assertion -Assertions $assertions -Pass ([string]$lastStageName -eq [string]$receipt.requested_stage_stop) -Message 'stage lineage terminal stage matches host launch receipt requested stop'
-        }
+    if ($confirmRequired) {
+        Add-Assertion -Assertions $assertions -Pass ([string]$lastStageName -eq 'skeleton_check') -Message 'confirm-required routing stops before governed stage progression'
+    } elseif (-not [string]::IsNullOrWhiteSpace([string]$receipt.requested_stage_stop)) {
+        Add-Assertion -Assertions $assertions -Pass ([string]$lastStageName -eq [string]$receipt.requested_stage_stop) -Message 'stage lineage terminal stage matches host launch receipt requested stop'
     }
 }
 

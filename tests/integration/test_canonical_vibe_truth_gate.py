@@ -214,6 +214,40 @@ def test_truth_gate_reports_missing_route_snapshot_without_unbound_selected_skil
     assert "selectedSkill" not in combined
 
 
+def test_truth_gate_rejects_missing_entry_intent_id(tmp_path: Path) -> None:
+    session_root = tmp_path / "session"
+    _write_valid_canonical_entry_artifacts(session_root)
+    runtime_packet_path = session_root / "runtime-input-packet.json"
+    runtime_packet = json.loads(runtime_packet_path.read_text(encoding="utf-8"))
+    runtime_packet.pop("entry_intent_id")
+    _write_json(runtime_packet_path, runtime_packet)
+
+    result = _run_truth_gate(session_root)
+
+    combined = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "runtime packet preserves entry_intent_id independently from router authority" in combined
+
+
+def test_truth_gate_enforces_confirm_required_skeleton_stop_without_requested_stage_stop(tmp_path: Path) -> None:
+    session_root = tmp_path / "session"
+    _write_valid_canonical_entry_artifacts(
+        session_root,
+        requested_stage_stop="",
+        terminal_stage="phase_cleanup",
+    )
+    runtime_packet_path = session_root / "runtime-input-packet.json"
+    runtime_packet = json.loads(runtime_packet_path.read_text(encoding="utf-8"))
+    runtime_packet["route_snapshot"]["confirm_required"] = True
+    _write_json(runtime_packet_path, runtime_packet)
+
+    result = _run_truth_gate(session_root)
+
+    combined = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "confirm-required routing stops before governed stage progression" in combined
+
+
 def test_truth_gate_accepts_explicit_no_specialist_decision(tmp_path: Path) -> None:
     session_root = tmp_path / "session"
     _write_valid_canonical_entry_artifacts(session_root)
