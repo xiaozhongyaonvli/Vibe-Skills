@@ -383,6 +383,69 @@ def test_resolve_effective_prompt_enriches_short_vibe_do_prompt_with_prior_inten
     assert prompt.endswith("execute plan phase-cleanup")
 
 
+def test_load_continuation_context_resolves_relative_artifacts_from_session_root(tmp_path: Path) -> None:
+    session_root = tmp_path / "outputs" / "runtime" / "vibe-sessions" / "prior-run"
+    intent_contract_path = session_root / "artifacts" / "intent-contract.json"
+    execution_plan_path = session_root / "artifacts" / "execution-plan.md"
+    summary_path = session_root / "runtime-summary.json"
+
+    _write_json(intent_contract_path, {"goal": "relative artifact goal", "deliverable": "report"})
+    execution_plan_path.parent.mkdir(parents=True, exist_ok=True)
+    execution_plan_path.write_text("# execution plan\n", encoding="utf-8")
+    _write_json(
+        summary_path,
+        {
+            "run_id": "prior-run",
+            "terminal_stage": "xl_plan",
+            "artifacts": {
+                "intent_contract": "artifacts/intent-contract.json",
+                "execution_plan": "artifacts/execution-plan.md",
+            },
+        },
+    )
+    _write_host_launch_receipt(session_root, run_id="prior-run")
+
+    continuation = canonical_entry._load_continuation_context_from_summary(
+        summary_path,
+        required_artifact="execution_plan",
+    )
+
+    assert continuation is not None
+    assert continuation["intent_goal"] == "relative artifact goal"
+    assert continuation["required_artifact"] == str(execution_plan_path)
+
+
+def test_bounded_return_control_resolves_relative_artifacts_from_summary_path(tmp_path: Path) -> None:
+    session_root = tmp_path / "outputs" / "runtime" / "vibe-sessions" / "bounded-run"
+    summary_path = session_root / "runtime-summary.json"
+    _write_json(session_root / "artifacts" / "intent-contract.json", {"goal": "relative bounded goal"})
+    _write_json(
+        session_root / "artifacts" / "runtime-input-packet.json",
+        {"canonical_router": {"task_type": "research"}},
+    )
+    summary = {
+        "run_id": "bounded-run",
+        "terminal_stage": "requirement_doc",
+        "artifacts": {
+            "intent_contract": "artifacts/intent-contract.json",
+            "runtime_input_packet": "artifacts/runtime-input-packet.json",
+        },
+        "bounded_return_control": {
+            "explicit_user_reentry_required": True,
+            "source_run_id": "bounded-run",
+            "terminal_stage": "requirement_doc",
+            "allowed_followup_entry_ids": ["vibe"],
+            "reentry_token": "token-123",  # noqa: S106 - non-secret fixture token
+        },
+    }
+
+    guard = canonical_entry._coerce_bounded_return_control(summary, summary_path)
+
+    assert guard is not None
+    assert guard["intent_goal"] == "relative bounded goal"
+    assert guard["prior_task_type"] == "research"
+
+
 def test_resolve_effective_prompt_enriches_vibe_reentry_with_requirement_context(
     tmp_path: Path,
 ) -> None:
@@ -967,6 +1030,15 @@ def test_resolve_progressive_requested_stage_stop_does_not_wrap_after_terminal_s
         requested_stage_stop="phase_cleanup",
         bounded_reentry={"terminal_stage": "phase_cleanup"},
     ) == "phase_cleanup"
+
+
+def test_resolve_progressive_requested_stage_stop_preserves_explicit_intermediate_stop() -> None:
+    assert canonical_entry._resolve_progressive_requested_stage_stop(
+        repo_root=REPO_ROOT,
+        entry_id="vibe",
+        requested_stage_stop="xl_plan",
+        bounded_reentry=None,
+    ) == "xl_plan"
 
 
 def test_canonical_entry_marks_receipt_failed_when_runtime_invocation_raises(

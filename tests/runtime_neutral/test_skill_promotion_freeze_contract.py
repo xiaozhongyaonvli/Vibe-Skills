@@ -251,6 +251,8 @@ class SkillPromotionFreezeContractTests(unittest.TestCase):
 
         self.assertEqual([], as_list(payload["approved_dispatch"]))
         self.assertEqual(["demo-skill"], [item["skill_id"] for item in as_list(payload["local_specialist_suggestions"])])
+        self.assertFalse(payload["escalation_required"])
+        self.assertEqual("not_required", payload["escalation_status"])
 
     def test_surface_only_recommendation_is_not_auto_approved_in_root_scope(self) -> None:
         split_function = extract_split_specialist_dispatch_function()

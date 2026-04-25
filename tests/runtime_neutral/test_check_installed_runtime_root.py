@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import locale
 import os
 import shutil
 import subprocess
@@ -104,13 +103,10 @@ def _to_windows_path(path: Path, powershell: str | None = None) -> str:
 
 
 def _capture_text_kwargs() -> dict[str, object]:
-    encoding = "utf-8"
-    if not shutil.which("pwsh") and not shutil.which("pwsh.exe"):
-        encoding = locale.getpreferredencoding(False) or "utf-8"
     return {
         "capture_output": True,
         "text": True,
-        "encoding": encoding,
+        "encoding": "utf-8",
         "errors": "replace",
     }
 
@@ -140,7 +136,7 @@ def test_to_windows_path_keeps_posix_path_for_pwsh(monkeypatch: pytest.MonkeyPat
     assert _to_windows_path(tmp_path, powershell="/usr/bin/pwsh") == str(tmp_path.resolve())
 
 
-def test_to_bash_path_prefers_cygpath_for_non_wsl_bash(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_to_bash_path_prefers_cygpath_for_non_wsl_bash(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_which(name: str) -> str | None:
         if name == "bash":
             return r"D:\tool\Git\bin\bash.exe"
@@ -152,10 +148,19 @@ def test_to_bash_path_prefers_cygpath_for_non_wsl_bash(monkeypatch: pytest.Monke
         assert args[:2] == [r"D:\tool\Git\usr\bin\cygpath.exe", "-u"]
         return subprocess.CompletedProcess(args=args, returncode=0, stdout="/f/test/example\n", stderr="")
 
+    windows_path = Path("F:/test/example")
+    original_resolve = Path.resolve
+
+    def fake_resolve(path: Path, *args: object, **kwargs: object) -> Path:
+        if path == windows_path:
+            return windows_path
+        return original_resolve(path, *args, **kwargs)
+
     monkeypatch.setattr(shutil, "which", fake_which)
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(Path, "resolve", fake_resolve)
 
-    assert _to_bash_path(tmp_path) == "/f/test/example"
+    assert _to_bash_path(windows_path) == "/f/test/example"
 
 
 def install_minimal_codex_runtime(target_root: Path) -> None:

@@ -14,6 +14,7 @@ FULL_MANIFEST = REPO_ROOT / "config" / "runtime-core-packaging.full.json"
 REPRESENTATIVE_NON_CORE_SKILL = "scikit-learn"
 DIRECT_RUNTIME_PUBLIC_SKILLS = {
     "vibe",
+    "vibe-upgrade",
 }
 HOST_VISIBLE_DISCOVERABLE_ENTRIES = {
     "vibe",
@@ -37,6 +38,7 @@ def load_skill_inventory(path: Path) -> tuple[set[str], set[str], set[str]]:
 MINIMAL_RUNTIME_SKILLS, MINIMAL_WORKFLOW_SKILLS, _ = load_skill_inventory(MINIMAL_MANIFEST)
 FULL_RUNTIME_SKILLS, FULL_WORKFLOW_SKILLS, FULL_OPTIONAL_WORKFLOW_SKILLS = load_skill_inventory(FULL_MANIFEST)
 MINIMAL_REQUIRED_SKILLS = MINIMAL_RUNTIME_SKILLS | MINIMAL_WORKFLOW_SKILLS
+MINIMAL_INSTALLED_SKILLS = MINIMAL_REQUIRED_SKILLS | {"vibe-upgrade"}
 MINIMAL_ALLOWLIST_SKILLS = (MINIMAL_RUNTIME_SKILLS - {"vibe"}) | MINIMAL_WORKFLOW_SKILLS
 
 
@@ -95,14 +97,15 @@ class InstallProfileDifferentiationTests(unittest.TestCase):
             self.assertTrue(hidden_required_skill.exists())
             self.assertNotIn(REPRESENTATIVE_NON_CORE_SKILL, installed_skills)
             self.assertEqual("minimal", ledger["profile"])
-            self.assertEqual(sorted(MINIMAL_REQUIRED_SKILLS), ledger["payload_summary"]["installed_skill_names"])
+            self.assertEqual(sorted(MINIMAL_INSTALLED_SKILLS), ledger["payload_summary"]["installed_skill_names"])
             self.assertEqual(sorted(DIRECT_RUNTIME_PUBLIC_SKILLS), ledger["payload_summary"]["public_skill_names"])
             self.assertEqual(sorted(HOST_VISIBLE_DISCOVERABLE_ENTRIES), ledger["payload_summary"]["host_visible_entry_names"])
             self.assertEqual(len(HOST_VISIBLE_DISCOVERABLE_ENTRIES), ledger["payload_summary"]["host_visible_entry_count"])
             # In a fresh temp target, every file should be installer-owned.
             self.assertEqual(count_files(target_root), ledger["payload_summary"]["installed_file_count"])
             self.assertTrue((target_root / "commands" / "vibe.md").exists())
-            self.assertTrue((target_root / "commands" / "vibe-upgrade.md").exists())
+            self.assertTrue((target_root / "skills" / "vibe-upgrade" / "SKILL.md").exists())
+            self.assertFalse((target_root / "commands" / "vibe-upgrade.md").exists())
 
     def test_full_install_extends_minimal_payload_and_records_larger_summary(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -177,10 +180,10 @@ class InstallProfileDifferentiationTests(unittest.TestCase):
                 if candidate.is_dir()
             }
 
-            self.assertEqual({"vibe"}, installed_skills)
+            self.assertEqual({"vibe", "vibe-upgrade"}, installed_skills)
             self.assertNotIn(REPRESENTATIVE_NON_CORE_SKILL, installed_skills)
             self.assertEqual(sorted(MINIMAL_REQUIRED_SKILLS), ledger["managed_skill_names"])
-            self.assertEqual(sorted(MINIMAL_REQUIRED_SKILLS), ledger["payload_summary"]["installed_skill_names"])
+            self.assertEqual(sorted(MINIMAL_INSTALLED_SKILLS), ledger["payload_summary"]["installed_skill_names"])
 
     def test_payload_summary_ignores_preexisting_foreign_host_content(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

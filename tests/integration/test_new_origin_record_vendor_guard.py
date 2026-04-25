@@ -13,9 +13,9 @@ SCRIPT_PATH = REPO_ROOT / "scripts" / "governance" / "new-origin-record.ps1"
 
 
 def _require_powershell() -> str:
-    powershell = shutil.which("pwsh") or shutil.which("powershell")
+    powershell = shutil.which("pwsh")
     if not powershell:
-        pytest.skip("PowerShell executable not available in PATH")
+        pytest.skip("PowerShell 7 (pwsh) executable not available in PATH")
     return powershell
 
 

@@ -3568,10 +3568,11 @@ function New-VibeHostUserBriefingProjection {
             }) | Out-Null
         }
         $requiredUnitArray = [object[]]$requiredUnits.ToArray()
+        $pythonLauncher = if ([System.IO.Path]::DirectorySeparatorChar -eq '\') { 'py -3' } else { 'python3' }
         $refreshCommandHint = if (-not [string]::IsNullOrWhiteSpace($sessionRoot)) {
-            'py -3 scripts/verify/runtime_neutral/runtime_delivery_acceptance.py --session-root "{0}" --write-artifacts' -f $sessionRoot
+            '{0} scripts/verify/runtime_neutral/runtime_delivery_acceptance.py --session-root "{1}" --write-artifacts' -f $pythonLauncher, $sessionRoot
         } else {
-            'py -3 scripts/verify/runtime_neutral/runtime_delivery_acceptance.py --session-root <session_root> --write-artifacts'
+            '{0} scripts/verify/runtime_neutral/runtime_delivery_acceptance.py --session-root <session_root> --write-artifacts' -f $pythonLauncher
         }
         $executionHandoffContract = [pscustomobject]@{
             protocol_version = 'v1'
@@ -3745,7 +3746,7 @@ function New-VibeHostUserBriefingProjection {
             ('- preferred structured approval action: `{0}`' -f [string]$preferredDecisionAction),
             ('- approval instruction: {0}' -f [string]$approvalPrompt),
             '- do not continue in the same assistant turn; wait for a new user message before consuming re-entry credentials',
-            '- if you intentionally continue, forward `--continue-from-run-id <source_run_id>` and `--bounded-reentry-token <reentry_token>` from the latest runtime summary'
+            ('- if you intentionally continue, forward `--continue-from-run-id {0}` and `--bounded-reentry-token {1}` from the latest runtime summary' -f [string]$BoundedReturnControl.source_run_id, [string]$BoundedReturnControl.reentry_token)
         )
         $boundedSegment = [pscustomobject]@{
             segment_id = 'bounded_return_control'
@@ -3759,6 +3760,7 @@ function New-VibeHostUserBriefingProjection {
             rendered_text = (@($boundedLines) -join "`n")
             control_owner = if ((Test-VibeObjectHasProperty -InputObject $BoundedReturnControl -PropertyName 'control_owner') -and -not [string]::IsNullOrWhiteSpace([string]$BoundedReturnControl.control_owner)) { [string]$BoundedReturnControl.control_owner } else { 'user' }
             source_run_id = if ((Test-VibeObjectHasProperty -InputObject $BoundedReturnControl -PropertyName 'source_run_id') -and -not [string]::IsNullOrWhiteSpace([string]$BoundedReturnControl.source_run_id)) { [string]$BoundedReturnControl.source_run_id } else { $null }
+            reentry_token = if ((Test-VibeObjectHasProperty -InputObject $BoundedReturnControl -PropertyName 'reentry_token') -and -not [string]::IsNullOrWhiteSpace([string]$BoundedReturnControl.reentry_token)) { [string]$BoundedReturnControl.reentry_token } else { $null }
             terminal_stage = if ((Test-VibeObjectHasProperty -InputObject $BoundedReturnControl -PropertyName 'terminal_stage') -and -not [string]::IsNullOrWhiteSpace([string]$BoundedReturnControl.terminal_stage)) { [string]$BoundedReturnControl.terminal_stage } else { $null }
             next_stage = $nextStage
             approval_kind = $approvalKind

@@ -974,7 +974,7 @@ function Split-VibeSpecialistDispatch {
         }
     }
 
-    $escalationRequired = @($localSuggestions).Count -gt 0 -and (
+    $escalationRequired = $null -eq $HostSpecialistDispatchDecision -and @($localSuggestions).Count -gt 0 -and (
         $null -eq $SuggestionContract -or
         -not ($SuggestionContract.PSObject.Properties.Name -contains 'escalation_required') -or
         [bool]$SuggestionContract.escalation_required
@@ -1082,9 +1082,24 @@ if (
 ) {
     $preferredPayload = $routeResult.confirm_ui.route_decision_contract.preferred_payload
     $syntheticHostDecisionJson = $preferredPayload | ConvertTo-Json -Depth 20 -Compress
-    $routeResult = Invoke-VibeFrozenRoute -RouterScriptPath $routerScriptPath -BaseArgs $routeArgs -HostDecisionJson $syntheticHostDecisionJson
     $hostDecision = ConvertFrom-VibeHostDecisionJson -HostDecisionJson $syntheticHostDecisionJson
     $continuationContext = Get-VibeHostContinuationContext -HostDecision $hostDecision
+    if (
+        (Test-VibeStructuredBoundedReentryContext -ContinuationContext $continuationContext) -and
+        (Test-VibeObjectHasProperty -InputObject $continuationContext -PropertyName 'control_only_prompt') -and
+        [bool]$continuationContext.control_only_prompt -and
+        (Test-VibeObjectHasProperty -InputObject $continuationContext -PropertyName 'prior_task_type') -and
+        -not [string]::IsNullOrWhiteSpace([string]$continuationContext.prior_task_type)
+    ) {
+        $taskType = [string]$continuationContext.prior_task_type
+        for ($routeArgIndex = 0; $routeArgIndex -lt (@($routeArgs).Count - 1); $routeArgIndex++) {
+            if ([string]::Equals([string]$routeArgs[$routeArgIndex], '-TaskType', [System.StringComparison]::OrdinalIgnoreCase)) {
+                $routeArgs[$routeArgIndex + 1] = $taskType
+                break
+            }
+        }
+    }
+    $routeResult = Invoke-VibeFrozenRoute -RouterScriptPath $routerScriptPath -BaseArgs $routeArgs -HostDecisionJson $syntheticHostDecisionJson
     $executionPhaseDecomposition = Resolve-VibeHostPhaseDecomposition -HostDecision $hostDecision -Task $Task -Policy $policy
 }
 

@@ -53,6 +53,9 @@ class DiscoverableWrapperHostVisibilityTests(unittest.TestCase):
                     self.assertIn("vibe", names, host_id)
                     self.assertEqual(int(payload_summary.get("host_visible_entry_count") or 0), len(names), host_id)
                     self.assertTrue(EXPECTED_DISCOVERABLE_ENTRIES.issubset(set(names)), host_id)
+                    self.assertTrue((target_root / "skills" / "vibe-upgrade" / "SKILL.md").exists(), host_id)
+                    self.assertFalse((target_root / "commands" / "vibe-upgrade.md").exists(), host_id)
+                    self.assertFalse((target_root / "command" / "vibe-upgrade.md").exists(), host_id)
 
     def test_shell_check_accepts_supported_host_discoverable_surfaces(self) -> None:
         self._require_bash()

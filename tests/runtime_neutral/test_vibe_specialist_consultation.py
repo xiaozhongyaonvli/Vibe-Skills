@@ -1186,6 +1186,33 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
         self.assertEqual("unit-1", contract["required_units"][0]["unit_id"])
         self.assertEqual("executed", contract["preferred_payload"]["units"][0]["resolution_state"])
 
+    def test_host_user_briefing_keeps_concrete_bounded_reentry_credentials(self) -> None:
+        result = run_runtime_common_json(
+            """
+            $boundedReturnControl = [pscustomobject]@{
+                enabled = $true
+                terminal_stage = 'requirement_doc'
+                source_run_id = 'pytest-source-run'
+                reentry_token = 'pytest-token-123'
+                next_stage = 'xl_plan'
+                approval_kind = 'stage_approval'
+                approval_prompt = 'Approve the frozen requirement before planning.'
+                allowed_followup_entry_ids = @('vibe')
+                host_decision_contract = [pscustomobject]@{
+                    preferred_decision_action = 'approve_requirement'
+                }
+            }
+            $result = New-VibeHostUserBriefingProjection -BoundedReturnControl $boundedReturnControl
+            $result | ConvertTo-Json -Depth 20
+            """
+        )
+
+        self.assertIn("--continue-from-run-id pytest-source-run", result["rendered_text"])
+        self.assertIn("--bounded-reentry-token pytest-token-123", result["rendered_text"])
+        segment = list(result["segments"])[0]
+        self.assertEqual("pytest-source-run", segment["source_run_id"])
+        self.assertEqual("pytest-token-123", segment["reentry_token"])
+
     def test_consultation_window_invokes_specialist_and_emits_progressive_disclosure(self) -> None:
         shell = resolve_powershell()
         if shell is None:

@@ -24,6 +24,18 @@ from .runtime_delivery_acceptance_support import (
 )
 
 
+def _normalize_entrypoint_path_for_compare(value: object) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    normalized = raw.replace("\\", "/").rstrip("/")
+    if len(normalized) >= 3 and normalized[1:3] == ":/":
+        return normalized.casefold()
+    if "\\" in raw:
+        return normalized.casefold()
+    return normalized
+
+
 def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[str, Any]:
     contract = load_json(repo_root / "config" / "project-delivery-acceptance-contract.json")
     execute_receipt_path = session_root / "phase-execute.json"
@@ -195,7 +207,22 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
         if skill_id and native_skill_entrypoint and skill_id not in disclosure_entrypoint_by_skill_id:
             disclosure_entrypoint_by_skill_id[skill_id] = native_skill_entrypoint
 
+    raw_specialist_execution_units = specialist_execution_payload.get("units") or []
+    if not isinstance(raw_specialist_execution_units, list):
+        raw_specialist_execution_units = [raw_specialist_execution_units] if raw_specialist_execution_units else []
+
+    direct_routed_units_key_present = "direct_routed_specialist_units" in specialist_accounting
     raw_direct_routed_specialist_units = specialist_accounting.get("direct_routed_specialist_units") or []
+    if not direct_routed_units_key_present and not raw_direct_routed_specialist_units and raw_specialist_execution_units:
+        raw_direct_routed_specialist_units = [
+            {
+                "unit_id": str(record.get("unit_id") or "").strip(),
+                "skill_id": str(record.get("skill_id") or record.get("specialist_skill_id") or "").strip(),
+                "result_path": str(record.get("result_path") or "").strip(),
+            }
+            for record in raw_specialist_execution_units
+            if isinstance(record, dict)
+        ]
     if not isinstance(raw_direct_routed_specialist_units, list):
         raw_direct_routed_specialist_units = [raw_direct_routed_specialist_units] if raw_direct_routed_specialist_units else []
 
@@ -230,9 +257,6 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
     if specialist_execution_source_path:
         specialist_execution_evidence = [specialist_execution_source_path, *specialist_execution_evidence]
 
-    raw_specialist_execution_units = specialist_execution_payload.get("units") or []
-    if not isinstance(raw_specialist_execution_units, list):
-        raw_specialist_execution_units = [raw_specialist_execution_units] if raw_specialist_execution_units else []
     if (
         not runtime_specialist_execution_status
         and approved_dispatch_skill_ids
@@ -330,7 +354,12 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
 
         native_skill_entrypoint = str(record.get("native_skill_entrypoint") or "").strip()
         expected_entrypoint = str(expected_unit.get("native_skill_entrypoint") or "").strip()
-        if native_skill_entrypoint and expected_entrypoint and native_skill_entrypoint != expected_entrypoint:
+        if (
+            native_skill_entrypoint
+            and expected_entrypoint
+            and _normalize_entrypoint_path_for_compare(native_skill_entrypoint)
+            != _normalize_entrypoint_path_for_compare(expected_entrypoint)
+        ):
             specialist_execution_payload_valid = False
             specialist_execution_notes.append(
                 f"Specialist execution sidecar unit `{unit_id}` changed native_skill_entrypoint away from the disclosed value."

@@ -359,6 +359,7 @@ def _relax_deep_discovery_confirm(
     deep_discovery_advice["reason"] = "intent_contract_sufficient_single_capability"
     deep_discovery_advice["confirm_required"] = False
     deep_discovery_advice["interview_required"] = False
+    deep_discovery_advice["should_apply_hook"] = False
     return True
 
 

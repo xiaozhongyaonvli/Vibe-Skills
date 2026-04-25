@@ -48,7 +48,15 @@ def run_bridge(
         command.extend(["--requested-skill", requested_skill])
     if entry_intent_id:
         command.extend(["--entry-intent-id", entry_intent_id])
-    completed = subprocess.run(command, cwd=REPO_ROOT, capture_output=True, text=True, check=True)
+    completed = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
+    )
     return json.loads(completed.stdout)
 
 
@@ -182,6 +190,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual([], result["confirm_ui"]["clarification_questions"])
         self.assertNotIn(CONFIRM_UI_BATCH_PROMPT, result["confirm_ui"]["rendered_text"])
         self.assertNotIn(DEEP_DISCOVERY_FIRST_QUESTION, result["confirm_ui"]["rendered_text"])
+        self.assertFalse(result["deep_discovery_advice"]["should_apply_hook"])
 
     def test_powershell_host_selection_confirm_ui_does_not_reopen_generic_clarifiers(self) -> None:
         result = run_powershell_route(

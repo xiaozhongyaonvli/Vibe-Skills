@@ -354,11 +354,25 @@ def _has_verified_host_launch_receipt(summary_path: Path) -> bool:
     return True
 
 
-def _load_intent_contract_from_artifacts(artifacts: dict[str, Any]) -> dict[str, Any] | None:
-    intent_contract_path = _artifact_path_value(artifacts, "intent_contract")
-    if not intent_contract_path:
+def _artifact_path_from_artifacts(artifacts: dict[str, Any], key: str, *, base_dir: Path | None = None) -> Path | None:
+    raw_path = _artifact_path_value(artifacts, key)
+    if not raw_path:
         return None
-    return _load_json_dict_if_exists(Path(intent_contract_path))
+    candidate = Path(raw_path)
+    if not candidate.is_absolute() and base_dir is not None:
+        candidate = base_dir / candidate
+    return candidate
+
+
+def _load_intent_contract_from_artifacts(
+    artifacts: dict[str, Any],
+    *,
+    base_dir: Path | None = None,
+) -> dict[str, Any] | None:
+    intent_contract_path = _artifact_path_from_artifacts(artifacts, "intent_contract", base_dir=base_dir)
+    if intent_contract_path is None:
+        return None
+    return _load_json_dict_if_exists(intent_contract_path)
 
 
 def _load_runtime_input_packet_from_summary(summary_path: Path | None) -> dict[str, Any] | None:
@@ -643,6 +657,9 @@ def _resolve_progressive_requested_stage_stop(
                 return progressive_stage_stops[terminal_index + 1]
             return terminal_stage
 
+    if normalized_requested_stage_stop and normalized_requested_stage_stop in progressive_stage_stops[:-1]:
+        return normalized_requested_stage_stop
+
     return progressive_stage_stops[0]
 
 
@@ -748,10 +765,10 @@ def _load_continuation_context_from_summary(
     if not _has_verified_host_launch_receipt(summary_path):
         return None
     artifacts = _artifact_paths(summary)
-    required_path = _artifact_path_value(artifacts, required_artifact)
-    if not required_path or not Path(required_path).exists():
+    required_path = _artifact_path_from_artifacts(artifacts, required_artifact, base_dir=summary_path.parent)
+    if not required_path or not required_path.exists():
         return None
-    intent_contract = _load_intent_contract_from_artifacts(artifacts)
+    intent_contract = _load_intent_contract_from_artifacts(artifacts, base_dir=summary_path.parent)
     if not intent_contract:
         return None
     runtime_packet = _load_runtime_input_packet_from_summary(summary_path)
@@ -821,7 +838,7 @@ def _resolve_effective_prompt(
     return prompt_text
 
 
-def _coerce_bounded_return_control(summary: dict[str, Any]) -> dict[str, Any] | None:
+def _coerce_bounded_return_control(summary: dict[str, Any], summary_path: Path | None = None) -> dict[str, Any] | None:
     if not _has_explicit_bounded_return_control(summary):
         return None
 
@@ -841,9 +858,12 @@ def _coerce_bounded_return_control(summary: dict[str, Any]) -> dict[str, Any] | 
         return None
 
     artifacts = _artifact_paths(summary)
-    intent_contract = _load_intent_contract_from_artifacts(artifacts)
-    runtime_packet_path = _artifact_path_value(artifacts, "runtime_input_packet")
-    runtime_packet = _load_json_dict_if_exists(Path(runtime_packet_path)) if runtime_packet_path else {}
+    summary_base_dir = summary_path.parent if summary_path is not None else None
+    if summary_base_dir is None and summary.get("summary_path"):
+        summary_base_dir = Path(str(summary.get("summary_path"))).parent
+    intent_contract = _load_intent_contract_from_artifacts(artifacts, base_dir=summary_base_dir)
+    runtime_packet_path = _artifact_path_from_artifacts(artifacts, "runtime_input_packet", base_dir=summary_base_dir)
+    runtime_packet = _load_json_dict_if_exists(runtime_packet_path) if runtime_packet_path else {}
     prior_task_type = ""
     if isinstance(runtime_packet, dict):
         canonical_router = runtime_packet.get("canonical_router")
@@ -871,9 +891,9 @@ def _has_explicit_bounded_return_control(summary: dict[str, Any]) -> bool:
 
 def _build_malformed_bounded_return_control(summary: dict[str, Any], summary_path: Path) -> dict[str, Any]:
     artifacts = _artifact_paths(summary)
-    intent_contract = _load_intent_contract_from_artifacts(artifacts)
-    runtime_packet_path = _artifact_path_value(artifacts, "runtime_input_packet")
-    runtime_packet = _load_json_dict_if_exists(Path(runtime_packet_path)) if runtime_packet_path else {}
+    intent_contract = _load_intent_contract_from_artifacts(artifacts, base_dir=summary_path.parent)
+    runtime_packet_path = _artifact_path_from_artifacts(artifacts, "runtime_input_packet", base_dir=summary_path.parent)
+    runtime_packet = _load_json_dict_if_exists(runtime_packet_path) if runtime_packet_path else {}
     prior_task_type = ""
     if isinstance(runtime_packet, dict):
         canonical_router = runtime_packet.get("canonical_router")
@@ -907,7 +927,7 @@ def _find_latest_bounded_return_control(
             return None
         preferred_summary = _load_json_dict_if_exists(preferred_summary_path)
         if preferred_summary and _has_explicit_bounded_return_control(preferred_summary):
-            preferred_guard = _coerce_bounded_return_control(preferred_summary)
+            preferred_guard = _coerce_bounded_return_control(preferred_summary, preferred_summary_path)
             if preferred_guard:
                 preferred_guard["summary_path"] = str(preferred_summary_path)
                 return preferred_guard
@@ -923,7 +943,7 @@ def _find_latest_bounded_return_control(
             continue
         if not _has_explicit_bounded_return_control(summary):
             continue
-        guard = _coerce_bounded_return_control(summary)
+        guard = _coerce_bounded_return_control(summary, summary_path)
         if guard:
             guard["summary_path"] = str(summary_path)
             return guard

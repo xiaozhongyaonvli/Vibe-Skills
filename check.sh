@@ -451,11 +451,18 @@ def emit(value):
     sys.stdout.buffer.write(f"{value}\n".encode("utf-8", errors="backslashreplace"))
 
 path, expr = sys.argv[1], sys.argv[2]
-with open(path, encoding='utf-8-sig') as fh:
-    data = json.load(fh)
+try:
+    with open(path, encoding='utf-8-sig') as fh:
+        data = json.load(fh)
+except Exception as exc:
+    sys.stderr.write(f"failed to parse JSON {path}: {exc}\n")
+    sys.exit(1)
 value = data
-for part in expr.split('.'):
-    value = value[part]
+try:
+    for part in expr.split('.'):
+        value = value[part]
+except (KeyError, TypeError):
+    sys.exit(2)
 if isinstance(value, list):
     for item in value:
         emit('true' if item is True else 'false' if item is False else item)
@@ -477,11 +484,18 @@ def emit(value):
     sys.stdout.buffer.write(f"{value}\n".encode("utf-8", errors="backslashreplace"))
 
 path, expr = sys.argv[1], sys.argv[2]
-with open(path, encoding='utf-8-sig') as fh:
-    data = json.load(fh)
+try:
+    with open(path, encoding='utf-8-sig') as fh:
+        data = json.load(fh)
+except Exception as exc:
+    sys.stderr.write(f"failed to parse JSON {path}: {exc}\n")
+    sys.exit(1)
 value = data
-for part in expr.split('.'):
-    value = value[part]
+try:
+    for part in expr.split('.'):
+        value = value[part]
+except (KeyError, TypeError):
+    sys.exit(2)
 if isinstance(value, list):
     for item in value:
         emit('true' if item is True else 'false' if item is False else item)
@@ -499,6 +513,9 @@ param([string]$Path,[string]$Expr)
 $raw = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
 $value = $raw | ConvertFrom-Json
 foreach ($part in $Expr.Split(".")) {
+  if ($null -eq $value -or -not ($value.PSObject.Properties.Name -contains $part)) {
+    exit 2
+  }
   $value = $value.$part
 }
 if ($value -is [System.Collections.IEnumerable] -and -not ($value -is [string])) {
@@ -573,7 +590,19 @@ projected_skill_names_for_check() {
 
   if [[ "${projection_name}" == "compatibility_skill_projections" ]]; then
     local allowlist=()
-    mapfile -t allowlist < <(json_query_lines_from_file "${manifest_path}" "${projection_name}.host_allowlist" 2>/dev/null || true)
+    local allowlist_output=""
+    local allowlist_status=0
+    allowlist_output="$(json_query_lines_from_file "${manifest_path}" "${projection_name}.host_allowlist" 2>/dev/null)" || allowlist_status=$?
+    if [[ ${allowlist_status} -eq 1 ]]; then
+      echo "[FAIL] Unable to parse ${manifest_path} while reading ${projection_name}.host_allowlist" >&2
+      return 1
+    elif [[ ${allowlist_status} -gt 2 ]]; then
+      echo "[FAIL] Unable to read ${projection_name}.host_allowlist from ${manifest_path}" >&2
+      return 1
+    fi
+    if [[ -n "${allowlist_output}" ]]; then
+      mapfile -t allowlist <<<"${allowlist_output}"
+    fi
     if [[ ${#allowlist[@]} -gt 0 ]]; then
       local allowed="false"
       local lowered_host=""
@@ -589,7 +618,14 @@ projected_skill_names_for_check() {
     fi
   fi
 
-  json_query_lines_from_file "${manifest_path}" "${projection_name}.projected_skill_names" 2>/dev/null || true
+  local projected_output=""
+  local projected_status=0
+  projected_output="$(json_query_lines_from_file "${manifest_path}" "${projection_name}.projected_skill_names" 2>/dev/null)" || projected_status=$?
+  if [[ ${projected_status} -ne 0 ]]; then
+    echo "[FAIL] Unable to read ${projection_name}.projected_skill_names from ${manifest_path}" >&2
+    return 1
+  fi
+  printf '%s\n' "${projected_output}"
 }
 
 load_projected_skill_names_for_check() {
@@ -1057,7 +1093,11 @@ if [[ "${HOST_ID}" == "codex" && "${ADAPTER_CHECK_MODE}" == "governed" ]]; then
   load_projected_skill_names_for_check "public_skill_surface"
   codex_command_names=("${PROJECTED_SKILL_NAMES[@]}")
   for n in "${codex_command_names[@]}"; do
-    check_path "codex command/${n}" "${TARGET_ROOT}/commands/${n}.md" false
+    if [[ "${n}" == "vibe-upgrade" ]]; then
+      check_path "skill/${n}" "${TARGET_ROOT}/skills/${n}/SKILL.md"
+    else
+      check_path "codex command/${n}" "${TARGET_ROOT}/commands/${n}.md" false
+    fi
   done
 fi
 if [[ "${HOST_ID}" == "opencode" ]]; then

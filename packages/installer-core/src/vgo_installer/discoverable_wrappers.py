@@ -17,6 +17,8 @@ class WrapperDescriptor:
 
 def _host_wrapper_relpath(host_id: str, entry: DiscoverableEntry) -> Path:
     normalized = (host_id or "").strip().lower()
+    if entry.id == "vibe-upgrade":
+        return Path("skills") / entry.id / "SKILL.md"
     if normalized != "opencode" and uses_skill_only_activation(normalized):
         return Path("skills") / entry.id / "SKILL.md"
     return Path("commands") / f"{entry.id}.md"

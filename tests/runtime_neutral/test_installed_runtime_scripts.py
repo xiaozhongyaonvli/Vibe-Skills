@@ -68,6 +68,8 @@ def _native_shell_frontend_unavailable_reason() -> str | None:
 
 
 def _is_native_shell_frontend_test(method_name: str) -> bool:
+    if "powershell_" in method_name:
+        return False
     markers = (
         "shell_",
         "check_sh",
@@ -76,14 +78,18 @@ def _is_native_shell_frontend_test(method_name: str) -> bool:
     )
     return any(marker in method_name for marker in markers)
 
+
+def test_native_shell_frontend_classifier_does_not_match_powershell_tests() -> None:
+    assert not _is_native_shell_frontend_test("test_powershell_install_succeeds_without_python_on_path")
+    assert _is_native_shell_frontend_test("test_shell_install_writes_install_ledger")
+
+
 def resolve_powershell() -> str | None:
     candidates = [
         shutil.which("pwsh"),
         shutil.which("pwsh.exe"),
         r"C:\Program Files\PowerShell\7\pwsh.exe",
         r"C:\Program Files\PowerShell\7-preview\pwsh.exe",
-        shutil.which("powershell"),
-        shutil.which("powershell.exe"),
     ]
     for candidate in candidates:
         if candidate and Path(candidate).exists():
@@ -459,7 +465,7 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
         self.assertTrue(payload["installed_commit"])
         self.assertFalse(payload["update_available"])
 
-    def test_installed_codex_check_accepts_hyphen_command_shim_surface(self) -> None:
+    def test_installed_codex_check_accepts_public_upgrade_skill_surface(self) -> None:
         self.install_shell_runtime("codex")
 
         commands_root = self.target_root / "commands"
@@ -470,7 +476,8 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
         )
         for discoverable_name in hidden_wrapper_commands:
             self.assertFalse((commands_root / discoverable_name).exists(), discoverable_name)
-        self.assertTrue((commands_root / "vibe-upgrade.md").exists(), "vibe-upgrade.md")
+        self.assertFalse((commands_root / "vibe-upgrade.md").exists(), "vibe-upgrade.md")
+        self.assertTrue((self.target_root / "skills" / "vibe-upgrade" / "SKILL.md").exists(), "skills/vibe-upgrade/SKILL.md")
 
         installed_root = self.target_root / "skills" / "vibe"
         check_cmd = [

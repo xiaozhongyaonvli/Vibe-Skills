@@ -28,7 +28,7 @@ def test_build_wrapper_descriptors_renders_all_discoverable_entries_for_codex() 
 
     assert sorted(rendered) == ['vibe', 'vibe-upgrade']
     assert rendered['vibe'].relpath.as_posix() == 'commands/vibe.md'
-    assert rendered['vibe-upgrade'].relpath.as_posix() == 'commands/vibe-upgrade.md'
+    assert rendered['vibe-upgrade'].relpath.as_posix() == 'skills/vibe-upgrade/SKILL.md'
     assert 'Wrapper entry: Vibe (`vibe`)' in rendered['vibe'].content
     assert '"schema": "vibe-wrapper-trampoline/v1"' in rendered['vibe'].content
     assert '"launch_mode": "canonical-entry"' in rendered['vibe'].content
@@ -42,6 +42,10 @@ def test_build_wrapper_descriptors_renders_all_discoverable_entries_for_codex() 
     assert 'Do not preflight-scan the current workspace or repository for canonical proof files before launch.' in rendered['vibe'].content
     assert 'validate canonical proof artifacts only inside that launched session root.' in rendered['vibe'].content
     assert 'Wrapper labels only select the bounded terminal stage.' in rendered['vibe'].content
+    assert 'name: vibe-upgrade' in rendered['vibe-upgrade'].content
+    assert 'Wrapper entry: Vibe: Upgrade (`vibe-upgrade`)' in rendered['vibe-upgrade'].content
+    assert '"entry_id": "vibe-upgrade"' in rendered['vibe-upgrade'].content
+    assert 'default to upgrading the current host installation' in rendered['vibe-upgrade'].content
 
 
 def test_build_wrapper_descriptors_renders_skill_wrappers_for_skill_only_hosts() -> None:
@@ -68,6 +72,22 @@ def test_build_wrapper_descriptors_renders_skill_wrappers_for_skill_only_hosts()
     assert 'Do not preflight-scan the current workspace or repository for canonical proof files before launch.' in rendered['vibe'].content
     assert 'validate canonical proof artifacts only inside that launched session root.' in rendered['vibe'].content
     assert '$ARGUMENTS' in rendered['vibe'].content
+    assert 'name: vibe-upgrade' in rendered['vibe-upgrade'].content
+    assert 'Wrapper entry: Vibe: Upgrade (`vibe-upgrade`)' in rendered['vibe-upgrade'].content
+
+
+def test_build_wrapper_descriptors_renders_upgrade_as_skill_for_command_hosts() -> None:
+    surface = load_discoverable_entry_surface(ROOT)
+
+    rendered = build_wrapper_descriptors(
+        host_id='opencode',
+        surface=surface,
+    )
+
+    assert rendered['vibe'].relpath.as_posix() == 'commands/vibe.md'
+    assert rendered['vibe-upgrade'].relpath.as_posix() == 'skills/vibe-upgrade/SKILL.md'
+    assert 'name: vibe-upgrade' in rendered['vibe-upgrade'].content
+    assert 'Wrapper entry: Vibe: Upgrade (`vibe-upgrade`)' in rendered['vibe-upgrade'].content
 
 
 def test_build_wrapper_descriptors_fails_closed_when_canonical_contract_is_unresolved(monkeypatch) -> None:

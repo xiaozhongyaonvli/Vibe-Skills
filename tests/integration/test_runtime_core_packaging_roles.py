@@ -107,6 +107,11 @@ def test_profile_runtime_core_packaging_projections_match_base_overlay_resolutio
         assert full_projection == resolved_full
 
 
+def test_committed_profile_runtime_core_packaging_does_not_embed_repo_root() -> None:
+    assert "_repo_root" not in _load(MINIMAL_MANIFEST)
+    assert "_repo_root" not in _load(FULL_MANIFEST)
+
+
 def test_profile_runtime_core_packaging_roles_describe_delivery_model() -> None:
     minimal = _load(MINIMAL_MANIFEST)
     full = _load(FULL_MANIFEST)
