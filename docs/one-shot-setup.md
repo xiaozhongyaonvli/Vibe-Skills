@@ -58,11 +58,10 @@ bash ./scripts/bootstrap/one-shot-setup.sh
 - `git`
 - `node` and `npm`
 - `python3` or `python`
-- Windows: `powershell` or `pwsh`
-- Linux / macOS: `bash`
-- Recommended on Linux / macOS for authoritative gate parity: `pwsh` (PowerShell 7)
+- Windows: `pwsh` (PowerShell 7) is preferred; Windows PowerShell is only a fallback
+- Linux / macOS: `bash` for the shell entrypoint plus `pwsh` (PowerShell 7) for PowerShell-native governed verification
 
-Linux / macOS without `pwsh` still gets the shipped content and the runtime-neutral verification path where supported, but the PowerShell-native doctor gates degrade to explicit warnings instead of silent success.
+Linux / macOS without `pwsh` still gets the shipped content and the runtime-neutral verification path where supported, but the PowerShell-native governed runtime, doctor, freshness, and parity gates degrade to explicit warnings instead of silent success.
 
 ## What one-shot actually does now
 

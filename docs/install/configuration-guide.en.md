@@ -128,10 +128,10 @@ Run from the repo root.
 ### Windows
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<target host root>" -WriteArtifacts
+pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<target host root>" -WriteArtifacts
 ```
 
-If PowerShell 7 is already installed on your machine, you can use `pwsh` instead.
+`powershell.exe` is only a Windows fallback when `pwsh` is unavailable; Linux/macOS PowerShell-native governed verification requires PowerShell 7.
 
 ### Linux / macOS
 

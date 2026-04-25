@@ -95,8 +95,8 @@ it explicitly every time.
 
 ### Continuation-Aware Router Input
 
-When entering through a downstream wrapper such as `vibe-how` after `vibe-want`, or
-`vibe-do` after `vibe-how`, do not pretend this is a brand-new task if the same thread
+When entering through a compatibility stage entry such as `vibe-how-do-we-do` after
+`vibe-what-do-i-want`, or `vibe-do-it` after `vibe-how-do-we-do`, do not pretend this is a brand-new task if the same thread
 already has a verified governed requirement or plan.
 
 Continuation rules:
@@ -135,9 +135,10 @@ If `py -3` is unavailable, try `python` instead.
 
 If you must invoke PowerShell through a Bash-like tool surface, do not place `$env:PYTHONPATH=...` inside a double-quoted `-Command` string. The outer shell can expand `$env` first and corrupt it to `:PYTHONPATH`, leaving `PYTHONPATH` unset and causing `ModuleNotFoundError: No module named 'vgo_cli'`. In that situation, either set `PYTHONPATH=...` in the outer shell before invoking `py -3 -m ...`, or single-quote / escape the PowerShell payload so `$env:` reaches PowerShell literally.
 
-Discoverable wrapper ids still enter canonical `vibe`; only the bounded stop contract changes:
+Public discoverable entries still enter canonical `vibe`; only the bounded stop contract changes:
 - `vibe` uses progressive governed stops: first `requirement_doc`, then `xl_plan`, then `phase_cleanup` after explicit re-entry approval at each boundary
-- legacy bounded wrappers remain compatibility aliases: `vibe-want` -> `requirement_doc`, `vibe-how` -> `xl_plan --requested-grade-floor XL`, `vibe-do-it` -> `phase_cleanup`
+- `vibe-upgrade` is the public governed upgrade entry.
+- compatibility stage entries are non-public unless a host explicitly renders them from `config/vibe-entry-surfaces.json`: `vibe-what-do-i-want` -> `requirement_doc`, `vibe-how-do-we-do` -> `xl_plan --requested-grade-floor XL`, `vibe-do-it` -> `phase_cleanup`
 
 Hard rules:
 - Do not inspect the repo, protocol docs, or prior run outputs before canonical launch returns, except to resolve `skill_root` and current host id.

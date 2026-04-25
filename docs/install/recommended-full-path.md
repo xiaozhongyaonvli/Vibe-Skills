@@ -23,11 +23,15 @@
 - 失败不会阻塞 base install；失败只会在最终报告里集中汇总
 - 最终报告会把 `installed locally`、`vibe host-ready`、`mcp native auto-provision attempted`、每个 MCP 的 `host-visible readiness`、`manual follow-up`、以及 `online-ready` 分开写清楚
 
-Linux / macOS 公共前置条件：
+公共平台前置条件：
 
+- Windows：先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+- Linux：先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+- macOS：如果要使用 PowerShell 命令面，先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
 - shell 入口按 **macOS 自带 Bash 3.2** 兼容维护
 - `python3` / `python` 需要满足 **Python 3.10+**
 - 从 `zsh` 启动不是问题本身；真正关键是解析到的 `bash` / `python3` 版本
+- shell 入口仍然受支持，但完整 governed runtime 和验证面也依赖 PowerShell 7
 
 ## 支持宿主与默认路径
 

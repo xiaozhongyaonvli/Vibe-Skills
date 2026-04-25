@@ -26,13 +26,15 @@ def test_build_wrapper_descriptors_renders_all_discoverable_entries_for_codex() 
         surface=surface,
     )
 
-    assert sorted(rendered) == ['vibe']
+    assert sorted(rendered) == ['vibe', 'vibe-upgrade']
     assert rendered['vibe'].relpath.as_posix() == 'commands/vibe.md'
+    assert rendered['vibe-upgrade'].relpath.as_posix() == 'commands/vibe-upgrade.md'
     assert 'Wrapper entry: Vibe (`vibe`)' in rendered['vibe'].content
     assert '"schema": "vibe-wrapper-trampoline/v1"' in rendered['vibe'].content
     assert '"launch_mode": "canonical-entry"' in rendered['vibe'].content
     assert '"host_id": "codex"' in rendered['vibe'].content
     assert '"entry_id": "vibe"' in rendered['vibe'].content
+    assert '"entry_id": "vibe-upgrade"' in rendered['vibe-upgrade'].content
     assert '"progressive_stage_stops": [' in rendered['vibe'].content
     assert 'Progressive stop sequence: `requirement_doc`, `xl_plan`, `phase_cleanup`' in rendered['vibe'].content
     assert 'Do not consume `--continue-from-run-id` and `--bounded-reentry-token` in the same assistant turn' in rendered['vibe'].content
@@ -50,14 +52,16 @@ def test_build_wrapper_descriptors_renders_skill_wrappers_for_skill_only_hosts()
         surface=surface,
     )
 
-    assert sorted(rendered) == ['vibe']
+    assert sorted(rendered) == ['vibe', 'vibe-upgrade']
     assert rendered['vibe'].relpath.as_posix() == 'skills/vibe/SKILL.md'
+    assert rendered['vibe-upgrade'].relpath.as_posix() == 'skills/vibe-upgrade/SKILL.md'
     assert 'name: vibe' in rendered['vibe'].content
     assert 'Wrapper entry: Vibe (`vibe`)' in rendered['vibe'].content
     assert '"schema": "vibe-wrapper-trampoline/v1"' in rendered['vibe'].content
     assert '"launch_mode": "canonical-entry"' in rendered['vibe'].content
     assert '"host_id": "claude-code"' in rendered['vibe'].content
     assert '"entry_id": "vibe"' in rendered['vibe'].content
+    assert '"entry_id": "vibe-upgrade"' in rendered['vibe-upgrade'].content
     assert '"progressive_stage_stops": [' in rendered['vibe'].content
     assert 'Progressive stop sequence: `requirement_doc`, `xl_plan`, `phase_cleanup`' in rendered['vibe'].content
     assert 'Dispatch through canonical-entry runtime bridge.' in rendered['vibe'].content

@@ -20,33 +20,32 @@ Go straight to:
 
 The main entry there is not a wall of commands. It is a prompt you can copy into your AI assistant.
 
-The current public host-visible wrapper set is fixed to these four entries:
+The current public host-visible entry set is fixed to:
 
 - `vibe`
-- `vibe-want`
-- `vibe-how`
-- `vibe-do`
+- `vibe-upgrade`
 
-If your host supports menu-style rendering, it will usually display them as:
+If your host supports menu-style rendering, it may also display non-public compatibility stage labels from the entry-surface contract:
 
 - `Vibe`
 - `Vibe: What Do I Want?`
 - `Vibe: How Do We Do It?`
 - `Vibe: Do It`
 
-They still resolve to the same governed `vibe` runtime. The difference is the default stop target:
+They still resolve to the same governed `vibe` runtime. Public users should rely on `vibe`; compatibility labels only change the bounded stop target when the host explicitly exposes them:
 
-- `vibe` / `Vibe`: run the full governed flow
-- `vibe-want` / `Vibe: What Do I Want?`: clarify goals, boundaries, and acceptance criteria, then stop after freezing the requirement
-- `vibe-how` / `Vibe: How Do We Do It?`: freeze the requirement and plan, then stop
-- `vibe-do` / `Vibe: Do It`: execute the full governed flow without skipping requirement or plan
+- `vibe` / `Vibe`: progressive governed entry, stopping at requirement, plan, and execution boundaries until explicitly approved
+- `vibe-upgrade`: governed upgrade entry
+- `Vibe: What Do I Want?`: clarify goals, boundaries, and acceptance criteria, then stop after freezing the requirement
+- `Vibe: How Do We Do It?`: freeze the requirement and plan, then stop
+- `Vibe: Do It`: execute the governed flow without skipping requirement or plan
 
 If you want a heavier execution lane, use only:
 
 - `--l`
 - `--xl`
 
-Do not rely on aliases like `vibe-l` or `vibe-xl`. Those combinations are intentionally unsupported.
+Do not rely on aliases like `vibe-l`, `vibe-xl`, or stage-plus-grade combinations. Those combinations are intentionally unsupported.
 
 If your target host is OpenCode, you can also go straight to:
 

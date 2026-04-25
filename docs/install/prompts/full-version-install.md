@@ -17,7 +17,7 @@
 规则：
 1. 如果宿主不在 `codex`、`claude-code`、`cursor`、`windsurf`、`openclaw`、`opencode` 内，直接拒绝，不要伪装安装成功。
 2. 这次如果我选的是“全量版本+可自定义添加治理”，你必须把它映射到真实 profile：`full`。
-3. 先判断系统类型；Linux / macOS 用 `bash`，Windows 用 `pwsh`。
+3. 先判断系统类型；Linux / macOS 的 shell 安装路径用 `bash`，PowerShell 命令面统一以 `pwsh` 为默认。完整 governed runtime 和验证一致性默认要求 PowerShell 7 / `pwsh`。
 4. 如果我选 `codex`，仍然使用 `--host codex --profile full`，但默认必须落到真实 Codex 宿主根目录，保证安装完成后 `$vibe` 能被直接发现：
    - 这里的真实宿主根目录就是 `~/.codex`
    - Linux / macOS：`CODEX_HOME="$HOME/.codex" bash ./install.sh --host codex --profile full` 与 `CODEX_HOME="$HOME/.codex" bash ./check.sh --host codex --profile full`
@@ -47,9 +47,9 @@
    - 提醒旧 `OPENAI_*` 不再自动回填，必须手动迁移到 `VCO_*`
 12. 区分“本地安装完成”和“在线能力就绪”。
 13. 安装完成后，主动给我一条“AI 治理是否配置好”的快速检查命令：
-   - Windows：`powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<本次宿主根目录>" -WriteArtifacts`
+   - Windows：`pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<本次宿主根目录>" -WriteArtifacts`
    - Linux / macOS：`python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<本次宿主根目录>" --write-artifacts`
-   - 如用户本机已安装 PowerShell 7，可接受等价的 `pwsh` 版本，但不要把 `pwsh` 当作默认前提。
+   - `powershell.exe` 只作为 Windows 上缺少 `pwsh` 时的 fallback；Linux / macOS 要跑完整 PowerShell-native governed verification，需要安装 PowerShell 7。
    - 并用一句话说明：`ok` 表示 AI 治理 advice 已连通；`missing_credentials`、`missing_model`、`provider_rejected_request` 等表示本地或在线配置仍未就绪。
 14. 安装完成后，用简洁中文汇报：目标宿主、公开版本、实际 profile、实际命令、已完成部分、仍需我手动处理的部分。
 

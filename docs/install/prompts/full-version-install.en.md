@@ -17,7 +17,7 @@ Then you must also ask:
 Rules:
 1. If the host is outside `codex`, `claude-code`, `cursor`, `windsurf`, `openclaw`, or `opencode`, reject it directly and stop.
 2. If I choose the full version, map it to the real profile `full`.
-3. Detect the OS first; use `bash` on Linux/macOS and `pwsh` on Windows.
+3. Detect the OS first; use `bash` for the Linux/macOS shell install path and `pwsh` for the PowerShell command surface. PowerShell 7 / `pwsh` is the documented default for full governed runtime and verification parity.
 4. For `codex`, still use `--host codex --profile full`, but default to the real Codex host root so `$vibe` is directly discoverable after install:
    - the real host root here is `~/.codex`
    - Linux / macOS: `CODEX_HOME="$HOME/.codex" bash ./install.sh --host codex --profile full` and `CODEX_HOME="$HOME/.codex" bash ./check.sh --host codex --profile full`
@@ -47,9 +47,9 @@ Rules:
    - note that legacy `OPENAI_*` names are no longer used as automatic fallbacks for the built-in runtime
 12. Distinguish “installed locally” from “online-ready”.
 13. After installation, proactively give me one quick check command for “is AI governance configured?”:
-   - Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<resolved host root>" -WriteArtifacts`
+   - Windows: `pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<resolved host root>" -WriteArtifacts`
    - Linux / macOS: `python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<resolved host root>" --write-artifacts`
-   - if the user already has PowerShell 7, an equivalent `pwsh` command is acceptable, but `pwsh` must not be treated as the default prerequisite.
+   - `powershell.exe` is only a Windows fallback when `pwsh` is unavailable; Linux/macOS full governed verification requires PowerShell 7 for PowerShell-native gates.
    - also add one short sentence: `ok` means AI governance advice is online; `missing_credentials`, `missing_model`, or `provider_rejected_request` mean local or online readiness is still incomplete.
 14. End with a concise report covering host, public version, real profile, commands executed, completed parts, and manual follow-up.
 

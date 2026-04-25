@@ -15,7 +15,7 @@
 规则：
 1. 如果宿主不在当前支持面内，直接拒绝，不要伪装安装成功。
 2. 这次如果我选的是“仅核心框架+可自定义添加治理”，你必须把它映射到真实 profile：`minimal`。
-3. 先判断系统类型；Linux / macOS 用 `bash`，Windows 用 `pwsh`。
+3. 先判断系统类型；Linux / macOS 的 shell 安装路径用 `bash`，PowerShell 命令面统一以 `pwsh` 为默认。governed verification parity 默认要求 PowerShell 7 / `pwsh`。
 4. 按我选择的宿主执行对应命令；如果宿主是 `opencode`，默认优先使用更薄的 direct install/check：
    - Windows：`pwsh -NoProfile -File .\install.ps1 -HostId opencode -Profile minimal` 与 `pwsh -NoProfile -File .\check.ps1 -HostId opencode -Profile minimal`
    - Linux / macOS：`bash ./install.sh --host opencode --profile minimal` 与 `bash ./check.sh --host opencode --profile minimal`
@@ -33,9 +33,9 @@
    - 说明旧 `OPENAI_*` 不再自动回填，必须手动迁移到 `VCO_*`
 8. 安装完成后，必须额外提醒我：当前拿到的是治理框架底座，不等于默认 workflow core 已齐备。
 9. 安装完成后，主动给我一条“AI 治理是否配置好”的快速检查命令：
-   - Windows：`powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<本次宿主根目录>" -WriteArtifacts`
+   - Windows：`pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<本次宿主根目录>" -WriteArtifacts`
    - Linux / macOS：`python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<本次宿主根目录>" --write-artifacts`
-   - 如用户本机已安装 PowerShell 7，可接受等价的 `pwsh` 版本，但不要把 `pwsh` 当作默认前提。
+   - `powershell.exe` 只作为 Windows 上缺少 `pwsh` 时的 fallback；Linux / macOS 要跑 PowerShell-native verification，需要安装 PowerShell 7。
    - 并说明：这个检查只看 AI 治理 advice 连通性，不等于整个平台总健康检查。
 10. 结果报告仍需包含：目标宿主、公开版本、实际 profile、实际命令、已完成部分、仍需手动处理的部分。
 

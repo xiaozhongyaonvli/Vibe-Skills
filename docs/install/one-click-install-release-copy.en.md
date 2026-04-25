@@ -112,11 +112,11 @@ Notes:
 If you want to quickly confirm whether the router AI governance advice path is configured, run this from the repo root:
 
 - Windows:
-  - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<target host root>" -WriteArtifacts`
+  - `pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<target host root>" -WriteArtifacts`
 - Linux / macOS:
   - `python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<target host root>" --write-artifacts`
 
-If PowerShell 7 is already installed on your machine, you can replace `powershell.exe` with `pwsh`.
+`powershell.exe` is only a Windows fallback when `pwsh` is unavailable; Linux/macOS PowerShell-native governed verification requires PowerShell 7.
 
 Common default target roots:
 

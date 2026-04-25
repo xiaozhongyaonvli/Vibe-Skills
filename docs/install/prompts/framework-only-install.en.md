@@ -15,7 +15,7 @@ Then you must also ask:
 Rules:
 1. Reject unsupported hosts directly.
 2. If I choose the framework version, map it to the real profile `minimal`.
-3. Detect the OS first; use `bash` on Linux/macOS and `pwsh` on Windows.
+3. Detect the OS first; use `bash` for the Linux/macOS shell install path and `pwsh` for the PowerShell command surface. PowerShell 7 / `pwsh` is the documented default for governed verification parity.
 4. Execute the matching install and check commands for the selected host.
 For `codex`, if the install must be immediately callable through `$vibe`, default to the real host root `~/.codex`:
      - Linux / macOS: `CODEX_HOME="$HOME/.codex" bash ./install.sh --host codex --profile minimal` and `CODEX_HOME="$HOME/.codex" bash ./check.sh --host codex --profile minimal`
@@ -34,9 +34,9 @@ For `opencode`, prefer the thinner direct install/check path by default:
    - the built-in AI governance layer supports OpenAI-compatible integration only
 8. Remind me that this gives me the governance foundation first, not the full default workflow-core experience.
 9. After installation, proactively give me one quick check command for “is AI governance configured?”:
-   - Windows: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<resolved host root>" -WriteArtifacts`
+   - Windows: `pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<resolved host root>" -WriteArtifacts`
    - Linux / macOS: `python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<resolved host root>" --write-artifacts`
-   - if the user already has PowerShell 7, an equivalent `pwsh` command is acceptable, but `pwsh` must not be treated as the default prerequisite.
+   - `powershell.exe` is only a Windows fallback when `pwsh` is unavailable; Linux/macOS PowerShell-native verification requires PowerShell 7.
    - explain that this probe checks only AI governance advice connectivity, not full platform health.
 10. End with a concise report covering host, public version, real profile, commands executed, completed parts, and manual follow-up.
 

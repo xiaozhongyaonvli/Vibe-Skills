@@ -7,6 +7,15 @@
 
 如果你是第一次安装，默认按这个顺序选就行：
 
+> 前置条件：
+>
+> - Windows：先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+> - Linux：先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+> - macOS：如果要使用 PowerShell 命令面，先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+> - 所有平台：`python3` / `python` 需要满足 **Python 3.10+**
+>
+> shell 入口仍然可用，但完整 governed runtime 和验证面也依赖 PowerShell 7。
+
 1. 先选宿主
 2. 再选 `安装`
 3. 拿不准版本时先选 `全量版本 + 可自定义添加治理`
@@ -102,11 +111,11 @@
 如果你想快速确认“路由里的 AI 治理 advice 是否已经配通”，可以在仓库根目录运行：
 
 - Windows：
-  - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<目标宿主根目录>" -WriteArtifacts`
+  - `pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<目标宿主根目录>" -WriteArtifacts`
 - Linux / macOS：
   - `python3 ./scripts/verify/runtime_neutral/router_ai_connectivity_probe.py --target-root "<目标宿主根目录>" --write-artifacts`
 
-如果你本机已经装了 PowerShell 7，也可以把 `powershell.exe` 换成 `pwsh`。
+`powershell.exe` 只作为 Windows 上缺少 `pwsh` 时的 fallback；Linux / macOS 要跑 PowerShell-native governed verification，需要安装 PowerShell 7。
 
 常见默认目标根目录：
 

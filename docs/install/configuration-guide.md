@@ -133,10 +133,10 @@
 ### Windows
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<目标宿主根目录>" -WriteArtifacts
+pwsh -NoProfile -File .\scripts\verify\vibe-router-ai-connectivity-gate.ps1 -TargetRoot "<目标宿主根目录>" -WriteArtifacts
 ```
 
-如果本机已经安装了 PowerShell 7，也可以改成 `pwsh`。
+`powershell.exe` 只作为 Windows 上缺少 `pwsh` 时的 fallback；Linux / macOS 要跑 PowerShell-native governed verification，需要安装 PowerShell 7。
 
 ### Linux / macOS
 

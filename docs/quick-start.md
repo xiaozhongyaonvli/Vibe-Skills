@@ -20,33 +20,32 @@
 
 这里的主入口不是一堆命令，而是一段可以直接复制给 AI 的安装提示词。
 
-当前公开投影出来的宿主可见入口固定是这四个 wrapper：
+当前公开投影出来的宿主可见入口固定是：
 
 - `vibe`
-- `vibe-want`
-- `vibe-how`
-- `vibe-do`
+- `vibe-upgrade`
 
-如果宿主支持菜单化展示，它通常会把它们显示成这几种标签：
+如果宿主支持菜单化展示，也可能按 entry-surface contract 显示下面这些非公开兼容阶段标签：
 
 - `Vibe`
 - `Vibe: What Do I Want?`
 - `Vibe: How Do We Do It?`
 - `Vibe: Do It`
 
-它们都还是同一个 `vibe` governed runtime，只是默认停靠点不同：
+它们都还是同一个 `vibe` governed runtime。公开用户应优先依赖 `vibe`；兼容阶段标签只有在宿主明确暴露时才改变默认停靠点：
 
-- `vibe` / `Vibe`：走完整受管流程
-- `vibe-want` / `Vibe: What Do I Want?`：先把目标、边界、验收标准说清楚，并冻结 requirement 后停止
-- `vibe-how` / `Vibe: How Do We Do It?`：冻结 requirement 和 plan 后停止
-- `vibe-do` / `Vibe: Do It`：执行完整流程，但不会跳过 requirement / plan
+- `vibe` / `Vibe`：渐进式受管入口，会在 requirement、plan、execution 边界停下，等待明确批准后继续
+- `vibe-upgrade`：受管升级入口
+- `Vibe: What Do I Want?`：先把目标、边界、验收标准说清楚，并冻结 requirement 后停止
+- `Vibe: How Do We Do It?`：冻结 requirement 和 plan 后停止
+- `Vibe: Do It`：执行受管流程，但不会跳过 requirement / plan
 
 如果你希望提高执行强度，只用：
 
 - `--l`
 - `--xl`
 
-不要再记 `vibe-l`、`vibe-xl` 这种组合入口，系统不支持这类别名。
+不要再记 `vibe-l`、`vibe-xl` 或“阶段入口 + grade”的组合入口，系统不支持这类别名。
 
 如果你的目标宿主是 OpenCode，也可以直接看：
 

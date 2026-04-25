@@ -2,6 +2,16 @@
 
 本目录用于对外公开的安装、升级与自定义接入说明。
 
+## 运行时前置条件
+
+在使用本文档里的 install、check、upgrade 或 one-shot 命令前：
+
+- Windows：先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+- Linux：先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+- macOS：如果要使用 PowerShell 命令面，先安装 **PowerShell 7**，并确保 `pwsh` 在 `PATH` 上可用
+- 所有平台：`python3` / `python` 需要满足 **Python 3.10+**，才能使用 wrapper 驱动的安装面
+- Linux / macOS 的 shell 入口仍然可用，但完整 governed runtime 和验证面也依赖 PowerShell 7
+
 ## 快速导航
 
 ### 公开安装入口
