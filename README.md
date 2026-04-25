@@ -126,7 +126,7 @@ Install the Skills package, call `vibe`, and let the harness do the heavy liftin
 
 The agent-skills world is moving past "give the model a bigger toolbox."
 
-Projects like **Superpowers** show that Skills can become a serious software-development methodology: clarify before coding, design before implementation, test before claiming success. **GSD / Get Shit Done** shows another important truth: agents need context engineering, specs, milestones, and a way to keep projects moving instead of drifting in chat history.
+Projects like **[Superpowers](https://github.com/obra/superpowers)** show that Skills can become a serious software-development methodology: clarify before coding, design before implementation, test before claiming success. **[GSD / Get Shit Done](https://github.com/gsd-build/get-shit-done)** shows another important truth: agents need context engineering, specs, milestones, and a way to keep projects moving instead of drifting in chat history.
 
 VibeSkills builds on that same direction, but pushes the package shape further:
 

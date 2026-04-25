@@ -125,7 +125,7 @@
 
 AI Skills 的发展，正在从“给模型更多工具”，走向“让模型更会组织工作”。
 
-像 **Superpowers** 这样的项目证明了：Skills 可以变成严肃的软件开发方法论，要求 AI 先澄清、再设计、再实现、再测试。**GSD / Get Shit Done** 则证明了另一件事：Agent 需要上下文工程、规格说明、里程碑和项目推进节奏，否则工作很容易散在聊天记录里。
+像 **[Superpowers](https://github.com/obra/superpowers)** 这样的项目证明了：Skills 可以变成严肃的软件开发方法论，要求 AI 先澄清、再设计、再实现、再测试。**[GSD / Get Shit Done](https://github.com/gsd-build/get-shit-done)** 则证明了另一件事：Agent 需要上下文工程、规格说明、里程碑和项目推进节奏，否则工作很容易散在聊天记录里。
 
 VibeSkills 站在同一个方向上，但进一步改变了封装形态：
 
