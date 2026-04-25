@@ -16,12 +16,12 @@
 
 <br/><br/>
 
-### 面向 Skills AI Agent 的简单易用工作 harness
+### 面向 Skills AI Agent 的 Super Skill harness
 
 #### 安装这个 Skills 包，调用 `vibe`，剩下的重活交给 harness：理解任务、拆分阶段、自动拉起合适的专家 Skills、检查结果，并把关键上下文留给下一次会话。
 
 &nbsp;
-*你不需要背技能表，也不需要一步步盯着 AI 该做什么。VibeSkills 想做的事很直接：让用户少操心，让 Agent 更有章法地完成工作。*
+*它不只是“更多工具”，而是一种新的 Super Skill：让 harness 成为 Skill 管理者。你不需要背技能表，不需要一步步盯着 AI，也不需要反复提醒它工作应该怎么推进。*
 
 
 <br/>
@@ -78,6 +78,7 @@
 
 ## 📋 目录
 
+- [一种新的 Super Skill 范式](#-一种新的-super-skill-范式)
 - [为什么与众不同](#-为什么它与众不同)
 - [适合你吗](#-适用人群)
 - [智能路由](#-智能路由机制340-技能如何协同而不冲突)
@@ -117,6 +118,35 @@
 
 <img width="1376" height="768" alt="Generated Image April 21, 2026 - 8_51PM" src="https://github.com/user-attachments/assets/de9f1d20-3976-40b9-bc7c-37bb308a3591" />
 
+
+---
+
+## 🧬 一种新的 Super Skill 范式
+
+AI Skills 的发展，正在从“给模型更多工具”，走向“让模型更会组织工作”。
+
+像 **Superpowers** 这样的项目证明了：Skills 可以变成严肃的软件开发方法论，要求 AI 先澄清、再设计、再实现、再测试。**GSD / Get Shit Done** 则证明了另一件事：Agent 需要上下文工程、规格说明、里程碑和项目推进节奏，否则工作很容易散在聊天记录里。
+
+VibeSkills 站在同一个方向上，但进一步改变了封装形态：
+
+> **普通 Skill 说：**“我能做某件事。”
+>
+> **Super Skill 说：**“我知道这件事应该怎么推进。”
+
+VibeSkills 属于第二种。它把 harness、专家 Skills、阶段编排、验证纪律和工作区记忆，封装成一个可迁移的通用 Skills 包。
+
+<div align="center">
+
+| 项目类型 | 擅长什么 | VibeSkills 往前推进的地方 |
+|:---|:---|:---|
+| **传统 Skills 集合** | 给 Agent 增加更多能力 | 把这些能力组织成有阶段、有验证、有上下文延续的工作系统 |
+| **Superpowers 式方法论** | 让 coding agent 更有开发纪律 | 泛化成更大的 Super Skill harness，并把专家 Skill 自动编排作为核心能力 |
+| **GSD 式项目流** | 通过规格、上下文、里程碑和执行节奏推进项目 | 把阶段化 Skill 调度和跨会话记忆提升为 runtime 的一等能力 |
+| **VibeSkills** | 面向 Skills Agent 的通用 Super Skill 包 | 简单入口、智能编排、降低认知负担、TDD/验证导向，并适配多种宿主 |
+
+</div>
+
+创新点不是“Skills 更多”。创新点是把 Skills 从一个能力库，变成一个会自动运转的工作系统。
 
 ---
 

@@ -16,12 +16,12 @@
 
 <br/><br/>
 
-### A simple plug-in harness for any skills-capable AI agent
+### A Super Skill harness for skills-capable AI agents
 
 Install the Skills package, call `vibe`, and let the harness do the heavy lifting. VibeSkills reads the task, breaks it into stages, automatically brings in the right expert Skills, checks the work, and keeps useful context for the next session.
 
 &nbsp;
-*You do not need to memorize a skill catalog or babysit every step. The point is simple: less control burden for you, more disciplined work from the agent.*
+*This is not just more tools. It is a new kind of Super Skill: the harness becomes the skill manager, so you do not have to memorize a catalog, babysit every step, or keep reminding the agent how work should move.*
 
 
 <br/>
@@ -78,6 +78,7 @@ Install the Skills package, call `vibe`, and let the harness do the heavy liftin
 
 ## 📋 Table of Contents
 
+- [A New Kind of Super Skill](#-a-new-kind-of-super-skill)
 - [What makes it different](#-what-makes-it-different)
 - [Who is it for](#-who-is-it-for)
 - [Intelligent Routing](#-intelligent-routing-how-340-skills-collaborate-without-conflict)
@@ -118,6 +119,35 @@ Install the Skills package, call `vibe`, and let the harness do the heavy liftin
 <img width="1376" height="768" alt="Generated Image April 21, 2026 - 8_49PM" src="https://github.com/user-attachments/assets/82c6e1f2-23fb-46de-b4c6-2f73b5350d4c" />
 
 
+
+---
+
+## 🧬 A New Kind of Super Skill
+
+The agent-skills world is moving past "give the model a bigger toolbox."
+
+Projects like **Superpowers** show that Skills can become a serious software-development methodology: clarify before coding, design before implementation, test before claiming success. **GSD / Get Shit Done** shows another important truth: agents need context engineering, specs, milestones, and a way to keep projects moving instead of drifting in chat history.
+
+VibeSkills builds on that same direction, but pushes the package shape further:
+
+> **A normal Skill says:** "Here is one thing I can do."
+>
+> **A Super Skill says:** "Here is how the work should run."
+
+VibeSkills is the second kind. It wraps the harness, the expert Skills, the stage orchestration, the verification discipline, and the workspace memory into one portable Skills package.
+
+<div align="center">
+
+| Project style | What it is great at | Where VibeSkills goes further |
+|:---|:---|:---|
+| **Traditional skill collections** | Give the agent more capabilities | Turns those capabilities into a staged, verified, context-aware working system |
+| **Superpowers-style methodology** | Gives coding agents stronger development discipline | Generalizes the idea into a broader Super Skill harness with automatic expert-Skill orchestration |
+| **GSD-style project flow** | Keeps projects moving through specs, context, milestones, and execution | Makes stage-aware Skill dispatch and cross-session memory first-class runtime behavior |
+| **VibeSkills** | One portable Super Skill package for Skills-capable agents | Simple entry, intelligent orchestration, lower user cognitive load, TDD/verification, and multi-host adaptation |
+
+</div>
+
+The innovation is not simply "more Skills." The innovation is turning Skills from a library into a working system.
 
 ---
 
