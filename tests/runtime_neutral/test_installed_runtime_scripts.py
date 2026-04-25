@@ -372,10 +372,8 @@ class InstalledRuntimeScriptsTests(unittest.TestCase):
         commands_root = self.target_root / "commands"
         self.assertTrue(commands_root.exists())
         installed_files = {path.name for path in commands_root.iterdir() if path.is_file()}
-        self.assertTrue(
-            CODEX_COMPATIBILITY_COMMAND_FILES.issubset(installed_files),
-            installed_files,
-        )
+        self.assertEqual({"vibe.md", "vibe-upgrade.md"}, installed_files)
+        self.assertTrue(CODEX_COMPATIBILITY_COMMAND_FILES.issubset(installed_files))
 
     def test_shell_install_materializes_codex_wrapper_skill_surface(self) -> None:
         self.install_shell_runtime("codex")

@@ -27,8 +27,22 @@ def test_readmes_describe_only_public_vibe_entry_surface() -> None:
     for path in ("README.md", "README.zh.md", "docs/quick-start.en.md", "docs/quick-start.md"):
         content = _read(path)
         assert "vibe-upgrade" in content
+        assert "host-rendered" not in content
+        assert "宿主渲染标签" not in content
         for legacy_alias in ("vibe-want", "vibe-how", "vibe-do"):
             assert re.search(rf"(?<![\w-]){re.escape(legacy_alias)}(?![\w-])", content) is None
+
+
+def test_quick_start_does_not_advertise_disabled_stage_labels() -> None:
+    disabled_stage_labels = (
+        "Vibe: What Do I Want?",
+        "Vibe: How Do We Do It?",
+        "Vibe: Do It",
+    )
+    for path in ("docs/quick-start.en.md", "docs/quick-start.md"):
+        content = _read(path)
+        for label in disabled_stage_labels:
+            assert label not in content
 
 
 def test_install_prompts_treat_pwsh_as_default_power_shell_surface() -> None:

@@ -95,9 +95,9 @@ it explicitly every time.
 
 ### Continuation-Aware Router Input
 
-When entering through a compatibility stage entry such as `vibe-how-do-we-do` after
-`vibe-what-do-i-want`, or `vibe-do-it` after `vibe-how-do-we-do`, do not pretend this is a brand-new task if the same thread
-already has a verified governed requirement or plan.
+When continuing a prior run that records a legacy compatibility entry ID such as
+`vibe-what-do-i-want`, `vibe-how-do-we-do`, or `vibe-do-it`, do not pretend this is a brand-new task if the same thread
+already has a verified governed requirement or plan. These IDs are retained as non-public compatibility metadata, not as host-visible public entries.
 
 Continuation rules:
 1. Reuse the latest verified frozen requirement/plan from the same thread or workspace as continuation context when it exists.
@@ -138,7 +138,7 @@ If you must invoke PowerShell through a Bash-like tool surface, do not place `$e
 Public discoverable entries still enter canonical `vibe`; only the bounded stop contract changes:
 - `vibe` uses progressive governed stops: first `requirement_doc`, then `xl_plan`, then `phase_cleanup` after explicit re-entry approval at each boundary
 - `vibe-upgrade` is the public governed upgrade entry.
-- compatibility stage entries are non-public unless a host explicitly renders them from `config/vibe-entry-surfaces.json`: `vibe-what-do-i-want` -> `requirement_doc`, `vibe-how-do-we-do` -> `xl_plan --requested-grade-floor XL`, `vibe-do-it` -> `phase_cleanup`
+- compatibility stage IDs are non-public and must not be materialized as host-visible command or skill wrappers: `vibe-what-do-i-want` -> `requirement_doc`, `vibe-how-do-we-do` -> `xl_plan --requested-grade-floor XL`, `vibe-do-it` -> `phase_cleanup`
 
 Hard rules:
 - Do not inspect the repo, protocol docs, or prior run outputs before canonical launch returns, except to resolve `skill_root` and current host id.
@@ -178,11 +178,12 @@ Structured host decision SOP:
 - Route decisions must stay inside the surfaced confirm options. Bounded stage approvals must stay inside the surfaced approval action contract. Specialist curation must stay inside the surfaced specialist recommendation ids. Runtime validation remains authoritative.
 - Keep the task context stable across re-entry. Do not reduce the next canonical launch prompt to the user's short approval text alone when the governed task context is already known.
 
-Discoverable wrapper labels may request an earlier terminal stage (that changes where the run stops, not which runtime owns authority):
-- `Vibe: What Do I Want?` -> `requirement_doc`
-- `Vibe: How Do We Do It?` -> `xl_plan`
-- `Vibe` progresses through `requirement_doc -> xl_plan -> phase_cleanup`
-- `Vibe: Do It` -> `phase_cleanup`
+Public wrapper entries remain limited to `vibe` and `vibe-upgrade`.
+Non-public compatibility stage metadata may request an earlier terminal stage (that changes where a legacy run stops, not which runtime owns authority):
+- `vibe-what-do-i-want` -> `requirement_doc`
+- `vibe-how-do-we-do` -> `xl_plan`
+- `vibe` progresses through `requirement_doc -> xl_plan -> phase_cleanup`
+- `vibe-do-it` -> `phase_cleanup`
 
 Official governed entry records lineage:
 - root or child entry writes `governance-capsule.json`

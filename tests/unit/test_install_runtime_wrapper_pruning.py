@@ -132,6 +132,69 @@ def test_prune_retired_discoverable_wrapper_paths_removes_nonpublic_wrapper_file
     assert not skill_wrapper_root.exists()
 
 
+def test_prune_retired_discoverable_wrapper_paths_removes_previous_static_command_copies(tmp_path: Path) -> None:
+    target_root = tmp_path / "target"
+    command_wrapper = target_root / "commands" / "vibe-how-do-we-do.md"
+    current_wrapper = target_root / "commands" / "vibe.md"
+    command_wrapper.parent.mkdir(parents=True, exist_ok=True)
+    command_wrapper.write_text("previous static copy\n", encoding="utf-8")
+    current_wrapper.write_text("current public wrapper\n", encoding="utf-8")
+
+    entry_surface = load_discoverable_entry_surface(REPO_ROOT)
+    previous_ledger = {
+        "created_paths": [
+            str(command_wrapper),
+            str(current_wrapper),
+        ],
+        "specialist_wrapper_paths": [
+            str(current_wrapper),
+        ],
+    }
+
+    install_runtime.prune_retired_discoverable_wrapper_paths(
+        target_root,
+        entry_surface,
+        [current_wrapper],
+        previous_ledger,
+    )
+
+    assert current_wrapper.exists()
+    assert not command_wrapper.exists()
+
+
+def test_copy_command_tree_with_public_vibe_entries_skips_nonpublic_vibe_commands(tmp_path: Path) -> None:
+    src_root = tmp_path / "src" / "commands"
+    dst_root = tmp_path / "target" / "commands"
+    src_root.mkdir(parents=True)
+    for name in (
+        "non-vibe-helper.md",
+        "vibe.md",
+        "vibe-upgrade.md",
+        "vibe-implement.md",
+        "vibe-review.md",
+        "vibe-what-do-i-want.md",
+        "vibe-how-do-we-do.md",
+        "vibe-do-it.md",
+    ):
+        (src_root / name).write_text(f"{name}\n", encoding="utf-8")
+
+    entry_surface = load_discoverable_entry_surface(REPO_ROOT)
+
+    install_runtime.copy_command_tree_with_public_vibe_entries(
+        src_root,
+        dst_root,
+        entry_surface,
+    )
+
+    installed = {path.name for path in dst_root.iterdir()}
+    assert {"non-vibe-helper.md", "vibe.md", "vibe-upgrade.md"}.issubset(installed)
+    assert "vibe-implement.md" not in installed
+    assert "vibe-review.md" not in installed
+    assert "vibe-what-do-i-want.md" not in installed
+    assert "vibe-how-do-we-do.md" not in installed
+    assert "vibe-do-it.md" not in installed
+
+
 def test_prune_known_legacy_wrapper_paths_preserves_same_name_user_owned_aliases(tmp_path: Path) -> None:
     target_root = tmp_path / "target"
     commands_root = target_root / "commands"

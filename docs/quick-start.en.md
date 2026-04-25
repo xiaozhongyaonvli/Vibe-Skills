@@ -25,20 +25,12 @@ The current public host-visible entry set is fixed to:
 - `vibe`
 - `vibe-upgrade`
 
-If your host supports menu-style rendering, it may also display non-public compatibility stage labels from the entry-surface contract:
+Both entries still resolve through the same governed `vibe` runtime authority:
 
-- `Vibe`
-- `Vibe: What Do I Want?`
-- `Vibe: How Do We Do It?`
-- `Vibe: Do It`
-
-They still resolve to the same governed `vibe` runtime. Public users should rely on `vibe`; compatibility labels only change the bounded stop target when the host explicitly exposes them:
-
-- `vibe` / `Vibe`: progressive governed entry, stopping at requirement, plan, and execution boundaries until explicitly approved
+- `vibe`: progressive governed entry, stopping at requirement, plan, and execution boundaries until explicitly approved
 - `vibe-upgrade`: governed upgrade entry
-- `Vibe: What Do I Want?`: clarify goals, boundaries, and acceptance criteria, then stop after freezing the requirement
-- `Vibe: How Do We Do It?`: freeze the requirement and plan, then stop
-- `Vibe: Do It`: execute the governed flow without skipping requirement or plan
+
+Older stage-specific compatibility IDs may still exist in runtime metadata for continuity, but they are non-public and must not be installed or advertised as host-visible commands or skills.
 
 If you want a heavier execution lane, use only:
 

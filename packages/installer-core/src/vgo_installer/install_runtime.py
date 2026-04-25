@@ -88,6 +88,63 @@ ledger_state = {
 LEGACY_VIBE_WRAPPER_IDS = ("vibe-want", "vibe-how", "vibe-do")
 
 
+def retired_discoverable_entry_ids(entry_surface) -> list[str]:
+    return [
+        str(entry.id).strip()
+        for entry in getattr(entry_surface, "entries", ())
+        if entry is not None
+        and str(getattr(entry, "id", "")).strip()
+        and not bool(getattr(entry, "publicly_exposed", False))
+    ]
+
+
+def retired_discoverable_command_filenames(entry_surface) -> set[str]:
+    return {f"{entry_id}.md" for entry_id in retired_discoverable_entry_ids(entry_surface)}
+
+
+def public_discoverable_command_filenames(entry_surface) -> set[str]:
+    return {
+        f"{str(entry.id).strip()}.md"
+        for entry in getattr(entry_surface, "public_entries", ())
+        if entry is not None and str(getattr(entry, "id", "")).strip()
+    }
+
+
+def should_skip_host_visible_command_source(child: Path, entry_surface) -> bool:
+    if not child.is_file() or child.suffix != ".md":
+        return False
+    if child.name in public_discoverable_command_filenames(entry_surface):
+        return False
+    if child.name in retired_discoverable_command_filenames(entry_surface):
+        return True
+    return child.stem == "vibe" or child.stem.startswith("vibe-")
+
+
+def copy_command_tree_with_public_vibe_entries(
+    src_root: Path,
+    dst_root: Path,
+    entry_surface,
+) -> None:
+    if not src_root.exists():
+        return
+
+    dst_root.mkdir(parents=True, exist_ok=True)
+    track_created_path(dst_root)
+    for child in sorted(src_root.iterdir(), key=lambda item: item.name):
+        if should_skip_host_visible_command_source(child, entry_surface):
+            continue
+        target = dst_root / child.name
+        if child.is_dir():
+            copy_dir_replace(
+                child,
+                target,
+                track_created_path=track_created_path,
+                record_owned_tree_root=record_owned_tree_root,
+            )
+        else:
+            copy_file(child, target, track_created_path=track_created_path)
+
+
 def build_closed_ready_failure_message(adapter: dict[str, object], closure: dict[str, object]) -> str:
     """Describe why a host closure failed the closed_ready requirement."""
     adapter_id = str(adapter.get("id") or "")
@@ -372,6 +429,15 @@ def _is_installer_owned_wrapper_cleanup_candidate(
     previous_install_ledger: dict | None,
 ) -> bool:
     resolved_candidate = candidate.resolve(strict=False)
+    for raw_path in ledger_state["created_paths"]:
+        current_created = _resolve_ledger_path_within_target(target_root, raw_path)
+        if current_created is None:
+            continue
+        current_created = current_created.resolve(strict=False)
+        if resolved_candidate == current_created:
+            return True
+        if resolved_candidate.is_dir() and _path_is_within(current_created, resolved_candidate):
+            return True
     for owned_path in _iter_previous_install_owned_wrapper_paths(target_root, previous_install_ledger):
         if resolved_candidate == owned_path:
             return True
@@ -379,6 +445,16 @@ def _is_installer_owned_wrapper_cleanup_candidate(
             return True
         if _path_is_within(owned_path, resolved_candidate):
             return True
+    if isinstance(previous_install_ledger, dict):
+        for raw_path in previous_install_ledger.get("created_paths") or []:
+            previous_created = _resolve_ledger_path_within_target(target_root, raw_path)
+            if previous_created is None:
+                continue
+            previous_created = previous_created.resolve(strict=False)
+            if resolved_candidate == previous_created:
+                return True
+            if resolved_candidate.is_dir() and _path_is_within(previous_created, resolved_candidate):
+                return True
     return False
 
 
@@ -478,11 +554,7 @@ def prune_retired_discoverable_wrapper_paths(
     current_wrapper_paths: list[Path],
     previous_install_ledger: dict | None = None,
 ) -> None:
-    retired_entry_ids = [
-        str(entry.id).strip()
-        for entry in getattr(entry_surface, "entries", ())
-        if entry is not None and not bool(getattr(entry, "publicly_exposed", False))
-    ]
+    retired_entry_ids = retired_discoverable_entry_ids(entry_surface)
     if not retired_entry_ids:
         return
 
@@ -545,6 +617,10 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
     skill_inventory = load_managed_skill_inventory(packaging)
     current_managed_skill_names = desired_managed_skill_names(repo_root, packaging)
     projected_skill_names = set(compatibility_projection_names(packaging, host_id=adapter["id"]))
+    entry_surface = None
+    discoverable_entry_surface = str((packaging.get("public_skill_surface") or {}).get("discoverable_entry_surface") or "").strip()
+    if discoverable_entry_surface:
+        entry_surface = load_discoverable_entry_surface(repo_root)
     include_command_surfaces = not uses_skill_only_activation(adapter["id"])
     runtime_directories = [
         rel for rel in packaging["directories"]
@@ -572,12 +648,19 @@ def install_runtime_core(repo_root: Path, target_root: Path, profile: str, allow
                 record_owned_tree_root=record_owned_tree_root,
             )
         else:
-            copy_tree(
-                src_root,
-                dst_root,
-                track_created_path=track_created_path,
-                record_owned_tree_root=record_owned_tree_root,
-            )
+            if entry["source"] == "commands" and entry["target"] == "commands" and entry_surface is not None:
+                copy_command_tree_with_public_vibe_entries(
+                    src_root,
+                    dst_root,
+                    entry_surface,
+                )
+            else:
+                copy_tree(
+                    src_root,
+                    dst_root,
+                    track_created_path=track_created_path,
+                    record_owned_tree_root=record_owned_tree_root,
+                )
         if entry["target"] == "skills":
             for skill_dir in (target_root / "skills").iterdir():
                 if skill_dir.is_dir():
@@ -760,6 +843,22 @@ def main(argv: list[str] | None = None):
     packaging, external_used, managed_skill_names = install_runtime_core(
         repo_root, target_root, args.profile, args.allow_external_skill_fallback, adapter
     )
+    runtime_entry_surface = None
+    runtime_discoverable_entry_surface = str((packaging.get("public_skill_surface") or {}).get("discoverable_entry_surface") or "").strip()
+    if runtime_discoverable_entry_surface:
+        runtime_entry_surface = load_discoverable_entry_surface(repo_root)
+
+    def copy_runtime_core_mode_tree(src: Path, dst: Path) -> None:
+        if src == repo_root / "commands" and runtime_entry_surface is not None:
+            copy_command_tree_with_public_vibe_entries(src, dst, runtime_entry_surface)
+            return
+        copy_tree(
+            src,
+            dst,
+            track_created_path=track_created_path,
+            record_owned_tree_root=record_owned_tree_root,
+        )
+
     mode = adapter["install_mode"]
     legacy_opencode_config_cleanup = None
     if mode == "governed":
@@ -801,12 +900,7 @@ def main(argv: list[str] | None = None):
             repo_root,
             target_root,
             adapter,
-            copy_tree_fn=lambda src, dst: copy_tree(
-                src,
-                dst,
-                track_created_path=track_created_path,
-                record_owned_tree_root=record_owned_tree_root,
-            ),
+            copy_tree_fn=copy_runtime_core_mode_tree,
             copy_file_fn=lambda src, dst: copy_file(src, dst, track_created_path=track_created_path),
             track_created_path=track_created_path,
             record_generated_from_template=record_generated_from_template,

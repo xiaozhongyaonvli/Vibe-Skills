@@ -25,20 +25,12 @@
 - `vibe`
 - `vibe-upgrade`
 
-如果宿主支持菜单化展示，也可能按 entry-surface contract 显示下面这些非公开兼容阶段标签：
+两个入口底层仍然回到同一个 `vibe` governed runtime authority：
 
-- `Vibe`
-- `Vibe: What Do I Want?`
-- `Vibe: How Do We Do It?`
-- `Vibe: Do It`
-
-它们都还是同一个 `vibe` governed runtime。公开用户应优先依赖 `vibe`；兼容阶段标签只有在宿主明确暴露时才改变默认停靠点：
-
-- `vibe` / `Vibe`：渐进式受管入口，会在 requirement、plan、execution 边界停下，等待明确批准后继续
+- `vibe`：渐进式受管入口，会在 requirement、plan、execution 边界停下，等待明确批准后继续
 - `vibe-upgrade`：受管升级入口
-- `Vibe: What Do I Want?`：先把目标、边界、验收标准说清楚，并冻结 requirement 后停止
-- `Vibe: How Do We Do It?`：冻结 requirement 和 plan 后停止
-- `Vibe: Do It`：执行受管流程，但不会跳过 requirement / plan
+
+旧的阶段兼容 ID 可能仍保留在运行时元数据里用于连续性，但它们是非公开入口，不应被安装或宣传成宿主可见的 commands / skills。
 
 如果你希望提高执行强度，只用：
 
