@@ -163,12 +163,12 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
                 code_task_tdd_evidence_notes.append(
                     "Code-task TDD evidence did not record coverage for all frozen TDD requirements."
                 )
-            if not red_phase_evidence_paths:
+            if code_task_tdd_evidence_requirements and not red_phase_evidence_paths:
                 code_task_tdd_evidence_state = "manual_review_required"
                 code_task_tdd_evidence_notes.append(
                     "Code-task TDD evidence did not record failing-first evidence paths."
                 )
-            if not green_phase_evidence_paths:
+            if code_task_tdd_evidence_requirements and not green_phase_evidence_paths:
                 code_task_tdd_evidence_state = "manual_review_required"
                 code_task_tdd_evidence_notes.append(
                     "Code-task TDD evidence did not record green-phase verification evidence paths."

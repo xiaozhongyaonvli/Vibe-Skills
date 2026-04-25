@@ -40,6 +40,11 @@ def test_runtime_router_infers_debug_from_keyword_style_router_prompt() -> None:
     assert infer_task_type(task) == 'debug'
 
 
+def test_runtime_router_infers_debug_for_dispatch_triage_prompts() -> None:
+    assert infer_task_type('triage runtime specialist dispatch duplication') == 'debug'
+    assert infer_task_type('root cause specialist dispatch duplication') == 'debug'
+
+
 def test_runtime_router_avoids_suffix_fix_false_positive_for_docs_cleanup() -> None:
     assert infer_task_type('suffix cleanup in docs') == 'planning'
 

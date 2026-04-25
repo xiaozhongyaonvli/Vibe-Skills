@@ -24,6 +24,11 @@
       "optional": false
     },
     {
+      "source": "config/powershell-host-policy.json",
+      "target": "config/powershell-host-policy.json",
+      "optional": false
+    },
+    {
       "source": "config/skills-lock.json",
       "target": "config/skills-lock.json",
       "optional": true
@@ -66,6 +71,11 @@
         {
           "source": "config/adapter-registry.json",
           "target": "config/adapter-registry.json",
+          "optional": false
+        },
+        {
+          "source": "config/powershell-host-policy.json",
+          "target": "config/powershell-host-policy.json",
           "optional": false
         }
       ]

@@ -23,6 +23,11 @@
       "optional": false
     },
     {
+      "source": "config/powershell-host-policy.json",
+      "target": "config/powershell-host-policy.json",
+      "optional": false
+    },
+    {
       "source": "config/skills-lock.json",
       "target": "config/skills-lock.json",
       "optional": true
@@ -66,6 +71,11 @@
           "source": "config/adapter-registry.json",
           "target": "config/adapter-registry.json",
           "optional": false
+        },
+        {
+          "source": "config/powershell-host-policy.json",
+          "target": "config/powershell-host-policy.json",
+          "optional": false
         }
       ]
     },
@@ -78,9 +88,9 @@
       "internal_skill_corpus": "Full bundled specialist corpus may be materialized under the canonical vibe root and consumed by runtime descriptor resolution without top-level exposure.",
       "compatibility_skill_projections": "Compatibility projections preserve selected direct-entry skill paths only when host or runtime behavior still depends on them.",
       "public_skill_surface_mode": "discoverable_wrapper_projection",
+      "discoverable_entry_surface": "config/vibe-entry-surfaces.json",
       "internal_skill_corpus_enabled": true,
-      "compatibility_projection_mode": "explicit_projection_only",
-      "discoverable_entry_surface": "config/vibe-entry-surfaces.json"
+      "compatibility_projection_mode": "explicit_projection_only"
     },
     "copy_directories": {
       "active_sources": [
@@ -184,5 +194,6 @@
       "systematic-debugging"
     ],
     "optional_workflow_skills": []
-  }
+  },
+  "_repo_root": "F:\\test\\Vibe-Skills-prgit"
 }

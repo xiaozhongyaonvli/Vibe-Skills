@@ -703,8 +703,9 @@ class NativeExecutionTopologyTests(unittest.TestCase):
 
             self.assertIn("### Phase `ungrouped`: fallback specialist dispatch", execution_plan)
             self.assertIn(f"- Dispatch {unknown_dispatch_skill_id} as", execution_plan)
-            self.assertIn("### Phase `ungrouped`: fallback escalation suggestions", execution_plan)
-            self.assertIn("- Suggest pytest-ungrouped-suggestion.", execution_plan)
+            self.assertIn("## Specialist Dispatch Audit", execution_plan)
+            self.assertIn("Local specialist suggestion count:", execution_plan)
+            self.assertNotIn("- Suggest pytest-ungrouped-suggestion.", execution_plan)
 
     def test_plan_execute_marks_legacy_dispatch_packets_incomplete_without_crashing(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

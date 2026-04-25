@@ -185,6 +185,51 @@ class StructuredBoundedReentryContinuationTests(unittest.TestCase):
             self.assertTrue(packet["continuation_context"]["structured_bounded_reentry"])
             self.assertTrue(packet["continuation_context"]["control_only_prompt"])
 
+    def test_stale_host_specialist_dispatch_decision_is_safely_shrunk(self) -> None:
+        shell = resolve_powershell()
+        if shell is None:
+            raise unittest.SkipTest("PowerShell executable not available in PATH")
+
+        command = [
+            shell,
+            "-NoLogo",
+            "-NoProfile",
+            "-Command",
+            (
+                "& { "
+                f". {ps_quote(str(REPO_ROOT / 'scripts' / 'runtime' / 'VibeRuntime.Common.ps1'))}; "
+                "$hostDecision = [pscustomobject]@{ specialist_dispatch_decision = [pscustomobject]@{ "
+                "selection_mode = 'curated_only'; "
+                "approved_skill_ids = @('old-skill'); "
+                "deferred_skill_ids = @(); "
+                "rejected_skill_ids = @() "
+                "} }; "
+                "$recommendations = @([pscustomobject]@{ skill_id = 'new-skill' }); "
+                "$result = Resolve-VibeHostSpecialistDispatchDecision "
+                "-HostDecision $hostDecision "
+                "-Recommendations $recommendations "
+                "-GovernanceScope 'root' "
+                "-Policy $null; "
+                "$result | ConvertTo-Json -Depth 20 "
+                "}"
+            ),
+        ]
+        completed = subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+        )
+        payload = json.loads(completed.stdout)
+
+        self.assertEqual([], payload["approved_skill_ids"])
+        self.assertEqual(["old-skill"], payload["stale_skill_ids"])
+        self.assertEqual("stale_recuration_required", payload["reconciliation_state"])
+        self.assertTrue(payload["requires_recuration"])
+
     def test_runtime_skips_global_memory_reads_for_structured_bounded_reentry(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             artifact_root = Path(tempdir) / "artifacts"

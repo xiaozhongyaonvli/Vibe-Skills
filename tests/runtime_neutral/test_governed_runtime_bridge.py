@@ -85,6 +85,8 @@ def resolve_python_command_spec_via_powershell(command_spec: str, path_entries: 
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     )
     return json.loads(completed.stdout)
@@ -249,6 +251,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
             )
@@ -337,7 +341,7 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 self.assertIn("No baseline UI quality dimensions were frozen for this run.", requirement_doc)
                 self.assertIn("## Task-Specific Acceptance Extensions", requirement_doc)
                 self.assertIn("## Research Augmentation Sources", requirement_doc)
-                self.assertIn("Eligible recommendations should auto-promote", requirement_doc)
+                self.assertIn("Only host-adopted or effective approved specialist dispatch is shown here", requirement_doc)
             self.assertEqual("requirements", requirement_doc_path.parent.name)
             self.assertEqual("plans", execution_plan_path.parent.name)
             execution_plan = execution_plan_path.read_text(encoding="utf-8")
@@ -514,6 +518,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
             )
@@ -565,6 +571,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
             )
@@ -631,6 +639,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
             )
@@ -680,6 +690,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
             )
@@ -730,6 +742,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={**os.environ, "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "1"},
             )
@@ -811,6 +825,8 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
             )
 

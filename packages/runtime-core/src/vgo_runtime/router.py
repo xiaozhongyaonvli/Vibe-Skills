@@ -53,7 +53,7 @@ _ROUTER_DEBUG_MARKERS = (
 
 
 _TASK_TYPE_RULES = (
-    ('review', ('review', 'code review', 'audit', '审查', '评审', '审核', '代码评审')),
+    ('review', ('review', 'code review', 'pr review', 'audit', 'assess', '审查', '评审', '审核', '代码评审')),
         (
             'debug',
             (
@@ -65,8 +65,12 @@ _TASK_TYPE_RULES = (
                 'failure',
                 'failing',
                 'regression',
+                'root cause',
+                'diagnos',
+                'triage',
                 'mismatch',
                 'misroute',
+                'inaccurate',
                 'friction',
                 'error',
             'issue',
@@ -78,12 +82,14 @@ _TASK_TYPE_RULES = (
             '报错',
             '排查',
             '定位',
+            '根因',
             '回退',
+            '回滚',
             '低置信度',
             '误路由',
         ),
     ),
-    ('research', ('research', 'survey', 'literature', 'investigate', '调研', '研究')),
+    ('research', ('research', 'survey', 'literature', 'paper', 'investigate', '调研', '研究')),
         (
             'coding',
             (

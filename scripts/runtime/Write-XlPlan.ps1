@@ -159,6 +159,15 @@ $planPath = if ($isChildScope) {
 }
 $requirementPath = if (-not [string]::IsNullOrWhiteSpace($RequirementDocPath)) { $RequirementDocPath } else { Get-VibeRequirementDocPath -RepoRoot $runtime.repo_root -Task $Task -ArtifactRoot $ArtifactRoot }
 $antiDriftDraft = Get-VgoAntiProxyGoalDriftPacketFromRequirementDoc -RequirementDocPath $requirementPath
+$requirementDocLines = if (Test-Path -LiteralPath $requirementPath) {
+    @(Get-Content -LiteralPath $requirementPath -Encoding UTF8)
+} else {
+    @()
+}
+$requirementSections = Get-VgoMarkdownSectionMap -Lines $requirementDocLines
+$frozenCodeTaskTddEvidenceRequirements = @(Get-VgoMarkdownSectionList -Sections $requirementSections -Heading 'Code Task TDD Evidence Requirements' | Where-Object { -not ([string]$_).StartsWith('No code-task TDD evidence requirements were frozen', [System.StringComparison]::OrdinalIgnoreCase) })
+$frozenCodeTaskTddExceptions = @(Get-VgoMarkdownSectionList -Sections $requirementSections -Heading 'Code Task TDD Exceptions' | Where-Object { -not ([string]$_).StartsWith('No code-task TDD exceptions were frozen', [System.StringComparison]::OrdinalIgnoreCase) })
+$hasFrozenCodeTaskTddObligations = (@($frozenCodeTaskTddEvidenceRequirements).Count -gt 0 -or @($frozenCodeTaskTddExceptions).Count -gt 0)
 $specialistDecision = if (
     $runtimeInputPacket -and
     $runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_decision' -and
@@ -332,11 +341,19 @@ $lines += @(
     '- Artifact review may be recorded inline in `phase-execute.json` or through a dedicated `artifact-review.json` sidecar, but one of those governed surfaces must exist when direct artifact review is required.',
     '- Product acceptance stays blocked when required artifact review remains missing, partial, degraded, or manual-review-only.',
     '',
-    '## Code Task TDD Evidence Plan',
-    '- Reuse the frozen `Code Task TDD Evidence Requirements` section from the requirement doc rather than inventing late closeout claims.',
-    '- Reuse the frozen `Code Task TDD Exceptions` section when strict failing-first sequencing is intentionally exempted.',
-    '- Map each frozen requirement or exception to an implementation step, a targeted verification command, and a proof artifact.',
-    '- If strict failing-first sequencing is blocked, execution must record the bounded reason and fallback evidence explicitly.',
+    '## Code Task TDD Evidence Plan'
+)
+if ($hasFrozenCodeTaskTddObligations) {
+    $lines += @(
+        '- Reuse the frozen `Code Task TDD Evidence Requirements` section from the requirement doc rather than inventing late closeout claims.',
+        '- Reuse the frozen `Code Task TDD Exceptions` section when strict failing-first sequencing is intentionally exempted.',
+        '- Map each frozen requirement or exception to an implementation step, a targeted verification command, and a proof artifact.',
+        '- If strict failing-first sequencing is blocked, execution must record the bounded reason and fallback evidence explicitly.'
+    )
+} else {
+    $lines += 'TDD mode is not_applicable for this plan; do not block execution on red/green evidence unless a later host/runtime decision explicitly freezes code-task TDD obligations.'
+}
+$lines += @(
     '',
     '## Baseline Document Quality Mapping',
     '- Use the frozen `Baseline Document Quality Dimensions` section in the requirement doc as the authoritative list of document-artifact quality dimensions that artifact review must cover before a document delivery can claim full completion.',
@@ -392,12 +409,12 @@ if ($hostSpecialistDispatchDecision) {
     )
     $lines += @(Get-VibeHostSpecialistDispatchDecisionMarkdownLines -Decision $hostSpecialistDispatchDecision)
 }
-if (@($approvedDispatch).Count -gt 0 -or @($localSuggestions).Count -gt 0) {
+if (@($approvedDispatch).Count -gt 0) {
     $lines += @(
         '',
         '## Specialist Skill Dispatch Plan',
         '- Specialist routing is mandatory and bounded inside governed `vibe`; it does not transfer runtime authority away from vibe.',
-        '- Eligible specialist recommendations should auto-promote into `approved_dispatch` by default unless a valid host specialist dispatch decision curates the surfaced set.',
+        '- This section lists only effective approved dispatch; non-adopted router candidates and local suggestions remain packet/audit data, not user-facing execution requirements.',
         '- Before specialist execution starts, governed `vibe` emits one unified disclosure for the effective `approved_dispatch` set using each skill''s real `native_skill_entrypoint`.',
         '- Each specialist must be invoked through its native workflow, input contract, and validation style.',
         '- Specialist outputs remain subordinate to the frozen requirement and the governed plan.'
@@ -432,43 +449,13 @@ if (@($approvedDispatch).Count -gt 0 -or @($localSuggestions).Count -gt 0) {
     } else {
         $lines += @(Get-VibeDispatchPlanLines -Recommendations @($approvedDispatch))
     }
-    if (@($localSuggestions).Count -gt 0) {
-        $lines += @(
-            '',
-            '## Child Specialist Escalation Suggestions',
-            '- These are residual suggestions only after same-round safe auto-promotion; anything still listed here requires explicit escalation.'
-        )
-        if ($executionPhaseDecomposition -and @($executionPhaseDecomposition.phases).Count -gt 0) {
-            $declaredPhaseIds = @($executionPhaseDecomposition.phases | ForEach-Object { [string]$_.phase_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-            foreach ($phase in @($executionPhaseDecomposition.phases)) {
-                $targetPhaseId = [string]$phase.phase_id
-                $phaseSuggestions = @($localSuggestions | Where-Object { (Get-VibeRecommendationPhaseId -Recommendation $_) -eq $targetPhaseId })
-                if (@($phaseSuggestions).Count -eq 0) {
-                    continue
-                }
-
-                $lines += @(
-                    '',
-                    ('### Phase `{0}` [{1} -> {2}] order `{3}`: {4}' -f [string]$phase.phase_id, [string]$phase.stage_type, [string]$phase.dispatch_phase, [int]$phase.stage_order, [string]$phase.stage_label)
-                )
-                $lines += @(Get-VibeDispatchPlanLines -Recommendations @($phaseSuggestions) -SuggestionMode)
-            }
-
-            $ungroupedSuggestions = @($localSuggestions | Where-Object {
-                $phaseId = Get-VibeRecommendationPhaseId -Recommendation $_
-                [string]::IsNullOrWhiteSpace($phaseId) -or $declaredPhaseIds -notcontains $phaseId
-            })
-            if (@($ungroupedSuggestions).Count -gt 0) {
-                $lines += @(
-                    '',
-                    '### Phase `ungrouped`: fallback escalation suggestions'
-                )
-                $lines += @(Get-VibeDispatchPlanLines -Recommendations @($ungroupedSuggestions) -SuggestionMode)
-            }
-        } else {
-            $lines += @(Get-VibeDispatchPlanLines -Recommendations @($localSuggestions) -SuggestionMode)
-        }
-    }
+}
+if (@($localSuggestions).Count -gt 0) {
+    $lines += @(
+        '',
+        '## Specialist Dispatch Audit',
+        ('Local specialist suggestion count: {0}. These suggestions remain audit-only until a host decision adopts them; do not ask the user to delete or manually prune them from the plan.' -f @($localSuggestions).Count)
+    )
 }
 if ($planningConsultation -and [bool]$planningConsultation.enabled) {
     $lines += @(

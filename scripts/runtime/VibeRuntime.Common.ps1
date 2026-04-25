@@ -585,16 +585,142 @@ function Resolve-VibeHostSpecialistDispatchDecision {
     $explicitSkillIds = @(@($approvedSkillIds) + @($deferredSkillIds) + @($rejectedSkillIds) | Select-Object -Unique)
     $unknownSkillIds = @($explicitSkillIds | Where-Object { $_ -notin $surfacedSkillIds })
     if (@($unknownSkillIds).Count -gt 0) {
-        throw ('structured host specialist dispatch decision referenced skill ids outside the surfaced recommendation set: {0}' -f [string]::Join(', ', @($unknownSkillIds)))
+        $approvedSkillIds = @($approvedSkillIds | Where-Object { $_ -in $surfacedSkillIds })
+        $deferredSkillIds = @($deferredSkillIds | Where-Object { $_ -in $surfacedSkillIds })
+        $rejectedSkillIds = @($rejectedSkillIds | Where-Object { $_ -in $surfacedSkillIds })
+    }
+    $effectiveSelectionMode = if (@($unknownSkillIds).Count -gt 0 -and @($explicitSkillIds).Count -gt 0) {
+        'curated_only'
+    } else {
+        [string]$selectionMode
+    }
+    $validExplicitSkillIds = @(@($approvedSkillIds) + @($deferredSkillIds) + @($rejectedSkillIds) | Select-Object -Unique)
+    $requiresRecuration = (@($unknownSkillIds).Count -gt 0 -and @($validExplicitSkillIds).Count -eq 0 -and [string]$effectiveSelectionMode -eq 'curated_only')
+    $reconciliationState = if (@($unknownSkillIds).Count -eq 0) {
+        'current'
+    } elseif ($requiresRecuration) {
+        'stale_recuration_required'
+    } else {
+        'partial_reconciled'
     }
 
     return [pscustomobject]@{
         protocol_version = if ((Test-VibeObjectHasProperty -InputObject $decision -PropertyName 'protocol_version') -and -not [string]::IsNullOrWhiteSpace([string]$decision.protocol_version)) { [string]$decision.protocol_version } else { 'v1' }
         derived_by = if ((Test-VibeObjectHasProperty -InputObject $decision -PropertyName 'derived_by') -and -not [string]::IsNullOrWhiteSpace([string]$decision.derived_by)) { [string]$decision.derived_by } else { 'host' }
-        selection_mode = [string]$selectionMode
+        selection_mode = [string]$effectiveSelectionMode
+        requested_selection_mode = [string]$selectionMode
         approved_skill_ids = @($approvedSkillIds)
         deferred_skill_ids = @($deferredSkillIds)
         rejected_skill_ids = @($rejectedSkillIds)
+        surfaced_skill_ids = @($surfacedSkillIds)
+        stale_skill_ids = @($unknownSkillIds)
+        reconciliation_state = [string]$reconciliationState
+        requires_recuration = [bool]$requiresRecuration
+    }
+}
+
+function Normalize-VibeCodeTaskTddMode {
+    param(
+        [AllowNull()] [object]$Value = $null
+    )
+
+    $mode = ([string]$Value).Trim().ToLowerInvariant()
+    if ([string]::IsNullOrWhiteSpace($mode)) {
+        return ''
+    }
+
+    switch -Regex ($mode) {
+        '^(required|require|enabled|enable|on|true|yes|tdd|required_code_task_tdd)$' { return 'required' }
+        '^(not_applicable|not-applicable|na|n/a|none|off|false|no|disabled|disable|skip|skipped)$' { return 'not_applicable' }
+        '^(exception_approved|exception-approved|exception|exempt|exemption|approved_exception)$' { return 'exception_approved' }
+        default { return '' }
+    }
+}
+
+function Get-VibeCodeTaskTddDecisionFromHostDecision {
+    param(
+        [AllowNull()] [object]$HostDecision = $null
+    )
+
+    if ($null -eq $HostDecision) {
+        return $null
+    }
+
+    $rawDecision = $null
+    foreach ($propertyName in @('code_task_tdd_decision', 'code_task_tdd', 'tdd_decision')) {
+        if (Test-VibeObjectHasProperty -InputObject $HostDecision -PropertyName $propertyName) {
+            $rawDecision = $HostDecision.$propertyName
+            break
+        }
+    }
+    if ($null -eq $rawDecision -and (Test-VibeObjectHasProperty -InputObject $HostDecision -PropertyName 'code_task_tdd_mode')) {
+        $rawDecision = [pscustomobject]@{
+            mode = [string]$HostDecision.code_task_tdd_mode
+        }
+    }
+    if ($null -eq $rawDecision) {
+        return $null
+    }
+
+    if (-not (Test-VibeStructuredObject -InputObject $rawDecision)) {
+        $rawDecision = [pscustomobject]@{
+            mode = [string]$rawDecision
+        }
+    }
+
+    $mode = Normalize-VibeCodeTaskTddMode -Value $(if (Test-VibeObjectHasProperty -InputObject $rawDecision -PropertyName 'mode') { $rawDecision.mode } elseif (Test-VibeObjectHasProperty -InputObject $rawDecision -PropertyName 'tdd_mode') { $rawDecision.tdd_mode } else { '' })
+    if ([string]::IsNullOrWhiteSpace($mode)) {
+        throw 'structured host code_task_tdd_decision must declare mode as required, not_applicable, or exception_approved'
+    }
+
+    return [pscustomobject]@{
+        mode = [string]$mode
+        source = 'host_decision'
+        reason = if ((Test-VibeObjectHasProperty -InputObject $rawDecision -PropertyName 'reason') -and -not [string]::IsNullOrWhiteSpace([string]$rawDecision.reason)) { [string]$rawDecision.reason } else { 'Host supplied an explicit structured code-task TDD decision.' }
+        exception = if ((Test-VibeObjectHasProperty -InputObject $rawDecision -PropertyName 'exception') -and -not [string]::IsNullOrWhiteSpace([string]$rawDecision.exception)) { [string]$rawDecision.exception } else { $null }
+    }
+}
+
+function Resolve-VibeCodeTaskTddDecision {
+    param(
+        [AllowNull()] [object]$HostDecision = $null,
+        [Parameter(Mandatory)] [string]$Task,
+        [AllowEmptyString()] [string]$Deliverable = '',
+        [AllowEmptyString()] [string]$TaskType = '',
+        [bool]$HeuristicRequiresTdd = $false,
+        [bool]$DocumentArtifactBaseline = $false
+    )
+
+    $hostDecisionProjection = Get-VibeCodeTaskTddDecisionFromHostDecision -HostDecision $HostDecision
+    if ($null -ne $hostDecisionProjection) {
+        return $hostDecisionProjection
+    }
+
+    if ($DocumentArtifactBaseline) {
+        return [pscustomobject]@{
+            mode = 'not_applicable'
+            source = 'runtime_inference'
+            reason = 'Document-artifact work uses artifact review requirements instead of code-task TDD evidence.'
+            exception = $null
+        }
+    }
+
+    $normalizedTaskType = ([string]$TaskType).Trim().ToLowerInvariant()
+    $requiresTdd = [bool]$HeuristicRequiresTdd -and $normalizedTaskType -in @('coding', 'debug', '')
+    if ($requiresTdd) {
+        return [pscustomobject]@{
+            mode = 'required'
+            source = 'runtime_inference'
+            reason = 'The task includes implementation or defect-correction intent that requires code-task TDD evidence.'
+            exception = $null
+        }
+    }
+
+    return [pscustomobject]@{
+        mode = 'not_applicable'
+        source = 'runtime_inference'
+        reason = 'No host decision or runtime inference required code-task TDD evidence for this task.'
+        exception = $null
     }
 }
 
@@ -729,9 +855,12 @@ function Get-VibeHostSpecialistDispatchDecisionMarkdownLines {
         '- Host specialist curation remains bounded to the surfaced recommendation ids from the current governed run.',
         '- Runtime validation remains authoritative for blocked and degraded specialist outcomes.',
         ('- Selection mode: {0}' -f [string]$Decision.selection_mode),
+        ('- Reconciliation state: {0}' -f $(if ((Test-VibeObjectHasProperty -InputObject $Decision -PropertyName 'reconciliation_state') -and -not [string]::IsNullOrWhiteSpace([string]$Decision.reconciliation_state)) { [string]$Decision.reconciliation_state } else { 'current' })),
+        ('- Requires re-curation: {0}' -f $(if (Test-VibeObjectHasProperty -InputObject $Decision -PropertyName 'requires_recuration') { [bool]$Decision.requires_recuration } else { $false })),
         ('- Approved skill ids: {0}' -f $(if (@($Decision.approved_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.approved_skill_ids)) } else { 'none' })),
         ('- Deferred skill ids: {0}' -f $(if (@($Decision.deferred_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.deferred_skill_ids)) } else { 'none' })),
-        ('- Rejected skill ids: {0}' -f $(if (@($Decision.rejected_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.rejected_skill_ids)) } else { 'none' }))
+        ('- Rejected skill ids: {0}' -f $(if (@($Decision.rejected_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.rejected_skill_ids)) } else { 'none' })),
+        ('- Dropped stale skill ids: {0}' -f $(if ((Test-VibeObjectHasProperty -InputObject $Decision -PropertyName 'stale_skill_ids') -and @($Decision.stale_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.stale_skill_ids)) } else { 'none' }))
     )
 }
 
@@ -1653,6 +1782,7 @@ function New-VibeRuntimeInputPacketProjection {
         [AllowEmptyString()] [string]$RuntimeSelectedSkill = 'vibe',
         [AllowNull()] [object]$ExecutionPhaseDecomposition = $null,
         [AllowNull()] [object]$HostSpecialistDispatchDecision = $null,
+        [AllowNull()] [object]$CodeTaskTddDecision = $null,
         [AllowNull()] [object]$HostDecision = $null,
         [AllowNull()] [object[]]$SpecialistRecommendations = @(),
         [AllowNull()] [object[]]$StageAssistantHints = @(),
@@ -1739,6 +1869,7 @@ function New-VibeRuntimeInputPacketProjection {
         custom_admission = $customAdmission
         continuation_context = if ($null -ne $continuationContext) { $continuationContext } else { $null }
         execution_phase_decomposition = $ExecutionPhaseDecomposition
+        code_task_tdd_decision = $CodeTaskTddDecision
         host_specialist_dispatch_decision = $HostSpecialistDispatchDecision
         specialist_recommendations = @($SpecialistRecommendations)
         stage_assistant_hints = @($StageAssistantHints)
@@ -1760,6 +1891,9 @@ function New-VibeRuntimeInputPacketProjection {
             host_approved_skill_ids = if ($null -ne $HostSpecialistDispatchDecision -and (Test-VibeObjectHasProperty -InputObject $HostSpecialistDispatchDecision -PropertyName 'approved_skill_ids')) { [object[]]@($HostSpecialistDispatchDecision.approved_skill_ids) } else { @() }
             host_deferred_skill_ids = if ($null -ne $HostSpecialistDispatchDecision -and (Test-VibeObjectHasProperty -InputObject $HostSpecialistDispatchDecision -PropertyName 'deferred_skill_ids')) { [object[]]@($HostSpecialistDispatchDecision.deferred_skill_ids) } else { @() }
             host_rejected_skill_ids = if ($null -ne $HostSpecialistDispatchDecision -and (Test-VibeObjectHasProperty -InputObject $HostSpecialistDispatchDecision -PropertyName 'rejected_skill_ids')) { [object[]]@($HostSpecialistDispatchDecision.rejected_skill_ids) } else { @() }
+            host_stale_skill_ids = if ($null -ne $HostSpecialistDispatchDecision -and (Test-VibeObjectHasProperty -InputObject $HostSpecialistDispatchDecision -PropertyName 'stale_skill_ids')) { [object[]]@($HostSpecialistDispatchDecision.stale_skill_ids) } else { @() }
+            host_reconciliation_state = if ($null -ne $HostSpecialistDispatchDecision -and (Test-VibeObjectHasProperty -InputObject $HostSpecialistDispatchDecision -PropertyName 'reconciliation_state')) { [string]$HostSpecialistDispatchDecision.reconciliation_state } else { $null }
+            host_requires_recuration = if ($null -ne $HostSpecialistDispatchDecision -and (Test-VibeObjectHasProperty -InputObject $HostSpecialistDispatchDecision -PropertyName 'requires_recuration')) { [bool]$HostSpecialistDispatchDecision.requires_recuration } else { $false }
             escalation_required = Get-VibeNestedPropertySafe -InputObject $SpecialistDispatch -PropertyPath @('escalation_required') -DefaultValue $false
             escalation_status = Get-VibeNestedPropertySafe -InputObject $SpecialistDispatch -PropertyPath @('escalation_status') -DefaultValue ''
             approval_owner = Get-VibeNestedPropertySafe -InputObject $Policy -PropertyPath @('child_specialist_suggestion_contract', 'approval_owner') -DefaultValue 'root_vibe'

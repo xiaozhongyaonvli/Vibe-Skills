@@ -1013,6 +1013,28 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             report["tdd_evidence_coverage"]["missing_code_task_tdd_evidence_requirements"],
         )
 
+    def test_runtime_delivery_acceptance_allows_exception_only_tdd_without_red_green_paths(self) -> None:
+        exceptions = [
+            "Host approved a bounded code-task TDD exception with targeted fallback verification evidence."
+        ]
+        session_root = self._build_session(
+            code_task_tdd_exceptions=exceptions,
+            phase_execute_tdd_evidence={
+                "status": "passing",
+                "evidence_paths": [
+                    "/tmp/pytest-tdd-exception-only.md"
+                ],
+                "covered_code_task_tdd_exceptions": exceptions,
+                "notes": "Strict red/green sequencing was not applicable to this bounded exception.",
+            },
+        )
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["summary"]["gate_result"])
+        self.assertEqual("passing", report["truth_results"]["code_task_tdd_evidence_truth"]["state"])
+        self.assertEqual([], report["tdd_evidence_coverage"]["red_phase_evidence_paths"])
+        self.assertEqual([], report["tdd_evidence_coverage"]["green_phase_evidence_paths"])
+
     def test_runtime_delivery_acceptance_requires_full_tdd_evidence_when_exception_is_recorded(self) -> None:
         requirements = [
             "Record failing-first evidence for the changed behavior before implementation or defect correction.",
