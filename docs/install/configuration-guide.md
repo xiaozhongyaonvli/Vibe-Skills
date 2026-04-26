@@ -76,7 +76,7 @@
 - 目标根目录：`OPENCODE_HOME` 或真实宿主根目录 `~/.config/opencode`
 - 真实宿主配置目录仍是 `~/.config/opencode`
 - `<target-root>/opencode.json.example` 只是参考脚手架，不是 live host config
-- 真实 `opencode.json`、provider 凭据、plugin 安装和 MCP 信任仍由 OpenCode 宿主侧维护
+- 真实宿主配置文件是 `~/.config/opencode/opencode.json`；provider 凭据、plugin 安装和 MCP 信任仍由 OpenCode 宿主侧维护
 
 ## 卸载
 

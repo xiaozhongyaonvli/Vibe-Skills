@@ -34,6 +34,7 @@
 ## Governance
 
 - 文档结构规则：[`docs-information-architecture.md`](./docs-information-architecture.md)
+- source-neutral 链接规则：[`governance/source-neutral-link-governance.md`](./governance/source-neutral-link-governance.md)
 - 打包与兼容拓扑：[`version-packaging-governance.md`](./version-packaging-governance.md)
 - 清洁度规则：[`repo-cleanliness-governance.md`](./repo-cleanliness-governance.md)
 - 安装一致性 SOP：[`runtime-freshness-install-sop.md`](./runtime-freshness-install-sop.md)

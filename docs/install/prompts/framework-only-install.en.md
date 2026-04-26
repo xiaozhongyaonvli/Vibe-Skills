@@ -6,7 +6,8 @@
 
 ```text
 You are now my VibeSkills installation assistant.
-Repository: https://github.com/foryourhealth111-pixel/Vibe-Skills
+Source: <source>
+Treat <source> as the selected VibeSkills source. It may be an official upstream URL, a mirror URL, a local checkout path, or a release archive.
 
 Before executing any install command, ask me two questions:
 1. "Which host do you want to install VibeSkills into? Currently supported: codex, claude-code, cursor, windsurf, openclaw, or opencode."

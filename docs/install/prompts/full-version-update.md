@@ -6,7 +6,8 @@
 
 ```text
 你现在是我的 VibeSkills 更新助手。
-仓库地址：https://github.com/foryourhealth111-pixel/Vibe-Skills
+来源：<source>
+把 <source> 当作本次选择的 VibeSkills 来源；它可以是官方上游 URL、镜像 URL、本地 checkout 路径，或 release 压缩包。
 
 在执行任何更新命令前，先问我两个问题：
 1. “你当前安装在哪个宿主里？当前支持：codex、claude-code、cursor、windsurf、openclaw、opencode。”

@@ -76,7 +76,7 @@ The public install flow does not currently guide users through built-in online e
 - target root: `OPENCODE_HOME` or the real host root `~/.config/opencode`
 - the real host config directory remains `~/.config/opencode`
 - `<target-root>/opencode.json.example` is only a reference scaffold, not the live host config
-- the real `opencode.json`, provider credentials, plugin installation, and MCP trust remain host-managed
+- the real host config file is `~/.config/opencode/opencode.json`; provider credentials, plugin installation, and MCP trust remain host-managed
 
 ## Uninstall
 

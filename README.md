@@ -67,11 +67,11 @@ Install VibeSkills, type `vibe`, and let the harness handle the busy work: under
 
 <br/>
 
-<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/one-click-install-release-copy.en.md">
+<a href="docs/install/one-click-install-release-copy.en.md">
   <img src="https://img.shields.io/badge/⚡_Get_Started-7B61FF?style=for-the-badge" alt="Install">
 </a>
 &nbsp;
-<a href="https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/quick-start.en.md">
+<a href="docs/quick-start.en.md">
   <img src="https://img.shields.io/badge/📖_Quick_Start-2d3748?style=for-the-badge" alt="Docs">
 </a>
 &nbsp;
@@ -585,7 +585,7 @@ This is the shortest path. Choose three things, then copy one prompt into the AI
 2. Pick your action: `install` for a first install, `update` if VibeSkills is already installed.
 3. Pick your version: `full` is the recommended default; `minimal` is the smaller framework-only path.
 4. Open the install entry:
-   [Prompt-based install (recommended)](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/one-click-install-release-copy.en.md)
+   [Prompt-based install (recommended)](docs/install/one-click-install-release-copy.en.md)
 5. Copy the matching prompt into your AI app and let it run the install and check steps.
 
 The prompt asks the assistant to confirm host and public version first, then run the install and checks. It does not ask you to paste secrets, URLs, or model names into chat.
@@ -594,7 +594,7 @@ The prompt asks the assistant to confirm host and public version first, then run
 
 If you prefer to run commands directly, open:
 
-[Multi-host command reference](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/recommended-full-path.en.md)
+[Multi-host command reference](docs/install/recommended-full-path.en.md)
 
 Command install is useful when:
 
@@ -622,10 +622,10 @@ The public install flow currently focuses on local installation, `vibe` discover
 
 ### Open More Docs Only When Needed
 
-- Unsure which host root applies? Use the [cold-start host matrix](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/cold-start-install-paths.en.md).
-- Want raw commands instead of prompts? Use the [multi-host command reference](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/recommended-full-path.en.md).
-- Need OpenClaw or OpenCode details? Open the [OpenClaw guide](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/openclaw-path.en.md) or [OpenCode guide](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/opencode-path.en.md).
-- Need offline setup? Use the [manual install guide](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/manual-copy-install.en.md).
+- Unsure which host root applies? Use the [cold-start host matrix](docs/cold-start-install-paths.en.md).
+- Want raw commands instead of prompts? Use the [multi-host command reference](docs/install/recommended-full-path.en.md).
+- Need OpenClaw or OpenCode details? Open the [OpenClaw guide](docs/install/openclaw-path.en.md) or [OpenCode guide](docs/install/opencode-path.en.md).
+- Need offline setup? Use the [manual install guide](docs/install/manual-copy-install.en.md).
 
 <details>
 <summary><b>🔧 Advanced install details</b></summary>
@@ -665,8 +665,8 @@ These checks confirm that the installed runtime still controls routing, writes g
 **Uninstall and custom skills**
 
 - uninstall paths: `uninstall.ps1 -HostId <host>` and `uninstall.sh --host <host>`
-- uninstall governance notes: [`docs/uninstall-governance.md`](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/uninstall-governance.md)
-- custom skill onboarding: [custom workflow & skill onboarding guide](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/custom-workflow-onboarding.en.md)
+- uninstall governance notes: [`docs/uninstall-governance.md`](docs/uninstall-governance.md)
+- custom skill onboarding: [custom workflow & skill onboarding guide](docs/install/custom-workflow-onboarding.en.md)
 
 </details>
 
@@ -715,7 +715,7 @@ _If VibeSkills is already installed, start with one invocation._
 
 - First try a small request such as planning, clarifying, or breaking down a task.
 - If you want later turns to stay inside the governed workflow, append `$vibe` or `/vibe` to each message.
-- If VibeSkills is not installed yet, start with [Prompt-based install (recommended)](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/one-click-install-release-copy.en.md).
+- If VibeSkills is not installed yet, start with [Prompt-based install (recommended)](docs/install/one-click-install-release-copy.en.md).
 
 > MCP note: `$vibe` or `/vibe` only enters the governed runtime. It is **not MCP completion**, and it does not by itself prove that MCP is installed in the host's native MCP surface.
 
@@ -732,17 +732,17 @@ _If VibeSkills is already installed, start with one invocation._
 
 **Start here**
 
-- ⚡️ [Prompt-based install (recommended)](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/one-click-install-release-copy.en.md)
-- 📖 [System architecture & philosophy](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/quick-start.en.md)
+- ⚡️ [Prompt-based install (recommended)](docs/install/one-click-install-release-copy.en.md)
+- 📖 [System architecture & philosophy](docs/quick-start.en.md)
 
 **Open only if needed**
 
-- 🛠 [Command install reference](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/recommended-full-path.en.md)
-- 🧩 [Custom workflow onboarding](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/custom-workflow-onboarding.en.md)
-- 📄 [OpenClaw host notes](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/openclaw-path.en.md)
-- 📄 [OpenCode host notes](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/opencode-path.en.md)
-- 📁 [Manual copy install (offline)](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/install/manual-copy-install.en.md)
-- 🧊 [Cold start & other environments](https://github.com/foryourhealth111-pixel/Vibe-Skills/blob/main/docs/cold-start-install-paths.en.md)
+- 🛠 [Command install reference](docs/install/recommended-full-path.en.md)
+- 🧩 [Custom workflow onboarding](docs/install/custom-workflow-onboarding.en.md)
+- 📄 [OpenClaw host notes](docs/install/openclaw-path.en.md)
+- 📄 [OpenCode host notes](docs/install/opencode-path.en.md)
+- 📁 [Manual copy install (offline)](docs/install/manual-copy-install.en.md)
+- 🧊 [Cold start & other environments](docs/cold-start-install-paths.en.md)
 
 </details>
 
