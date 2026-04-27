@@ -93,20 +93,32 @@
     "documentation-lookup": {
       "keywords": ["api reference", "framework docs", "文档查询", "接口参考", "官方文档检索"]
     },
+    "aeon": {
+      "keywords": ["aeon", "time series machine learning", "time series classification", "time series clustering", "时序机器学习", "时间序列分类", "时序聚类"]
+    },
+    "evaluating-machine-learning-models": {
+      "keywords": ["model evaluation", "model validation", "threshold selection", "calibration", "模型评估", "模型验证", "阈值选择"]
+    },
+    "exploratory-data-analysis": {
+      "keywords": ["eda", "exploratory data analysis", "data profiling", "data quality", "探索性分析", "数据画像", "数据质量"]
+    },
+    "ml-pipeline-workflow": {
+      "keywords": ["mlops", "ml pipeline", "machine learning workflow", "training pipeline", "机器学习流程", "训练流水线", "模型流水线"]
+    },
     "scikit-learn": {
-      "keywords": ["scikit-learn", "sklearn", "cross validation", "scikit学习", "机器学习建模", "交叉验证", "机器学习分析", "模型训练分析", "训练评估"]
+      "keywords": ["scikit-learn", "sklearn", "classification", "regression", "cross validation", "tabular machine learning", "scikit学习", "分类模型", "回归模型", "交叉验证"]
     },
     "LQF_Machine_Learning_Expert_Guide": {
       "keywords": ["machine learning expert", "机器学习专家", "批判式讨论", "批判性评估", "challenge my assumptions", "挑战我的假设", "baseline first", "基线是否充分", "ablation study", "消融实验"]
     },
     "shap": {
-      "keywords": ["shap", "feature attribution", "beeswarm", "模型解释", "特征归因", "shap图"]
+      "keywords": ["shap", "feature attribution", "model explainability", "beeswarm", "waterfall plot", "模型解释", "特征归因", "shap图"]
     },
     "umap-learn": {
       "keywords": ["umap", "dimensionality reduction", "manifold", "降维", "流形学习", "umap可视化"]
     },
     "ml-data-leakage-guard": {
-      "keywords": ["data leakage", "leakage guard", "防止泄漏", "数据泄漏检查", "时序泄漏"]
+      "keywords": ["data leakage", "leakage audit", "fit before split", "normalization before split", "train test contamination", "prediction time", "防止泄漏", "数据泄漏", "数据泄漏检查", "泄漏检查", "归一化", "划分前fit", "fit了", "训练测试污染", "时序泄漏"]
     },
     "preprocessing-data-with-automated-pipelines": {
       "keywords": ["preprocess data", "data preprocessing", "data cleaning pipeline", "etl pipeline", "data transformation", "feature encoding", "standardize data", "normalize data", "数据预处理", "清洗数据", "ETL流水线", "数据转换"]

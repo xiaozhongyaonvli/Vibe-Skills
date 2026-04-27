@@ -54,6 +54,7 @@ $cases = @(
 
     [pscustomobject]@{ Name = "data-ml coding"; Prompt = "build machine learning model with scikit-learn feature engineering and training"; Grade = "M"; TaskType = "coding"; RequestedSkill = $null; ExpectedPack = "data-ml"; AllowedModes = @("pack_overlay", "confirm_required") },
     [pscustomobject]@{ Name = "data-ml research ZH"; Prompt = "使用scikit-learn做分类训练并交叉验证"; Grade = "L"; TaskType = "research"; RequestedSkill = $null; ExpectedPack = "data-ml"; AllowedModes = @("pack_overlay", "confirm_required") },
+    [pscustomobject]@{ Name = "data-ml leakage review ZH"; Prompt = "请检查这个机器学习流程是否存在数据泄漏，尤其是归一化是否在划分前fit了"; Grade = "M"; TaskType = "review"; RequestedSkill = $null; ExpectedPack = "data-ml"; ExpectedSkill = "ml-data-leakage-guard"; AllowedModes = @("pack_overlay", "confirm_required") },
 
     [pscustomobject]@{ Name = "bio-science research"; Prompt = "single-cell scRNA analysis with scanpy clustering and marker genes"; Grade = "L"; TaskType = "research"; RequestedSkill = $null; ExpectedPack = "bio-science"; AllowedModes = @("pack_overlay", "confirm_required") },
 

@@ -998,6 +998,33 @@
 
                                                                           ]
                                                },
+                   "aeon":  {
+                                "task_allow":  [
+                                                   "planning",
+                                                   "coding",
+                                                   "research"
+                                               ],
+                                "positive_keywords":  [
+                                                          "aeon",
+                                                          "time series machine learning",
+                                                          "time series classification",
+                                                          "time series regression",
+                                                          "time series clustering",
+                                                          "时序机器学习",
+                                                          "时间序列分类",
+                                                          "时序聚类"
+                                                      ],
+                                "negative_keywords":  [
+                                                          "ordinary tabular classification",
+                                                          "普通表格分类",
+                                                          "shap",
+                                                          "data leakage"
+                                                      ],
+                                "equivalent_group":  "ml-time-series",
+                                "canonical_for_task":  [
+
+                                                       ]
+                            },
                    "preprocessing-data-with-automated-pipelines":  {
                                                                         "task_allow":  [
                                                                                            "coding",
@@ -1011,10 +1038,12 @@
                                                                                                   "etl pipeline",
                                                                                                   "data transformation",
                                                                                                   "feature encoding",
+                                                                                                  "feature preprocessing",
                                                                                                   "standardize data",
                                                                                                   "normalize data",
                                                                                                   "数据预处理",
                                                                                                   "清洗数据",
+                                                                                                  "特征编码",
                                                                                                   "ETL流水线",
                                                                                                   "数据转换"
                                                                                               ],
@@ -1024,6 +1053,8 @@
                                                                                                   "prediction time",
                                                                                                   "批判式讨论",
                                                                                                   "challenge my assumptions",
+                                                                                                  "train model",
+                                                                                                  "model evaluation",
                                                                                                   "publication figure",
                                                                                                   "research report"
                                                                                               ],
@@ -1061,11 +1092,16 @@
                                                                   "sklearn",
                                                                   "classification",
                                                                   "regression",
+                                                                  "tabular machine learning",
+                                                                  "train baseline",
                                                                   "交叉验证"
                                                               ],
                                         "negative_keywords":  [
                                                                   "single-cell",
-                                                                  "ci pipeline"
+                                                                  "ci pipeline",
+                                                                  "shap",
+                                                                  "data leakage audit",
+                                                                  "time series classification"
                                                               ],
                                         "equivalent_group":  null,
                                         "canonical_for_task":  [
@@ -1122,11 +1158,24 @@
                                                 "positive_keywords":  [
                                                                           "mlops",
                                                                           "pipeline",
+                                                                          "machine learning workflow",
+                                                                          "end-to-end machine learning",
                                                                           "deployment workflow",
                                                                           "训练流水线"
                                                                       ],
                                                 "negative_keywords":  [
                                                                           "latex manuscript",
+                                                                          "data leakage",
+                                                                          "leakage audit",
+                                                                          "fit before split",
+                                                                          "normalization before split",
+                                                                          "train test contamination",
+                                                                          "数据泄漏",
+                                                                          "泄漏检查",
+                                                                          "归一化是否在划分前",
+                                                                          "划分前fit",
+                                                                          "fit了",
+                                                                          "训练测试污染",
                                                                           "runtime router",
                                                                           "routing decision",
                                                                           "router pack",
@@ -1150,6 +1199,9 @@
                                                                                         "model evaluation",
                                                                                         "metrics",
                                                                                         "validation",
+                                                                                        "threshold selection",
+                                                                                        "calibration",
+                                                                                        "compare models",
                                                                                         "模型评估"
                                                                                     ],
                                                               "negative_keywords":  [
@@ -1169,6 +1221,8 @@
                                 "positive_keywords":  [
                                                           "shap",
                                                           "feature attribution",
+                                                          "model explainability",
+                                                          "waterfall plot",
                                                           "beeswarm",
                                                           "模型解释"
                                                       ],
@@ -1241,10 +1295,13 @@
                                                                         "research",
                                                                         "planning"
                                                                     ],
-                                                     "positive_keywords":  [
-                                                                               "eda",
-                                                                               "data profiling",
-                                                                               "探索性分析"
+                                                    "positive_keywords":  [
+                                                                              "eda",
+                                                                              "exploratory data analysis",
+                                                                              "data profiling",
+                                                                              "data quality",
+                                                                              "missing values",
+                                                                              "探索性分析"
                                                                            ],
                                                      "negative_keywords":  [
                                                                                "hardening deployment"
@@ -1264,9 +1321,16 @@
                                                                            "data leakage",
                                                                            "time leakage",
                                                                            "防止泄漏",
+                                                                           "数据泄漏",
                                                                            "泄漏检查",
                                                                            "leakage audit",
                                                                            "fit before split",
+                                                                           "normalization before split",
+                                                                           "train test contamination",
+                                                                           "归一化",
+                                                                           "划分前fit",
+                                                                           "fit了",
+                                                                           "训练测试污染",
                                                                            "prediction time"
                                                                        ],
                                                  "negative_keywords":  [

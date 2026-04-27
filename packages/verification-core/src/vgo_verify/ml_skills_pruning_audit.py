@@ -804,10 +804,9 @@ def audit_data_ml_problem_map(repo_root: Path) -> ProblemMapArtifact:
     pack_index = _build_pack_index(pack_manifest)
     data_ml = _data_ml_pack(pack_manifest)
     rows: list[ProblemMapRow] = []
-    for skill_id_raw in _as_list(data_ml.get("skill_candidates")):
-        skill_id = str(skill_id_raw).strip()
-        if not skill_id:
-            continue
+    data_ml_candidates = [str(item).strip() for item in _as_list(data_ml.get("skill_candidates")) if str(item).strip()]
+    skill_ids = list(dict.fromkeys(data_ml_candidates + list(DATA_ML_PROBLEM_DECISIONS)))
+    for skill_id in skill_ids:
         record = pack_index.get(skill_id, {"packs": set(), "route_authority": set(), "stage_assistant": set(), "defaults": set()})
         decision = _problem_decision_for(skill_id)
         skill_dir = repo_root / "bundled" / "skills" / skill_id

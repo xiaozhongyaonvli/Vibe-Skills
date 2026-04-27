@@ -507,40 +507,24 @@
                                            ],
                       "skill_candidates":  [
                                                "aeon",
-                                               "creating-data-visualizations",
-                                               "data-exploration-visualization",
-                                               "engineering-features-for-machine-learning",
                                                "evaluating-machine-learning-models",
                                                "exploratory-data-analysis",
-                                               "LQF_Machine_Learning_Expert_Guide",
                                                "ml-data-leakage-guard",
                                                "ml-pipeline-workflow",
                                                "preprocessing-data-with-automated-pipelines",
-                                               "running-clustering-algorithms",
                                                "scikit-learn",
-                                               "shap",
-                                               "statistical-analysis",
-                                               "statsmodels",
-                                               "training-machine-learning-models",
-                                               "umap-learn"
+                                               "shap"
                                            ],
                       "route_authority_candidates":  [
                                                        "aeon",
                                                        "evaluating-machine-learning-models",
                                                        "exploratory-data-analysis",
-                                                       "LQF_Machine_Learning_Expert_Guide",
                                                        "ml-data-leakage-guard",
                                                        "ml-pipeline-workflow",
-                                                       "running-clustering-algorithms",
                                                        "scikit-learn",
-                                                       "statistical-analysis",
-                                                       "statsmodels",
-                                                       "training-machine-learning-models"
+                                                       "shap"
                                                    ],
                       "stage_assistant_candidates":  [
-                                                       "creating-data-visualizations",
-                                                       "data-exploration-visualization",
-                                                       "engineering-features-for-machine-learning",
                                                        "preprocessing-data-with-automated-pipelines"
                                                    ],
                       "defaults_by_task":  {
