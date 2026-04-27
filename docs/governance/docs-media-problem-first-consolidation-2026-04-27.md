@@ -10,6 +10,8 @@
 
 > 只有能独立处理一个清楚的文档、表格、PDF 或截图问题，才继续留在 `docs-media` 主路由里。
 
+更新说明：本文件记录第一轮治理。第二轮继续把截图拆到 `screen-capture`，并把 `excel-analysis` 收并到 `spreadsheet`，见 `docs/governance/docs-media-second-pass-consolidation-2026-04-27.md`。
+
 没有删除任何 skill 目录。带脚本、references、assets 的 skill 仍保留在仓库中，后续如要物理删除，需要单独迁移资产。
 
 ## 数量变化
@@ -96,3 +98,4 @@ scripts/verify/vibe-pack-regression-matrix.ps1
 - `excel-analysis` 仍保留为阶段助手，后续可以比较其内容是否需要迁入 `spreadsheet` 后再删除目录。
 - `jupyter-notebook` 被移出 `docs-media` 后没有新 pack 归属；当前更合理的状态是显式调用或后续单独设计 notebook/education/experiment pack。
 
+第二轮已处理前三项中的两项半：截图已迁出 `docs-media`，`excel-analysis` 已删除目录入口，`doc` 已移出 pack 但因仍有脚本和素材未物理删除。

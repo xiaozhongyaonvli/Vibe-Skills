@@ -1580,24 +1580,6 @@
 
                                                        ]
                             },
-                   "excel-analysis":  {
-                                          "task_allow":  [
-                                                             "research",
-                                                             "coding"
-                                                         ],
-                                          "positive_keywords":  [
-                                                                    "pivot table",
-                                                                    "excel analysis",
-                                                                    "数据透视"
-                                                                ],
-                                          "negative_keywords":  [
-                                                                    "threat modeling"
-                                                                ],
-                                          "equivalent_group":  "tabular-processing",
-                                          "canonical_for_task":  [
-
-                                                                 ]
-                                      },
                    "doc":  {
                                "task_allow":  [
                                                   "coding",
@@ -1623,9 +1605,12 @@
                                                 ],
                                 "positive_keywords":  [
                                                           "docx",
+                                                          "docx formatting",
+                                                          "layout fidelity",
                                                           "tracked changes",
                                                           "word",
-                                                          "修订"
+                                                          "修订",
+                                                          "文档排版"
                                                       ],
                                 "negative_keywords":  [
                                                           "xlsx",
@@ -1931,12 +1916,18 @@
                                                          "coding",
                                                          "research"
                                                      ],
-                                      "positive_keywords":  [
-                                                                "screenshot",
-                                                                "capture",
-                                                                "截图",
-                                                                "屏幕快照"
-                                                            ],
+         "positive_keywords":  [
+                                           "screenshot",
+                                           "capture",
+                                           "capture screen",
+                                           "desktop screenshot",
+                                           "window screenshot",
+                                           "截图",
+                                           "截屏",
+                                           "桌面截图",
+                                           "窗口截图",
+                                           "屏幕快照"
+                                       ],
                                       "negative_keywords":  [
                                                                 "word document edit",
                                                                 "docx",

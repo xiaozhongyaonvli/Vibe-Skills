@@ -864,7 +864,6 @@
                                                "表格",
                                                "电子表格",
                                                "xlsx",
-                                               "截图",
                                                 "批注",
                                                 "回复批注",
                                                  "word批注",
@@ -880,10 +879,7 @@
                                                  "pdf",
                                                  "spreadsheet",
                                                  "xlsx",
-                                                 "xan",
-                                                 "screenshot",
-                                                 "doc",
-                                                 "excel-analysis"
+                                                 "xan"
                                            ],
                         "route_authority_candidates":  [
                                                            "docs-write",
@@ -893,19 +889,48 @@
                                                            "pdf",
                                                            "spreadsheet",
                                                            "xlsx",
-                                                           "xan",
-                                                           "screenshot"
+                                                           "xan"
                                                        ],
-                        "stage_assistant_candidates":  [
-                                                          "doc",
-                                                          "excel-analysis"
-                                                      ],
                        "defaults_by_task":  {
                                                 "planning":  "docs-write",
                                                 "coding":  "spreadsheet",
                                                 "review":  "docs-review",
                                                 "research":  "pdf"
                                             }
+                  },
+                  {
+                      "id":  "screen-capture",
+                      "priority":  84,
+                      "grade_allow":  [
+                                          "M",
+                                          "L"
+                                      ],
+                      "task_allow":  [
+                                         "coding",
+                                         "research"
+                                     ],
+                      "trigger_keywords":  [
+                                               "screenshot",
+                                               "screen capture",
+                                               "capture screen",
+                                               "desktop screenshot",
+                                               "window screenshot",
+                                               "截屏",
+                                               "截图",
+                                               "桌面截图",
+                                               "窗口截图",
+                                               "屏幕快照"
+                                           ],
+                      "skill_candidates":  [
+                                               "screenshot"
+                                           ],
+                      "route_authority_candidates":  [
+                                                       "screenshot"
+                                                   ],
+                      "defaults_by_task":  {
+                                               "coding":  "screenshot",
+                                               "research":  "screenshot"
+                                           }
                   },
                   {
                       "id":  "media-video",

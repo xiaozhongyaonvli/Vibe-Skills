@@ -36,7 +36,7 @@ $cases = @(
     [pscustomobject]@{ Name = "speech synthesis"; Prompt = "把这段文本做语音合成并输出mp3"; Grade = "M"; TaskType = "research"; ExpectedPack = "media-video"; ExpectedSkill = "speech" },
     [pscustomobject]@{ Name = "meeting transcription"; Prompt = "请把会议录音转文字并区分说话人"; Grade = "M"; TaskType = "research"; ExpectedPack = "media-video"; ExpectedSkill = "transcribe" },
     [pscustomobject]@{ Name = "pdf extraction"; Prompt = "读取pdf并提取章节正文"; Grade = "M"; TaskType = "coding"; ExpectedPack = "docs-media"; ExpectedSkill = "pdf" },
-    [pscustomobject]@{ Name = "screenshot capture"; Prompt = "给我截一张当前桌面截图"; Grade = "M"; TaskType = "coding"; ExpectedPack = "docs-media"; ExpectedSkill = "screenshot" },
+    [pscustomobject]@{ Name = "screenshot capture"; Prompt = "给我截一张当前桌面截图"; Grade = "M"; TaskType = "coding"; ExpectedPack = "screen-capture"; ExpectedSkill = "screenshot" },
 
     [pscustomobject]@{ Name = "sklearn training"; Prompt = "用scikit-learn做分类训练和交叉验证"; Grade = "L"; TaskType = "research"; ExpectedPack = "data-ml"; ExpectedSkill = "scikit-learn" },
     [pscustomobject]@{ Name = "shap interpretation"; Prompt = "请计算SHAP解释并输出beeswarm图"; Grade = "L"; TaskType = "research"; ExpectedPack = "data-ml"; ExpectedSkill = "shap" },
