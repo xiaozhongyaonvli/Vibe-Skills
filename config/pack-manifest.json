@@ -48,70 +48,30 @@
                                                "路由"
                                            ],
                       "skill_candidates":  [
-                                               "autonomous-builder",
                                                "brainstorming",
-                                               "cancel-ralph",
-                                               "claude-skills",
-                                               "context-fundamentals",
-                                               "context-hunter",
-                                               "create-plan",
-                                               "dialectic",
-                                               "hive-mind-advanced",
-                                               "local-vco-roles",
-                                               "planning-with-files",
-                                               "ralph-loop",
-                                               "speckit-analyze",
-                                               "speckit-checklist",
-                                               "speckit-clarify",
-                                               "speckit-constitution",
-                                               "speckit-implement",
-                                               "speckit-plan",
-                                               "speckit-specify",
-                                               "speckit-tasks",
-                                               "speckit-taskstoissues",
-                                               "spec-kit-vibe-compat",
+                                               "writing-plans",
                                                "subagent-driven-development",
-                                               "superclaude-framework-compat",
+                                               "context-hunter",
                                                "think-harder",
-                                               "vibe",
-                                               "writing-plans"
+                                               "dialectic",
+                                               "local-vco-roles",
+                                               "spec-kit-vibe-compat"
                                            ],
                       "route_authority_candidates":  [
                                                        "brainstorming",
                                                        "writing-plans",
-                                                       "subagent-driven-development"
+                                                       "subagent-driven-development",
+                                                       "spec-kit-vibe-compat"
                                                    ],
                       "stage_assistant_candidates":  [
-                                                       "autonomous-builder",
-                                                       "cancel-ralph",
-                                                       "claude-skills",
-                                                       "context-fundamentals",
                                                        "context-hunter",
-                                                       "create-plan",
+                                                       "think-harder",
                                                        "dialectic",
-                                                       "hive-mind-advanced",
-                                                       "local-vco-roles",
-                                                       "planning-with-files",
-                                                       "ralph-loop",
-                                                       "speckit-analyze",
-                                                       "speckit-checklist",
-                                                       "speckit-clarify",
-                                                       "speckit-constitution",
-                                                       "speckit-implement",
-                                                       "speckit-plan",
-                                                       "speckit-specify",
-                                                       "speckit-tasks",
-                                                       "speckit-taskstoissues",
-                                                       "spec-kit-vibe-compat",
-                                                       "superclaude-framework-compat",
-                                                       "think-harder"
+                                                       "local-vco-roles"
                                                    ],
                       "defaults_by_task":  {
-                                               "debug":  "subagent-driven-development",
                                                "planning":  "writing-plans",
-                                               "research":  "brainstorming",
-                                               "coding":  "subagent-driven-development",
-                                               "review":  "writing-plans"
+                                               "research":  "brainstorming"
                                            }
                   },
                   {

@@ -10,10 +10,10 @@
   },
   "skills": {
     "brainstorming": {
-      "keywords": ["brainstorm", "ideation", "头脑风暴", "方案发散", "创意讨论"]
+      "keywords": ["brainstorm", "ideation", "头脑风暴", "方案发散", "创意讨论", "比较几个方案", "比较几个方向"]
     },
     "writing-plans": {
-      "keywords": ["implementation plan", "task breakdown", "execution plan", "milestone roadmap", "migration plan", "governance rollout", "rollout plan", "runbook", "wave plan", "cross-module migration", "routing governance", "计划书", "实施计划", "任务拆解", "里程碑规划", "soft migration", "hard migration", "软迁移", "硬迁移", "canonical alias", "canonical + alias 映射", "迁移计划", "重构迁移", "验证命中稳定", "先做软迁移"]
+      "keywords": ["implementation plan", "task breakdown", "execution plan", "milestone roadmap", "migration plan", "governance rollout", "rollout plan", "runbook", "wave plan", "cross-module migration", "routing governance", "计划书", "实施计划", "执行计划", "任务拆解", "里程碑规划", "迁移计划"]
     },
     "vibe": {
       "keywords": ["/vibe", "$vibe", "vibe route", "vibe 路由", "vibe内核", "vibe skills", "路由融合", "路由冲突", "命中稳定", "误路由", "权重计算", "阈值计算"]
@@ -34,7 +34,10 @@
       "keywords": ["deepagent", "memory folding", "fold", "context compression", "compress context", "resume prompt", "handoff", "handover", "long-running", "上下文压缩", "记忆折叠", "续跑", "交接", "恢复提示"]
     },
     "subagent-driven-development": {
-      "keywords": ["subagent", "parallel tasks", "子代理", "并行执行", "多任务协作"]
+      "keywords": ["subagent", "parallel agents", "multi-agent", "independent tasks", "子代理", "多代理", "并行执行", "拆成多个代理", "多个 agent"]
+    },
+    "spec-kit-vibe-compat": {
+      "keywords": ["/speckit", "speckit", "spec-kit", ".specify", "specify cli", "spec.md", "tasks.md", "constitution.md"]
     },
     "tdd-guide": {
       "keywords": ["tdd", "red green refactor", "write failing tests first", "failing tests first", "test first", "测试驱动", "先写测试", "先写失败测试", "测试先行", "红绿重构"]

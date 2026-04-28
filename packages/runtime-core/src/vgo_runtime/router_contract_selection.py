@@ -152,6 +152,9 @@ def select_pack_candidate(
         canonical_for_task = [normalize_text(item) for item in (rule.get("canonical_for_task") or [])]
         canonical_hit = 1.0 if task_type in canonical_for_task else 0.0
         route_authority_eligible = candidate_key in authority_allowlist if authority_allowlist is not None else True
+        requires_positive_keyword_match = bool(rule.get("requires_positive_keyword_match"))
+        if route_authority_eligible and requires_positive_keyword_match and positive_score <= 0:
+            route_authority_eligible = False
         stage_assistant_eligible = candidate_key in stage_assistant_allowlist
         routing_role = "explicit_only"
         if route_authority_eligible:
@@ -179,6 +182,7 @@ def select_pack_candidate(
                 "route_authority_eligible": route_authority_eligible,
                 "stage_assistant_eligible": stage_assistant_eligible,
                 "routing_role": routing_role,
+                "requires_positive_keyword_match": requires_positive_keyword_match,
                 "ordinal": ordinal,
             }
         )

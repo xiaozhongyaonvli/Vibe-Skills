@@ -59,7 +59,10 @@
                                                                    "brainstorm",
                                                                    "ideation",
                                                                    "头脑风暴",
-                                                                   "方案发散"
+                                                                   "方案发散",
+                                                                   "创意讨论",
+                                                                   "比较几个方案",
+                                                                   "比较几个方向"
                                                                ],
                                          "negative_keywords":  [
                                                                    "直接实现",
@@ -86,8 +89,11 @@
                                                                    "runbook",
                                                                    "wave plan",
                                                                    "计划",
+                                                                   "实施计划",
+                                                                   "执行计划",
                                                                    "任务拆解",
-                                                                   "里程碑"
+                                                                   "里程碑",
+                                                                   "迁移计划"
                                                                ],
                                          "negative_keywords":  [
                                                                    "bug",
@@ -395,19 +401,54 @@
                                                                       ],
                                                        "positive_keywords":  [
                                                                                  "subagent",
-                                                                                 "parallel",
-                                                                                 "并行",
+                                                                                 "parallel agents",
                                                                                  "multi-agent",
-                                                                                 "拆分任务"
+                                                                                 "independent tasks",
+                                                                                 "子代理",
+                                                                                 "多代理",
+                                                                                 "并行执行",
+                                                                                 "拆成多个代理",
+                                                                                 "多个 agent"
                                                                              ],
                                                        "negative_keywords":  [
-                                                                                 "single file typo"
+                                                                                 "single file typo",
+                                                                                 "ordinary coding",
+                                                                                 "普通改代码",
+                                                                                 "普通调试"
                                                                              ],
                                                        "equivalent_group":  null,
                                                        "canonical_for_task":  [
-                                                                                  "coding"
-                                                                              ]
+                                                                              ],
+                                                       "requires_positive_keyword_match":  true
                                                    },
+                   "spec-kit-vibe-compat":  {
+                                               "task_allow":  [
+                                                                  "planning",
+                                                                  "coding",
+                                                                  "review",
+                                                                  "debug",
+                                                                  "research"
+                                                              ],
+                                               "positive_keywords":  [
+                                                                        "/speckit",
+                                                                        "speckit",
+                                                                        "spec-kit",
+                                                                        ".specify",
+                                                                        "specify cli",
+                                                                        "spec.md",
+                                                                        "tasks.md",
+                                                                        "constitution.md"
+                                                                    ],
+                                               "negative_keywords":  [
+                                                                        "ordinary implementation plan",
+                                                                        "普通实施计划",
+                                                                        "普通任务拆解"
+                                                                    ],
+                                               "equivalent_group":  null,
+                                               "canonical_for_task":  [
+                                                                      ],
+                                               "requires_positive_keyword_match":  true
+                                           },
                    "autonomous-builder":  {
                                               "task_allow":  [
                                                                  "coding",

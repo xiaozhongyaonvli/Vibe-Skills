@@ -175,6 +175,13 @@ function Select-PackCandidate {
         $canonicalHit = Get-CanonicalForTaskHit -Rule $rule -TaskType $TaskType
         $candidateKey = ([string]$candidate).Trim().ToLowerInvariant()
         $routeAuthorityEligible = if ($authorityAllowlistSpecified) { $authorityAllowlist -contains $candidateKey } else { $true }
+        $requiresPositiveKeywordMatch = $false
+        if ($rule -and ($rule.PSObject.Properties.Name -contains 'requires_positive_keyword_match')) {
+            $requiresPositiveKeywordMatch = [bool]$rule.requires_positive_keyword_match
+        }
+        if ($routeAuthorityEligible -and $requiresPositiveKeywordMatch -and ([double]$positiveScore -le 0.0)) {
+            $routeAuthorityEligible = $false
+        }
         $stageAssistantEligible = $stageAssistantAllowlist -contains $candidateKey
         $routingRole = if ($routeAuthorityEligible) { "route_authority" } elseif ($stageAssistantEligible) { "stage_assistant" } else { "explicit_only" }
 
@@ -198,6 +205,7 @@ function Select-PackCandidate {
             route_authority_eligible = [bool]$routeAuthorityEligible
             stage_assistant_eligible = [bool]$stageAssistantEligible
             routing_role = $routingRole
+            requires_positive_keyword_match = [bool]$requiresPositiveKeywordMatch
             equivalent_group = $equivalentGroup
             ordinal = $i
         }

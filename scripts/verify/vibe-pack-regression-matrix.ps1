@@ -49,6 +49,11 @@ $cases = @(
     [pscustomobject]@{ Name = "orchestration planning EN"; Prompt = "create implementation plan and task breakdown with milestones"; Grade = "L"; TaskType = "planning"; RequestedSkill = $null; ExpectedPack = "orchestration-core"; ExpectedSkill = "writing-plans"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
     [pscustomobject]@{ Name = "orchestration planning ZH"; Prompt = "请给我实施计划和任务拆解"; Grade = "L"; TaskType = "planning"; RequestedSkill = $null; ExpectedPack = "orchestration-core"; ExpectedSkill = "writing-plans"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
     [pscustomobject]@{ Name = "orchestration subagent ZH"; Prompt = "把任务拆成多个子代理并行执行"; Grade = "XL"; TaskType = "planning"; RequestedSkill = $null; ExpectedPack = "orchestration-core"; ExpectedSkill = "subagent-driven-development"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
+    [pscustomobject]@{ Name = "orchestration generic coding M not subagent"; Prompt = "实现这个功能并修改代码"; Grade = "M"; TaskType = "coding"; RequestedSkill = $null; ExpectedPack = $null; BlockedPackAndSkill = "orchestration-core/subagent-driven-development"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
+    [pscustomobject]@{ Name = "orchestration generic coding L not subagent"; Prompt = "实现这个功能并修改代码"; Grade = "L"; TaskType = "coding"; RequestedSkill = $null; ExpectedPack = $null; BlockedPackAndSkill = "orchestration-core/subagent-driven-development"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
+    [pscustomobject]@{ Name = "orchestration generic coding XL not silent subagent"; Prompt = "实现这个功能并修改代码"; Grade = "XL"; TaskType = "coding"; RequestedSkill = $null; ExpectedPack = $null; BlockedPackAndSkill = "orchestration-core/subagent-driven-development"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
+    [pscustomobject]@{ Name = "orchestration explicit subagent coding"; Prompt = "请用子代理并行执行这个代码修改"; Grade = "XL"; TaskType = "coding"; RequestedSkill = $null; ExpectedPack = "orchestration-core"; ExpectedSkill = "subagent-driven-development"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
+    [pscustomobject]@{ Name = "orchestration explicit speckit"; Prompt = "/speckit.plan 生成技术计划"; Grade = "L"; TaskType = "planning"; RequestedSkill = $null; ExpectedPack = "orchestration-core"; ExpectedSkill = "spec-kit-vibe-compat"; AllowedModes = @("pack_overlay", "confirm_required", "legacy_fallback") },
 
     [pscustomobject]@{ Name = "code-quality review canonical"; Prompt = "run code review and quality checks"; Grade = "M"; TaskType = "review"; RequestedSkill = "code-reviewer"; ExpectedPack = "code-quality"; ExpectedSkill = "code-reviewer"; AllowedModes = @("pack_overlay", "confirm_required") },
     [pscustomobject]@{ Name = "code-quality review feedback"; Prompt = "收到CodeRabbit评审意见，帮我逐条判断是否要改"; Grade = "M"; TaskType = "review"; RequestedSkill = $null; ExpectedPack = "code-quality"; ExpectedSkill = "receiving-code-review"; AllowedModes = @("pack_overlay", "confirm_required") },
@@ -108,6 +113,16 @@ foreach ($case in $cases) {
 
     if ($case.BlockedPack) {
         $results += Assert-True -Condition ($route.selected.pack_id -ne $case.BlockedPack) -Message "[$($case.Name)] blocked pack $($case.BlockedPack) not selected"
+    }
+
+    if ($case.BlockedSkill) {
+        $results += Assert-True -Condition ($route.selected.skill -ne $case.BlockedSkill) -Message "[$($case.Name)] blocked skill $($case.BlockedSkill) not selected"
+    }
+
+    if ($case.BlockedPackAndSkill) {
+        $pair = [string]$case.BlockedPackAndSkill
+        $actualPair = "{0}/{1}" -f $route.selected.pack_id, $route.selected.skill
+        $results += Assert-True -Condition ($actualPair -ne $pair) -Message "[$($case.Name)] blocked pair $pair not selected"
     }
 
     $results += Assert-True -Condition ($route.top1_top2_gap -ge 0) -Message "[$($case.Name)] top1_top2_gap is non-negative"
