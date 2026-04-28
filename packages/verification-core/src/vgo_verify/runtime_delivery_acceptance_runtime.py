@@ -63,8 +63,10 @@ def _load_skill_usage(
         if isinstance(candidate, dict):
             return candidate
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "state_model": "binary_used_unused",
+        "used": [],
+        "unused": [],
         "used_skills": [],
         "unused_skills": [],
         "loaded_skills": [],
@@ -74,8 +76,12 @@ def _load_skill_usage(
 
 
 def _evaluate_skill_usage_truth(skill_usage: dict[str, Any]) -> dict[str, Any]:
-    used_skill_ids = _normalize_skill_id_list(skill_usage.get("used_skills") or [])
-    unused_skill_ids = _normalize_skill_id_list(skill_usage.get("unused_skills") or [])
+    used_rows = [row for row in list(skill_usage.get("used") or []) if isinstance(row, dict)]
+    unused_rows = [row for row in list(skill_usage.get("unused") or []) if isinstance(row, dict)]
+    new_used_ids = [row.get("skill_id") for row in used_rows]
+    new_unused_ids = [row.get("skill_id") for row in unused_rows]
+    used_skill_ids = _normalize_skill_id_list(new_used_ids or skill_usage.get("used_skills") or [])
+    unused_skill_ids = _normalize_skill_id_list(new_unused_ids or skill_usage.get("unused_skills") or [])
     loaded_records = list(skill_usage.get("loaded_skills") or [])
     evidence_records = list(skill_usage.get("evidence") or [])
     failure_reasons: list[str] = []
@@ -87,6 +93,12 @@ def _evaluate_skill_usage_truth(skill_usage: dict[str, Any]) -> dict[str, Any]:
         if skill_id and skill_id not in loaded_by_skill:
             loaded_by_skill[skill_id] = record
     evidence_by_skill: dict[str, list[dict[str, Any]]] = {skill_id: [] for skill_id in used_skill_ids}
+    for row in used_rows:
+        skill_id = str(row.get("skill_id") or "").strip()
+        if skill_id in evidence_by_skill:
+            for evidence in list(row.get("evidence") or []):
+                if isinstance(evidence, dict):
+                    evidence_by_skill[skill_id].append(evidence)
     for record in evidence_records:
         if not isinstance(record, dict):
             continue
@@ -114,9 +126,9 @@ def _evaluate_skill_usage_truth(skill_usage: dict[str, Any]) -> dict[str, Any]:
         for impact in impacts:
             if not str(impact.get("stage") or "").strip():
                 failure_reasons.append("missing_impact_stage")
-            if not str(impact.get("artifact_ref") or "").strip():
+            if not str(impact.get("artifact_ref") or impact.get("artifact_path") or "").strip():
                 failure_reasons.append("missing_impact_artifact_ref")
-            if not str(impact.get("impact_summary") or "").strip():
+            if not str(impact.get("impact_summary") or impact.get("impact") or "").strip():
                 failure_reasons.append("missing_impact_summary")
 
     state = "PASS" if not failure_reasons else "FAIL"
@@ -129,7 +141,17 @@ def _evaluate_skill_usage_truth(skill_usage: dict[str, Any]) -> dict[str, Any]:
         "loaded_skill_ids": sorted(loaded_by_skill),
         "evidence_count": len(evidence_records),
         "evidence_paths": _normalize_string_list(
-            [record.get("artifact_ref") for record in evidence_records if isinstance(record, dict)]
+            [
+                record.get("artifact_ref") or record.get("artifact_path")
+                for record in evidence_records
+                if isinstance(record, dict)
+            ]
+            + [
+                evidence.get("artifact_ref") or evidence.get("artifact_path")
+                for row in used_rows
+                for evidence in list(row.get("evidence") or [])
+                if isinstance(evidence, dict)
+            ]
         ),
         "failure_reasons": sorted(set(failure_reasons)),
     }

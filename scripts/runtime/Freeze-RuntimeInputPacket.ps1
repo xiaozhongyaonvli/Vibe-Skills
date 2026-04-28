@@ -1223,7 +1223,7 @@ foreach ($selectedSkill in @(Get-VibeSkillRoutingSelected -SkillRouting $skillRo
         -HostId $routerHostId
 }
 $routingTouchedSkills = @(
-    @($skillRouting.selected | ForEach-Object { [pscustomobject]@{ skill_id = [string]$_.skill_id; reason = 'loaded_but_no_artifact_impact' } }) +
+    @($skillRouting.selected | ForEach-Object { [pscustomobject]@{ skill_id = [string]$_.skill_id; reason = 'selected_but_no_artifact_impact' } }) +
     @($skillRouting.candidates | ForEach-Object { [pscustomobject]@{ skill_id = [string]$_.skill_id; reason = 'not_selected' } })
 )
 $skillUsage = New-VibeInitialSkillUsage `

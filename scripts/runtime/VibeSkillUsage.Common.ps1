@@ -96,7 +96,7 @@ function New-VibeInitialSkillUsage {
         $reason = if ($touch.PSObject.Properties.Name -contains 'reason' -and -not [string]::IsNullOrWhiteSpace([string]$touch.reason)) {
             [string]$touch.reason
         } elseif ($loadedIds -contains $skillId) {
-            'loaded_but_no_artifact_impact'
+            'selected_but_no_artifact_impact'
         } else {
             'candidate_only'
         }
@@ -107,14 +107,16 @@ function New-VibeInitialSkillUsage {
     foreach ($loadedSkill in $loaded) {
         $skillId = [string]$loadedSkill.skill_id
         if (-not [string]::IsNullOrWhiteSpace($skillId) -and -not $seen.ContainsKey($skillId)) {
-            $unusedRows.Add([pscustomobject]@{ skill_id = $skillId; reason = 'loaded_but_no_artifact_impact' }) | Out-Null
+            $unusedRows.Add([pscustomobject]@{ skill_id = $skillId; reason = 'selected_but_no_artifact_impact' }) | Out-Null
             $seen[$skillId] = $true
         }
     }
 
     return [pscustomobject]@{
-        schema_version = 1
+        schema_version = 2
         state_model = 'binary_used_unused'
+        used = @()
+        unused = [object[]]$unusedRows.ToArray()
         used_skills = @()
         unused_skills = [object[]]@($unusedRows.ToArray() | ForEach-Object { [string]$_.skill_id })
         loaded_skills = [object[]]@($loaded)
@@ -132,15 +134,21 @@ function Update-VibeSkillUsageArtifactImpact {
         [Parameter(Mandatory)] [string]$ImpactSummary
     )
 
-    $usedIds = @($SkillUsage.used_skills | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-    if ($usedIds -notcontains $SkillId) {
-        $usedIds += $SkillId
-    }
-    $unusedRows = @($SkillUsage.unused_reasons | Where-Object { [string]$_.skill_id -ne $SkillId })
     $loaded = @($SkillUsage.loaded_skills)
     $loadedRecord = @($loaded | Where-Object { [string]$_.skill_id -eq $SkillId } | Select-Object -First 1)
+    $usedRows = if ($SkillUsage.PSObject.Properties.Name -contains 'used') { @($SkillUsage.used | Where-Object { [string]$_.skill_id -ne $SkillId }) } else { @() }
+    $unusedRows = if ($SkillUsage.PSObject.Properties.Name -contains 'unused') {
+        @($SkillUsage.unused | Where-Object { [string]$_.skill_id -ne $SkillId })
+    } else {
+        @($SkillUsage.unused_reasons | Where-Object { [string]$_.skill_id -ne $SkillId })
+    }
     $evidence = @($SkillUsage.evidence)
-    $evidence += [pscustomobject]@{
+    $impactRecord = [pscustomobject]@{
+        stage = $Stage
+        artifact_path = $ArtifactRef
+        impact = $ImpactSummary
+    }
+    $legacyEvidenceRecord = [pscustomobject]@{
         skill_id = $SkillId
         stage = $Stage
         artifact_ref = $ArtifactRef
@@ -148,11 +156,20 @@ function Update-VibeSkillUsageArtifactImpact {
         skill_md_path = if (@($loadedRecord).Count -gt 0) { [string]$loadedRecord[0].skill_md_path } else { $null }
         skill_md_sha256 = if (@($loadedRecord).Count -gt 0) { [string]$loadedRecord[0].skill_md_sha256 } else { $null }
     }
+    $evidence += $legacyEvidenceRecord
+    $usedRows += [pscustomobject]@{
+        skill_id = $SkillId
+        skill_md_path = if (@($loadedRecord).Count -gt 0) { [string]$loadedRecord[0].skill_md_path } else { $null }
+        skill_md_sha256 = if (@($loadedRecord).Count -gt 0) { [string]$loadedRecord[0].skill_md_sha256 } else { $null }
+        evidence = @($impactRecord)
+    }
 
     return [pscustomobject]@{
-        schema_version = 1
+        schema_version = 2
         state_model = 'binary_used_unused'
-        used_skills = [object[]]@($usedIds | Select-Object -Unique)
+        used = [object[]]$usedRows
+        unused = [object[]]$unusedRows
+        used_skills = [object[]]@($usedRows | ForEach-Object { [string]$_.skill_id } | Select-Object -Unique)
         unused_skills = [object[]]@($unusedRows | ForEach-Object { [string]$_.skill_id } | Select-Object -Unique)
         loaded_skills = [object[]]$loaded
         evidence = [object[]]$evidence

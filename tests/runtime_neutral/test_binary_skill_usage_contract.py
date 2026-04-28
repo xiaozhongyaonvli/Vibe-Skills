@@ -47,6 +47,14 @@ def run_ps_json(script: str) -> dict[str, object]:
     return json.loads(result.stdout)
 
 
+def as_list(value: object) -> list[object]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
 class BinarySkillUsageContractTests(unittest.TestCase):
     def test_full_skill_load_records_hash_path_line_and_byte_counts(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -95,6 +103,11 @@ class BinarySkillUsageContractTests(unittest.TestCase):
 
             self.assertEqual(["demo-skill"], payload["used_skills"])
             self.assertEqual([], payload["unused_skills"])
+            used_rows = as_list(payload["used"])
+            self.assertEqual(["demo-skill"], [item["skill_id"] for item in used_rows])
+            self.assertEqual([], as_list(payload["unused"]))
+            self.assertEqual("demo-skill", used_rows[0]["skill_id"])
+            self.assertEqual("xl_plan", used_rows[0]["evidence"][0]["stage"])
             self.assertEqual("demo-skill", payload["evidence"][0]["skill_id"])
             self.assertEqual("xl_plan", payload["evidence"][0]["stage"])
             self.assertEqual("xl_plan.md", payload["evidence"][0]["artifact_ref"])
@@ -138,9 +151,14 @@ class BinarySkillUsageContractTests(unittest.TestCase):
             self.assertRegex(selected_record["skill_md_sha256"], r"^[0-9a-f]{64}$")
             self.assertEqual([], usage["used_skills"])
             self.assertIn(selected_skill, usage["unused_skills"])
+            self.assertIn(selected_skill, [item["skill_id"] for item in as_list(usage["unused"])])
             self.assertIn(
-                "loaded_but_no_artifact_impact",
+                "selected_but_no_artifact_impact",
                 [item["reason"] for item in usage["unused_reasons"] if item["skill_id"] == selected_skill],
+            )
+            self.assertIn(
+                "selected_but_no_artifact_impact",
+                [item["reason"] for item in as_list(usage["unused"]) if item["skill_id"] == selected_skill],
             )
             for hint in packet["stage_assistant_hints"]:
                 self.assertIn(hint["skill_id"], usage["unused_skills"])
