@@ -27,6 +27,10 @@ function New-VibeSkillRoutingEntry {
     if ([string]::IsNullOrWhiteSpace($skillMdPath)) {
         $skillMdPath = $nativeEntrypoint
     }
+    $skillRoot = [string](Get-VibeSkillRoutingProperty -InputObject $Source -PropertyName 'skill_root' -DefaultValue '')
+    if ([string]::IsNullOrWhiteSpace($skillRoot) -and -not [string]::IsNullOrWhiteSpace($skillMdPath)) {
+        $skillRoot = Split-Path -Parent $skillMdPath
+    }
     $dispatchPhase = [string](Get-VibeSkillRoutingProperty -InputObject $Source -PropertyName 'dispatch_phase' -DefaultValue 'in_execution')
     if ([string]::IsNullOrWhiteSpace($dispatchPhase)) {
         $dispatchPhase = 'in_execution'
@@ -46,6 +50,7 @@ function New-VibeSkillRoutingEntry {
         parallelizable_in_root_xl = [bool](Get-VibeSkillRoutingProperty -InputObject $Source -PropertyName 'parallelizable_in_root_xl' -DefaultValue $false)
         native_usage_required = [bool](Get-VibeSkillRoutingProperty -InputObject $Source -PropertyName 'native_usage_required' -DefaultValue $true)
         native_skill_entrypoint = if ([string]::IsNullOrWhiteSpace($nativeEntrypoint)) { $null } else { $nativeEntrypoint }
+        skill_root = if ([string]::IsNullOrWhiteSpace($skillRoot)) { $null } else { $skillRoot }
         bounded_role = [string](Get-VibeSkillRoutingProperty -InputObject $Source -PropertyName 'bounded_role' -DefaultValue 'selected_skill')
         must_preserve_workflow = [bool](Get-VibeSkillRoutingProperty -InputObject $Source -PropertyName 'must_preserve_workflow' -DefaultValue $true)
         binding_profile = [string](Get-VibeSkillRoutingProperty -InputObject $Source -PropertyName 'binding_profile' -DefaultValue 'selected_skill')
@@ -198,6 +203,8 @@ function Convert-VibeSkillRoutingSelectedToDispatch {
             dispatch_phase = [string](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'dispatch_phase' -DefaultValue 'in_execution')
             parallelizable_in_root_xl = [bool](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'parallelizable_in_root_xl' -DefaultValue $false)
             native_usage_required = [bool](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'native_usage_required' -DefaultValue $true)
+            usage_required = [bool](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'usage_required' -DefaultValue (Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'native_usage_required' -DefaultValue $true))
+            skill_root = Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'skill_root' -DefaultValue $null
             bounded_role = [string](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'bounded_role' -DefaultValue 'selected_skill')
             must_preserve_workflow = [bool](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'must_preserve_workflow' -DefaultValue $true)
             binding_profile = [string](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'binding_profile' -DefaultValue 'selected_skill')

@@ -18,6 +18,7 @@ $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'VibeRuntime.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeSkillUsage.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeSkillRouting.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeExecution.Common.ps1')
 
 function New-VibeDelegatedLaneSpec {
@@ -1203,8 +1204,14 @@ $tokens = @{
 }
 $planShadow = Get-VibePlanDerivedExecutionShadow -PlanPath $planPath -RunId $RunId -SessionRoot $sessionRoot
 $specialistRecommendations = if ($runtimeInputPacket) { @($runtimeInputPacket.specialist_recommendations) } else { @() }
-$frozenApprovedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.approved_dispatch) } else { @() }
-$frozenLocalSuggestions = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.local_specialist_suggestions) } else { @() }
+$skillRouting = if ($runtimeInputPacket -and $runtimeInputPacket.PSObject.Properties.Name -contains 'skill_routing') {
+    $runtimeInputPacket.skill_routing
+} else {
+    $null
+}
+$selectedSkills = @(Convert-VibeSkillRoutingSelectedToDispatch -RuntimeInputPacket $runtimeInputPacket -SkillRouting $skillRouting)
+$frozenApprovedDispatch = @($selectedSkills)
+$frozenLocalSuggestions = @()
 $frozenBlockedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'blocked' -and $null -ne $runtimeInputPacket.specialist_dispatch.blocked) { @($runtimeInputPacket.specialist_dispatch.blocked) } else { @() }
 $frozenDegradedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'degraded' -and $null -ne $runtimeInputPacket.specialist_dispatch.degraded) { @($runtimeInputPacket.specialist_dispatch.degraded) } else { @() }
 $matchedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'matched_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.matched_skill_ids) { @($runtimeInputPacket.specialist_dispatch.matched_skill_ids) } else { @() }
@@ -1212,13 +1219,30 @@ $surfacedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_
 $blockedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'blocked_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.blocked_skill_ids) { @($runtimeInputPacket.specialist_dispatch.blocked_skill_ids) } else { @() }
 $degradedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'degraded_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.degraded_skill_ids) { @($runtimeInputPacket.specialist_dispatch.degraded_skill_ids) } else { @() }
 $ghostMatchSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'ghost_match_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.ghost_match_skill_ids) { @($runtimeInputPacket.specialist_dispatch.ghost_match_skill_ids) } else { @() }
-$specialistDispatchResolution = Resolve-VibeEffectiveSpecialistDispatch `
-    -SessionRoot $sessionRoot `
-    -HierarchyState $hierarchyState `
-    -RuntimeInputPacket $runtimeInputPacket `
-    -ApprovedDispatch @($frozenApprovedDispatch) `
-    -LocalSuggestions @($frozenLocalSuggestions) `
-    -SuggestionContract $runtime.runtime_input_packet_policy.child_specialist_suggestion_contract
+$hasCanonicalSelectedSkills = $null -ne $skillRouting -and $skillRouting.PSObject.Properties.Name -contains 'selected' -and @($skillRouting.selected).Count -gt 0
+if ($hasCanonicalSelectedSkills) {
+    $specialistDispatchResolution = [pscustomobject]@{
+        effective_approved_dispatch = @($selectedSkills)
+        residual_local_specialist_suggestions = @()
+        auto_approved_dispatch = @()
+        auto_absorb_gate = [pscustomobject]@{
+            enabled = $false
+            receipt_path = $null
+            reason = 'skill_routing_selected_is_authority'
+        }
+        escalation_required = $false
+        approval_owner = 'root'
+        escalation_status = 'not_required'
+    }
+} else {
+    $specialistDispatchResolution = Resolve-VibeEffectiveSpecialistDispatch `
+        -SessionRoot $sessionRoot `
+        -HierarchyState $hierarchyState `
+        -RuntimeInputPacket $runtimeInputPacket `
+        -ApprovedDispatch @($frozenApprovedDispatch) `
+        -LocalSuggestions @($frozenLocalSuggestions) `
+        -SuggestionContract $runtime.runtime_input_packet_policy.child_specialist_suggestion_contract
+}
 $approvedDispatch = @($specialistDispatchResolution.effective_approved_dispatch)
 $localSuggestions = @($specialistDispatchResolution.residual_local_specialist_suggestions)
 $autoApprovedDispatch = @($specialistDispatchResolution.auto_approved_dispatch)
@@ -1881,6 +1905,9 @@ $executionManifest = [pscustomobject]@{
     execution_topology_path = $executionTopologyPath
     runtime_input_packet_path = $runtimeInputPath
     skill_usage = $skillUsage
+    skill_routing_path = $runtimeInputPath
+    skill_routing_summary = New-VibeSkillRoutingSummary -SkillRouting $skillRouting -SkillUsage $skillUsage
+    selected_skill_ids = @(Get-VibeSkillRoutingSelectedSkillIds -RuntimeInputPacket $runtimeInputPacket -SkillRouting $skillRouting)
     execution_memory_context_path = if ([string]::IsNullOrWhiteSpace($ExecutionMemoryContextPath)) { $null } else { $ExecutionMemoryContextPath }
     generated_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
     planned_wave_count = @($profile.waves).Count
