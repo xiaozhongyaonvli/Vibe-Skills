@@ -39,6 +39,7 @@ function Get-ArraySafe {
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $runtimeScript = Join-Path $repoRoot 'scripts\runtime\invoke-vibe-runtime.ps1'
+. (Join-Path $repoRoot 'scripts\runtime\VibeRuntime.Common.ps1')
 $outputRoot = if ($OutputDirectory) { $OutputDirectory } else { Join-Path $repoRoot 'outputs\verify\vibe-skill-promotion-execution-gate' }
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
 
@@ -65,14 +66,19 @@ foreach ($case in @($cases)) {
     $summary = $payload.summary
     $runtimeInput = Get-Content -LiteralPath ([string]$summary.artifacts.runtime_input_packet) -Raw -Encoding UTF8 | ConvertFrom-Json
     $executionManifest = Get-Content -LiteralPath ([string]$summary.artifacts.execution_manifest) -Raw -Encoding UTF8 | ConvertFrom-Json
-    $dispatch = $runtimeInput.specialist_dispatch
+    $dispatch = Get-VibeRuntimeSpecialistDispatchProjection -RuntimeInputPacket $runtimeInput
     $funnel = $executionManifest.specialist_accounting.promotion_funnel
 
     if ([string]$case.id -eq 'non_destructive_ml') {
         Add-Assertion -Results ([ref]$results) -Condition ((Get-ArraySafe -Value $dispatch.approved_skill_ids) -contains 'scikit-learn') -Message 'ML prompt promotes scikit-learn into approved dispatch'
         Add-Assertion -Results ([ref]$results) -Condition ((Get-ArraySafe -Value $dispatch.ghost_match_skill_ids).Count -eq 0) -Message 'ML prompt has zero ghost matches'
         Add-Assertion -Results ([ref]$results) -Condition ([int]$funnel.dispatched -ge 1) -Message 'ML prompt dispatches at least one specialist'
-        Add-Assertion -Results ([ref]$results) -Condition (([int]$executionManifest.specialist_accounting.executed_specialist_unit_count + [int]$executionManifest.specialist_accounting.degraded_specialist_unit_count) -ge 1) -Message 'ML prompt resolves to executed or degraded specialist outcome'
+        $resolvedSpecialistOutcomeCount = (
+            [int]$executionManifest.specialist_accounting.executed_specialist_unit_count +
+            [int]$executionManifest.specialist_accounting.degraded_specialist_unit_count +
+            [int]$executionManifest.specialist_accounting.direct_routed_specialist_unit_count
+        )
+        Add-Assertion -Results ([ref]$results) -Condition ($resolvedSpecialistOutcomeCount -ge 1) -Message 'ML prompt resolves to executed, degraded, or direct-routed specialist outcome'
     } else {
         Add-Assertion -Results ([ref]$results) -Condition ((Get-ArraySafe -Value $dispatch.approved_dispatch).Count -eq 0) -Message 'Destructive prompt does not auto-approve specialist dispatch'
         Add-Assertion -Results ([ref]$results) -Condition ((Get-ArraySafe -Value $dispatch.blocked_skill_ids).Count -ge 1) -Message 'Destructive prompt records explicit blocked specialist skill ids'
