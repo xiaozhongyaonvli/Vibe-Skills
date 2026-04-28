@@ -9,7 +9,7 @@ RUNTIME_SRC = ROOT / "packages" / "runtime-core" / "src"
 if str(RUNTIME_SRC) not in sys.path:
     sys.path.insert(0, str(RUNTIME_SRC))
 
-from vgo_runtime.router_contract_selection import select_pack_candidate
+from vgo_runtime.router_contract_selection import get_pack_skill_candidates, select_pack_candidate
 
 
 def _selection(prompt: str, *, requested: str | None = None) -> dict[str, object]:
@@ -50,6 +50,7 @@ def _selection(prompt: str, *, requested: str | None = None) -> dict[str, object
         },
         pack={
             "id": "synthetic-process-pack",
+            "skill_candidates": ["subagent-driven-development"],
             "route_authority_candidates": ["subagent-driven-development"],
             "stage_assistant_candidates": [],
             "defaults_by_task": {},
@@ -66,7 +67,7 @@ def test_guarded_subagent_does_not_win_generic_coding_fallback() -> None:
     selection = _selection("实现这个功能并修改代码")
 
     assert selection["selected"] is None
-    assert selection["reason"] == "no_route_authority_candidate"
+    assert selection["reason"] == "no_usable_candidate"
     assert selection["route_authority_eligible"] is False
 
 
@@ -83,3 +84,58 @@ def test_requested_subagent_bypasses_guard() -> None:
 
     assert selection["selected"] == "subagent-driven-development"
     assert selection["reason"] == "requested_skill"
+
+
+def test_pack_skill_candidates_prefer_unified_field_over_legacy_roles() -> None:
+    pack = {
+        "skill_candidates": ["primary", "assistant"],
+        "route_authority_candidates": ["legacy-only-primary"],
+        "stage_assistant_candidates": ["legacy-only-assistant"],
+    }
+
+    assert get_pack_skill_candidates(pack) == ["primary", "assistant"]
+
+
+def test_pack_skill_candidates_fall_back_to_legacy_role_union() -> None:
+    pack = {
+        "route_authority_candidates": ["primary", "shared"],
+        "stage_assistant_candidates": ["assistant", "shared"],
+    }
+
+    assert get_pack_skill_candidates(pack) == ["primary", "shared", "assistant"]
+
+
+def test_legacy_stage_role_does_not_block_selection_when_skill_candidate_matches() -> None:
+    selection = select_pack_candidate(
+        prompt_lower="use helper for specialized cleanup",
+        candidates=["primary", "helper"],
+        task_type="coding",
+        requested_canonical=None,
+        skill_keyword_index={
+            "selection": {
+                "weights": {"keyword_match": 0.8, "name_match": 0.2},
+                "fallback_to_first_when_score_below": 0.2,
+            },
+            "skills": {
+                "primary": {"keywords": ["primary"]},
+                "helper": {"keywords": ["helper", "cleanup"]},
+            },
+        },
+        routing_rules={"skills": {}},
+        pack={
+            "id": "synthetic-pack",
+            "skill_candidates": ["primary", "helper"],
+            "route_authority_candidates": ["primary"],
+            "stage_assistant_candidates": ["helper"],
+            "defaults_by_task": {},
+        },
+        candidate_selection_config={
+            "rule_positive_keyword_bonus": 0.2,
+            "rule_negative_keyword_penalty": 0.25,
+            "canonical_for_task_bonus": 0.12,
+        },
+    )
+
+    assert selection["selected"] == "helper"
+    assert selection["ranking"][0]["legacy_role"] == "stage_assistant"
+    assert "routing_role" not in selection["ranking"][0]

@@ -104,24 +104,19 @@ class PythonValidationContractTests(unittest.TestCase):
 
         self.assertEqual([], forbidden_paths)
 
-    def test_pack_defaults_do_not_point_to_non_authority_stage_assistants(self) -> None:
+    def test_pack_defaults_point_to_unified_skill_candidates(self) -> None:
         manifest = json.loads(PACK_MANIFEST.read_text(encoding="utf-8-sig"))
         mismatches: dict[str, dict[str, str]] = {}
 
         for pack in manifest["packs"]:
-            authority_source = (
-                pack.get("route_authority_candidates")
-                if "route_authority_candidates" in pack
-                else pack.get("skill_candidates")
-            )
-            authority = {skill.casefold() for skill in (authority_source or [])}
-            if not authority:
+            skill_candidates = {skill.casefold() for skill in (pack.get("skill_candidates") or [])}
+            if not skill_candidates:
                 continue
 
             bad_defaults = {
                 task: skill
                 for task, skill in (pack.get("defaults_by_task") or {}).items()
-                if skill.casefold() not in authority
+                if skill.casefold() not in skill_candidates
             }
             if bad_defaults:
                 mismatches[pack["id"]] = bad_defaults

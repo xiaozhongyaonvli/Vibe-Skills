@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .custom_admission import load_custom_admission
 from .router_contract_presentation import build_confirm_ui, build_fallback_truth
-from .router_contract_selection import get_pack_default_candidate, select_pack_candidate
+from .router_contract_selection import get_pack_default_candidate, get_pack_skill_candidates, select_pack_candidate
 from .router_contract_support import (
     RepoContext,
     candidate_name_score,
@@ -487,13 +487,10 @@ def route_prompt(
         if task_allow and task_type not in task_allow:
             continue
 
+        pack_candidates = get_pack_skill_candidates(pack)
         selection = select_pack_candidate(
             prompt_lower=prompt_lower,
-            candidates=[
-                str(item).strip()
-                for item in (pack.get("skill_candidates") or [])
-                if str(item).strip()
-            ],
+            candidates=pack_candidates,
             task_type=task_type,
             requested_canonical=requested_canonical,
             skill_keyword_index=skill_keyword_index,
@@ -502,11 +499,11 @@ def route_prompt(
             candidate_selection_config=candidate_selection_cfg,
         )
         trigger_ratio = keyword_ratio(prompt_lower, pack.get("trigger_keywords") or [])
-        intent_score = _pack_intent_score(prompt_lower, str(pack.get("id") or ""), list(pack.get("skill_candidates") or []))
+        intent_score = _pack_intent_score(prompt_lower, str(pack.get("id") or ""), pack_candidates)
         workspace_score = _workspace_signal_score(
             prompt_lower,
             requested_canonical,
-            list(pack.get("skill_candidates") or []),
+            pack_candidates,
         )
         priority_signal = min(max(float(pack.get("priority", 0)) / 100.0, 0.0), 1.0)
         relevance_score = float(selection.get("relevance_score", selection["score"]))

@@ -31,7 +31,7 @@ def test_router_contract_runtime_delegates_selection_and_presentation_helpers() 
     presentation = (REPO_ROOT / 'packages' / 'runtime-core' / 'src' / 'vgo_runtime' / 'router_contract_presentation.py').read_text(encoding='utf-8')
 
     assert 'from .router_contract_support import (' in runtime
-    assert 'from .router_contract_selection import get_pack_default_candidate, select_pack_candidate' in runtime
+    assert 'from .router_contract_selection import get_pack_default_candidate, get_pack_skill_candidates, select_pack_candidate' in runtime
     assert 'from .router_contract_presentation import build_confirm_ui, build_fallback_truth' in runtime
     assert 'load_router_config_bundle' in runtime
 
@@ -56,6 +56,7 @@ def test_router_contract_runtime_delegates_selection_and_presentation_helpers() 
     assert 'def read_skill_descriptor(' in support
 
     assert 'def get_pack_default_candidate(' in selection
+    assert 'def get_pack_skill_candidates(' in selection
     assert 'def select_pack_candidate(' in selection
 
     assert 'def build_confirm_ui(' in presentation

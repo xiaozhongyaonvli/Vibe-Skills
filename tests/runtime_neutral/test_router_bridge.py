@@ -277,7 +277,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertIn("brainstorm_planning", result["intent_contract"]["capabilities"])
         self.assertEqual(["vibe"], result["deep_discovery_advice"]["recommended_skills"])
 
-    def test_scientific_figure_route_keeps_plotting_libraries_out_of_main_candidate_pool(self) -> None:
+    def test_scientific_figure_route_keeps_legacy_plotting_assistant_metadata(self) -> None:
         result = run_bridge(
             "帮我做科研绘图，产出期刊级 figure，多面板、颜色无障碍、矢量导出",
             "L",
@@ -288,10 +288,12 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("scientific-visualization", result["selected"]["skill"])
 
         figure_row = next(row for row in result["ranked"] if row["pack_id"] == "science-figures-visualization")
-        self.assertEqual(
-            ["scientific-visualization", "scientific-schematics"],
-            [row["skill"] for row in figure_row["candidate_ranking"]],
-        )
+        ranking_by_skill = {row["skill"]: row for row in figure_row["candidate_ranking"]}
+        self.assertEqual("route_authority", ranking_by_skill["scientific-visualization"]["legacy_role"])
+        self.assertEqual("route_authority", ranking_by_skill["scientific-schematics"]["legacy_role"])
+        self.assertEqual("stage_assistant", ranking_by_skill["matplotlib"]["legacy_role"])
+        self.assertEqual("stage_assistant", ranking_by_skill["seaborn"]["legacy_role"])
+        self.assertEqual("stage_assistant", ranking_by_skill["plotly"]["legacy_role"])
         self.assertTrue(
             {"matplotlib", "seaborn", "plotly"}.issubset(
                 {row["skill"] for row in figure_row["stage_assistant_candidates"]}
@@ -309,7 +311,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("science-literature-citations", result["selected"]["pack_id"])
         self.assertEqual("bgpt-paper-search", result["selected"]["skill"])
 
-    def test_deep_research_pack_keeps_deepagent_helpers_out_of_main_candidate_pool(self) -> None:
+    def test_deep_research_pack_records_deepagent_helpers_as_legacy_stage_assistants(self) -> None:
         result = run_bridge(
             "我要做 deep research，多跳浏览网页并保留 trace.jsonl 和 sources.json 证据链",
             "L",
@@ -320,10 +322,11 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("webthinker-deep-research", result["selected"]["skill"])
 
         deep_research_row = next(row for row in result["ranked"] if row["pack_id"] == "ruc-nlpir-augmentation")
-        self.assertEqual(
-            ["webthinker-deep-research", "flashrag-evidence"],
-            [row["skill"] for row in deep_research_row["candidate_ranking"]],
-        )
+        ranking_by_skill = {row["skill"]: row for row in deep_research_row["candidate_ranking"]}
+        self.assertEqual("route_authority", ranking_by_skill["webthinker-deep-research"]["legacy_role"])
+        self.assertEqual("route_authority", ranking_by_skill["flashrag-evidence"]["legacy_role"])
+        self.assertEqual("stage_assistant", ranking_by_skill["deepagent-toolchain-plan"]["legacy_role"])
+        self.assertEqual("stage_assistant", ranking_by_skill["deepagent-memory-fold"]["legacy_role"])
 
     def test_data_leakage_audit_can_route_to_ml_data_leakage_guard(self) -> None:
         result = run_bridge(
@@ -369,7 +372,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("research-design", result["selected"]["pack_id"])
         self.assertEqual("performing-regression-analysis", result["selected"]["skill"])
 
-    def test_preprocessing_pipeline_surfaces_stage_assistant_without_taking_main_route(self) -> None:
+    def test_preprocessing_pipeline_keeps_legacy_stage_role_while_unifying_candidates(self) -> None:
         result = run_bridge(
             "请用 scikit-learn 设计数据预处理流水线：清洗、编码、标准化、ETL pipeline，但先不要做数据泄漏审计",
             "L",
@@ -379,9 +382,10 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
         data_ml_row = next(row for row in result["ranked"] if row["pack_id"] == "data-ml")
         self.assertEqual("scikit-learn", data_ml_row["selected_candidate"])
-        self.assertNotIn(
-            "preprocessing-data-with-automated-pipelines",
-            [row["skill"] for row in data_ml_row["candidate_ranking"]],
+        ranking_by_skill = {row["skill"]: row for row in data_ml_row["candidate_ranking"]}
+        self.assertEqual(
+            "stage_assistant",
+            ranking_by_skill["preprocessing-data-with-automated-pipelines"]["legacy_role"],
         )
         self.assertIn(
             "preprocessing-data-with-automated-pipelines",

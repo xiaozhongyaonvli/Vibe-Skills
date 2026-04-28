@@ -616,14 +616,16 @@ foreach ($pack in $packsForScoring) {
     if ($rules.enforce_grade_boundary -and -not $gradeAllowed) { continue }
     if ($rules.enforce_task_boundary -and -not $taskAllowed) { continue }
 
-    $intent = Get-IntentScore -PromptLower $promptLower -PackId $pack.id -Candidates $pack.skill_candidates
+    $packCandidates = Get-PackSkillCandidates -Pack $pack
+
+    $intent = Get-IntentScore -PromptLower $promptLower -PackId $pack.id -Candidates $packCandidates
     $trigger = Get-TriggerKeywordScore -PromptLower $promptLower -Keywords $pack.trigger_keywords
-    $workspace = Get-WorkspaceSignalScore -PromptLower $promptLower -RequestedCanonical $requestedCanonical -Candidates $pack.skill_candidates
-    $skillSignal = Get-PackSkillSignalScore -PromptLower $promptLower -Candidates $pack.skill_candidates -SkillKeywordIndex $skillKeywordIndex
+    $workspace = Get-WorkspaceSignalScore -PromptLower $promptLower -RequestedCanonical $requestedCanonical -Candidates $packCandidates
+    $skillSignal = Get-PackSkillSignalScore -PromptLower $promptLower -Candidates $packCandidates -SkillKeywordIndex $skillKeywordIndex
     $prior = [double]$pack.priority / 100.0
     $conflictInverse = if ($gradeAllowed -and $taskAllowed) { 1.0 } else { 0.0 }
 
-    $selection = Select-PackCandidate -PromptLower $promptLower -Candidates $pack.skill_candidates -TaskType $TaskType -RequestedCanonical $requestedCanonical -SkillKeywordIndex $skillKeywordIndex -RoutingRules $routingRules -Pack $pack -CandidateSelectionConfig $candidateSelectionConfig
+    $selection = Select-PackCandidate -PromptLower $promptLower -Candidates $packCandidates -TaskType $TaskType -RequestedCanonical $requestedCanonical -SkillKeywordIndex $skillKeywordIndex -RoutingRules $routingRules -Pack $pack -CandidateSelectionConfig $candidateSelectionConfig
     $selectionRelevanceScore = if ($selection.PSObject.Properties.Name -contains 'relevance_score') { [double]$selection.relevance_score } else { [double]$selection.score }
     $score =
         ([double]$weights.intent_match * $intent) +
@@ -658,7 +660,7 @@ foreach ($pack in $packsForScoring) {
         prior = [Math]::Round($prior, 4)
         grade_allowed = $gradeAllowed
         task_allowed = $taskAllowed
-        candidates = @($pack.skill_candidates)
+        candidates = @($packCandidates)
         selected_candidate = $selection.selected
         candidate_selection_reason = $selection.reason
         candidate_selection_score = [Math]::Round([double]$selection.score, 4)

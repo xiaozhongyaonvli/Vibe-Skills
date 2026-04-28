@@ -252,6 +252,24 @@ class GlobalPackConsolidationAuditTests(unittest.TestCase):
         self.assertEqual(3, artifact.summary["pack_count"])
         self.assertIn("research-design", {row.pack_id for row in artifact.rows})
 
+    def test_real_pack_manifest_has_unified_skill_candidates_for_legacy_role_fields(self) -> None:
+        manifest = json.loads((REPO_ROOT / "config" / "pack-manifest.json").read_text(encoding="utf-8-sig"))
+        missing_skill_candidates: list[str] = []
+        legacy_not_in_unified: dict[str, list[str]] = {}
+
+        for pack in manifest["packs"]:
+            skill_candidates = set(pack.get("skill_candidates") or [])
+            old_route = set(pack.get("route_authority_candidates") or [])
+            old_stage = set(pack.get("stage_assistant_candidates") or [])
+            if not skill_candidates:
+                missing_skill_candidates.append(pack["id"])
+            missing_legacy = sorted((old_route | old_stage) - skill_candidates)
+            if missing_legacy:
+                legacy_not_in_unified[pack["id"]] = missing_legacy
+
+        self.assertEqual([], missing_skill_candidates)
+        self.assertEqual({}, legacy_not_in_unified)
+
 
 if __name__ == "__main__":
     unittest.main()
