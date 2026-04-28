@@ -109,7 +109,7 @@ $explorationIntentProfiles = Get-Content -LiteralPath $explorationIntentProfiles
 $explorationDomainMap = Get-Content -LiteralPath $explorationDomainMapPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
 $requiredPackIds = @(
-    "orchestration-core",
+    "workflow-compatibility",
     "aios-core",
     "code-quality",
     "data-ml",
@@ -294,4 +294,3 @@ if ($failCount -gt 0) {
 
 Write-Host "Pack routing smoke checks passed."
 exit 0
-

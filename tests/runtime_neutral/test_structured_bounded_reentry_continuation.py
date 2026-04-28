@@ -226,9 +226,9 @@ class StructuredBoundedReentryContinuationTests(unittest.TestCase):
     def test_confirm_ui_does_not_treat_structured_revision_delta_as_route_confirmation(self) -> None:
         payload = run_confirm_ui_script(
             "$confirm = [pscustomobject]@{ "
-            "  selected_pack = 'orchestration-core'; "
+            "  selected_pack = 'runtime-entry'; "
             "  selected_skill = 'vibe'; "
-            "  options = @([pscustomobject]@{ skill = 'vibe'; pack_id = 'orchestration-core'; score = 1.0 }) "
+            "  options = @([pscustomobject]@{ skill = 'vibe'; pack_id = 'runtime-entry'; score = 1.0 }) "
             "}; "
             "$decision = @{ "
             "  decision_kind = 'approval_response'; "
@@ -245,9 +245,9 @@ class StructuredBoundedReentryContinuationTests(unittest.TestCase):
     def test_confirm_ui_still_accepts_structured_approval_as_route_confirmation(self) -> None:
         payload = run_confirm_ui_script(
             "$confirm = [pscustomobject]@{ "
-            "  selected_pack = 'orchestration-core'; "
+            "  selected_pack = 'runtime-entry'; "
             "  selected_skill = 'vibe'; "
-            "  options = @([pscustomobject]@{ skill = 'vibe'; pack_id = 'orchestration-core'; score = 1.0 }) "
+            "  options = @([pscustomobject]@{ skill = 'vibe'; pack_id = 'runtime-entry'; score = 1.0 }) "
             "}; "
             "$decision = @{ "
             "  decision_kind = 'approval_response'; "

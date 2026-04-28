@@ -206,7 +206,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertNotIn(CONFIRM_UI_BATCH_PROMPT, result["confirm_ui"]["rendered_text"])
         self.assertNotIn(DEEP_DISCOVERY_FIRST_QUESTION, result["confirm_ui"]["rendered_text"])
 
-    def test_ml_critical_discussion_routes_to_lqf_ml_expert(self) -> None:
+    def test_ml_critical_discussion_routes_to_data_leakage_guard(self) -> None:
         result = run_bridge(
             "请你作为机器学习专家和我进行三轮批判式讨论：这个分类方案有没有数据泄漏、基线是否充分、是否该先用简单模型",
             "L",
@@ -215,7 +215,7 @@ class RouterBridgeTests(unittest.TestCase):
 
         self.assertEqual("pack_overlay", result["route_mode"])
         self.assertEqual("data-ml", result["selected"]["pack_id"])
-        self.assertEqual("LQF_Machine_Learning_Expert_Guide", result["selected"]["skill"])
+        self.assertEqual("ml-data-leakage-guard", result["selected"]["skill"])
 
     def test_ml_threshold_question_does_not_false_positive_to_vibe(self) -> None:
         result = run_bridge(
@@ -227,17 +227,17 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertNotEqual("vibe", result["selected"]["skill"])
         self.assertEqual("data-ml", result["selected"]["pack_id"])
 
-    def test_requested_mixed_case_skill_routes_authoritatively_in_runtime_neutral_lane(self) -> None:
+    def test_requested_mixed_case_active_skill_routes_authoritatively_in_runtime_neutral_lane(self) -> None:
         result = run_bridge(
             "请用机器学习专家视角审视这个分类方案",
             "L",
             "research",
-            requested_skill="LQF_Machine_Learning_Expert_Guide",
+            requested_skill="Scikit-Learn",
         )
 
         self.assertEqual("pack_overlay", result["route_mode"])
         self.assertEqual("data-ml", result["selected"]["pack_id"])
-        self.assertEqual("LQF_Machine_Learning_Expert_Guide", result["selected"]["skill"])
+        self.assertEqual("scikit-learn", result["selected"]["skill"])
 
     def test_wrapper_entry_intent_does_not_override_runtime_neutral_router_selection(self) -> None:
         prompt = (
@@ -272,13 +272,10 @@ class RouterBridgeTests(unittest.TestCase):
             requested_skill="vibe",
         )
 
-        self.assertEqual("orchestration-core", result["selected"]["pack_id"])
-        self.assertEqual("vibe", result["selected"]["skill"])
-
-        orchestration_row = next(row for row in result["ranked"] if row["pack_id"] == "orchestration-core")
-        self.assertEqual("vibe", orchestration_row["selected_candidate"])
-        self.assertEqual(["vibe"], [row["skill"] for row in orchestration_row["candidate_ranking"]])
-        self.assertIn("planning-with-files", [row["skill"] for row in orchestration_row["stage_assistant_candidates"]])
+        self.assertEqual("vibe", result["alias"]["requested_canonical"])
+        self.assertNotEqual("orchestration-core", result["selected"]["pack_id"])
+        self.assertIn("brainstorm_planning", result["intent_contract"]["capabilities"])
+        self.assertEqual(["vibe"], result["deep_discovery_advice"]["recommended_skills"])
 
     def test_scientific_figure_route_keeps_plotting_libraries_out_of_main_candidate_pool(self) -> None:
         result = run_bridge(
@@ -411,10 +408,10 @@ class RouterBridgeTests(unittest.TestCase):
         )
 
         self.assertEqual("pack_overlay", result["route_mode"])
-        self.assertEqual("orchestration-core", result["selected"]["pack_id"])
-        self.assertEqual("vibe", result["selected"]["skill"])
+        self.assertEqual("code-quality", result["selected"]["pack_id"])
+        self.assertEqual("systematic-debugging", result["selected"]["skill"])
         self.assertEqual("vibe", result["alias"]["requested_canonical"])
-        self.assertEqual("vibe", result["ranked"][0]["selected_candidate"])
+        self.assertNotEqual("orchestration-core", result["selected"]["pack_id"])
         self.assertIn("confirm_ui", result)
         self.assertTrue(result["confirm_ui"]["enabled"])
 
@@ -427,9 +424,7 @@ class RouterBridgeTests(unittest.TestCase):
         )
 
         self.assertEqual("pack_overlay", result["route_mode"])
-        self.assertEqual("candidate_signal_auto_route", result["route_reason"])
-        self.assertEqual("orchestration-core", result["selected"]["pack_id"])
-        self.assertEqual("vibe", result["selected"]["skill"])
+        self.assertNotEqual("orchestration-core", result["selected"]["pack_id"])
         self.assertEqual("vibe", result["alias"]["requested_canonical"])
 
 

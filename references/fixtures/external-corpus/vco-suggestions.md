@@ -14,7 +14,6 @@
 
 ## Advisory Pack Trigger Candidates
 
-- $(@{pack_id=orchestration-core; advisory_trigger_candidates=System.Object[]}.pack_id): agent, model, test, tests, mcp, security, testing
 - $(@{pack_id=code-quality; advisory_trigger_candidates=System.Object[]}.pack_id): agent, model, tests, mcp, testing
 - $(@{pack_id=data-ml; advisory_trigger_candidates=System.Object[]}.pack_id): agent, test, tests, mcp, security, testing
 - $(@{pack_id=bio-science; advisory_trigger_candidates=System.Object[]}.pack_id): agent, model, test, tests, mcp, security, testing

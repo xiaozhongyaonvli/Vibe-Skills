@@ -67,12 +67,12 @@ function Invoke-Route {
 
 $cases = @(
     [pscustomobject]@{
-        Name = "L planning orchestration"
+        Name = "L planning no orchestration core"
         Prompt = "create implementation plan and task breakdown with milestones"
         Grade = "L"
         TaskType = "planning"
         RequestedSkill = $null
-        ExpectedPack = "orchestration-core"
+        ExpectedPack = $null
         ExpectedProfile = "full"
         ExpectedEnforcement = "required"
     },
@@ -112,7 +112,7 @@ $cases = @(
         Grade = "M"
         TaskType = "planning"
         RequestedSkill = $null
-        ExpectedPack = "orchestration-core"
+        ExpectedPack = $null
         ExpectedProfile = "full"
         ExpectedEnforcement = "required"
     },
@@ -130,11 +130,11 @@ $cases = @(
     },
     [pscustomobject]@{
         Name = "Requested skill whitelist bypass"
-        Prompt = "plan implementation milestones for module refactor"
+        Prompt = "/speckit.plan implementation milestones for module refactor"
         Grade = "M"
         TaskType = "planning"
-        RequestedSkill = "writing-plans"
-        ExpectedPack = "orchestration-core"
+        RequestedSkill = "spec-kit-vibe-compat"
+        ExpectedPack = "workflow-compatibility"
         ExpectedProfile = "full"
         ExpectedEnforcement = "none"
         ExpectedBypass = $true
@@ -165,7 +165,7 @@ try {
     $policyObj.profile_by_grade.XL = "full"
     $policyObj.required_task_types_by_profile.full = @("planning")
     $policyObj.exemptions.requested_skill_bypass = $true
-    $policyObj.exemptions.requested_skill_whitelist = @("sc:design", "brainstorming", "writing-plans")
+    $policyObj.exemptions.requested_skill_whitelist = @("sc:design", "spec-kit-vibe-compat")
 
     Write-Utf8NoBomText -Path $policyPath -Content ($policyObj | ConvertTo-Json -Depth 30)
 
@@ -199,7 +199,7 @@ try {
         -NoAutoCreateLite
     $governanceObj = $governance | ConvertFrom-Json
     $results += Assert-True -Condition ($governanceObj.status -in @("full_ready", "full_missing")) -Message "[governance script] full profile handling status"
-    $results += Assert-True -Condition ($governanceObj.selected_pack -eq "orchestration-core") -Message "[governance script] selected pack preserved"
+    $results += Assert-True -Condition ($governanceObj.selected_pack -ne "orchestration-core") -Message "[governance script] does not preserve orchestration-core"
 
     $strictTaskId = "governance-gate-{0}" -f ([guid]::NewGuid().ToString("N").Substring(0, 12))
     $strictGovernance = & $governanceScript `

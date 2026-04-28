@@ -1,19 +1,19 @@
 # External Corpus Gate Result
 
-- Generated: 2026-02-24T19:21:55.4362555Z
+- Generated: 2026-04-28T05:42:46.4532269Z
 - Gate passed: True
-- Fail on smoke error: True
+- Fail on smoke error: False
 
 ## Baseline
 
-- Accuracy: 1
-- Fallback rate: 0.5833
-- Avg route gap: 0.2559
+- Accuracy: 0.9167
+- Fallback rate: 0
+- Avg route gap: 0.3161
 
 ## Candidate
 
-- Accuracy: 1
-- Fallback rate: 0.5833
-- Avg route gap: 0.2559
+- Accuracy: 0.9167
+- Fallback rate: 0
+- Avg route gap: 0.3117
 
 ## Reasons

@@ -16,11 +16,11 @@
       "expected": {
         "route_mode": "pack_overlay",
         "route_reason": "host_selection_required",
-        "selected_pack": "orchestration-core",
-        "selected_skill": "vibe",
-        "confidence": 0.2429,
-        "top1_top2_gap": 0.12,
-        "candidate_signal": 0.12
+        "selected_pack": "scholarly-publishing-workflow",
+        "selected_skill": "scholarly-publishing",
+        "confidence": 0.0619,
+        "top1_top2_gap": 0.0,
+        "candidate_signal": 0.09
       }
     },
     {
@@ -32,11 +32,11 @@
       "expected": {
         "route_mode": "pack_overlay",
         "route_reason": "host_selection_required",
-        "selected_pack": "orchestration-core",
-        "selected_skill": "vibe",
-        "confidence": 0.2429,
-        "top1_top2_gap": 0.12,
-        "candidate_signal": 0.12
+        "selected_pack": "scholarly-publishing-workflow",
+        "selected_skill": "scholarly-publishing",
+        "confidence": 0.0619,
+        "top1_top2_gap": 0.0,
+        "candidate_signal": 0.09
       }
     },
     {
@@ -50,9 +50,9 @@
         "route_reason": "auto_route",
         "selected_pack": "code-quality",
         "selected_skill": "code-reviewer",
-        "confidence": 0.7081,
-        "top1_top2_gap": 0.1658,
-        "candidate_signal": 0.3283
+        "confidence": 0.7737,
+        "top1_top2_gap": 0.525,
+        "candidate_signal": 0.615
       }
     },
     {
@@ -111,12 +111,12 @@
       "requested_skill": null,
       "expected": {
         "route_mode": "pack_overlay",
-        "route_reason": "host_selection_required",
+        "route_reason": "candidate_signal_auto_route",
         "selected_pack": "data-ml",
         "selected_skill": "scikit-learn",
-        "confidence": 0.6306,
-        "top1_top2_gap": 0.4625,
-        "candidate_signal": 0.5525
+        "confidence": 0.7,
+        "top1_top2_gap": 0.675,
+        "candidate_signal": 0.765
       }
     },
     {
@@ -159,12 +159,12 @@
       "requested_skill": "writing-plans",
       "expected": {
         "route_mode": "pack_overlay",
-        "route_reason": "candidate_signal_auto_route",
-        "selected_pack": "orchestration-core",
-        "selected_skill": "writing-plans",
-        "confidence": 0.7,
-        "top1_top2_gap": 1.0,
-        "candidate_signal": 1.0
+        "route_reason": "host_selection_required",
+        "selected_pack": "aios-core",
+        "selected_skill": "aios-master",
+        "confidence": 0.1885,
+        "top1_top2_gap": 0.0,
+        "candidate_signal": 0.0
       }
     },
     {
@@ -175,12 +175,12 @@
       "requested_skill": "vibe-do",
       "expected": {
         "route_mode": "pack_overlay",
-        "route_reason": "candidate_signal_auto_route",
-        "selected_pack": "orchestration-core",
-        "selected_skill": "vibe",
-        "confidence": 0.7,
-        "top1_top2_gap": 1.0,
-        "candidate_signal": 1.0
+        "route_reason": "host_selection_required",
+        "selected_pack": "data-ml",
+        "selected_skill": "scikit-learn",
+        "confidence": 0.295,
+        "top1_top2_gap": 0.0,
+        "candidate_signal": 0.09
       }
     }
   ]

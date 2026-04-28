@@ -9,10 +9,10 @@
   ],
   "rerank": {
     "abstain": false,
-    "suggested_pack_id": "orchestration-core",
+    "suggested_pack_id": "code-quality",
     "suggested_skill": "autonomous-builder",
     "confidence": 0.82,
-    "reason": "Mock: general coding task likely fits orchestration-core; keep default skill."
+    "reason": "Mock: general coding task likely fits code-quality after orchestration-core hard removal."
   },
   "qa": {
     "recommendations": [
@@ -24,4 +24,3 @@
   },
   "notes": "mock fixture for vibe-llm-acceleration-overlay-gate"
 }
-

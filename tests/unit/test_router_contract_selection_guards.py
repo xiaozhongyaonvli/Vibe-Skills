@@ -49,7 +49,7 @@ def _selection(prompt: str, *, requested: str | None = None) -> dict[str, object
             }
         },
         pack={
-            "id": "orchestration-core",
+            "id": "synthetic-process-pack",
             "route_authority_candidates": ["subagent-driven-development"],
             "stage_assistant_candidates": [],
             "defaults_by_task": {},
