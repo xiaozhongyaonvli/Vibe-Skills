@@ -125,9 +125,11 @@ class RuntimeContractSchemaTests(unittest.TestCase):
         self.assertEqual(1, payload["schema_version"])
         self.assertEqual("vibeskills", payload["brand"])
         self.assertEqual(workspace_root_text, payload["workspace_root"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills", payload["workspace_sidecar_root"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills/project.json", payload["project_descriptor_path"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills", payload["default_artifact_root"])
+        expected_sidecar_root = str((workspace_root / ".vibeskills").resolve())
+        expected_project_descriptor = str((workspace_root / ".vibeskills" / "project.json").resolve())
+        self.assertEqual(expected_sidecar_root, payload["workspace_sidecar_root"])
+        self.assertEqual(expected_project_descriptor, payload["project_descriptor_path"])
+        self.assertEqual(expected_sidecar_root, payload["default_artifact_root"])
         self.assertEqual("docs/requirements", payload["relative_runtime_contract"]["requirement_root"])
         self.assertEqual("docs/plans", payload["relative_runtime_contract"]["execution_plan_root"])
         self.assertEqual("outputs/runtime/vibe-sessions", payload["relative_runtime_contract"]["session_root"])
@@ -147,7 +149,7 @@ class RuntimeContractSchemaTests(unittest.TestCase):
                 "$descriptor | ConvertTo-Json -Depth 10 }"
             )
 
-        self.assertEqual(f"{workspace_root_text}/.vibeskills/project.json", payload["memory_plane"]["identity_root"])
+        self.assertEqual(str((workspace_root / ".vibeskills" / "project.json").resolve()), payload["memory_plane"]["identity_root"])
         self.assertEqual("workspace", payload["memory_plane"]["identity_scope"])
         self.assertEqual("workspace_shared_memory_v1", payload["memory_plane"]["driver_contract"])
         self.assertEqual(
@@ -171,11 +173,13 @@ class RuntimeContractSchemaTests(unittest.TestCase):
             )
 
         self.assertEqual(workspace_root_text, payload["workspace_root"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills", payload["workspace_sidecar_root"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills", payload["artifact_root"])
+        expected_sidecar_root = str((workspace_root / ".vibeskills").resolve())
+        expected_project_descriptor = str((workspace_root / ".vibeskills" / "project.json").resolve())
+        self.assertEqual(expected_sidecar_root, payload["workspace_sidecar_root"])
+        self.assertEqual(expected_sidecar_root, payload["artifact_root"])
         self.assertEqual("workspace_sidecar_default", payload["artifact_root_source"])
         self.assertTrue(payload["default_workspace_sidecar_artifact_root"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills/project.json", payload["project_descriptor_path"])
+        self.assertEqual(expected_project_descriptor, payload["project_descriptor_path"])
 
     def test_workspace_artifact_projection_exposes_workspace_memory_identity_fields(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -193,7 +197,7 @@ class RuntimeContractSchemaTests(unittest.TestCase):
             )
 
         self.assertEqual(
-            f"{workspace_root_text}/.vibeskills/project.json",
+            str((workspace_root / ".vibeskills" / "project.json").resolve()),
             payload["workspace_memory_identity_root"],
         )
         self.assertEqual("workspace", payload["workspace_memory_identity_scope"])
@@ -510,10 +514,12 @@ class RuntimeContractSchemaTests(unittest.TestCase):
         self.assertEqual("openclaw", payload["host_adapter"]["requested_host_id"])
         self.assertEqual("openclaw", payload["host_adapter"]["effective_host_id"])
         self.assertEqual(workspace_root_text, payload["storage"]["workspace_root"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills", payload["storage"]["workspace_sidecar_root"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills", payload["storage"]["artifact_root"])
+        expected_sidecar_root = str((workspace_root / ".vibeskills").resolve())
+        expected_project_descriptor = str((workspace_root / ".vibeskills" / "project.json").resolve())
+        self.assertEqual(expected_sidecar_root, payload["storage"]["workspace_sidecar_root"])
+        self.assertEqual(expected_sidecar_root, payload["storage"]["artifact_root"])
         self.assertEqual("workspace_sidecar_default", payload["storage"]["artifact_root_source"])
-        self.assertEqual(f"{workspace_root_text}/.vibeskills/project.json", payload["storage"]["project_descriptor_path"])
+        self.assertEqual(expected_project_descriptor, payload["storage"]["project_descriptor_path"])
         self.assertTrue(payload["provenance"]["freeze_before_requirement_doc"])
 
     def test_runtime_summary_projection_preserves_public_contract_shape(self) -> None:
