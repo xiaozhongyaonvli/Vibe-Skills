@@ -118,7 +118,8 @@ class CodeQualityPackConsolidationAuditTests(unittest.TestCase):
         self.assertEqual("debug_root_cause", rows["systematic-debugging"].primary_problem_id)
         self.assertEqual("keep-route-authority", rows["receiving-code-review"].target_role)
         self.assertEqual("review_feedback_handling", rows["receiving-code-review"].primary_problem_id)
-        self.assertEqual("stage-assistant", rows["requesting-code-review"].target_role)
+        self.assertEqual("keep-route-authority", rows["requesting-code-review"].target_role)
+        self.assertEqual("review_request_preparation", rows["requesting-code-review"].primary_problem_id)
 
     def test_problem_map_marks_safe_delete_and_move_out(self) -> None:
         artifact = audit_code_quality_problem_map(self.root)
@@ -156,10 +157,8 @@ class CodeQualityPackConsolidationAuditTests(unittest.TestCase):
                     {
                         "id": "code-quality",
                         "skill_candidates": target_candidates,
-                        "route_authority_candidates": [
-                            item for item in target_candidates if item != "requesting-code-review"
-                        ],
-                        "stage_assistant_candidates": ["requesting-code-review"],
+                        "route_authority_candidates": target_candidates,
+                        "stage_assistant_candidates": [],
                         "defaults_by_task": {
                             "debug": "systematic-debugging",
                             "coding": "tdd-guide",
@@ -181,6 +180,7 @@ class CodeQualityPackConsolidationAuditTests(unittest.TestCase):
 
     def test_artifact_writer_outputs_json_csv_and_markdown(self) -> None:
         artifact = audit_code_quality_problem_map(self.root)
+        self.assertEqual(0, artifact.to_dict()["summary"]["target_stage_assistant_count"])
         written = write_code_quality_problem_artifacts(self.root, artifact, self.root / "outputs" / "skills-audit")
 
         self.assertTrue(written["json"].exists())

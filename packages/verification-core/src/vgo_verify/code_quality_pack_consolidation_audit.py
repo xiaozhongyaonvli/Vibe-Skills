@@ -43,6 +43,7 @@ TARGET_ROUTE_AUTHORITIES = [
     "deslop",
     "generating-test-reports",
     "receiving-code-review",
+    "requesting-code-review",
     "security-reviewer",
     "systematic-debugging",
     "tdd-guide",
@@ -50,9 +51,7 @@ TARGET_ROUTE_AUTHORITIES = [
     "windows-hook-debugging",
 ]
 
-TARGET_STAGE_ASSISTANTS = [
-    "requesting-code-review",
-]
+TARGET_STAGE_ASSISTANTS: list[str] = []
 
 CODE_QUALITY_DECISIONS: dict[str, dict[str, Any]] = {
     "code-reviewer": {
@@ -155,15 +154,15 @@ CODE_QUALITY_DECISIONS: dict[str, dict[str, Any]] = {
         "rationale": "收尾前确认测试和验收证据是完成声明前的独立质量门。",
     },
     "requesting-code-review": {
-        "problem_ids": ["review_request_stage"],
-        "primary_problem_id": "review_request_stage",
-        "target_role": "stage-assistant",
-        "target_owner": "code-reviewer",
-        "overlap_with": "code-reviewer",
-        "routing_change": "keep as stage assistant, not default route authority",
+        "problem_ids": ["review_request_preparation"],
+        "primary_problem_id": "review_request_preparation",
+        "target_role": "keep-route-authority",
+        "target_owner": "",
+        "overlap_with": "code-reviewer; receiving-code-review",
+        "routing_change": "keep as direct route authority for preparing review requests",
         "delete_allowed_now": False,
         "risk_level": "low",
-        "rationale": "提交前请求 review 是流程提醒，不应抢普通 code review。",
+        "rationale": "准备发起 code review、整理 review 请求材料是明确任务，不再作为阶段助手表达。",
     },
     "reviewing-code": {
         "problem_ids": ["code_review_general"],
