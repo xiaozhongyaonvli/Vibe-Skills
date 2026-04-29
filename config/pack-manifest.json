@@ -758,35 +758,41 @@
                                                "ppt",
                                                "pptx",
                                                "powerpoint",
-                                               "poster",
-                                               "infographic",
-                                               "mermaid",
-                                               "diagram",
-                                               "flowchart",
+                                               "presentation",
+                                               "talk",
+                                               "seminar",
+                                               "defense",
                                                "slidev",
                                                "marp",
                                                "reveal.js",
+                                               "quarto slides",
+                                               "slides as code",
                                                "幻灯片",
                                                "演示文稿",
-                                               "海报",
-                                               "信息图",
-                                               "流程图",
-                                               "示意图"
+                                               "组会汇报",
+                                               "答辩",
+                                               "路演",
+                                               "学术报告"
                                            ],
                       "skill_candidates":  [
                                                "scientific-slides",
                                                "slides-as-code",
                                                "pptx-posters",
-                                               "infographics",
-                                               "markdown-mermaid-writing",
-                                               "markitdown",
-                                                "document-skills",
-                                               "generate-image"
+                                               "infographics"
+                                           ],
+                      "route_authority_candidates":  [
+                                                       "scientific-slides",
+                                                       "slides-as-code",
+                                                       "pptx-posters",
+                                                       "infographics"
+                                                   ],
+                      "stage_assistant_candidates":  [
+
                                            ],
                       "defaults_by_task":  {
                                                "planning":  "scientific-slides",
-                                               "coding":  "markdown-mermaid-writing",
-                                               "research":  "infographics"
+                                               "coding":  "slides-as-code",
+                                               "research":  "scientific-slides"
                                            }
                   },
                   {
