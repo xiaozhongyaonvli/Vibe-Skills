@@ -95,6 +95,13 @@ $cases = @(
     [pscustomobject]@{ Name = "top journal figures"; Prompt = "顶级期刊作图：多面板figure，导出TIFF 600dpi，色盲友好配色，误差棒和显著性标注"; Grade = "L"; TaskType = "coding"; ExpectedPack = "science-figures-visualization"; ExpectedSkill = "scientific-visualization" },
     [pscustomobject]@{ Name = "scientific report"; Prompt = "科研技术报告：包含方法/结果/讨论，输出HTML+PDF，附录写清复现步骤"; Grade = "L"; TaskType = "planning"; ExpectedPack = "science-reporting"; ExpectedSkill = "scientific-reporting" },
     [pscustomobject]@{ Name = "rebuttal matrix"; Prompt = "回复审稿意见：生成rebuttal逐条回应矩阵，提供返修清单，并起草cover letter"; Grade = "L"; TaskType = "planning"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "submission-checklist" },
+    [pscustomobject]@{ Name = "publishing workflow package"; Prompt = "规划一套期刊投稿工作流，包含投稿包、校样和 camera-ready"; Grade = "L"; TaskType = "planning"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "scholarly-publishing" },
+    [pscustomobject]@{ Name = "submission checklist rebuttal matrix"; Prompt = "写 cover letter 和 response to reviewers rebuttal matrix"; Grade = "L"; TaskType = "planning"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "submission-checklist" },
+    [pscustomobject]@{ Name = "manuscript as code reproducible build"; Prompt = "把论文仓库改成 manuscript-as-code，可复现构建 PDF"; Grade = "L"; TaskType = "planning"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "manuscript-as-code" },
+    [pscustomobject]@{ Name = "latex submission zip build"; Prompt = "配置 latexmk/chktex/latexindent 编译论文 PDF 并打包 submission zip"; Grade = "XL"; TaskType = "coding"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "latex-submission-pipeline" },
+    [pscustomobject]@{ Name = "venue template anonymous submission"; Prompt = "查 NeurIPS 模板和匿名投稿格式要求"; Grade = "L"; TaskType = "planning"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "venue-templates" },
+    [pscustomobject]@{ Name = "latex academic poster"; Prompt = "用 beamerposter 做会议学术海报"; Grade = "L"; TaskType = "coding"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "latex-posters" },
+    [pscustomobject]@{ Name = "paper2web video abstract"; Prompt = "把论文转换成 paper2web 项目主页和视频摘要"; Grade = "L"; TaskType = "planning"; ExpectedPack = "scholarly-publishing-workflow"; ExpectedSkill = "paper-2-web" },
 
     [pscustomobject]@{ Name = "grant proposal"; Prompt = "请帮我写NSFC科研基金申请书（基金申请书），需要结构化标书与评审点对齐"; Grade = "L"; TaskType = "planning"; ExpectedPack = "research-design"; ExpectedSkill = "research-grants" },
     [pscustomobject]@{ Name = "experiment failure analysis"; Prompt = "分析实验失败原因，判断是否继续优化还是放弃该方案"; Grade = "L"; TaskType = "review"; ExpectedPack = "research-design"; ExpectedSkill = "experiment-failure-analysis" },
