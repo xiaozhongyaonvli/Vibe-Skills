@@ -234,9 +234,6 @@
     "paper-2-web": {
       "keywords": ["paper to web", "paper2web", "论文转网页", "论文可视化", "paper viewer"]
     },
-    "open-notebook": {
-      "keywords": ["research notebook", "open notebook", "lab notebook", "研究笔记", "实验记录", "notebook"]
-    },
     "pyzotero": {
       "keywords": ["zotero", "pyzotero", "bibtex", "citation management", "references", "参考文献管理", "引文管理"]
     },
@@ -247,13 +244,13 @@
       "keywords": ["literature review", "systematic review", "meta-analysis", "文献综述", "系统综述", "荟萃分析"]
     },
     "peer-review": {
-      "keywords": ["peer review", "reviewer comments", "rebuttal", "同行评审", "审稿意见", "审稿", "返修"]
+      "keywords": ["peer review", "reviewer comments", "manuscript review", "grant review", "methodology review", "statistical validity", "reproducibility risk", "同行评审", "审稿意见", "审稿", "论文评审", "方法学缺陷", "可复现性风险"]
     },
     "scholar-evaluation": {
-      "keywords": ["scholar evaluation", "paper evaluation", "methodology scoring", "论文评价", "学术评估", "评估论文"]
+      "keywords": ["scholar evaluation", "scholareval", "paper evaluation", "paper quality", "research quality", "methodology scoring", "scoring rubric", "rubric", "score paper", "论文评价", "论文质量", "学术评估", "评估论文", "评分 rubric", "量化评分"]
     },
     "scientific-critical-thinking": {
-      "keywords": ["critical thinking", "scientific critique", "methodology critique", "批判性思维", "科研批判", "方法学批判"]
+      "keywords": ["critical thinking", "scientific critique", "methodology critique", "evidence strength", "bias", "confounders", "GRADE", "Cochrane", "risk of bias", "批判性思维", "科研批判", "方法学批判", "证据强度", "偏倚", "混杂因素"]
     },
     "chembl-database": {
       "keywords": ["chembl", "bioactivity", "assay", "ic50", "ki", "kd", "target", "化合物活性", "药物靶点"]

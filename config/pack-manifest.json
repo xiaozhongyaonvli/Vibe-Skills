@@ -243,14 +243,9 @@
                                                "openalex-database",
                                                "biorxiv-database",
                                                "bgpt-paper-search",
-                                               "paper-2-web",
-                                               "open-notebook",
                                                "pyzotero",
                                                "citation-management",
-                                               "literature-review",
-                                               "peer-review",
-                                               "scholar-evaluation",
-                                               "scientific-critical-thinking"
+                                               "literature-review"
                                            ],
                       "route_authority_candidates":  [
                                                        "pubmed-database",
@@ -259,19 +254,15 @@
                                                        "bgpt-paper-search",
                                                        "pyzotero",
                                                        "citation-management",
-                                                       "literature-review",
-                                                       "peer-review",
-                                                       "scholar-evaluation",
-                                                       "scientific-critical-thinking"
+                                                       "literature-review"
                                                    ],
                       "stage_assistant_candidates":  [
-                                                       "paper-2-web",
-                                                       "open-notebook"
+
                                                    ],
                       "defaults_by_task":  {
                                                "planning":  "literature-review",
                                                "coding":  "pubmed-database",
-                                               "review":  "peer-review",
+                                               "review":  "literature-review",
                                                "research":  "pubmed-database"
                                            }
                   },
@@ -344,13 +335,36 @@
                                      ],
                       "trigger_keywords":  [
                                                "peer review",
-                                               "审稿"
+                                               "manuscript review",
+                                               "paper quality",
+                                               "research quality",
+                                               "scholareval",
+                                               "rubric",
+                                               "methodology critique",
+                                               "evidence strength",
+                                               "bias",
+                                               "confounders",
+                                               "审稿",
+                                               "论文评审",
+                                               "论文质量",
+                                               "学术评估",
+                                               "证据强度",
+                                               "偏倚",
+                                               "混杂因素"
                                            ],
                       "skill_candidates":  [
                                                "peer-review",
                                                "scientific-critical-thinking",
                                                "scholar-evaluation"
                                            ],
+                      "route_authority_candidates":  [
+                                                       "peer-review",
+                                                       "scientific-critical-thinking",
+                                                       "scholar-evaluation"
+                                                   ],
+                      "stage_assistant_candidates":  [
+
+                                                   ],
                       "defaults_by_task":  {
                                                "planning":  "scientific-critical-thinking",
                                                "review":  "peer-review",

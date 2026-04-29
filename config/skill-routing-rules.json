@@ -89,7 +89,17 @@
                                                                        "toolchain",
                                                                        "memory folding",
                                                                        "记忆折叠",
-                                                                       "技能链"
+                                                                       "技能链",
+                                                                       "paper quality",
+                                                                       "research quality",
+                                                                       "methodology critique",
+                                                                       "evidence strength",
+                                                                       "bias",
+                                                                       "confounders",
+                                                                       "论文质量",
+                                                                       "证据强度",
+                                                                       "偏倚",
+                                                                       "混杂因素"
                                                                    ],
                                              "equivalent_group":  "evidence-retrieval",
                                              "canonical_for_task":  [
@@ -736,7 +746,14 @@
                                                                    "auth bypass",
                                                                    "安全审计",
                                                                    "安全评审",
-                                                                   "漏洞"
+                                                                   "漏洞",
+                                                                   "paper quality",
+                                                                   "research quality",
+                                                                   "scholareval",
+                                                                   "methodology scoring",
+                                                                   "论文质量",
+                                                                   "学术评估",
+                                                                   "评估论文"
                                                                ],
                                          "equivalent_group":  "code-review-core",
                                          "canonical_for_task":  [
@@ -1252,7 +1269,14 @@
                                                                                         "模型评估"
                                                                                     ],
                                                               "negative_keywords":  [
-                                                                                        "deploy infra"
+                                                                                        "deploy infra",
+                                                                                        "paper quality",
+                                                                                        "research quality",
+                                                                                        "scholareval",
+                                                                                        "peer review",
+                                                                                        "论文质量",
+                                                                                        "学术评估",
+                                                                                        "同行评审"
                                                                                     ],
                                                               "equivalent_group":  null,
                                                               "canonical_for_task":  [
@@ -3490,30 +3514,6 @@
  
                                                               ]
                                    },
-                   "open-notebook":  {
-                                         "task_allow":  [
-                                                            "planning",
-                                                            "coding",
-                                                            "research"
-                                                        ],
-                                         "positive_keywords":  [
-                                                                   "open notebook",
-                                                                   "notebooklm",
-                                                                   "self-hosted",
-                                                                   "document chat",
-                                                                   "notebook lm",
-                                                                   "文档对话",
-                                                                   "研究笔记"
-                                                               ],
-                                         "negative_keywords":  [
-                                                                   "citation style",
-                                                                   "bibtex"
-                                                               ],
-                                         "equivalent_group":  "research-notebook",
-                                         "canonical_for_task":  [
- 
-                                                                ]
-                                     },
                    "pyzotero":  {
                                     "task_allow":  [
                                                        "planning",
@@ -3599,13 +3599,25 @@
                                                                  "peer review",
                                                                  "review this paper",
                                                                  "review my paper",
+                                                                 "manuscript review",
+                                                                 "grant review",
                                                                  "审稿",
                                                                  "reviewer comments",
-                                                                 "匿名评审"
+                                                                 "匿名评审",
+                                                                 "methodology defects",
+                                                                 "statistical validity",
+                                                                 "reproducibility risk",
+                                                                 "同行评审",
+                                                                 "论文评审",
+                                                                 "方法学缺陷",
+                                                                 "可复现性风险"
                                                              ],
                                        "negative_keywords":  [
                                                                  "bibtex",
-                                                                 "zotero"
+                                                                 "zotero",
+                                                                 "latex",
+                                                                 "cover letter",
+                                                                 "rebuttal matrix"
                                                              ],
                                        "equivalent_group":  "literature-synthesis",
                                        "canonical_for_task":  [
@@ -3621,17 +3633,30 @@
                                                                         "scholareval",
                                                                         "evaluate paper",
                                                                         "score paper",
+                                                                        "paper quality",
+                                                                        "research quality",
+                                                                        "methodology scoring",
+                                                                        "scoring rubric",
                                                                         "rubric",
+                                                                        "论文质量",
+                                                                        "论文评价",
+                                                                        "学术评估",
+                                                                        "评估论文",
                                                                         "评分",
+                                                                        "评分 rubric",
                                                                         "量化评估"
                                                                     ],
                                               "negative_keywords":  [
+                                                                        "model evaluation",
+                                                                        "模型评估",
+                                                                        "代码质量",
+                                                                        "code review",
                                                                         "pubmed api",
                                                                         "openalex api"
                                                                     ],
                                               "equivalent_group":  "literature-synthesis",
                                               "canonical_for_task":  [
- 
+                                                                        "review"
                                                                      ]
                                           },
                    "scientific-critical-thinking":  {
@@ -3640,22 +3665,35 @@
                                                                            "review",
                                                                            "research"
                                                                        ],
-                                                        "positive_keywords":  [
+                                                       "positive_keywords":  [
                                                                                   "critical thinking",
                                                                                   "critique",
                                                                                   "challenge assumptions",
                                                                                   "evidence strength",
+                                                                                  "bias",
+                                                                                  "confounders",
+                                                                                  "GRADE",
+                                                                                  "Cochrane",
+                                                                                  "risk of bias",
                                                                                   "批判性思维",
                                                                                   "反驳",
-                                                                                  "证据强度"
+                                                                                  "证据强度",
+                                                                                  "科研批判",
+                                                                                  "偏倚",
+                                                                                  "混杂因素"
                                                                               ],
                                                         "negative_keywords":  [
                                                                                   "excel",
-                                                                                  "xlsx"
+                                                                                  "xlsx",
+                                                                                  "source of truth",
+                                                                                  "repo evidence",
+                                                                                  "router config",
+                                                                                  "配置出处"
                                                                               ],
                                                         "equivalent_group":  "literature-synthesis",
-                                                        "canonical_for_task":  [
-
+                                                       "canonical_for_task":  [
+                                                                                  "planning",
+                                                                                  "review"
                                                                                ]
                                                     },
                    "chembl-database":  {
