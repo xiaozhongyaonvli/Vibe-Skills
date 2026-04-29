@@ -1,9 +1,9 @@
 ﻿{
     "version":  1,
-    "generated_at":  "2026-04-28T23:16:05+08:00",
+    "generated_at":  "2026-04-29T10:08:41+08:00",
     "source":  "bundled/skills",
-    "skill_count":  329,
-    "total_bytes":  20959139,
+    "skill_count":  328,
+    "total_bytes":  20886000,
     "skills":  [
                    {
                        "name":  ".system",
@@ -1404,14 +1404,6 @@
                        "bytes":  51077,
                        "skill_md_hash":  "2e65510083f17b7ccc28efc4e3e295685acc636e857b6080eb78cd63e91593c0",
                        "dir_hash":  "e759bb9c1b32cc001500d412a3fb0c7a03e52adc497e036ad9d18c22c3d64229"
-                   },
-                   {
-                       "name":  "open-notebook",
-                       "relative_path":  "bundled/skills/open-notebook",
-                       "file_count":  9,
-                       "bytes":  73139,
-                       "skill_md_hash":  "acca2204da2faf1bdac8a85f86148087702a080db86617d9c47c2e45967aed6e",
-                       "dir_hash":  "336f96b4c791cef924ebadcf7616973b75c37567d4fb125eef060ad132f41555"
                    },
                    {
                        "name":  "opentargets-database",
