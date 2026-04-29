@@ -255,30 +255,6 @@
     "figma-implement-design": {
       "keywords": ["figma to code", "implement design", "design implementation", "design to code", "frontend implementation", "Figma 设计稿", "figma设计稿", "设计稿还原", "figma实现", "按figma开发", "按 Figma 开发", "还原代码", "还原为可运行代码", "设计转代码", "UI还原"]
     },
-    "aios-master": {
-      "keywords": ["aios master", "aios orchestrator", "synkra aios", "aios总控", "aios编排器", "框架级任务"]
-    },
-    "aios-dev": {
-      "keywords": ["aios dev", "aios开发", "故事实现", "story implementation", "按故事开发"]
-    },
-    "aios-architect": {
-      "keywords": ["aios architect", "架构设计", "技术架构", "architecture design", "technical architecture", "module boundary", "cross-module architecture", "routing architecture", "governance architecture", "architecture review", "架构评审"]
-    },
-    "aios-pm": {
-      "keywords": ["aios pm", "prd", "产品需求文档", "产品规划", "epic规划"]
-    },
-    "aios-qa": {
-      "keywords": ["aios qa", "quality gate", "质量门禁", "测试架构", "qa review"]
-    },
-    "aios-sm": {
-      "keywords": ["aios sm", "scrum master", "用户故事拆分", "story drafting", "敏捷节奏"]
-    },
-    "aios-po": {
-      "keywords": ["aios po", "product owner", "backlog管理", "验收标准", "优先级排序"]
-    },
-    "aios-analyst": {
-      "keywords": ["aios analyst", "市场分析", "需求调研", "business analysis", "竞争分析"]
-    },
     "research-lookup": {
       "keywords": ["literature search", "paper search", "文献检索", "查找论文", "研究调研"]
     },

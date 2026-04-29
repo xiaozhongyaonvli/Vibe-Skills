@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "generated_at": "2026-04-29T20:30:54+08:00",
+  "generated_at": "2026-04-29T21:07:13+08:00",
   "source": "bundled/skills",
-  "skill_count": 328,
-  "total_bytes": 20877073.0,
+  "skill_count": 316,
+  "total_bytes": 20860183.0,
   "skills": [
     {
       "name": ".system",
@@ -28,102 +28,6 @@
       "bytes": 73407,
       "skill_md_hash": "c45c5d51959e174b984ce873735c586854a388036180798bee5adb0d97faf471",
       "dir_hash": "6903209d5b54e38fa709e8dad1e6937c91b315eff5c6f4defbe21fbf02e9ec01"
-    },
-    {
-      "name": "aios-analyst",
-      "relative_path": "bundled/skills/aios-analyst",
-      "file_count": 1,
-      "bytes": 1402,
-      "skill_md_hash": "7393efc370b264c83fe201db8cc66a6a71ba72895ddedd05205e0ddc87a7c4b9",
-      "dir_hash": "537bf18d879ee5e704c454e39859f1f56b4fd7d1d4976f2a9452e40b35a5deb9"
-    },
-    {
-      "name": "aios-architect",
-      "relative_path": "bundled/skills/aios-architect",
-      "file_count": 1,
-      "bytes": 1552,
-      "skill_md_hash": "01e902e41342583d8a5a0a4a6dd07c83b4f5aa491fe4d6729563ad7d0dfb160e",
-      "dir_hash": "8a47693f21fe11098123aae0bd05e0a2e9f14db35cca77ec017dd629ed8713c9"
-    },
-    {
-      "name": "aios-data-engineer",
-      "relative_path": "bundled/skills/aios-data-engineer",
-      "file_count": 1,
-      "bytes": 1437,
-      "skill_md_hash": "a75532d2a8c7f079c0cf015735fe0cdf657c03b0c805cc0f9dd22853915a7486",
-      "dir_hash": "8b18dd532589b07ce10de182581bebea32cf1357209816834c6a6b043e8cba86"
-    },
-    {
-      "name": "aios-dev",
-      "relative_path": "bundled/skills/aios-dev",
-      "file_count": 1,
-      "bytes": 1477,
-      "skill_md_hash": "b3400430f1791bfda4687b1c3171084d20e9c35aa6f134b7776370f8052a67d6",
-      "dir_hash": "3920d24478070d47b6b3ec0b0d91fb3308a1d7065c8483ca92b0dd31411a1f40"
-    },
-    {
-      "name": "aios-devops",
-      "relative_path": "bundled/skills/aios-devops",
-      "file_count": 1,
-      "bytes": 1469,
-      "skill_md_hash": "8f7086a3b9de88eb5fec6b7b3b72f07835064bc6634c1911780b2ca928b846e1",
-      "dir_hash": "196e4ec6ccbf4e2f03f4e9b70f3cd313a85f08244ffc713afc31ba68c2e23f7e"
-    },
-    {
-      "name": "aios-master",
-      "relative_path": "bundled/skills/aios-master",
-      "file_count": 1,
-      "bytes": 1478,
-      "skill_md_hash": "9d9ea508de09a1addf9084c862f037139c7ffe031d7b6c53f539054f153d1c02",
-      "dir_hash": "40c67c46d6677265826762f75460af14810581e4e2e4ccb0647ea50cbd7c9e9c"
-    },
-    {
-      "name": "aios-pm",
-      "relative_path": "bundled/skills/aios-pm",
-      "file_count": 1,
-      "bytes": 1485,
-      "skill_md_hash": "e32b871b49fd75e6077f64442e74ef17fea9a15c5b07dfb71e3058a73cf76a89",
-      "dir_hash": "36219c12896853f5e78494db1d66f838e20127f620f2c6d0768dbcb650f626e9"
-    },
-    {
-      "name": "aios-po",
-      "relative_path": "bundled/skills/aios-po",
-      "file_count": 1,
-      "bytes": 1436,
-      "skill_md_hash": "28c91b2849c7d59450d1a3d54951968a1899b6034d921c455572e4cdff919b7f",
-      "dir_hash": "10a874c03e9dad88d413df098730bf4e4f4031c5e3ab3cb89429a5b37cb061af"
-    },
-    {
-      "name": "aios-qa",
-      "relative_path": "bundled/skills/aios-qa",
-      "file_count": 1,
-      "bytes": 1501,
-      "skill_md_hash": "9b1ed86d0ad3b4f96a3558a663d77e151d676bef5fa69a763a96cfc534b789d0",
-      "dir_hash": "376128fe3b75e3b0862d7b4406848287b26a62b92fa124f24f939b405413543b"
-    },
-    {
-      "name": "aios-sm",
-      "relative_path": "bundled/skills/aios-sm",
-      "file_count": 1,
-      "bytes": 1226,
-      "skill_md_hash": "f340516e649f508f4ed9fb832a1517f42955849f9b3dad760ad1fbcc1f3df382",
-      "dir_hash": "e3064520507a51d069ab73f1c7ec3ea0491cca07f3ea3a876f8ee88c0d4c1e56"
-    },
-    {
-      "name": "aios-squad-creator",
-      "relative_path": "bundled/skills/aios-squad-creator",
-      "file_count": 1,
-      "bytes": 1377,
-      "skill_md_hash": "785d62017d82f05df46dca17e63482d66175472bf95873ff971c2a4f62328ea9",
-      "dir_hash": "cc8b55eee957094376c993a8aa3eb5428bf9cffd7de88bca46bef0c2e2afcf9d"
-    },
-    {
-      "name": "aios-ux-design-expert",
-      "relative_path": "bundled/skills/aios-ux-design-expert",
-      "file_count": 1,
-      "bytes": 1050,
-      "skill_md_hash": "00b1b72d2d1e718e17ec7bafc60fc46940ce70e32e3bcd4bac98b4f6dafc73df",
-      "dir_hash": "3382fceda3daec9b636c2109f86aa71f69556c8037cae236e6a3f6b940595ce7"
     },
     {
       "name": "algorithmic-art",

@@ -110,7 +110,6 @@ $explorationDomainMap = Get-Content -LiteralPath $explorationDomainMapPath -Raw 
 
 $requiredPackIds = @(
     "workflow-compatibility",
-    "aios-core",
     "code-quality",
     "data-ml",
     "bio-science",

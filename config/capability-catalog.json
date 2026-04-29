@@ -274,7 +274,6 @@
       ],
       "skills": [
         "autonomous-builder",
-        "aios-dev",
         "tdd-guide",
         "systematic-debugging"
       ],
@@ -567,7 +566,6 @@
         "技术选型"
       ],
       "skills": [
-        "aios-architect",
         "architecture-patterns",
         "vibe"
       ],
@@ -639,7 +637,6 @@
         "自动化"
       ],
       "skills": [
-        "aios-devops",
         "gh-fix-ci",
         "netlify-deploy",
         "vercel-deploy",

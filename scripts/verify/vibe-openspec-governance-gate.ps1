@@ -77,12 +77,13 @@ $cases = @(
         ExpectedEnforcement = "required"
     },
     [pscustomobject]@{
-        Name = "L planning aios-core"
+        Name = "L planning aios-core removed"
         Prompt = "create PRD and user story backlog with quality gate"
         Grade = "L"
         TaskType = "planning"
         RequestedSkill = $null
-        ExpectedPack = "aios-core"
+        ExpectedPack = $null
+        BlockedPack = "aios-core"
         ExpectedProfile = "full"
         ExpectedEnforcement = "required"
     },
@@ -175,6 +176,9 @@ try {
         $results += Assert-True -Condition ($null -ne $route.selected) -Message "[$($case.Name)] selected route exists"
         if ($case.ExpectedPack) {
             $results += Assert-True -Condition ($route.selected.pack_id -eq $case.ExpectedPack) -Message "[$($case.Name)] selected pack unchanged ($($case.ExpectedPack))"
+        }
+        if ($case.BlockedPack) {
+            $results += Assert-True -Condition ($route.selected.pack_id -ne $case.BlockedPack) -Message "[$($case.Name)] blocked pack not selected ($($case.BlockedPack))"
         }
         $results += Assert-True -Condition ($null -ne $route.openspec_advice) -Message "[$($case.Name)] openspec_advice exists"
         $results += Assert-True -Condition ($route.openspec_advice.enabled -eq $true) -Message "[$($case.Name)] openspec advice enabled"

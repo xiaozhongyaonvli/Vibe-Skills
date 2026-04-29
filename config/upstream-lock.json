@@ -381,21 +381,6 @@
       "license_spdx": "Apache-2.0"
     },
     {
-      "id": "SynkraAI/aios-core",
-      "upstream_repo": "https://github.com/SynkraAI/aios-core",
-      "upstream_ref": "main",
-      "integration_mode": "methodology-reference",
-      "local_rewrite_required": false,
-      "notes": "Methodology and role-pattern source for the aios-core pack; canonical runtime assets remain VCO-owned",
-      "canonical_slug": "aios-core",
-      "license_spdx": "NOASSERTION",
-      "distribution_tier": "reference-only",
-      "redistribution_posture": "reference-only-no-code-redistribution",
-      "disclosure_required": true,
-      "local_retention_allowed": false,
-      "shipped_by_default": false
-    },
-    {
       "id": "x1xhlol/system-prompts-and-models-of-ai-tools",
       "upstream_repo": "https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools",
       "upstream_ref": "main",

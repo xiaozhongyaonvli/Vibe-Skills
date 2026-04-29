@@ -39,7 +39,8 @@
           "pack_overlay",
           "confirm_required"
         ],
-        "selected_pack": "aios-core"
+        "blocked_pack": "aios-core",
+        "blocked_skill_prefix": "aios-"
       }
     },
     {

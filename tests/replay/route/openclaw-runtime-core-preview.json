@@ -22,8 +22,8 @@
       "prompt": "Install VibeSkills for OpenClaw with truthful runtime-core-preview boundaries and no overclaim.",
       "expected": {
         "route_mode": "pack_overlay",
-        "selected_pack": "aios-core",
-        "selected_skill": "aios-master",
+        "selected_pack": "scholarly-publishing-workflow",
+        "selected_skill": "scholarly-publishing",
         "required_disclosures": [
           "openclaw_status_preview",
           "host_managed_boundaries_explicit"

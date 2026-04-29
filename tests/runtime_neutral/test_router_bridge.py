@@ -161,6 +161,28 @@ class RouterBridgeTests(unittest.TestCase):
                     self.assertEqual(expected["selected_pack"], result["selected"]["pack_id"])
                 if "selected_skill" in expected:
                     self.assertEqual(expected["selected_skill"], result["selected"]["skill"])
+                if "blocked_pack" in expected:
+                    self.assertNotEqual(expected["blocked_pack"], result["selected"]["pack_id"])
+                    ranked_pack_ids = {
+                        str(row.get("pack_id") or "")
+                        for row in result["ranked"]
+                        if isinstance(row, dict)
+                    }
+                    self.assertNotIn(expected["blocked_pack"], ranked_pack_ids)
+                if "blocked_skill_prefix" in expected:
+                    blocked_prefix = expected["blocked_skill_prefix"]
+                    ranked_skills = {str(result["selected"].get("skill") or "")}
+                    for row in result["ranked"]:
+                        if not isinstance(row, dict):
+                            continue
+                        for field in ("candidate_ranking", "stage_assistant_candidates"):
+                            for item in row.get(field) or []:
+                                if isinstance(item, dict):
+                                    ranked_skills.add(str(item.get("skill") or ""))
+                    self.assertFalse(
+                        [skill for skill in sorted(ranked_skills) if skill.startswith(blocked_prefix)],
+                        ranked_skills,
+                    )
 
     def test_confirm_required_returns_batched_clarification_bundle(self) -> None:
         result = run_bridge(
