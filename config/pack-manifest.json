@@ -2208,20 +2208,13 @@
                                            ],
                       "skill_candidates":  [
                                                "scientific-visualization",
-                                               "matplotlib",
-                                               "seaborn",
-                                               "plotly",
                                                "scientific-schematics"
                                            ],
                       "route_authority_candidates":  [
                                                        "scientific-visualization",
                                                        "scientific-schematics"
                                                    ],
-                      "stage_assistant_candidates":  [
-                                                       "matplotlib",
-                                                       "seaborn",
-                                                       "plotly"
-                                                   ],
+                      "stage_assistant_candidates":  [],
                       "defaults_by_task":  {
                                                "planning":  "scientific-visualization",
                                                "coding":  "scientific-visualization",
@@ -2264,20 +2257,13 @@
                                            ],
                       "skill_candidates":  [
                                                "scientific-reporting",
-                                               "scientific-writing",
-                                               "scientific-visualization",
-                                               "scientific-schematics",
-                                               "markdown-mermaid-writing"
+                                               "scientific-writing"
                                            ],
                       "route_authority_candidates":  [
                                                        "scientific-reporting",
                                                        "scientific-writing"
                                                    ],
-                      "stage_assistant_candidates":  [
-                                                       "scientific-visualization",
-                                                       "scientific-schematics",
-                                                       "markdown-mermaid-writing"
-                                                   ],
+                      "stage_assistant_candidates":  [],
                       "defaults_by_task":  {
                                                "planning":  "scientific-reporting",
                                                "coding":  "scientific-reporting",

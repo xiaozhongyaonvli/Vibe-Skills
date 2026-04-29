@@ -277,7 +277,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertIn("brainstorm_planning", result["intent_contract"]["capabilities"])
         self.assertEqual(["vibe"], result["deep_discovery_advice"]["recommended_skills"])
 
-    def test_scientific_figure_route_keeps_legacy_plotting_assistant_metadata(self) -> None:
+    def test_scientific_figure_route_uses_only_direct_figure_candidates(self) -> None:
         result = run_bridge(
             "帮我做科研绘图，产出期刊级 figure，多面板、颜色无障碍、矢量导出",
             "L",
@@ -289,16 +289,13 @@ class RouterBridgeTests(unittest.TestCase):
 
         figure_row = next(row for row in result["ranked"] if row["pack_id"] == "science-figures-visualization")
         ranking_by_skill = {row["skill"]: row for row in figure_row["candidate_ranking"]}
+        self.assertEqual(
+            {"scientific-visualization", "scientific-schematics"},
+            set(ranking_by_skill),
+        )
         self.assertEqual("route_authority", ranking_by_skill["scientific-visualization"]["legacy_role"])
         self.assertEqual("route_authority", ranking_by_skill["scientific-schematics"]["legacy_role"])
-        self.assertEqual("stage_assistant", ranking_by_skill["matplotlib"]["legacy_role"])
-        self.assertEqual("stage_assistant", ranking_by_skill["seaborn"]["legacy_role"])
-        self.assertEqual("stage_assistant", ranking_by_skill["plotly"]["legacy_role"])
-        self.assertTrue(
-            {"matplotlib", "seaborn", "plotly"}.issubset(
-                {row["skill"] for row in figure_row["stage_assistant_candidates"]}
-            )
-        )
+        self.assertEqual([], figure_row["stage_assistant_candidates"])
 
     def test_full_text_evidence_table_prefers_bgpt_structured_paper_search(self) -> None:
         result = run_bridge(

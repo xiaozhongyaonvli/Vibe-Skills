@@ -73,9 +73,15 @@ class BundledStageAssistantFreezeTests(unittest.TestCase):
                 (item["skill_id"], item["source"])
                 for item in legacy["stage_assistant_hints"]
             ]
-            self.assertIn(("matplotlib", "route_stage_assistant"), hint_pairs)
-            self.assertIn(("seaborn", "route_stage_assistant"), hint_pairs)
-            self.assertIn(("plotly", "route_stage_assistant"), hint_pairs)
+            self.assertNotIn(("matplotlib", "route_stage_assistant"), hint_pairs)
+            self.assertNotIn(("seaborn", "route_stage_assistant"), hint_pairs)
+            self.assertNotIn(("plotly", "route_stage_assistant"), hint_pairs)
+
+            selected_ids = [
+                item["skill_id"]
+                for item in packet["skill_routing"]["selected"]
+            ]
+            self.assertEqual(["scientific-visualization"], selected_ids)
 
 
 if __name__ == "__main__":

@@ -582,6 +582,36 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
+        name = "figures_matplotlib_library_wording"
+        group = "science-figures-visualization"
+        prompt = "/vibe 用 matplotlib 绘制 publication-ready result figure，600dpi TIFF，带误差棒和显著性标注"
+        grade = "L"
+        task_type = "coding"
+        expected_pack = "science-figures-visualization"
+        expected_skill = "scientific-visualization"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "figures_seaborn_library_wording"
+        group = "science-figures-visualization"
+        prompt = "/vibe 用 seaborn 画模型评估结果图和投稿图，要求色盲友好配色"
+        grade = "L"
+        task_type = "coding"
+        expected_pack = "science-figures-visualization"
+        expected_skill = "scientific-visualization"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "figures_plotly_library_wording"
+        group = "science-figures-visualization"
+        prompt = "/vibe 用 plotly 做 interactive result figure，并导出 HTML figure 给科研报告使用"
+        grade = "L"
+        task_type = "coding"
+        expected_pack = "science-figures-visualization"
+        expected_skill = "scientific-visualization"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
         name = "figures_mermaid_flowchart"
         group = "science-figures-visualization"
         prompt = "/vibe 用 Mermaid 写一个实验流程图（flowchart），并给出可复制的 markdown"
@@ -589,6 +619,16 @@ $cases = @(
         task_type = "coding"
         expected_pack = "science-figures-visualization"
         expected_skill = "scientific-schematics"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "reporting_html_pdf_direct_owner"
+        group = "science-reporting"
+        prompt = "/vibe 科研技术报告：包含方法结果讨论，输出 HTML 和 PDF，附录写清复现步骤"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = "science-reporting"
+        expected_skill = "scientific-reporting"
         requested_skill = $null
     },
     [pscustomobject]@{
