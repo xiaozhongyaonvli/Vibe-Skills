@@ -97,7 +97,7 @@ $cases = @(
     [pscustomobject]@{
         name = "lit_pubmed_pmid_bibtex"
         group = "science-literature-citations"
-        prompt = "/vibe 用 PubMed 根据 PMID 12345 拉取文献信息，并导出 BibTeX 引用"
+        prompt = "/vibe 在 PubMed 检索文献并导出 BibTeX"
         grade = "M"
         task_type = "research"
         expected_pack = "science-literature-citations"
@@ -105,23 +105,73 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "lit_zotero_bibtex"
+        name = "lit_pyzotero_library_bibtex"
         group = "science-literature-citations"
-        prompt = "/vibe 用 Zotero 管理参考文献，去重并导出 BibTeX"
+        prompt = "/vibe 用 pyzotero 连接 Zotero library，批量整理条目并导出 BibTeX"
         grade = "M"
-        task_type = "planning"
+        task_type = "coding"
         expected_pack = "science-literature-citations"
-        expected_skill = $null
+        expected_skill = "pyzotero"
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "lit_peer_review"
+        name = "lit_citation_formatting"
         group = "science-literature-citations"
-        prompt = "/vibe 请对这篇论文做 peer review：指出方法学缺陷、统计问题和可复现性风险"
+        prompt = "/vibe 整理参考文献格式，修正 DOI，生成 Nature 格式 bibliography"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "science-literature-citations"
+        expected_skill = "citation-management"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lit_systematic_review_prisma"
+        group = "science-literature-citations"
+        prompt = "/vibe 做系统综述和 meta-analysis，输出 PRISMA 流程和纳排标准"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "science-literature-citations"
+        expected_skill = "literature-review"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lit_full_text_evidence_table"
+        group = "science-literature-citations"
+        prompt = "/vibe 做 full-text 文献检索，提取样本量、effect size、方法学细节，生成系统综述证据表"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "science-literature-citations"
+        expected_skill = "bgpt-paper-search"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "peer_review_formal"
+        group = "science-peer-review"
+        prompt = "/vibe 请对这篇论文做 peer review，指出方法学缺陷和可复现性风险"
         grade = "L"
         task_type = "review"
         expected_pack = "science-peer-review"
         expected_skill = "peer-review"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "peer_review_scholareval"
+        group = "science-peer-review"
+        prompt = "/vibe 用 ScholarEval rubric 评估这篇论文的问题 formulation、methodology、analysis 和 writing"
+        grade = "L"
+        task_type = "review"
+        expected_pack = "science-peer-review"
+        expected_skill = "scholar-evaluation"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "peer_review_critical_evidence"
+        group = "science-peer-review"
+        prompt = "/vibe 批判性分析这篇论文的证据强度、偏倚和混杂因素"
+        grade = "L"
+        task_type = "review"
+        expected_pack = "science-peer-review"
+        expected_skill = "scientific-critical-thinking"
         requested_skill = $null
     },
 
