@@ -31,6 +31,16 @@ MOVED_OUT_SKILLS = [
     "scientific-slides",
 ]
 
+FORBIDDEN_INLINE_HELPER_REFERENCES = sorted(
+    set(SCHOLARLY_PUBLISHING_SKILLS + MOVED_OUT_SKILLS)
+    | {
+        "research-lookup",
+        "literature-review",
+        "peer-review",
+        "research-grants",
+    }
+)
+
 
 def route(prompt: str, task_type: str = "research", grade: str = "L") -> dict[str, object]:
     return route_prompt(
@@ -76,6 +86,16 @@ def pack_by_id(pack_id: str) -> dict[str, object]:
     raise AssertionError(f"pack missing: {pack_id}")
 
 
+def skill_body(skill_id: str) -> str:
+    skill_path = REPO_ROOT / "bundled" / "skills" / skill_id / "SKILL.md"
+    text = skill_path.read_text(encoding="utf-8-sig")
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) == 3:
+            return parts[2].lower()
+    return text.lower()
+
+
 class ScholarlyPublishingPackConsolidationTests(unittest.TestCase):
     def assert_selected(
         self,
@@ -114,6 +134,24 @@ class ScholarlyPublishingPackConsolidationTests(unittest.TestCase):
         )
         for moved_skill in MOVED_OUT_SKILLS:
             self.assertNotIn(moved_skill, pack.get("skill_candidates") or [])
+
+    def test_kept_skill_docs_do_not_inline_cross_call_other_skills(self) -> None:
+        forbidden_headings = [
+            "visual enhancement with scientific schematics",
+            "integration with other skills",
+            "integration with other scientific skills",
+        ]
+        for skill_id in SCHOLARLY_PUBLISHING_SKILLS:
+            with self.subTest(skill_id=skill_id):
+                body = skill_body(skill_id)
+                forbidden_refs = [
+                    ref
+                    for ref in FORBIDDEN_INLINE_HELPER_REFERENCES
+                    if ref != skill_id and ref in body
+                ]
+                self.assertEqual([], forbidden_refs)
+                for heading in forbidden_headings:
+                    self.assertNotIn(heading, body)
 
     def test_publishing_workflow_routes_to_scholarly_publishing(self) -> None:
         self.assert_selected(

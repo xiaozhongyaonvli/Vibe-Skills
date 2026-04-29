@@ -1,9 +1,9 @@
 ﻿{
     "version":  1,
-    "generated_at":  "2026-04-29T10:08:41+08:00",
+    "generated_at":  "2026-04-29T12:23:26+08:00",
     "source":  "bundled/skills",
     "skill_count":  328,
-    "total_bytes":  20886000,
+    "total_bytes":  20877073,
     "skills":  [
                    {
                        "name":  ".system",
@@ -1121,17 +1121,17 @@
                        "name":  "latex-posters",
                        "relative_path":  "bundled/skills/latex-posters",
                        "file_count":  11,
-                       "bytes":  168221,
-                       "skill_md_hash":  "8a01567022ae51d4cb26a4d36c359b5f1c278055ada8dc1e3568899c2636fdee",
-                       "dir_hash":  "541cef7042b7dbe95425f3e5fcf8adffade0eba73ef61214d7630bc4e9e641dc"
+                       "bytes":  166845,
+                       "skill_md_hash":  "16ca06583ff64b23b99e3cfde83277a3c1027361bd804d8e47ba81ab59caf468",
+                       "dir_hash":  "c93916540d1eceed1de12c5911dbbcde7077a9ec309c8133aeb031c42b707ad0"
                    },
                    {
                        "name":  "latex-submission-pipeline",
                        "relative_path":  "bundled/skills/latex-submission-pipeline",
                        "file_count":  3,
-                       "bytes":  2635,
-                       "skill_md_hash":  "9205d96656a535c8c6fa65664edb344d1a209babb7d16745e513c21ae2aff5c6",
-                       "dir_hash":  "aa34e21b71260c1bdd98496e54b95dfc0b73482a03bd21bac35fb779cca343fc"
+                       "bytes":  2642,
+                       "skill_md_hash":  "3c68b01f18987d214aef37cdccd1ee7bea89b005f58ebdee4d3a44db1d0d80f2",
+                       "dir_hash":  "e035ca25ec792d5dd9def805e36e1384b68a6fa8555080df059c70f19aa529fe"
                    },
                    {
                        "name":  "literature-matrix",
@@ -1425,9 +1425,9 @@
                        "name":  "paper-2-web",
                        "relative_path":  "bundled/skills/paper-2-web",
                        "file_count":  6,
-                       "bytes":  56114,
-                       "skill_md_hash":  "9944290048601d34f0c24bf714f1fa0f5ef5bb71e80264646c422c397de49554",
-                       "dir_hash":  "3011c63dcbb0e36c28fce56a33de25b72a8a1dc55fc320a3f6f3252c32bd61b3"
+                       "bytes":  54740,
+                       "skill_md_hash":  "f61c1318a0a206c6564dd79a9c3ffc632f0a9c1da0fad52dc6404ce9be4fdb1f",
+                       "dir_hash":  "dcd669cfec329597fd4e738489042597ce7078285288c3dcd9be1c051a2e681c"
                    },
                    {
                        "name":  "pathml",
@@ -1833,9 +1833,9 @@
                        "name":  "scholarly-publishing",
                        "relative_path":  "bundled/skills/scholarly-publishing",
                        "file_count":  3,
-                       "bytes":  10387,
-                       "skill_md_hash":  "7e530b610f370c5c671bb45cf96a6ef97a1cec30a8cfd4dab0d7f8bb5ed758c8",
-                       "dir_hash":  "0d395942b1bbfe9506447677421e61a257c3bdce3c8a5934163964c289340a90"
+                       "bytes":  10201,
+                       "skill_md_hash":  "c253ac324a32842a963ecd047ac7e96a31032e59ee38794b38d347a123294425",
+                       "dir_hash":  "1669cc004ceec73b66719d685e5fa2ef0c01a1ee39f4d2c61ffc56767b97f041"
                    },
                    {
                        "name":  "scientific-brainstorming",
@@ -1897,9 +1897,9 @@
                        "name":  "scientific-writing",
                        "relative_path":  "bundled/skills/scientific-writing",
                        "file_count":  6,
-                       "bytes":  152381,
-                       "skill_md_hash":  "5a3e0eece58981384b763b6cdb68fe1744aa4549d239b46c40079b720edece31",
-                       "dir_hash":  "67d53c47a441b511ebd1f8f90470a564a361bfaecc2a7e3ea2c7dc5b5636f750"
+                       "bytes":  150835,
+                       "skill_md_hash":  "f764a8242a5ccc06363c765def08f5b3e9d5c98404acefa9edbc91d56fe19550",
+                       "dir_hash":  "c68b34856280efeac5e2751b37108ee3c3f9d92a7a5d18db1405d4f0cebb97d3"
                    },
                    {
                        "name":  "scikit-bio",
@@ -2465,9 +2465,9 @@
                        "name":  "venue-templates",
                        "relative_path":  "bundled/skills/venue-templates",
                        "file_count":  14,
-                       "bytes":  179650,
-                       "skill_md_hash":  "f83e321ef05177b40a086c88d90390be14f67d3eac8039661d0d79a2c38069dc",
-                       "dir_hash":  "d7dab8c7aaf9ba58f093490a3fd39802cdde15234df3468db6ab796a54e4e03d"
+                       "bytes":  175198,
+                       "skill_md_hash":  "ac23d2f4ab8f5cc18d6c3b14860f5d95176e0c020cbcdf0029063fe20ef69b2b",
+                       "dir_hash":  "5f07d69f4020d7e727c8cbb35706fe197f9600a62f677aaec1d575b4699c60ae"
                    },
                    {
                        "name":  "vercel-deploy",
