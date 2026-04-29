@@ -448,13 +448,13 @@
       "keywords": ["geniml", "genomic ml", "genomic machine learning", "genome embedding", "基因组机器学习", "基因组嵌入"]
     },
     "scientific-slides": {
-      "keywords": ["scientific slides", "slide deck", "ppt", "pptx", "科研幻灯片", "学术幻灯片"]
+      "keywords": ["scientific slides", "slide deck", "ppt", "pptx", "powerpoint", "presentation", "research talk", "seminar talk", "defense slides", "group meeting slides", "科研幻灯片", "学术幻灯片", "组会汇报", "答辩幻灯片", "路演PPT"]
     },
     "pptx-posters": {
-      "keywords": ["pptx poster", "poster", "powerpoint poster", "科研海报", "学术海报", "PPT海报"]
+      "keywords": ["pptx poster", "powerpoint poster", "powerpoint pptx", "ppt poster", "PPT海报", "PowerPoint海报", "PPTX学术海报", "可编辑海报"]
     },
     "infographics": {
-      "keywords": ["infographic", "data story", "visual summary", "信息图", "可视化总结"]
+      "keywords": ["infographic", "visual summary", "visual one-pager", "research summary graphic", "信息图", "可视化总结", "视觉摘要"]
     },
     "markdown-mermaid-writing": {
       "keywords": ["mermaid", "mermaid flowchart", "sequence diagram", "markdown diagram", "mermaid 流程图", "时序图"]
@@ -547,7 +547,7 @@
       "keywords": ["latex", "latexmk", "latexmkrc", "overleaf", "chktex", "latexindent", "bibtex", "biber", "texlive", "pdflatex", "xelatex", "lualatex", "latex action", "github actions", "submission zip", "latex投稿", "latex paper", "latex manuscript", "latex pdf", "paper pdf build", "manuscript pdf build", "build manuscript pdf", "compile paper", "compile manuscript", "LaTeX 论文", "LaTeX 写论文", "LaTeX 论文 PDF", "LaTeX 写成论文", "LaTeX 写成论文 PDF", "写成论文 PDF", "论文 PDF", "PDF 构建", "生成论文 PDF", "编译论文", "论文编译", "构建可投稿 PDF", "可投稿 PDF"]
     },
     "slides-as-code": {
-      "keywords": ["slidev", "marp", "reveal.js", "quarto slides", "decktape", "slides as code", "组会汇报", "导出pdf"]
+      "keywords": ["slidev", "marp", "reveal.js", "quarto slides", "decktape", "slides as code", "text-first slides", "markdown slides", "组会汇报", "导出pdf", "可复现幻灯片", "源码化幻灯片"]
     },
     "scientific-reporting": {
       "keywords": ["scientific report", "technical report", "research report", "科研报告", "技术报告", "项目报告", "执行摘要", "executive summary", "appendix", "附录", "可复现报告", "quarto", "rmarkdown"]

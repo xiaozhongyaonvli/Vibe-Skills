@@ -2914,12 +2914,20 @@
                                                                     "slidev",
                                                                     "marp",
                                                                     "reveal.js",
+                                                                    "quarto slides",
+                                                                    "decktape",
                                                                     "md slides",
+                                                                    "markdown slides",
+                                                                    "text-first slides",
+                                                                    "pdf export",
+                                                                    "export pdf",
                                                                     "deck",
                                                                     "speaker notes",
                                                                     "演示文稿",
                                                                     "幻灯片",
-                                                                    "组会汇报"
+                                                                    "组会汇报",
+                                                                    "导出 PDF",
+                                                                    "可复现导出"
                                                                 ],
                                           "negative_keywords":  [
                                                                     "tiff",
@@ -2927,11 +2935,18 @@
                                                                     "subplot",
                                                                     "figure",
                                                                     "poster",
-                                                                    "beamerposter"
+                                                                    "conference poster",
+                                                                    "academic poster",
+                                                                    "beamerposter",
+                                                                    "tikzposter",
+                                                                    "mermaid",
+                                                                    "flowchart",
+                                                                    "diagram",
+                                                                    "示意图",
+                                                                    "流程图"
                                                                 ],
                                           "equivalent_group":  "slides",
                                           "canonical_for_task":  [
-                                                                     "planning",
                                                                      "coding"
                                                                  ]
                                       },
@@ -4753,40 +4768,81 @@
                                                                        "pptx",
                                                                        "powerpoint",
                                                                        "presentation",
-                                                                       "talk",
+                                                                       "research talk",
+                                                                       "seminar",
+                                                                       "defense",
+                                                                       "grant pitch",
+                                                                       "roadshow",
+                                                                       "group meeting",
                                                                        "幻灯片",
                                                                        "演示文稿",
+                                                                       "组会汇报",
+                                                                       "答辩",
+                                                                       "路演",
                                                                        "学术报告"
                                                                    ],
                                              "negative_keywords":  [
                                                                        "excel",
-                                                                       "xlsx"
+                                                                       "xlsx",
+                                                                       "markitdown",
+                                                                       "pdf to markdown",
+                                                                       "docx to markdown",
+                                                                       "poster",
+                                                                       "海报",
+                                                                       "学术海报",
+                                                                       "powerpoint pptx",
+                                                                       "pptx 学术海报",
+                                                                       "mermaid",
+                                                                       "flowchart",
+                                                                       "diagram",
+                                                                       "schematic",
+                                                                       "示意图",
+                                                                       "流程图",
+                                                                       "投稿图",
+                                                                       "结果图",
+                                                                       "600dpi",
+                                                                       "tiff"
                                                                    ],
                                              "equivalent_group":  "science-communication",
                                              "canonical_for_task":  [
-                                                                        "planning"
+                                                                        "planning",
+                                                                        "research"
                                                                     ]
                                          },
                    "pptx-posters":  {
                                         "task_allow":  [
                                                            "planning",
+                                                           "coding",
                                                            "research"
                                                        ],
                                         "positive_keywords":  [
-                                                                  "poster",
-                                                                  "pptx",
+                                                                  "pptx poster",
                                                                   "powerpoint poster",
-                                                                  "conference poster",
-                                                                  "科研海报",
-                                                                  "学术海报"
+                                                                  "powerpoint pptx",
+                                                                  "pptx 学术海报",
+                                                                  "ppt poster",
+                                                                  "editable powerpoint poster",
+                                                                  "PPT海报",
+                                                                  "PowerPoint海报",
+                                                                  "可编辑海报"
                                                               ],
                                         "negative_keywords":  [
+                                                                  "latex",
+                                                                  "beamerposter",
+                                                                  "tikzposter",
+                                                                  "baposter",
+                                                                  "conference poster",
+                                                                  "academic poster",
+                                                                  "research poster",
+                                                                  "科研海报",
+                                                                  "会议海报",
                                                                   "dicom",
                                                                   "clinicaltrials"
                                                               ],
                                         "equivalent_group":  "science-communication",
                                         "canonical_for_task":  [
- 
+                                                                  "planning",
+                                                                  "coding"
                                                                ]
                                     },
                    "infographics":  {
@@ -4797,17 +4853,33 @@
                                         "positive_keywords":  [
                                                                   "infographic",
                                                                   "visual summary",
-                                                                  "data story",
+                                                                  "visual one-pager",
+                                                                  "research summary graphic",
+                                                                  "information graphic",
                                                                   "信息图",
-                                                                  "可视化总结"
+                                                                  "可视化总结",
+                                                                  "视觉摘要"
                                                               ],
                                         "negative_keywords":  [
                                                                   "unit test",
-                                                                  "pytest"
+                                                                  "pytest",
+                                                                  "subplot",
+                                                                  "multi-panel",
+                                                                  "result figure",
+                                                                  "publication figure",
+                                                                  "model evaluation plot",
+                                                                  "flowchart",
+                                                                  "schematic",
+                                                                  "diagram",
+                                                                  "投稿图",
+                                                                  "结果图",
+                                                                  "流程图",
+                                                                  "示意图"
                                                               ],
                                         "equivalent_group":  "science-communication",
                                         "canonical_for_task":  [
- 
+                                                                  "planning",
+                                                                  "research"
                                                                ]
                                     },
                    "markdown-mermaid-writing":  {
