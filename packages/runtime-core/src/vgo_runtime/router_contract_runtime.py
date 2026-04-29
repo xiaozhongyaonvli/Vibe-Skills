@@ -552,7 +552,8 @@ def route_prompt(
 
     ranked = sorted(pack_results, key=lambda row: (-row["score"], row["pack_id"]))
     authority_ranked = [row for row in ranked if bool(row.get("route_authority_eligible", True))]
-    selection_pool = authority_ranked if authority_ranked else ranked
+    selectable_ranked = [row for row in ranked if _optional_text(row.get("selected_candidate"))]
+    selection_pool = authority_ranked if authority_ranked else (selectable_ranked if selectable_ranked else ranked)
     top = selection_pool[0] if selection_pool else None
     confidence = float(top["score"]) if top else 0.0
     top_gap = float(top["candidate_top1_top2_gap"]) if top else 0.0

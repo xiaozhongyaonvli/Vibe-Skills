@@ -780,7 +780,8 @@ $ranked = $packResults | Sort-Object -Property @(
     @{ Expression = "pack_id"; Descending = $false }
 )
 $authorityRanked = @($ranked | Where-Object { $_.route_authority_eligible })
-$selectionPool = if ($authorityRanked.Count -gt 0) { @($authorityRanked) } else { @($ranked) }
+$selectableRanked = @($ranked | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.selected_candidate) })
+$selectionPool = if ($authorityRanked.Count -gt 0) { @($authorityRanked) } elseif ($selectableRanked.Count -gt 0) { @($selectableRanked) } else { @($ranked) }
 $top = $selectionPool | Select-Object -First 1
 $confidence = if ($top) { [double]$top.score } else { 0.0 }
 

@@ -843,8 +843,6 @@
                                       ],
                        "trigger_keywords":  [
                                                 "document",
-                                                "docx",
-                                                "pdf",
                                                 "pdf extract",
                                                 "pdf extraction",
                                                 "extract text",
@@ -860,7 +858,6 @@
                                                "说明文档",
                                                "表格",
                                                "电子表格",
-                                               "xlsx",
                                                 "批注",
                                                 "回复批注",
                                                  "word批注",

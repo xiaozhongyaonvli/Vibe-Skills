@@ -1664,6 +1664,7 @@
                                                                   "超大csv",
                                                                   "百万行"
                                                               ],
+                                        "requires_positive_keyword_match":  true,
                                         "equivalent_group":  "tabular-processing",
                                         "canonical_for_task":  [
                                                                    "coding"
@@ -1698,6 +1699,7 @@
                                                          "保留公式",
                                                          "数据透视"
                                                      ],
+                               "requires_positive_keyword_match":  true,
                                "equivalent_group":  "tabular-processing",
                                "canonical_for_task":  [
 
@@ -1709,12 +1711,15 @@
                                                    "research"
                                                ],
                                 "positive_keywords":  [
-                                                          "xlsx",
                                                           "workbook",
-                                                          "保留公式",
+                                                          "preserve formulas",
                                                           "excel file",
+                                                          "保留公式",
                                                           "xlsx formatting",
                                                           "spreadsheet formatting",
+                                                          "formula retention",
+                                                          "工作簿",
+                                                          "excel公式",
                                                           "公式"
                                                       ],
                                 "negative_keywords":  [
@@ -1724,8 +1729,14 @@
                                                           "large csv",
                                                           "big csv",
                                                           "streaming csv",
-                                                          "pdf"
+                                                          "pdf",
+                                                          "parallel processing",
+                                                          "parallel",
+                                                          "generic orchestration",
+                                                          "并行处理",
+                                                          "批量编排"
                                                       ],
+                                "requires_positive_keyword_match":  true,
                                 "equivalent_group":  "tabular-processing",
                                 "canonical_for_task":  [
 
@@ -1755,13 +1766,15 @@
                                                     "research"
                                                 ],
                                 "positive_keywords":  [
-                                                          "docx",
                                                           "docx formatting",
                                                           "layout fidelity",
                                                           "tracked changes",
-                                                          "word",
+                                                          "word document",
+                                                          "word formatting",
                                                           "修订",
-                                                          "文档排版"
+                                                          "文档排版",
+                                                          "word文档",
+                                                          "格式保真"
                                                       ],
                                 "negative_keywords":  [
                                                           "xlsx",
@@ -1773,8 +1786,14 @@
                                                           "回复批注",
                                                           "comment reply",
                                                           "comments.xml",
-                                                          "audio transcription"
+                                                          "audio transcription",
+                                                          "parallel processing",
+                                                          "parallel",
+                                                          "generic orchestration",
+                                                          "并行处理",
+                                                          "批量编排"
                                                       ],
+                                "requires_positive_keyword_match":  true,
                                 "equivalent_group":  "doc-authoring",
                                  "canonical_for_task":  [
  
@@ -1807,6 +1826,7 @@
                                                                           "review comments",
                                                                           "代码评审"
                                                                       ],
+                                                "requires_positive_keyword_match":  true,
                                                 "equivalent_group":  "doc-authoring",
                                                 "canonical_for_task":  [
                                                                           "review",
@@ -1819,7 +1839,6 @@
                                                    "research"
                                                ],
                                "positive_keywords":  [
-                                                         "pdf",
                                                          "pdf extract",
                                                          "pdf extraction",
                                                          "extract text",
@@ -1863,6 +1882,7 @@
                                                          "paper build",
                                                          "manuscript build"
                                                      ],
+                               "requires_positive_keyword_match":  true,
                                "equivalent_group":  null,
                                "canonical_for_task":  [
 
@@ -1898,6 +1918,7 @@
                                                                 "语音合成",
                                                                 "截图"
                                                             ],
+                                      "requires_positive_keyword_match":  true,
                                       "equivalent_group":  "docs-authoring",
                                       "canonical_for_task":  [
                                                                  "planning"
@@ -3180,6 +3201,7 @@
                                  "negative_keywords":  [
                                                            "without figma input"
                                                        ],
+                                 "requires_positive_keyword_match":  true,
                                  "equivalent_group":  "figma-workflow",
                                  "canonical_for_task":  [
 
@@ -3217,6 +3239,7 @@
                                                                             "中断时间序列",
                                                                             "合成控制"
                                                                         ],
+                                                  "requires_positive_keyword_match":  true,
                                                   "equivalent_group":  "figma-workflow",
                                                   "canonical_for_task":  [
                                                                             "coding",
