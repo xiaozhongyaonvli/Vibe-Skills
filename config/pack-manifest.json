@@ -1774,6 +1774,48 @@
                                            }
                   },
                   {
+                      "id":  "design-implementation",
+                      "priority":  98,
+                      "grade_allow":  [
+                                          "M",
+                                          "L",
+                                          "XL"
+                                      ],
+                      "task_allow":  [
+                                         "planning",
+                                         "coding"
+                                     ],
+                      "trigger_keywords":  [
+                                               "figma",
+                                               "figma to code",
+                                               "implement design",
+                                               "design implementation",
+                                               "design to code",
+                                               "frontend implementation",
+                                               "Figma 设计稿",
+                                               "figma设计稿",
+                                               "设计稿还原",
+                                               "还原为可运行代码",
+                                               "设计转代码",
+                                               "按 Figma 开发",
+                                               "按figma开发",
+                                               "UI 还原",
+                                               "UI还原"
+                                           ],
+                      "skill_candidates":  [
+                                               "figma-implement-design",
+                                               "figma"
+                                           ],
+                      "route_authority_candidates":  [
+                                                       "figma-implement-design",
+                                                       "figma"
+                                                   ],
+                      "defaults_by_task":  {
+                                               "planning":  "figma-implement-design",
+                                               "coding":  "figma-implement-design"
+                                           }
+                  },
+                  {
                       "id":  "research-design",
                       "priority":  80,
                       "grade_allow":  [
@@ -1824,8 +1866,6 @@
                                                "comprehensive-research-agent",
                                                "designing-experiments",
                                                "experiment-failure-analysis",
-                                               "figma",
-                                                "figma-implement-design",
                                                 "hypogenic",
                                                 "hypothesis-generation",
                                                 "hypothesis-testing",
