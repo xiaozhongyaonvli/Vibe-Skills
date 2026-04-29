@@ -1,17 +1,23 @@
 ---
 name: requesting-code-review
-description: Stage-assistant skill for requesting a review after implementation or before merge. It should appear as workflow support, not as the primary route for fresh code review, security audit, review-feedback handling, or final verification.
+description: Prepare and request a code review after implementation or before merge by assembling scope, requirements, git range, and reviewer instructions.
 ---
 
 # Requesting Code Review
 
-Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.
+Prepare a complete review request so the reviewer can evaluate the exact change against the intended requirements.
 
 **Core principle:** Review early, review often.
 
 ## Routing Boundary
 
-This is a stage assistant. It helps a workflow decide when to request review, while `code-reviewer` remains the primary owner for actually reviewing code.
+Use this skill when the user needs to prepare or request a code review.
+
+This skill owns the request package: implementation summary, requirements reference, base/head git range, reviewer prompt, and response handling checklist.
+
+Use `code-reviewer` for the actual review findings.
+
+Use `receiving-code-review` when review feedback already exists and must be evaluated or applied.
 
 ## When to Request Review
 
