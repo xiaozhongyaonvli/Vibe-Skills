@@ -383,6 +383,26 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
+        name = "lab_opentrons_flex_module"
+        group = "science-lab-automation"
+        prompt = "/vibe 用 Opentrons Flex 和 thermocycler module 写一个 PCR setup protocol"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-lab-automation"
+        expected_skill = "opentrons-integration"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lab_pylabrobot_hamilton_tecan"
+        group = "science-lab-automation"
+        prompt = "/vibe 用 PyLabRobot 控制 Hamilton 和 Tecan 液体处理机器人，统一调度 plate reader"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-lab-automation"
+        expected_skill = "pylabrobot"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
         name = "lab_protocolsio_pcr"
         group = "science-lab-automation"
         prompt = "/vibe 在 protocols.io 查找 PCR protocol，并总结关键步骤与关键试剂"
@@ -390,6 +410,46 @@ $cases = @(
         task_type = "research"
         expected_pack = "science-lab-automation"
         expected_skill = "protocolsio-integration"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lab_protocolsio_publish"
+        group = "science-lab-automation"
+        prompt = "/vibe 用 protocols.io API 创建并发布一个实验 protocol，包含 workspace 和文件附件"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-lab-automation"
+        expected_skill = "protocolsio-integration"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lab_benchling_registry_inventory"
+        group = "science-lab-automation"
+        prompt = "/vibe 查询 Benchling registry 里的 DNA sequence 和 inventory containers，并导出样品表"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-lab-automation"
+        expected_skill = "benchling-integration"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lab_labarchives_backup"
+        group = "science-lab-automation"
+        prompt = "/vibe 备份 LabArchives notebook，导出 entries、attachments 和 JSON metadata"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-lab-automation"
+        expected_skill = "labarchive-integration"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lab_ginkgo_cloud_lab_order"
+        group = "science-lab-automation"
+        prompt = "/vibe 在 Ginkgo Cloud Lab / cloud.ginkgo.bio 准备下单输入并估算 protocol pricing"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "science-lab-automation"
+        expected_skill = "ginkgo-cloud-lab"
         requested_skill = $null
     },
 
