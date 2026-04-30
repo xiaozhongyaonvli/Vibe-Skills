@@ -85,6 +85,11 @@ def pack_by_id(pack_id: str) -> dict[str, object]:
     raise AssertionError(f"pack missing: {pack_id}")
 
 
+def skill_text(skill_id: str) -> str:
+    skill_path = REPO_ROOT / "bundled" / "skills" / skill_id / "SKILL.md"
+    return skill_path.read_text(encoding="utf-8-sig")
+
+
 class ResearchDesignPackConsolidationTests(unittest.TestCase):
     def assert_selected(
         self,
@@ -115,6 +120,67 @@ class ResearchDesignPackConsolidationTests(unittest.TestCase):
         self.assertEqual([], pack.get("stage_assistant_candidates"))
         for moved_skill in MOVED_OUT_SKILLS:
             self.assertNotIn(moved_skill, pack.get("skill_candidates") or [])
+
+    def test_retained_skills_do_not_require_cross_skill_invocation(self) -> None:
+        banned_by_skill = {
+            "hypothesis-generation": [
+                "scientific-schematics",
+                "venue-templates",
+                "Related Skills",
+            ],
+            "research-grants": [
+                "scientific-schematics",
+                "MANDATORY: Every research grant proposal MUST include",
+            ],
+            "scientific-brainstorming": [
+                "can be consulted",
+                "Consult this file",
+            ],
+        }
+        for skill_id, banned_phrases in banned_by_skill.items():
+            text = skill_text(skill_id)
+            for phrase in banned_phrases:
+                self.assertNotIn(phrase, text, f"{skill_id} still contains {phrase!r}")
+
+    def test_design_without_modeling_routes_to_designing_experiments(self) -> None:
+        self.assert_selected(
+            "帮我设计准实验方案，先决定 DiD 还是中断时间序列，不要开始建模",
+            "research-design",
+            "designing-experiments",
+            task_type="planning",
+        )
+
+    def test_existing_data_causal_effect_routes_to_causal_analysis(self) -> None:
+        self.assert_selected(
+            "我已有面板数据，请用 DiD 估计政策的因果效应并做稳健性检验",
+            "research-design",
+            "performing-causal-analysis",
+            task_type="research",
+        )
+
+    def test_plain_hypothesis_generation_without_hypogenic_routes_to_hypothesis_generation(self) -> None:
+        self.assert_selected(
+            "普通科研假设生成，没有提 HypoGeniC",
+            "research-design",
+            "hypothesis-generation",
+            task_type="planning",
+        )
+
+    def test_open_scientific_ideation_routes_to_scientific_brainstorming(self) -> None:
+        self.assert_selected(
+            "开放式科研构思：围绕这个机制发散研究方向，不要求形成可检验假设报告",
+            "research-design",
+            "scientific-brainstorming",
+            task_type="planning",
+        )
+
+    def test_latex_paper_build_stays_outside_research_design(self) -> None:
+        self.assert_selected(
+            "论文撰写、LaTeX 构建或 PDF 投稿",
+            "scholarly-publishing-workflow",
+            "latex-submission-pipeline",
+            task_type="coding",
+        )
 
     def test_quasi_experiment_design_routes_to_designing_experiments(self) -> None:
         self.assert_selected(
