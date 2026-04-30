@@ -212,6 +212,31 @@ class CurrentRoutingContractCleanupTests(unittest.TestCase):
         self.assertIn("## Legacy Specialist Lifecycle Disclosure", payload["markdown"])
         self.assertIn("Usage claims still require `skill_usage.used` evidence", payload["markdown"])
 
+    def test_current_routing_governance_doc_defines_only_current_terms(self) -> None:
+        path = REPO_ROOT / "docs" / "governance" / "current-routing-contract.md"
+        text = path.read_text(encoding="utf-8")
+
+        self.assertIn("skill_candidates -> skill_routing.selected -> skill_usage.used / skill_usage.unused", text)
+        for required in [
+            "`candidate`",
+            "`selected`",
+            "`used`",
+            "`unused`",
+            "`evidence`",
+            "`legacy compatibility`",
+        ]:
+            self.assertIn(required, text)
+
+        active_section = text.split("## Legacy Compatibility Boundary", 1)[0]
+        for forbidden in [
+            "route owner",
+            "primary skill",
+            "secondary skill",
+            "consultation expert",
+            "auxiliary expert",
+        ]:
+            self.assertNotIn(forbidden, active_section.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
