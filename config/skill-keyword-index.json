@@ -454,16 +454,16 @@
       "keywords": ["generate image", "image generation", "生成图片", "图片生成", "出图"]
     },
     "fluidsim": {
-      "keywords": ["fluidsim", "cfd", "navier-stokes", "fluid simulation", "turbulence", "shallow water", "stratified flow", "pseudospectral", "流体仿真", "湍流"]
+      "keywords": ["fluidsim", "fluidsim cfd", "fluidsim navier-stokes", "fluidsim turbulence", "fluidsim shallow water", "fluidsim pseudospectral", "fluid dynamics fluidsim", "流体仿真 fluidsim"]
     },
     "simpy": {
-      "keywords": ["simpy", "discrete event simulation", "event simulation", "queue simulation", "resource process", "process simulation", "离散事件仿真", "排队仿真"]
+      "keywords": ["simpy", "simpy discrete event simulation", "simpy queue simulation", "simpy resource process", "simpy environment", "离散事件仿真 simpy", "simpy 排队仿真"]
     },
     "matchms": {
-      "keywords": ["matchms", "mass spectra", "mass spectrum", "ms/ms", "msms", "spectral similarity", "spectrum processing", "质谱", "谱图匹配"]
+      "keywords": ["matchms", "mass spectra", "mass spectrum", "ms/ms", "msms", "spectral similarity", "metabolomics spectrum processing", "spectrum processing", "质谱谱图匹配"]
     },
     "matlab": {
-      "keywords": ["matlab", "octave", ".m script", "m-file", "simulink", "matrix calculation", "matlab script", "矩阵计算", "matlab脚本"]
+      "keywords": ["matlab", "octave", ".m script", "m-file", "simulink", "matlab script", "matlab/octave", "matlab脚本"]
     },
     "modal": {
       "keywords": ["modal.com", "modal run", "modal deploy", "serverless gpu", "batch job", "gpu container", "云端运行", "gpu容器"]
@@ -472,22 +472,22 @@
       "keywords": ["modal.com", "modal labs", "modallabs", "modal run", "modal deploy", "modal serve", "modal 部署", "部署到 modal", "modal 而不是 vercel", "serverless gpu", "gpu function", "python gpu function", "batch job", "autoscaling containers", "云端运行", "云端作业", "云端 gpu", "gpu 容器", "gpu 函数"]
     },
     "neuropixels-analysis": {
-      "keywords": ["neuropixels", "kilosort", "spike sorting", "spikeglx", "open ephys", "ibl", "electrophysiology", "神经电生理", "峰电位排序"]
+      "keywords": ["neuropixels", "spikeglx", "kilosort", "spike sorting", "open ephys", "ibl electrophysiology", "neuropixels probe", "神经电生理 neuropixels"]
     },
     "pymc": {
-      "keywords": ["pymc", "bayesian", "mcmc", "nuts", "posterior", "hierarchical model", "bayesian model", "贝叶斯", "后验"]
+      "keywords": ["pymc", "bayesian hierarchical model", "nuts mcmc", "posterior predictive", "probabilistic programming", "pymc model", "pymc sampling", "贝叶斯 pymc"]
     },
     "pymoo": {
-      "keywords": ["pymoo", "multi-objective", "multi objective optimization", "nsga-ii", "nsga", "pareto", "constraint optimization", "多目标优化", "帕累托"]
+      "keywords": ["pymoo", "nsga-ii", "nsga", "multi-objective optimization", "pareto front", "pymoo constraint optimization", "pymoo algorithm", "多目标优化 pymoo"]
     },
     "rowan": {
-      "keywords": ["rowan", "rowan chemistry", "rowan-python", "labs.rowansci.com", "pka prediction", "conformer search", "geometry optimization", "quantum chemistry", "docking", "boltz", "chai-1", "量子化学"]
+      "keywords": ["rowan", "rowan chemistry", "rowan-python", "labs.rowansci.com", "rowan api", "rowan workflow", "rowan cloud chemistry", "rowan 量子化学"]
     },
     "stable-baselines3": {
-      "keywords": ["stable-baselines3", "stable baselines3", "sb3", "ppo", "sac", "dqn", "reinforcement learning", "rl agent", "强化学习", "智能体训练"]
+      "keywords": ["stable-baselines3", "stable baselines3", "sb3", "ppo", "sac", "dqn", "reinforcement learning", "rl agent", "强化学习 stable-baselines3"]
     },
     "timesfm-forecasting": {
-      "keywords": ["timesfm", "time series forecasting", "zero-shot forecasting", "prediction intervals", "foundation model forecasting", "forecast horizon", "时间序列预测", "零样本预测"]
+      "keywords": ["timesfm", "timesfm forecasting", "zero-shot forecasting", "prediction intervals", "foundation model forecasting", "forecast horizon", "time series foundation model", "零样本预测 timesfm"]
     },
     "torch-geometric": {
       "keywords": ["torch-geometric", "torch_geometric", "pyg", "pytorch geometric", "graph neural network", "gnn", "gcn", "gat", "graph classification", "node classification", "link prediction", "图神经网络", "图分类", "节点分类"]

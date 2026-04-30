@@ -6200,19 +6200,21 @@
                        ],
                        "positive_keywords": [
                            "simpy",
-                           "discrete event simulation",
-                           "event simulation",
-                           "queue simulation",
-                           "resource process",
-                           "process simulation",
-                           "离散事件仿真",
-                           "排队仿真"
+                           "simpy discrete event simulation",
+                           "simpy queue simulation",
+                           "simpy resource process",
+                           "simpy environment",
+                           "离散事件仿真 simpy",
+                           "simpy 排队仿真"
                        ],
                        "negative_keywords": [
                            "sympy",
                            "symbolic math",
                            "matplotlib animation",
-                           "agent-based model"
+                           "agent-based model",
+                           "monte carlo simulation",
+                           "generic simulation",
+                           "physics simulation"
                        ],
                        "equivalent_group": "simulation",
                        "canonical_for_task": [
@@ -6227,21 +6229,22 @@
                        ],
                        "positive_keywords": [
                            "fluidsim",
-                           "cfd",
-                           "navier-stokes",
-                           "fluid simulation",
-                           "turbulence",
-                           "shallow water",
-                           "stratified flow",
-                           "pseudospectral",
-                           "流体仿真",
-                           "湍流"
+                           "fluidsim cfd",
+                           "fluidsim navier-stokes",
+                           "fluidsim turbulence",
+                           "fluidsim shallow water",
+                           "fluidsim pseudospectral",
+                           "fluid dynamics fluidsim",
+                           "流体仿真 fluidsim"
                        ],
                        "negative_keywords": [
                            "css",
                            "fluid layout",
                            "responsive design",
                            "fluid typography",
+                           "generic pde",
+                           "finite element",
+                           "python simulation",
                            "液态布局"
                        ],
                        "equivalent_group": "cfd-simulation",
@@ -6263,13 +6266,15 @@
                            "ms/ms",
                            "msms",
                            "spectral similarity",
+                           "metabolomics spectrum processing",
                            "spectrum processing",
-                           "质谱",
-                           "谱图匹配"
+                           "质谱谱图匹配"
                        ],
                        "negative_keywords": [
                            "pubmed",
                            "literature review",
+                           "generic chemistry",
+                           "non-spectral metabolomics",
                            "plotting",
                            "matplotlib",
                            "not mass spectra",
@@ -6293,9 +6298,8 @@
                            ".m script",
                            "m-file",
                            "simulink",
-                           "matrix calculation",
                            "matlab script",
-                           "矩阵计算",
+                           "matlab/octave",
                            "matlab脚本"
                        ],
                        "negative_keywords": [
@@ -6303,8 +6307,12 @@
                            "not octave",
                            "不使用 matlab",
                            "不使用 MATLAB",
-                           "python matrix multiplication",
-                           "numpy matrix multiplication",
+                           "numpy",
+                           "python matrix",
+                           "jupyter",
+                           "scientific visualization",
+                           "data analysis",
+                           "numerical computing",
                            "numpy array"
                        ],
                        "equivalent_group": "matlab-octave",
@@ -6320,20 +6328,22 @@
                        ],
                        "positive_keywords": [
                            "neuropixels",
+                           "spikeglx",
                            "kilosort",
                            "spike sorting",
-                           "spikeglx",
                            "open ephys",
-                           "ibl",
-                           "electrophysiology",
-                           "神经电生理",
-                           "峰电位排序"
+                           "ibl electrophysiology",
+                           "neuropixels probe",
+                           "神经电生理 neuropixels"
                        ],
                        "negative_keywords": [
                            "single-cell rna",
                            "flow cytometry",
                            "clinical eeg",
-                           "fMRI"
+                           "fmri",
+                           "generic neuroscience",
+                           "rna-seq",
+                           "calcium imaging without neuropixels"
                        ],
                        "equivalent_group": "neuro-electrophysiology",
                        "canonical_for_task": [
@@ -6349,21 +6359,24 @@
                        ],
                        "positive_keywords": [
                            "pymc",
-                           "bayesian",
-                           "mcmc",
-                           "nuts",
-                           "posterior",
-                           "hierarchical model",
-                           "bayesian model",
-                           "贝叶斯",
-                           "后验"
+                           "bayesian hierarchical model",
+                           "nuts mcmc",
+                           "posterior predictive",
+                           "probabilistic programming",
+                           "pymc model",
+                           "pymc sampling",
+                           "贝叶斯 pymc"
                        ],
                        "negative_keywords": [
                            "pymatgen",
                            "crystal structure",
                            "materials project",
                            "pymoo",
-                           "nsga"
+                           "nsga",
+                           "scikit-learn",
+                           "sklearn",
+                           "generic regression",
+                           "causal analysis"
                        ],
                        "equivalent_group": "bayesian-modeling",
                        "canonical_for_task": [
@@ -6379,20 +6392,23 @@
                        ],
                        "positive_keywords": [
                            "pymoo",
-                           "multi-objective",
-                           "multi objective optimization",
                            "nsga-ii",
                            "nsga",
-                           "pareto",
-                           "constraint optimization",
-                           "多目标优化",
-                           "帕累托"
+                           "multi-objective optimization",
+                           "pareto front",
+                           "pymoo constraint optimization",
+                           "pymoo algorithm",
+                           "多目标优化 pymoo"
                        ],
                        "negative_keywords": [
                            "pymc",
                            "bayesian",
                            "mcmc",
-                           "posterior"
+                           "posterior",
+                           "generic optimization",
+                           "experiment design",
+                           "gradient descent",
+                           "causal analysis"
                        ],
                        "equivalent_group": "optimization",
                        "canonical_for_task": [
@@ -6407,19 +6423,14 @@
                            "research"
                        ],
                        "positive_keywords": [
+                           "rowan",
                            "rowan api",
                            "rowan chemistry",
                            "rowan-python",
                            "labs.rowansci.com",
-                           "cloud quantum chemistry",
-                           "pka prediction",
-                           "conformer search",
-                           "geometry optimization",
-                           "quantum chemistry",
-                           "docking",
-                           "boltz",
-                           "chai-1",
-                           "量子化学"
+                           "rowan workflow",
+                           "rowan cloud chemistry",
+                           "rowan 量子化学"
                        ],
                        "negative_keywords": [
                            "quaternion",
@@ -6427,7 +6438,15 @@
                            "rotation matrix",
                            "rowan tree",
                            "not rowan",
-                           "不调用 rowan"
+                           "不调用 rowan",
+                           "rdkit",
+                           "pubchem",
+                           "chembl",
+                           "docking",
+                           "pka",
+                           "conformer search",
+                           "quantum chemistry",
+                           "molecular machine learning"
                        ],
                        "equivalent_group": "cloud-quantum-chemistry",
                        "canonical_for_task": [
@@ -6451,8 +6470,7 @@
                            "dqn",
                            "reinforcement learning",
                            "rl agent",
-                           "强化学习",
-                           "智能体训练"
+                           "强化学习 stable-baselines3"
                        ],
                        "negative_keywords": [
                            "scikit-learn",
@@ -6460,8 +6478,9 @@
                            "random forest",
                            "supervised learning",
                            "ordinary supervised",
+                           "not reinforcement learning",
                            "不是 reinforcement learning",
-                           "not reinforcement learning"
+                           "classification model"
                        ],
                        "equivalent_group": "reinforcement-learning",
                        "canonical_for_task": [
@@ -6477,18 +6496,20 @@
                        ],
                        "positive_keywords": [
                            "timesfm",
-                           "time series forecasting",
+                           "timesfm forecasting",
                            "zero-shot forecasting",
                            "prediction intervals",
                            "foundation model forecasting",
                            "forecast horizon",
-                           "时间序列预测",
-                           "零样本预测"
+                           "time series foundation model",
+                           "零样本预测 timesfm"
                        ],
                        "negative_keywords": [
                            "scikit-learn",
                            "ordinary regression",
                            "tabular regression",
+                           "business forecast",
+                           "arima",
                            "not time series",
                            "不是 time series forecasting"
                        ],
@@ -6498,42 +6519,45 @@
                            "research"
                        ]
                    },
-                   "torch-geometric":  {
-                                           "task_allow":  [
-                                                              "planning",
-                                                              "coding",
-                                                              "research"
-                                                          ],
-                                           "positive_keywords":  [
-                                                                     "torch-geometric",
-                                                                     "torch_geometric",
-                                                                     "pyg",
-                                                                     "pytorch geometric",
-                                                                     "graph neural network",
-                                                                     "gnn",
-                                                                     "gcn",
-                                                                     "gat",
-                                                                     "graph classification",
-                                                                     "node classification",
-                                                                     "link prediction",
-                                                                     "图神经网络",
-                                                                     "图分类",
-                                                                     "节点分类"
-                                                                 ],
-                                           "negative_keywords":  [
-                                                                     "cnn",
-                                                                     "resnet",
-                                                                     "image classification",
-                                                                     "图像分类",
-                                                                     "computer vision",
-                                                                     "vision transformer"
-                                                                 ],
-                                           "equivalent_group":  "graph-ml",
-                                           "canonical_for_task":  [
-                                                                      "coding",
-                                                                      "research"
-                                                                  ]
-                                       },
+                   "torch-geometric": {
+                       "task_allow": [
+                           "planning",
+                           "coding",
+                           "research"
+                       ],
+                       "positive_keywords": [
+                           "torch-geometric",
+                           "torch_geometric",
+                           "pyg",
+                           "pytorch geometric",
+                           "graph neural network",
+                           "gnn",
+                           "gcn",
+                           "gat",
+                           "graph classification",
+                           "node classification",
+                           "link prediction",
+                           "图神经网络",
+                           "图分类",
+                           "节点分类"
+                       ],
+                       "negative_keywords": [
+                           "cnn",
+                           "resnet",
+                           "image classification",
+                           "图像分类",
+                           "computer vision",
+                           "vision transformer",
+                           "generic neural network",
+                           "network graph visualization",
+                           "molecule-only"
+                       ],
+                       "equivalent_group": "graph-ml",
+                       "canonical_for_task": [
+                           "coding",
+                           "research"
+                       ]
+                   },
                    "geniml":  {
                                  "task_allow":  [
                                                     "coding",
