@@ -444,6 +444,42 @@ $cases = @(
         expected_skill = "pathml"
         requested_skill = $null
     },
+    [pscustomobject]@{
+        name = "imaging_generic_datacommons_blocked"
+        group = "science-medical-imaging"
+        prompt = "/vibe 用 Data Commons 查询 population indicators、statistical variables 和 DCID，不涉及 Imaging Data Commons 或 DICOMWeb"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-medical-imaging"
+        blocked_skill = "imaging-data-commons"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "imaging_pubmed_evidence_blocked"
+        group = "science-medical-imaging"
+        prompt = "/vibe 查询 PubMed 文献并整理 PMID citation evidence table"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-medical-imaging"
+        blocked_skill = $null
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "imaging_generic_image_processing_blocked"
+        group = "science-medical-imaging"
+        prompt = "/vibe 对普通 PNG 图片做 OCR、截图裁剪和图像增强，不涉及 DICOM、WSI、OMERO 或 PathML"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-medical-imaging"
+        blocked_skill = $null
+        requested_skill = $null
+    },
 
     # science-lab-automation
     [pscustomobject]@{
