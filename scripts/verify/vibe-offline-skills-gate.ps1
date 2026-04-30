@@ -11,6 +11,16 @@ function New-CaseInsensitiveSet {
     return New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
 }
 
+function Read-JsonUtf8 {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $text = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+    return $text | ConvertFrom-Json
+}
+
 function Get-BytesHash {
     param(
         [Parameter(Mandatory = $true)]
@@ -121,7 +131,7 @@ function Get-CanonicalSkillMap {
             continue
         }
 
-        $skillJson = Get-Content -LiteralPath $skillJsonPath -Raw | ConvertFrom-Json
+        $skillJson = Read-JsonUtf8 -Path $skillJsonPath
         $source = if ($skillJson.PSObject.Properties.Name -contains 'source_of_truth') { $skillJson.source_of_truth } else { $null }
         $sourceKind = if ($null -ne $source -and $source.PSObject.Properties.Name -contains 'kind') { [string]$source.kind } else { '' }
         $sourcePathSpec = if ($null -ne $source -and $source.PSObject.Properties.Name -contains 'path') { [string]$source.path } else { '' }
@@ -180,8 +190,8 @@ if (-not (Test-Path -LiteralPath $SkillsLockPath)) {
     throw "Skills lock not found: $SkillsLockPath"
 }
 
-$manifest = Get-Content -LiteralPath $PackManifestPath -Raw | ConvertFrom-Json
-$lock = Get-Content -LiteralPath $SkillsLockPath -Raw | ConvertFrom-Json
+$manifest = Read-JsonUtf8 -Path $PackManifestPath
+$lock = Read-JsonUtf8 -Path $SkillsLockPath
 $canonicalSkillMap = Get-CanonicalSkillMap -RepoRoot $repoRoot
 $canonicalSkillSet = New-CaseInsensitiveSet
 foreach ($canonicalSkillId in @($canonicalSkillMap.Keys)) {
