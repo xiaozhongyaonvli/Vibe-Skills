@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "generated_at": "2026-04-30T11:03:19+08:00",
+  "generated_at": "2026-04-30T12:10:33+08:00",
   "source": "bundled/skills",
-  "skill_count": 299,
-  "total_bytes": 20211256.0,
+  "skill_count": 296,
+  "total_bytes": 20184253.0,
   "skills": [
     {
       "name": ".system",
@@ -81,9 +81,9 @@
       "name": "autonomous-builder",
       "relative_path": "bundled/skills/autonomous-builder",
       "file_count": 25,
-      "bytes": 249403,
-      "skill_md_hash": "fc74c3ab07c96cc719025cb9884401d80b52c60321efc03f21e8d742b27228d2",
-      "dir_hash": "da4f174edbbcd7f581e108ef4d060117b257b446f2cd5b34970e58d73f47a97d"
+      "bytes": 249280,
+      "skill_md_hash": "627a7475e7c15ea3e42494e85485de832535f511a7d49c81fd8ceb1588c90397",
+      "dir_hash": "2357a9bec1b80287ca9325b572c3e365b2100dfc7484d6d6c8bf55c2bb78a7b6"
     },
     {
       "name": "benchling-integration",
@@ -222,28 +222,12 @@
       "dir_hash": "c2c51469a8c2a47b4db809ba908e6948b9f1897afeb40d3a88d4174f62733d31"
     },
     {
-      "name": "code-review",
-      "relative_path": "bundled/skills/code-review",
-      "file_count": 3,
-      "bytes": 5906,
-      "skill_md_hash": "b344bb9d09e940aa1340fec3b7c314b32901bec3a5fd5a4b96dceae443229c0b",
-      "dir_hash": "2a79356bbfb614cafc1fe513fb8c7377c0d04b916065a3787b3d407d4f852827"
-    },
-    {
-      "name": "code-review-excellence",
-      "relative_path": "bundled/skills/code-review-excellence",
-      "file_count": 1,
-      "bytes": 13709,
-      "skill_md_hash": "235ec26133c43da32516fb2fbc6000e3dad78beb7e252b35577bf51346e1128d",
-      "dir_hash": "a57b85cf54e60997cf0cb49242cb03c8f38f4374cb7bc6f8401a18bf86f543fb"
-    },
-    {
       "name": "code-reviewer",
       "relative_path": "bundled/skills/code-reviewer",
-      "file_count": 7,
-      "bytes": 19696,
-      "skill_md_hash": "12aa340b3f638137d04b653366c49eea04898372824e2be3705f95a5cd63b7c8",
-      "dir_hash": "76588e71c583e06455221cc0194abb790ff035ed25974a27f3be5a4c2a2fb5d4"
+      "file_count": 9,
+      "bytes": 24797,
+      "skill_md_hash": "242fde77990971457da21dad50c503549d09544addce52d8c8ed21522b02fa49",
+      "dir_hash": "7551f2d6c7cd60d86e30b25bfbf7266151e9daaaa547d71ad13375373f84e8a0"
     },
     {
       "name": "coding-tutor",
@@ -372,14 +356,6 @@
       "bytes": 56340,
       "skill_md_hash": "d6f3a480f28997d230c1c7d2c014970daf5637399feba34968c6c63fe9a45ddd",
       "dir_hash": "99619be63ae48907e3b7952cde794f877930cc1aa03380cf467b92e8d537baef"
-    },
-    {
-      "name": "debugging-strategies",
-      "relative_path": "bundled/skills/debugging-strategies",
-      "file_count": 1,
-      "bytes": 12546,
-      "skill_md_hash": "61dbd539f0f9ba90aec588147d7ee44a9c54a4dcf148011aea9f000b2cd724a7",
-      "dir_hash": "b15fdb51b6ec23e974bff5c50b0dd6870a9aa30b08e02905aa65671cd1fc614d"
     },
     {
       "name": "deepchem",
@@ -561,9 +537,9 @@
       "name": "error-resolver",
       "relative_path": "bundled/skills/error-resolver",
       "file_count": 14,
-      "bytes": 125531,
-      "skill_md_hash": "5864ed0414f31a138a5d41dc7b50f3acd31c5adc0cfc911c434f2f6605fb0d7a",
-      "dir_hash": "a6418f8aaee5945ec717f89739481e51daccf7925c43089f3d03c22ff49c0e58"
+      "bytes": 125760,
+      "skill_md_hash": "fbb64aa4c34b328f99bda6295793e6cd6787f9326394bb9d045470c8bd90cc1a",
+      "dir_hash": "ebe1388bbbd390b96082923d0602f5d0be07117889571d447620aa3bccacb093"
     },
     {
       "name": "esm",
@@ -1897,9 +1873,9 @@
       "name": "spec-kit-vibe-compat",
       "relative_path": "bundled/skills/spec-kit-vibe-compat",
       "file_count": 3,
-      "bytes": 5368,
+      "bytes": 5370,
       "skill_md_hash": "ec8b8b92372b75b4ba326a08c2b23b233ec94d7977690d82227127e6ba376c7e",
-      "dir_hash": "33cdcb280a0764205e9ce496c26084883894661ad30353ede361325fbd38e265"
+      "dir_hash": "37a0b24efa0599f4690b37a713f3277d1a8bfbdcd4f0806cc21b03b6ffbd5579"
     },
     {
       "name": "speckit-analyze",
@@ -2057,9 +2033,9 @@
       "name": "superclaude-framework-compat",
       "relative_path": "bundled/skills/superclaude-framework-compat",
       "file_count": 33,
-      "bytes": 199484,
+      "bytes": 199431,
       "skill_md_hash": "0ed05ae178065f152d626d5df3046dfcc2ab1af275a42f9aa2d550fda36d1182",
-      "dir_hash": "d0d7793966a0ec85acb25af46d52751debc05ee552474218655a5584a1f2343c"
+      "dir_hash": "f4825baeac6ea99626db814f463e5e119d09af4f9338e06279d5d41cb0d4435b"
     },
     {
       "name": "sympy",
@@ -2105,9 +2081,9 @@
       "name": "think-harder",
       "relative_path": "bundled/skills/think-harder",
       "file_count": 1,
-      "bytes": 1350,
-      "skill_md_hash": "4b05faa41f937b44ddcbd8c2fa4bf9e1f658f3aa1785fcda6132b316e1f3aadd",
-      "dir_hash": "aa437d9dd46d4b39fdad116f7564e5c8db7bafb039c301e039ea00677987e5af"
+      "bytes": 1352,
+      "skill_md_hash": "648eed37a8369c87903eb0924046ad93581a5bd8f5ba2c27d722f425ec0eab51",
+      "dir_hash": "f1fd488365f3ad63b666e6948c11e8e325ffcacefbaa72505df93e49babc6a78"
     },
     {
       "name": "tiledbvcf",

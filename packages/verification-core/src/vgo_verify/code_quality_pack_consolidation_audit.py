@@ -318,7 +318,12 @@ def _asset_summary(skill_dir: Path) -> str:
     scripts = len(list((skill_dir / "scripts").rglob("*"))) if (skill_dir / "scripts").exists() else 0
     references = len(list((skill_dir / "references").rglob("*"))) if (skill_dir / "references").exists() else 0
     assets = len(list((skill_dir / "assets").rglob("*"))) if (skill_dir / "assets").exists() else 0
-    return f"scripts={scripts}; references={references}; assets={assets}"
+    migration_files = 0
+    for child_name in ("analysis", "patterns", "replay"):
+        child = skill_dir / child_name
+        if child.exists():
+            migration_files += sum(1 for item in child.rglob("*") if item.is_file())
+    return f"scripts={scripts}; references={references}; assets={assets}; migration_files={migration_files}"
 
 
 def audit_code_quality_problem_map(repo_root: Path) -> ProblemMapArtifact:
