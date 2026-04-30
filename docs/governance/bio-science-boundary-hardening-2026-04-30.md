@@ -71,6 +71,7 @@ string-database
 - Added `geniml` negatives for ordinary tabular ML, scikit-learn/random forest prompts, and explicit non-genomic ML prompts.
 - Added cross-pack negatives so generic similarity search and RDKit do not capture BED/genomic interval embedding tasks.
 - Added Scanpy single-cell RNA-seq analysis triggers so explicit scRNA-seq clustering remains with `scanpy` even when flow cytometry/FCS terms are negated.
+- Removed bare `UMAP` as a standalone `scanpy` trigger so generic dimensionality-reduction prompts stay with `data-ml`; `scanpy` still owns UMAP when the prompt also carries single-cell, h5ad, Leiden, marker-gene, or explicit Scanpy context.
 
 ## Protected Probes
 
@@ -93,6 +94,7 @@ False-positive boundaries:
 
 - `geniml` must not own ordinary clinical-table random forest prompts that say the task is not genomic ML.
 - `flowio` must not own single-cell RNA-seq prompts that only mention flow cytometry/FCS under `不是` negation.
+- `scanpy` must not own generic UMAP dimensionality-reduction visualization prompts without single-cell context.
 - `scanpy` must lose to AnnData, scVI, and CELLxGENE when those explicit owner signals appear.
 - `biopython` must lose to pysam, ESM, and COBRApy when those explicit owner signals appear.
 - `bioservices` must lose to KEGG and Reactome when the prompt names those deeper database workflows.

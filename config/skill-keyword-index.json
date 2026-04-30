@@ -133,7 +133,7 @@
       "keywords": ["preprocess data", "data preprocessing", "preprocessing pipeline", "data cleaning pipeline", "etl pipeline", "data transformation", "feature encoding", "feature preprocessing", "standardize data", "normalize data", "validate input data", "reusable preprocessing pipeline", "数据预处理", "清洗数据", "数据清洗", "预处理流水线", "特征编码", "ETL流水线", "数据转换", "数据验证", "可复用预处理流水线"]
     },
     "scanpy": {
-      "keywords": ["scanpy", "single-cell", "single-cell clustering", "scRNA", "single-cell RNA-seq", "single cell RNA-seq", "scRNA-seq", "UMAP", "QC", "10x", "leiden", "marker genes", "单细胞聚类", "细胞注释", "marker基因", "单细胞 RNA-seq", "单细胞RNA-seq"]
+      "keywords": ["scanpy", "single-cell", "single-cell clustering", "scRNA", "single-cell RNA-seq", "single cell RNA-seq", "scRNA-seq", "QC", "10x", "leiden", "marker genes", "单细胞聚类", "细胞注释", "marker基因", "单细胞 RNA-seq", "单细胞RNA-seq"]
     },
     "anndata": {
       "keywords": ["anndata", "AnnData", "h5ad", "obs", "var", "backed mode", "annotated data matrix", "sparse matrix", "zarr", "元数据", "稀疏矩阵"]

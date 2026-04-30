@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "generated_at": "2026-04-30T09:31:00+08:00",
+  "generated_at": "2026-04-30T09:52:33+08:00",
   "source": "bundled/skills",
-  "skill_count": 313,
-  "total_bytes": 20853870.0,
+  "skill_count": 312,
+  "total_bytes": 20835166.0,
   "skills": [
     {
       "name": ".system",
@@ -686,20 +686,12 @@
       "dir_hash": "86621eb6354144a8e50ebc3c824df9c7fe58515fddde5ccdceb5b3c071bf1e12"
     },
     {
-      "name": "figma",
-      "relative_path": "bundled/skills/figma",
-      "file_count": 8,
-      "bytes": 23641,
-      "skill_md_hash": "5b11f7c8d0ce4c047b401323e7b8fe6559bd3162a3397bf5248634a5444609d5",
-      "dir_hash": "3a9ff3347f1ff95e76ac4c681d3d614be9e9b0544ab960aa7df2fec19c5391cf"
-    },
-    {
       "name": "figma-implement-design",
       "relative_path": "bundled/skills/figma-implement-design",
-      "file_count": 6,
-      "bytes": 26753,
-      "skill_md_hash": "adea0fa5ed0b77a75112f64737f4aa562fcc231d242370f8cbdb25d050be19ad",
-      "dir_hash": "f0a6609d86e378e09f30c66716b04c821dc6c8c786ae225611498b8a563ccc8a"
+      "file_count": 8,
+      "bytes": 31690,
+      "skill_md_hash": "7e140497d79b3be84b897796c27761662e89c74bcd2d3b1e9396a92c9a6d86ec",
+      "dir_hash": "f78516e88cb182d5783c452abc5705cb723a33074cc322194ab733292387a8b7"
     },
     {
       "name": "file-organizer",

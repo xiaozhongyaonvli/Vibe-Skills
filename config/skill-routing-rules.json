@@ -1241,7 +1241,6 @@
                                                            "single-cell RNA-seq",
                                                            "single cell RNA-seq",
                                                            "scRNA-seq",
-                                                           "UMAP",
                                                            "QC",
                                                            "h5ad",
                                                            "10x",
@@ -3763,26 +3762,6 @@
                                                                                "planning"
                                                                            ]
                                                 },
-                   "figma":  {
-                                 "task_allow":  [
-                                                    "planning",
-                                                    "coding",
-                                                    "research"
-                                                ],
-                                 "positive_keywords":  [
-                                                           "figma",
-                                                           "design context",
-                                                           "node id"
-                                                       ],
-                                 "negative_keywords":  [
-                                                           "without figma input"
-                                                       ],
-                                 "requires_positive_keyword_match":  true,
-                                 "equivalent_group":  "figma-workflow",
-                                 "canonical_for_task":  [
-
-                                                        ]
-                             },
                    "figma-implement-design":  {
                                                   "task_allow":  [
                                                                      "coding",

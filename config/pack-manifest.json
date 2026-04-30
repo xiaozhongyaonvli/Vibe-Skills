@@ -2041,12 +2041,10 @@
                                                "UI还原"
                                            ],
                       "skill_candidates":  [
-                                               "figma-implement-design",
-                                               "figma"
+                                               "figma-implement-design"
                                            ],
                       "route_authority_candidates":  [
-                                                       "figma-implement-design",
-                                                       "figma"
+                                                       "figma-implement-design"
                                                    ],
                       "defaults_by_task":  {
                                                "planning":  "figma-implement-design",

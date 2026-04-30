@@ -2,6 +2,8 @@
 
 Date: 2026-04-29
 
+2026-04-30 update: the `design-implementation` Figma surface was further consolidated in `design-implementation-figma-consolidation-2026-04-30.md`; current routing keeps only `figma-implement-design` as the direct owner.
+
 ## Scope
 
 This cleanup clarifies routing ownership for document media, Figma implementation, publishing, reporting, slides, figures, and research-method prompts.

@@ -89,6 +89,14 @@ class BioScienceBoundaryHardeningTests(unittest.TestCase):
             "scanpy",
         )
 
+    def test_generic_umap_dimensionality_reduction_stays_in_data_ml(self) -> None:
+        self.assert_selected(
+            "使用UMAP进行降维可视化",
+            "data-ml",
+            "scikit-learn",
+            grade="L",
+        )
+
     def test_biopython_owns_sequence_conversion(self) -> None:
         self.assert_selected(
             "用 Biopython SeqIO 把 FASTA 转 GenBank，并通过 Entrez 拉取序列记录",
