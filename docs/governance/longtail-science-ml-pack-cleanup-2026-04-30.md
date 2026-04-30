@@ -41,18 +41,30 @@ No advisory experts, consultation state, helper experts, primary/secondary skill
 
 ## Verification
 
-Final verification will refresh this table with the exact final command evidence.
-
 | Command | Result |
 | --- | --- |
-| `python -m pytest tests/runtime_neutral/test_longtail_science_ml_pack_cleanup.py -q` | `8 passed` after skill boundary docs were added. |
-| `python -m pytest tests/runtime_neutral/test_zero_route_authority_third_pass.py tests/runtime_neutral/test_zero_route_authority_second_pass.py -q` | `14 passed` after route negation/fallback hardening. |
+| `python -m pytest tests\runtime_neutral\test_longtail_science_ml_pack_cleanup.py -q` | `8 passed in 5.74s`. |
+| `python -m pytest tests\runtime_neutral\test_zero_route_authority_third_pass.py tests\runtime_neutral\test_zero_route_authority_second_pass.py -q` | `14 passed in 8.02s`. |
 | `.\scripts\verify\probe-scientific-packs.ps1` | exit 0; wrote `outputs\verify\route-probe-scientific\summary.json`. |
-| `.\scripts\verify\vibe-skill-index-routing-audit.ps1` | `Total assertions: 521; Passed: 521; Failed: 0`. |
-| `.\scripts\verify\vibe-pack-regression-matrix.ps1` | `Total assertions: 479; Passed: 479; Failed: 0`. |
-| `.\scripts\verify\vibe-generate-skills-lock.ps1` | generated `config\skills-lock.json`; `skills=296`. |
+| `.\scripts\verify\vibe-skill-index-routing-audit.ps1` | `Total assertions: 521; Passed: 521; Failed: 0`; `Skill-index routing audit passed.` |
+| `.\scripts\verify\vibe-pack-regression-matrix.ps1` | `Total assertions: 479; Passed: 479; Failed: 0`; `Pack regression matrix checks passed.` |
+| `.\scripts\verify\vibe-pack-routing-smoke.ps1` | `Total assertions: 958; Passed: 958; Failed: 0`; `Pack routing smoke checks passed.` |
 | `.\scripts\verify\vibe-offline-skills-gate.ps1` | `[PASS] offline skill closure gate passed`; `present_skills=296`; `lock_skills=296`. |
-| `git diff --check` | exit 0 before Task 4 commit. |
+| `git diff --check` | exit 0; no whitespace errors. |
+
+`longtail-science-ml` probe group summary:
+
+```json
+{
+  "group": "longtail-science-ml",
+  "case_count": 16,
+  "pack_match_ratio": 1.0,
+  "skill_match_ratio": 1.0,
+  "skill_match_text": "100%",
+  "confirm_required_ratio": 0.0,
+  "avg_confidence": 0.8127
+}
+```
 
 ## Evidence Boundary
 
