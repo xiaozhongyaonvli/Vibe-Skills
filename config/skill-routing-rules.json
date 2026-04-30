@@ -1461,36 +1461,6 @@
                                                                 "research"
                                                             ]
                                  },
-                  "cellxgene-census":  {
-                                           "task_allow":  [
-                                                              "research",
-                                                              "coding"
-                                                          ],
-                                           "positive_keywords":  [
-                                                                     "cellxgene census",
-                                                                     "CZ CELLxGENE",
-                                                                     "CELLxGENE Census",
-                                                                     "single-cell census",
-                                                                     "cell type tissue disease",
-                                                                     "expression data",
-                                                                     "metadata",
-                                                                     "细胞图谱",
-                                                                     "单细胞参考"
-                                                                 ],
-                                           "negative_keywords":  [
-                                                                     "scVI",
-                                                                     "scANVI",
-                                                                     "DESeq2",
-                                                                     "BAM",
-                                                                     "VCF",
-                                                                     "RDKit",
-                                                                     "DICOM"
-                                                                 ],
-                                           "equivalent_group":  "bio-single-cell-reference",
-                                           "canonical_for_task":  [
-                                                                      "research"
-                                                                  ]
-                                       },
                   "deeptools":  {
                                     "task_allow":  [
                                                        "research",
@@ -1526,368 +1496,92 @@
                                                                "coding"
                                                            ]
                                 },
-                  "alphafold-database":  {
-                                             "task_allow":  [
-                                                                "research",
-                                                                "coding"
-                                                            ],
-                                             "positive_keywords":  [
-                                                                       "AlphaFold Database",
-                                                                       "alphafold",
-                                                                       "UniProt ID",
-                                                                       "pLDDT",
-                                                                       "PAE",
-                                                                       "predicted structure",
-                                                                       "mmCIF",
-                                                                       "蛋白结构预测"
-                                                                   ],
-                                             "negative_keywords":  [
-                                                                       "RCSB PDB",
-                                                                       "experimental structure",
-                                                                       "protein embedding",
-                                                                       "ESM",
-                                                                       "RDKit",
-                                                                       "SMILES"
-                                                                   ],
-                                             "equivalent_group":  "bio-protein-structure",
-                                             "canonical_for_task":  [
-                                                                        "research"
-                                                                    ]
-                                         },
-                  "clinvar-database":  {
-                                           "task_allow":  [
-                                                              "research",
-                                                              "coding"
-                                                          ],
-                                           "positive_keywords":  [
-                                                                     "ClinVar",
-                                                                     "clinical significance",
-                                                                     "pathogenic",
-                                                                     "benign",
-                                                                     "VUS",
-                                                                     "review stars",
-                                                                     "variant interpretation",
-                                                                     "clinical variant",
-                                                                     "临床意义",
-                                                                     "致病性"
-                                                                 ],
-                                           "negative_keywords":  [
-                                                                     "clinical trial",
-                                                                     "ClinicalTrials.gov",
-                                                                     "FDA",
-                                                                     "CPIC",
-                                                                     "GWAS Catalog",
-                                                                     "COSMIC",
-                                                                     "RDKit",
-                                                                     "DICOM"
-                                                                 ],
-                                           "equivalent_group":  "bio-variant-evidence",
-                                           "canonical_for_task":  [
-                                                                      "research"
-                                                                  ]
-                                       },
-                  "cosmic-database":  {
-                                          "task_allow":  [
-                                                             "research",
-                                                             "coding"
-                                                         ],
-                                          "positive_keywords":  [
-                                                                    "COSMIC",
-                                                                    "cancer mutation",
-                                                                    "Cancer Gene Census",
-                                                                    "mutational signatures",
-                                                                    "somatic mutation",
-                                                                    "gene fusion",
-                                                                    "肿瘤突变",
-                                                                    "癌症基因"
-                                                                ],
-                                          "negative_keywords":  [
-                                                                    "ClinVar",
-                                                                    "GWAS Catalog",
-                                                                    "clinical trial",
-                                                                    "FDA",
-                                                                    "RDKit"
-                                                                ],
-                                          "equivalent_group":  "bio-cancer-variant-evidence",
-                                          "canonical_for_task":  [
-                                                                     "research"
-                                                                 ]
-                                      },
-                  "ensembl-database":  {
-                                           "task_allow":  [
-                                                              "research",
-                                                              "coding"
-                                                          ],
-                                           "positive_keywords":  [
-                                                                     "Ensembl REST",
-                                                                     "Ensembl",
-                                                                     "orthologs",
-                                                                     "paralogs",
-                                                                     "VEP",
-                                                                     "variant effect",
-                                                                     "coordinate conversion",
-                                                                     "comparative genomics",
-                                                                     "同源基因",
-                                                                     "变异效应"
-                                                                 ],
-                                           "negative_keywords":  [
-                                                                     "gget",
-                                                                     "NCBI Gene",
-                                                                     "ClinVar",
-                                                                     "GWAS Catalog",
-                                                                     "RDKit",
-                                                                     "DICOM"
-                                                                 ],
-                                           "equivalent_group":  "bio-gene-annotation",
-                                           "canonical_for_task":  [
-                                                                      "research"
-                                                                  ]
-                                       },
-                  "gene-database":  {
-                                      "task_allow":  [
-                                                         "research",
-                                                         "coding"
-                                                     ],
-                                      "positive_keywords":  [
-                                                                "NCBI Gene",
-                                                                "gene database",
-                                                                "gene symbol",
-                                                                "RefSeq",
-                                                                "GO annotation",
-                                                                "gene metadata",
-                                                                "gene location",
-                                                                "基因数据库",
-                                                                "基因注释"
-                                                            ],
-                                      "negative_keywords":  [
-                                                                "gget",
-                                                                "Ensembl REST",
-                                                                "VEP",
-                                                                "Open Targets",
-                                                                "PubMed",
-                                                                "RDKit",
-                                                                "DICOM"
-                                                            ],
-                                      "equivalent_group":  "bio-gene-annotation",
-                                      "canonical_for_task":  [
-                                                                 "research"
-                                                             ]
-                                  },
-                  "gwas-database":  {
-                                      "task_allow":  [
-                                                         "research",
-                                                         "coding"
-                                                     ],
-                                      "positive_keywords":  [
-                                                                "GWAS Catalog",
-                                                                "GWAS",
-                                                                "SNP-trait association",
-                                                                "rs ID",
-                                                                "p-value",
-                                                                "summary statistics",
-                                                                "polygenic risk score",
-                                                                "遗传关联",
-                                                                "性状关联"
-                                                            ],
-                                      "negative_keywords":  [
-                                                                "ClinVar",
-                                                                "COSMIC",
-                                                                "clinical trial",
-                                                                "FDA",
-                                                                "PubMed",
-                                                                "RDKit"
-                                                            ],
-                                      "equivalent_group":  "bio-genetic-association",
-                                      "canonical_for_task":  [
-                                                                 "research"
-                                                             ]
-                                  },
-                  "kegg-database":  {
-                                      "task_allow":  [
-                                                         "research",
-                                                         "coding"
-                                                     ],
-                                      "positive_keywords":  [
-                                                                "KEGG REST",
-                                                                "KEGG pathway",
-                                                                "pathway mapping",
-                                                                "ID conversion",
-                                                                "metabolic pathway",
-                                                                "pathway database",
-                                                                "通路映射",
-                                                                "代谢通路"
-                                                            ],
-                                      "negative_keywords":  [
-                                                                "BioServices",
-                                                                "Reactome",
-                                                                "COBRApy",
-                                                                "FBA",
-                                                                "clinical trial",
-                                                                "RDKit"
-                                                            ],
-                                      "equivalent_group":  "bio-pathway",
-                                      "canonical_for_task":  [
-                                                                 "research"
-                                                             ]
-                                  },
-                  "opentargets-database":  {
-                                               "task_allow":  [
-                                                                  "research",
-                                                                  "coding"
-                                                              ],
-                                               "positive_keywords":  [
-                                                                         "Open Targets",
-                                                                         "OpenTargets",
-                                                                         "target-disease association",
-                                                                         "tractability",
-                                                                         "safety",
-                                                                         "known drugs",
-                                                                         "target prioritization",
-                                                                         "靶点疾病关联",
-                                                                         "靶点优先级"
-                                                                     ],
-                                               "negative_keywords":  [
-                                                                         "ClinicalTrials.gov",
-                                                                         "FDA drug label",
-                                                                         "CPIC",
-                                                                         "PubMed",
-                                                                         "RDKit",
-                                                                         "SMILES"
-                                                                     ],
-                                               "equivalent_group":  "bio-target-evidence",
-                                               "canonical_for_task":  [
-                                                                          "research"
-                                                                      ]
-                                           },
-                  "pdb-database":  {
-                                      "task_allow":  [
-                                                         "research",
-                                                         "coding"
-                                                     ],
-                                      "positive_keywords":  [
-                                                                "RCSB PDB",
-                                                                "PDB",
-                                                                "protein structure",
-                                                                "structure search",
-                                                                "sequence similarity",
-                                                                "mmCIF",
-                                                                "coordinate file",
-                                                                "experimental structure",
-                                                                "蛋白结构"
-                                                            ],
-                                      "negative_keywords":  [
-                                                                "AlphaFold",
-                                                                "pLDDT",
-                                                                "PAE",
-                                                                "protein embedding",
-                                                                "ESM",
-                                                                "RDKit",
-                                                                "SMILES"
-                                                            ],
-                                      "equivalent_group":  "bio-protein-structure",
-                                      "canonical_for_task":  [
-                                                                 "research"
-                                                             ]
-                                  },
-                  "reactome-database":  {
-                                           "task_allow":  [
-                                                              "research",
-                                                              "coding"
-                                                          ],
-                                           "positive_keywords":  [
-                                                                     "Reactome",
-                                                                     "Reactome pathway",
-                                                                     "pathway enrichment",
-                                                                     "gene-pathway mapping",
-                                                                     "disease pathway",
-                                                                     "reaction",
-                                                                     "通路富集",
-                                                                     "疾病通路"
-                                                                 ],
-                                           "negative_keywords":  [
-                                                                     "KEGG REST",
-                                                                     "BioServices",
-                                                                     "COBRApy",
-                                                                     "FBA",
-                                                                     "RDKit"
-                                                                 ],
-                                           "equivalent_group":  "bio-pathway",
-                                           "canonical_for_task":  [
-                                                                      "research"
-                                                                  ]
-                                       },
-                  "string-database":  {
-                                      "task_allow":  [
-                                                         "research",
-                                                         "coding"
-                                                     ],
-                                      "positive_keywords":  [
-                                                                "STRING API",
-                                                                "STRING database",
-                                                                "protein-protein interaction",
-                                                                "PPI network",
-                                                                "GO enrichment",
-                                                                "hub proteins",
-                                                                "interaction partners",
-                                                                "蛋白互作",
-                                                                "互作网络"
-                                                            ],
-                                      "negative_keywords":  [
-                                                                "AlphaFold",
-                                                                "RCSB PDB",
-                                                                "protein embedding",
-                                                                "ESM",
-                                                                "RDKit",
-                                                                "SMILES"
-                                                            ],
-                                      "equivalent_group":  "bio-protein-network",
-                                      "canonical_for_task":  [
-                                                                 "research"
-                                                             ]
-                                  },
-                  "gget":  {
-                               "task_allow":  [
-                                                  "research",
-                                                  "coding"
-                                              ],
-                               "positive_keywords":  [
-                                                         "gget",
-                                                         "Ensembl lookup",
-                                                         "gene symbol",
-                                                         "transcript lookup",
-                                                         "quick BLAST",
-                                                         "快速生信查询",
-                                                         "Ensembl ID"
-                                                     ],
-                               "negative_keywords":  [
-                                                         "scanpy",
-                                                         "single-cell",
-                                                         "h5ad",
-                                                         "Ensembl REST",
-                                                         "VEP",
-                                                         "orthologs",
-                                                         "coordinate conversion",
-                                                         "NCBI Gene",
-                                                         "RefSeq",
-                                                         "GO annotation",
-                                                         "DESeq2",
-                                                         "pydeseq2",
-                                                         "bulk RNA-seq",
-                                                         "BAM",
-                                                         "VCF",
-                                                         "pysam",
-                                                         "COBRApy",
-                                                         "FBA",
-                                                         "flow cytometry",
-                                                         "DICOM",
-                                                         "cover letter",
-                                                         "rebuttal"
-                                                     ],
-                               "equivalent_group":  null,
-                               "canonical_for_task":  [
-
-                                                      ]
-                           },
+                  "bio-database-evidence":  {
+                                                "task_allow":  [
+                                                                   "research",
+                                                                   "coding"
+                                                               ],
+                                                "positive_keywords":  [
+                                                                          "bio-database-evidence",
+                                                                          "biological database evidence",
+                                                                          "gene annotation",
+                                                                          "variant clinical significance",
+                                                                          "target-disease association",
+                                                                          "pathway mapping",
+                                                                          "protein structure lookup",
+                                                                          "protein interaction network",
+                                                                          "GWAS trait association",
+                                                                          "reference single-cell census",
+                                                                          "cross-database ID mapping",
+                                                                          "ClinVar",
+                                                                          "COSMIC",
+                                                                          "Ensembl",
+                                                                          "NCBI Gene",
+                                                                          "GWAS Catalog",
+                                                                          "KEGG",
+                                                                          "Reactome",
+                                                                          "Open Targets",
+                                                                          "AlphaFold",
+                                                                          "RCSB PDB",
+                                                                          "STRING",
+                                                                          "CELLxGENE Census",
+                                                                          "BioServices",
+                                                                          "gget",
+                                                                          "RefSeq",
+                                                                          "生物数据库证据",
+                                                                          "基因注释",
+                                                                          "变异临床意义",
+                                                                          "靶点疾病证据",
+                                                                          "通路映射",
+                                                                          "蛋白结构查询",
+                                                                          "蛋白互作网络"
+                                                                      ],
+                                                "negative_keywords":  [
+                                                                          "scanpy",
+                                                                          "single-cell clustering",
+                                                                          "marker genes",
+                                                                          "Leiden",
+                                                                          "scVI",
+                                                                          "scANVI",
+                                                                          "DESeq2",
+                                                                          "PyDESeq2",
+                                                                          "bulk RNA-seq differential expression",
+                                                                          "BAM",
+                                                                          "SAM",
+                                                                          "CRAM",
+                                                                          "VCF",
+                                                                          "pileup",
+                                                                          "coverage",
+                                                                          "deepTools",
+                                                                          "bamCoverage",
+                                                                          "computeMatrix",
+                                                                          "ESM",
+                                                                          "protein embedding",
+                                                                          "inverse folding",
+                                                                          "COBRApy",
+                                                                          "FBA",
+                                                                          "flux balance",
+                                                                          "BED genomic intervals",
+                                                                          "Region2Vec",
+                                                                          "GRNBoost2",
+                                                                          "GENIE3",
+                                                                          "flow cytometry",
+                                                                          "FCS",
+                                                                          "RDKit",
+                                                                          "SMILES",
+                                                                          "PubMed",
+                                                                          "BibTeX",
+                                                                          "DICOM",
+                                                                          "LaTeX",
+                                                                          "submission zip",
+                                                                          "结果图",
+                                                                          "scientific visualization"
+                                                                      ],
+                                                "equivalent_group":  null,
+                                                "canonical_for_task":  [
+                                                                           "research"
+                                                                       ]
+                                            },
                    "spreadsheet":  {
                                        "task_allow":  [
                                                           "coding",

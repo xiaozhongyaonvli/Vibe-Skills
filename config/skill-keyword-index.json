@@ -141,9 +141,6 @@
     "scvi-tools": {
       "keywords": ["scvi-tools", "scVI", "scANVI", "single-cell latent model", "batch correction", "cell type annotation", "multimodal single-cell", "spatial transcriptomics", "批次校正", "细胞类型注释"]
     },
-    "cellxgene-census": {
-      "keywords": ["cellxgene census", "CZ CELLxGENE", "CELLxGENE Census", "census", "single-cell census", "cell type tissue disease", "expression data metadata", "细胞图谱", "单细胞参考"]
-    },
     "pydeseq2": {
       "keywords": ["pydeseq2", "deseq2", "bulk RNA-seq", "differential expression", "volcano plot", "MA plot", "padj", "差异表达", "差异表达分析", "de分析", "rna-seq差异"]
     },
@@ -156,44 +153,8 @@
     "biopython": {
       "keywords": ["biopython", "seqio", "fasta", "genbank", "entrez", "sequence conversion", "序列格式转换", "序列解析", "生物序列处理"]
     },
-    "gget": {
-      "keywords": ["gget", "Ensembl lookup", "gene symbol", "transcript lookup", "quick BLAST", "快速生信查询", "基因symbol", "Ensembl ID"]
-    },
-    "ensembl-database": {
-      "keywords": ["ensembl", "ensembl rest", "orthologs", "paralogs", "vep", "variant effect predictor", "coordinate conversion", "comparative genomics", "同源基因", "变异效应"]
-    },
-    "gene-database": {
-      "keywords": ["ncbi gene", "gene database", "gene symbol", "refseq", "go annotation", "gene metadata", "gene location", "基因数据库", "基因注释"]
-    },
-    "clinvar-database": {
-      "keywords": ["clinvar", "clinical significance", "pathogenic", "benign", "vus", "review stars", "variant interpretation", "clinical variant", "临床意义", "致病性"]
-    },
-    "cosmic-database": {
-      "keywords": ["cosmic", "cancer mutation", "cancer gene census", "mutational signatures", "somatic mutation", "gene fusion", "肿瘤突变", "癌症基因"]
-    },
-    "gwas-database": {
-      "keywords": ["gwas catalog", "gwas", "snp trait association", "rs id", "p-value", "summary statistics", "polygenic risk score", "遗传关联", "性状关联"]
-    },
-    "bioservices": {
-      "keywords": ["bioservices", "cross database", "multi-database", "uniprot", "quickgo", "biomart", "id mapping", "多数据库", "跨数据库查询"]
-    },
-    "kegg-database": {
-      "keywords": ["kegg", "kegg rest", "kegg pathway", "pathway mapping", "id conversion", "metabolic pathway", "pathway database", "通路映射", "代谢通路"]
-    },
-    "reactome-database": {
-      "keywords": ["reactome", "reactome pathway", "pathway enrichment", "gene-pathway mapping", "disease pathway", "reaction", "通路富集", "疾病通路"]
-    },
-    "opentargets-database": {
-      "keywords": ["open targets", "opentargets", "target-disease association", "tractability", "safety", "known drugs", "target prioritization", "靶点疾病关联", "靶点优先级"]
-    },
-    "alphafold-database": {
-      "keywords": ["alphafold", "alphafold database", "uniprot id", "plddt", "pae", "predicted structure", "mmcif", "蛋白结构预测", "置信度"]
-    },
-    "pdb-database": {
-      "keywords": ["rcsb pdb", "pdb", "protein structure", "structure search", "sequence similarity", "mmcif", "coordinate file", "experimental structure", "蛋白结构"]
-    },
-    "string-database": {
-      "keywords": ["string database", "string api", "protein-protein interaction", "ppi network", "go enrichment", "hub proteins", "interaction partners", "蛋白互作", "互作网络"]
+    "bio-database-evidence": {
+      "keywords": ["bio-database-evidence", "biological database evidence", "gene annotation", "variant clinical significance", "target-disease association", "pathway mapping", "protein structure lookup", "protein interaction network", "GWAS trait association", "reference single-cell census", "cross-database ID mapping", "生物数据库证据", "基因注释", "变异临床意义", "靶点疾病证据", "通路映射", "蛋白结构查询", "蛋白互作网络", "ClinVar", "COSMIC", "Ensembl", "NCBI Gene", "GWAS Catalog", "KEGG", "Reactome", "Open Targets", "AlphaFold", "RCSB PDB", "STRING", "CELLxGENE Census", "BioServices", "gget", "RefSeq"]
     },
     "docs-write": {
       "keywords": ["write docs", "documentation", "documentation page", "markdown docs", "mdx docs", "说明文档", "文档写作", "用户文档", "使用说明", "markdown文档"]
