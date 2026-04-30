@@ -36,32 +36,80 @@ candidate skill -> selected skill -> used / unused
 | `code-review-excellence` | 与 `code-reviewer` 重叠，旧目录删除。 |
 | `error-resolver` | 资产重，保留目录；本轮不作为活跃直接路由 owner。 |
 
-## 验证计划
+## 配置清理
 
-实现完成后运行以下命令。最终验证输出在执行阶段更新到本记录。
+`config/batch-e-alias-whitelist.json` 是旧 Batch E alias 审计快照，文件自身标注为 audit-only / historical snapshot，且没有 runtime、脚本、测试或分发 manifest 消费。本轮删除该 active config 下的历史 JSON，避免旧 `code-review` canonical 名继续出现在活跃配置目录中。
+
+保留的 `config/settings.template.claude.json` 中仍有 `code-review@claude-plugins-official`，这是 Claude 官方插件名，不是 Vibe bundled skill id。
+
+## 验证结果
 
 ```text
 python -m pytest tests/runtime_neutral/test_code_quality_pack_consolidation_audit.py tests/runtime_neutral/test_final_stage_assistant_removal.py -q
+..................                                                       [100%]
+18 passed in 1.14s
 ```
 
 ```text
 .\scripts\verify\vibe-code-quality-pack-consolidation-audit-gate.ps1
+[PASS] vibe-code-quality-pack-consolidation-audit-gate passed
+summary:
+  code_quality_skill_count: 16
+  target_route_authority_count: 10
+  target_stage_assistant_count: 0
+  delete_now_count: 4
+  move_out_count: 0
+  merge_delete_after_migration_count: 1
+  defer_migration_count: 1
 ```
 
 ```text
 .\scripts\verify\vibe-skill-index-routing-audit.ps1
+=== Summary ===
+Total assertions: 436
+Passed: 436
+Failed: 0
+Skill-index routing audit passed.
 ```
 
 ```text
 .\scripts\verify\vibe-pack-regression-matrix.ps1
+=== Summary ===
+Total assertions: 317
+Passed: 317
+Failed: 0
+Pack regression matrix checks passed.
 ```
 
 ```text
 .\scripts\verify\vibe-pack-routing-smoke.ps1
+=== Summary ===
+Total assertions: 958
+Passed: 958
+Failed: 0
+Pack routing smoke checks passed.
 ```
 
 ```text
 .\scripts\verify\vibe-offline-skills-gate.ps1
+skills_root=F:\vibe\Vibe-Skills\bundled\skills
+required_skills=169
+canonical_required_skills=1
+present_skills=296
+lock_skills=296
+skip_hash=False
+[PASS] offline skill closure gate passed.
+```
+
+```text
+rg -n -P "(?<!receiving-)(?<!requesting-)\bcode-review\b|\bdebugging-strategies\b|\bcode-review-excellence\b" config scripts bundled
+config\settings.template.claude.json:18:    "code-review@claude-plugins-official": true,
+```
+
+```text
+rg -n -P "\berror-resolver\b" config scripts bundled
+config\skills-lock.json:537:      "name": "error-resolver",
+config\skills-lock.json:538:      "relative_path": "bundled/skills/error-resolver",
 ```
 
 ## 边界
