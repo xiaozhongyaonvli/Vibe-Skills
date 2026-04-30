@@ -28,10 +28,6 @@
       "skill_candidates": [
         "spec-kit-vibe-compat"
       ],
-      "route_authority_candidates": [
-        "spec-kit-vibe-compat"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "spec-kit-vibe-compat"
       }
@@ -121,19 +117,6 @@
         "verification-before-completion",
         "windows-hook-debugging"
       ],
-      "route_authority_candidates": [
-        "code-reviewer",
-        "deslop",
-        "generating-test-reports",
-        "receiving-code-review",
-        "requesting-code-review",
-        "security-reviewer",
-        "systematic-debugging",
-        "tdd-guide",
-        "verification-before-completion",
-        "windows-hook-debugging"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "debug": "systematic-debugging",
         "coding": "tdd-guide",
@@ -184,14 +167,6 @@
         "citation-management",
         "literature-review"
       ],
-      "route_authority_candidates": [
-        "pubmed-database",
-        "openalex-database",
-        "pyzotero",
-        "citation-management",
-        "literature-review"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "literature-review",
         "coding": "pubmed-database",
@@ -246,11 +221,6 @@
         "flashrag-evidence",
         "webthinker-deep-research"
       ],
-      "route_authority_candidates": [
-        "flashrag-evidence",
-        "webthinker-deep-research"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "research": "webthinker-deep-research"
       }
@@ -292,12 +262,6 @@
         "scientific-critical-thinking",
         "scholar-evaluation"
       ],
-      "route_authority_candidates": [
-        "peer-review",
-        "scientific-critical-thinking",
-        "scholar-evaluation"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "scientific-critical-thinking",
         "review": "peer-review",
@@ -350,12 +314,6 @@
         "medchem",
         "rdkit"
       ],
-      "route_authority_candidates": [
-        "chembl-database",
-        "medchem",
-        "rdkit"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "medchem",
         "coding": "rdkit",
@@ -430,17 +388,6 @@
         "scikit-learn",
         "shap"
       ],
-      "route_authority_candidates": [
-        "aeon",
-        "evaluating-machine-learning-models",
-        "exploratory-data-analysis",
-        "ml-data-leakage-guard",
-        "ml-pipeline-workflow",
-        "preprocessing-data-with-automated-pipelines",
-        "scikit-learn",
-        "shap"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "ml-pipeline-workflow",
         "research": "scikit-learn",
@@ -512,16 +459,6 @@
         "iso-13485-certification",
         "clinical-decision-support"
       ],
-      "route_authority_candidates": [
-        "clinicaltrials-database",
-        "fda-database",
-        "clinpgx-database",
-        "clinical-reports",
-        "treatment-plans",
-        "iso-13485-certification",
-        "clinical-decision-support"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "clinical-decision-support",
         "coding": "clinicaltrials-database",
@@ -599,13 +536,6 @@
         "pydeseq2",
         "bio-database-evidence"
       ],
-      "route_authority_candidates": [
-        "biopython",
-        "scanpy",
-        "pydeseq2",
-        "bio-database-evidence"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "biopython",
         "coding": "biopython",
@@ -650,14 +580,6 @@
         "omero-integration",
         "pathml"
       ],
-      "route_authority_candidates": [
-        "pydicom",
-        "imaging-data-commons",
-        "histolab",
-        "omero-integration",
-        "pathml"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "pathml",
         "coding": "pydicom",
@@ -705,13 +627,6 @@
         "pptx-posters",
         "infographics"
       ],
-      "route_authority_candidates": [
-        "scientific-slides",
-        "slides-as-code",
-        "pptx-posters",
-        "infographics"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "scientific-slides",
         "coding": "slides-as-code",
@@ -775,11 +690,6 @@
         "scrapling",
         "playwright"
       ],
-      "route_authority_candidates": [
-        "scrapling",
-        "playwright"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "coding": "scrapling",
         "research": "scrapling",
@@ -834,16 +744,6 @@
         "xlsx",
         "xan"
       ],
-      "route_authority_candidates": [
-        "docs-write",
-        "docs-review",
-        "docx",
-        "docx-comment-reply",
-        "pdf",
-        "spreadsheet",
-        "xlsx",
-        "xan"
-      ],
       "defaults_by_task": {
         "planning": "docs-write",
         "coding": "spreadsheet",
@@ -875,9 +775,6 @@
         "屏幕快照"
       ],
       "skill_candidates": [
-        "screenshot"
-      ],
-      "route_authority_candidates": [
         "screenshot"
       ],
       "defaults_by_task": {
@@ -970,11 +867,6 @@
         "transcribe",
         "speech"
       ],
-      "route_authority_candidates": [
-        "video-studio",
-        "transcribe",
-        "speech"
-      ],
       "defaults_by_task": {
         "planning": "video-studio",
         "coding": "video-studio",
@@ -1006,10 +898,6 @@
       "skill_candidates": [
         "markitdown"
       ],
-      "route_authority_candidates": [
-        "markitdown"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "markitdown",
         "coding": "markitdown",
@@ -1061,16 +949,6 @@
         "market-research-reports",
         "datacommons-client"
       ],
-      "route_authority_candidates": [
-        "edgartools",
-        "alpha-vantage",
-        "fred-economic-data",
-        "usfiscaldata",
-        "hedgefundmonitor",
-        "market-research-reports",
-        "datacommons-client"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "market-research-reports",
         "coding": "edgartools",
@@ -1120,15 +998,6 @@
         "netlify-deploy",
         "node-zombie-guardian"
       ],
-      "route_authority_candidates": [
-        "gh-fix-ci",
-        "mcp-integration",
-        "sentry",
-        "vercel-deploy",
-        "netlify-deploy",
-        "node-zombie-guardian"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "debug": "gh-fix-ci",
         "planning": "mcp-integration",
@@ -1190,14 +1059,6 @@
         "similarity-search-patterns",
         "evaluating-llms-harness"
       ],
-      "route_authority_candidates": [
-        "openai-docs",
-        "prompt-lookup",
-        "embedding-strategies",
-        "similarity-search-patterns",
-        "evaluating-llms-harness"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "embedding-strategies",
         "review": "evaluating-llms-harness",
@@ -1230,10 +1091,6 @@
       "skill_candidates": [
         "uspto-database"
       ],
-      "route_authority_candidates": [
-        "uspto-database"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "uspto-database",
         "coding": "uspto-database",
@@ -1267,10 +1124,6 @@
       "skill_candidates": [
         "astropy"
       ],
-      "route_authority_candidates": [
-        "astropy"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "astropy",
         "coding": "astropy",
@@ -1305,10 +1158,6 @@
       "skill_candidates": [
         "pymatgen"
       ],
-      "route_authority_candidates": [
-        "pymatgen"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "pymatgen",
         "coding": "pymatgen",
@@ -1342,11 +1191,6 @@
         "geopandas",
         "geomaster"
       ],
-      "route_authority_candidates": [
-        "geopandas",
-        "geomaster"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "geopandas",
         "coding": "geopandas",
@@ -1374,10 +1218,6 @@
       "skill_candidates": [
         "tiledbvcf"
       ],
-      "route_authority_candidates": [
-        "tiledbvcf"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "tiledbvcf",
         "coding": "tiledbvcf",
@@ -1407,10 +1247,6 @@
       "skill_candidates": [
         "simpy"
       ],
-      "route_authority_candidates": [
-        "simpy"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "simpy",
         "coding": "simpy",
@@ -1440,10 +1276,6 @@
       "skill_candidates": [
         "fluidsim"
       ],
-      "route_authority_candidates": [
-        "fluidsim"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "fluidsim",
         "coding": "fluidsim",
@@ -1473,10 +1305,6 @@
       "skill_candidates": [
         "matchms"
       ],
-      "route_authority_candidates": [
-        "matchms"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "matchms",
         "coding": "matchms",
@@ -1506,10 +1334,6 @@
       "skill_candidates": [
         "matlab"
       ],
-      "route_authority_candidates": [
-        "matlab"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "matlab",
         "coding": "matlab",
@@ -1540,10 +1364,6 @@
       "skill_candidates": [
         "neuropixels-analysis"
       ],
-      "route_authority_candidates": [
-        "neuropixels-analysis"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "neuropixels-analysis",
         "coding": "neuropixels-analysis",
@@ -1573,10 +1393,6 @@
       "skill_candidates": [
         "pymc"
       ],
-      "route_authority_candidates": [
-        "pymc"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "pymc",
         "coding": "pymc",
@@ -1606,10 +1422,6 @@
       "skill_candidates": [
         "pymoo"
       ],
-      "route_authority_candidates": [
-        "pymoo"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "pymoo",
         "coding": "pymoo",
@@ -1644,10 +1456,6 @@
       "skill_candidates": [
         "rowan"
       ],
-      "route_authority_candidates": [
-        "rowan"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "rowan",
         "coding": "rowan",
@@ -1679,10 +1487,6 @@
       "skill_candidates": [
         "stable-baselines3"
       ],
-      "route_authority_candidates": [
-        "stable-baselines3"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "stable-baselines3",
         "coding": "stable-baselines3",
@@ -1712,10 +1516,6 @@
       "skill_candidates": [
         "timesfm-forecasting"
       ],
-      "route_authority_candidates": [
-        "timesfm-forecasting"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "timesfm-forecasting",
         "coding": "timesfm-forecasting",
@@ -1747,10 +1547,6 @@
       "skill_candidates": [
         "torch-geometric"
       ],
-      "route_authority_candidates": [
-        "torch-geometric"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "torch-geometric",
         "coding": "torch-geometric",
@@ -1781,12 +1577,6 @@
         "vaex",
         "zarr-python"
       ],
-      "route_authority_candidates": [
-        "polars",
-        "vaex",
-        "zarr-python"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "zarr-python",
         "coding": "polars",
@@ -1823,9 +1613,6 @@
         "UI还原"
       ],
       "skill_candidates": [
-        "figma-implement-design"
-      ],
-      "route_authority_candidates": [
         "figma-implement-design"
       ],
       "defaults_by_task": {
@@ -1894,14 +1681,6 @@
         "research-grants",
         "scientific-brainstorming"
       ],
-      "route_authority_candidates": [
-        "designing-experiments",
-        "hypothesis-generation",
-        "performing-causal-analysis",
-        "research-grants",
-        "scientific-brainstorming"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "designing-experiments",
         "review": "designing-experiments",
@@ -2001,17 +1780,6 @@
         "latex-posters",
         "paper-2-web"
       ],
-      "route_authority_candidates": [
-        "scholarly-publishing",
-        "submission-checklist",
-        "manuscript-as-code",
-        "latex-submission-pipeline",
-        "scientific-writing",
-        "venue-templates",
-        "latex-posters",
-        "paper-2-web"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "scholarly-publishing",
         "coding": "latex-submission-pipeline",
@@ -2073,11 +1841,6 @@
         "scientific-visualization",
         "scientific-schematics"
       ],
-      "route_authority_candidates": [
-        "scientific-visualization",
-        "scientific-schematics"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "scientific-visualization",
         "coding": "scientific-visualization",
@@ -2122,11 +1885,6 @@
         "scientific-reporting",
         "scientific-writing"
       ],
-      "route_authority_candidates": [
-        "scientific-reporting",
-        "scientific-writing"
-      ],
-      "stage_assistant_candidates": [],
       "defaults_by_task": {
         "planning": "scientific-reporting",
         "coding": "scientific-reporting",
