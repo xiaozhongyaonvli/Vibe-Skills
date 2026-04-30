@@ -165,6 +165,39 @@ def consultation_native_subprocess_test_overrides(timeout_seconds: int = 30) -> 
     )
 
 
+def legacy_active_consultation_policy_ps(max_consults: int = 3) -> str:
+    return (
+        "[pscustomobject]@{ "
+        "enabled = $true; "
+        "version = 1; "
+        "policy_id = 'legacy-consultation-test-policy'; "
+        "mode = 'direct_current_session_route'; "
+        f"max_consults_per_window = {max_consults}; "
+        "selection_mode = 'bucketed_with_backfill'; "
+        "bucket_limits = [pscustomobject]@{ primary = 2; stage_assistant = 1 }; "
+        "allowed_windows = @('discussion', 'planning'); "
+        "require_contract_complete = $true; "
+        "require_native_workflow = $true; "
+        "require_native_usage_required = $true; "
+        "require_entrypoint_path = $true; "
+        "progressive_disclosure_enabled = $true; "
+        "defer_unapproved_to_execution = $true; "
+        "freeze_gate_enabled = $true; "
+        "require_outcome_coverage_for_approved_skills = $true; "
+        "require_disclosure_coverage_for_approved_skills = $true; "
+        "require_non_empty_summary_for_live_results = $true; "
+        "require_consultation_notes_for_live_results = $true; "
+        "require_adoption_notes_for_live_results = $true; "
+        "require_verification_notes_for_live_results = $true; "
+        "fail_freeze_on_live_degraded_results = $true; "
+        "window_prompts = [pscustomobject]@{ "
+        "discussion = 'Legacy compatibility test discussion prompt.'; "
+        "planning = 'Legacy compatibility test planning prompt.' "
+        "} "
+        "}"
+    )
+
+
 def freeze_runtime_packet(task: str, artifact_root: Path) -> dict[str, object]:
     shell = resolve_powershell()
     if shell is None:
@@ -662,7 +695,7 @@ def set_directory_writable(path: Path) -> None:
 
 
 class VibeSpecialistConsultationTests(unittest.TestCase):
-    def test_bucketed_consultation_selection_keeps_stage_assistant_visible(self) -> None:
+    def test_legacy_bucketed_consultation_selection_remains_readable(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             temp_root = Path(tempdir)
             primary_one = temp_root / "primary-one" / "SKILL.md"
@@ -1238,6 +1271,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 f"{consultation_native_subprocess_test_overrides()}"
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"$legacyPolicy = {legacy_active_consultation_policy_ps()}; "
                 f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                 f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot $runtime.repo_root -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
                 f"$result = Invoke-VibeSpecialistConsultationWindow "
@@ -1248,8 +1282,10 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
-                f"-Policy $runtime.specialist_consultation_policy; "
+                f"-Recommendations @($packet.skill_routing.selected | "
+                f"Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }} | "
+                f"ForEach-Object {{ $_ | Add-Member -NotePropertyName contract_complete -NotePropertyValue $true -Force; $_ }}) "
+                f"-Policy $legacyPolicy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
             completed = subprocess.run(
@@ -1314,6 +1350,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 f"{consultation_native_subprocess_test_overrides()}"
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"$legacyPolicy = {legacy_active_consultation_policy_ps()}; "
                 f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                 f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot {_ps_single_quote(str(non_git_root))} -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
                 f"$result = Invoke-VibeSpecialistConsultationWindow "
@@ -1324,8 +1361,10 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
-                f"-Policy $runtime.specialist_consultation_policy; "
+                f"-Recommendations @($packet.skill_routing.selected | "
+                f"Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }} | "
+                f"ForEach-Object {{ $_ | Add-Member -NotePropertyName contract_complete -NotePropertyValue $true -Force; $_ }}) "
+                f"-Policy $legacyPolicy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
             completed = subprocess.run(
@@ -1379,6 +1418,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 f"{consultation_native_subprocess_test_overrides()}"
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"$legacyPolicy = {legacy_active_consultation_policy_ps()}; "
                 f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                 f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot {_ps_single_quote(str(non_git_root))} -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
                 f"$result = Invoke-VibeSpecialistConsultationWindow "
@@ -1389,8 +1429,10 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
-                f"-Policy $runtime.specialist_consultation_policy; "
+                f"-Recommendations @($packet.skill_routing.selected | "
+                f"Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }} | "
+                f"ForEach-Object {{ $_ | Add-Member -NotePropertyName contract_complete -NotePropertyValue $true -Force; $_ }}) "
+                f"-Policy $legacyPolicy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
             completed = subprocess.run(
@@ -1455,6 +1497,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                     f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                     f"{consultation_native_subprocess_test_overrides()}"
                     f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                    f"$legacyPolicy = {legacy_active_consultation_policy_ps()}; "
                     f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                     f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot {_ps_single_quote(str(read_only_root))} -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
                     f"$result = Invoke-VibeSpecialistConsultationWindow "
@@ -1465,8 +1508,9 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                     f"-WindowId 'discussion' "
                     f"-Stage 'deep_interview' "
                     f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                    f"-Recommendations @($packet.specialist_recommendations) "
-                    f"-Policy $runtime.specialist_consultation_policy; "
+                    f"-Recommendations @($packet.skill_routing.selected | "
+                    f"ForEach-Object {{ $_ | Add-Member -NotePropertyName contract_complete -NotePropertyValue $true -Force; $_ }}) "
+                    f"-Policy $legacyPolicy; "
                     "$result | ConvertTo-Json -Depth 20 }"
                 )
                 completed = subprocess.run(
@@ -1646,7 +1690,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             self.assertIn("CODEX_HOME_SEEDED=1", list(result["stdout_preview"]))
             self.assertFalse(Path(codex_home).exists())
 
-    def test_runtime_projects_consultation_truth_into_summary_requirement_and_plan(self) -> None:
+    def test_runtime_reports_skill_usage_evidence_without_default_consultation(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             artifact_root = Path(tempdir)
             payload = run_runtime(
@@ -1661,53 +1705,32 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             summary = payload["summary"]
             artifacts = summary["artifacts"]
 
-            self.assertIn("discussion_specialist_consultation", artifacts)
-            self.assertIn("planning_specialist_consultation", artifacts)
+            self.assertIsNone(artifacts.get("discussion_specialist_consultation"))
+            self.assertIsNone(artifacts.get("planning_specialist_consultation"))
+            self.assertIsNone(summary.get("specialist_consultation"))
             self.assertIn("specialist_lifecycle_disclosure", artifacts)
 
-            discussion_receipt = load_json(artifacts["discussion_specialist_consultation"])
-            planning_receipt = load_json(artifacts["planning_specialist_consultation"])
             lifecycle_disclosure = load_json(artifacts["specialist_lifecycle_disclosure"])
             requirement_receipt = load_json(artifacts["requirement_receipt"])
             plan_receipt = load_json(artifacts["execution_plan_receipt"])
             requirement_doc = Path(artifacts["requirement_doc"]).read_text(encoding="utf-8")
             execution_plan = Path(artifacts["execution_plan"]).read_text(encoding="utf-8")
 
-            for receipt in (discussion_receipt, planning_receipt):
-                self.assertTrue(bool(receipt["enabled"]))
-                self.assertGreaterEqual(len(list(receipt["approved_consultation"])), 1)
-                self.assertEqual([], list(receipt["consulted_units"]))
-                self.assertGreaterEqual(len(list(receipt["routed_units"])), 1)
-                self.assertGreaterEqual(len(list(receipt["user_disclosures"])), 1)
-                disclosure = next(
-                    item for item in list(receipt["user_disclosures"]) if item["skill_id"] == "systematic-debugging"
-                )
-                self.assertTrue(disclosure["why_now"])
-                self.assertTrue(Path(disclosure["native_skill_entrypoint"]).is_absolute())
-                self.assertTrue(Path(disclosure["native_skill_entrypoint"]).exists())
-
-            specialist_consultation = summary["specialist_consultation"]
-            self.assertTrue(bool(specialist_consultation["enabled"]))
-            self.assertEqual(2, int(specialist_consultation["window_count"]))
-            self.assertEqual(
-                ["discussion", "planning"],
-                [str(window["window_id"]) for window in list(specialist_consultation["windows"])],
-            )
-            self.assertEqual(0, int(specialist_consultation["consulted_unit_count"]))
-            self.assertGreaterEqual(int(specialist_consultation["routed_unit_count"]), 2)
-            self.assertGreaterEqual(int(specialist_consultation["user_disclosure_count"]), 2)
-            self.assertNotIn("specialist_consultation", summary["specialist_user_disclosure"])
-
             specialist_lifecycle = summary["specialist_lifecycle_disclosure"]
             self.assertTrue(bool(specialist_lifecycle["enabled"]))
-            self.assertEqual("routing_consultation_execution_separated", specialist_lifecycle["truth_model"])
-            self.assertEqual(
-                ["discussion_routing", "discussion_consultation", "planning_consultation", "execution_dispatch"],
-                [str(layer["layer_id"]) for layer in list(specialist_lifecycle["layers"])],
-            )
+            self.assertEqual("skill_routing_usage_evidence", specialist_lifecycle["truth_model"])
+            layer_ids = [str(layer["layer_id"]) for layer in list(specialist_lifecycle["layers"])]
+            self.assertIn("discussion_routing", layer_ids)
+            self.assertNotIn("discussion_consultation", layer_ids)
+            self.assertNotIn("planning_consultation", layer_ids)
             self.assertGreaterEqual(int(specialist_lifecycle["skill_count"]), 1)
             self.assertIn("systematic-debugging", specialist_lifecycle["rendered_text"])
-            self.assertEqual("routing_consultation_execution_separated", lifecycle_disclosure["truth_model"])
+            self.assertNotIn("## Specialist Consultation", specialist_lifecycle["rendered_text"])
+            self.assertEqual("skill_routing_usage_evidence", lifecycle_disclosure["truth_model"])
+            persisted_layer_ids = [str(layer["layer_id"]) for layer in list(lifecycle_disclosure["layers"])]
+            self.assertIn("discussion_routing", persisted_layer_ids)
+            self.assertNotIn("discussion_consultation", persisted_layer_ids)
+            self.assertNotIn("planning_consultation", persisted_layer_ids)
             routing_layer = next(
                 item for item in list(lifecycle_disclosure["layers"]) if item["layer_id"] == "discussion_routing"
             )
@@ -1718,68 +1741,53 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             self.assertTrue(Path(routed_entry["native_skill_entrypoint"]).is_absolute())
             self.assertTrue(Path(routed_entry["native_skill_entrypoint"]).exists())
 
-            self.assertEqual(artifacts["discussion_specialist_consultation"], requirement_receipt["discussion_consultation_path"])
-            self.assertEqual(artifacts["planning_specialist_consultation"], plan_receipt["planning_consultation_path"])
+            self.assertIsNone(requirement_receipt.get("discussion_consultation_path"))
+            self.assertEqual(0, int(requirement_receipt.get("discussion_consultation_count", 0)))
+            self.assertIsNone(plan_receipt.get("planning_consultation_path"))
+            self.assertEqual(0, int(plan_receipt.get("planning_consultation_count", 0)))
             self.assertEqual(artifacts["specialist_lifecycle_disclosure"], requirement_receipt["specialist_lifecycle_disclosure_path"])
             self.assertEqual(artifacts["specialist_lifecycle_disclosure"], plan_receipt["specialist_lifecycle_disclosure_path"])
             self.assertIn("host_stage_disclosure", artifacts)
             host_stage_disclosure = load_json(artifacts["host_stage_disclosure"])
             self.assertTrue(bool(host_stage_disclosure["enabled"]))
             self.assertEqual("progressive_host_stage_disclosure", host_stage_disclosure["mode"])
-            self.assertEqual(4, int(host_stage_disclosure["event_count"]))
-            self.assertEqual(4, int(host_stage_disclosure["last_sequence"]))
+            self.assertGreaterEqual(int(host_stage_disclosure["event_count"]), 1)
             self.assertEqual(
-                [
-                    "discussion_routing_frozen",
-                    "discussion_consultation_routed",
-                    "planning_consultation_routed",
-                    "execution_dispatch_confirmed",
-                ],
-                [str(event["event_id"]) for event in list(host_stage_disclosure["events"])],
+                int(host_stage_disclosure["event_count"]),
+                int(host_stage_disclosure["last_sequence"]),
             )
-            self.assertEqual(
-                ["discussion_routing", "discussion_consultation", "planning_consultation", "execution_dispatch"],
-                [str(event["segment_id"]) for event in list(host_stage_disclosure["events"])],
-            )
-            self.assertEqual([1, 2, 3, 4], [int(event["sequence"]) for event in list(host_stage_disclosure["events"])])
+            event_ids = [str(event["event_id"]) for event in list(host_stage_disclosure["events"])]
+            segment_ids = [str(event["segment_id"]) for event in list(host_stage_disclosure["events"])]
+            self.assertIn("discussion_routing_frozen", event_ids)
+            self.assertNotIn("discussion_consultation_routed", event_ids)
+            self.assertNotIn("planning_consultation_routed", event_ids)
+            self.assertIn("discussion_routing", segment_ids)
+            self.assertNotIn("discussion_consultation", segment_ids)
+            self.assertNotIn("planning_consultation", segment_ids)
             self.assertIn("Vibe routed these Skills", host_stage_disclosure["rendered_text"])
-            self.assertIn("Vibe approved these Skills for execution dispatch", host_stage_disclosure["rendered_text"])
-            execution_event = next(
-                item for item in list(host_stage_disclosure["events"]) if item["segment_id"] == "execution_dispatch"
-            )
-            routed_skill = next(item for item in list(execution_event["skills"]) if item["skill_id"] == "systematic-debugging")
-            self.assertTrue(Path(routed_skill["native_skill_entrypoint"]).is_absolute())
-            self.assertTrue(Path(routed_skill["native_skill_entrypoint"]).exists())
+            self.assertNotIn("consultation", host_stage_disclosure["rendered_text"].lower())
             self.assertEqual(host_stage_disclosure, summary["host_stage_disclosure"])
             self.assertIn("host_user_briefing", artifacts)
             host_user_briefing_doc = Path(artifacts["host_user_briefing"]).read_text(encoding="utf-8")
             host_user_briefing = summary["host_user_briefing"]
             self.assertTrue(bool(host_user_briefing["enabled"]))
             self.assertTrue(bool(host_user_briefing["freeze_gate_passed"]))
-            self.assertEqual(
-                ["execution_handoff", "discussion_routing", "discussion_consultation", "planning_consultation", "execution_dispatch"],
-                [str(segment["segment_id"]) for segment in list(host_user_briefing["segments"])],
-            )
+            briefing_segment_ids = [str(segment["segment_id"]) for segment in list(host_user_briefing["segments"])]
+            self.assertIn("execution_handoff", briefing_segment_ids)
+            self.assertIn("discussion_routing", briefing_segment_ids)
+            self.assertNotIn("discussion_consultation", briefing_segment_ids)
+            self.assertNotIn("planning_consultation", briefing_segment_ids)
             self.assertIn("Execution handoff is still pending under governed vibe.", host_user_briefing["rendered_text"])
             self.assertIn("Vibe routed these Skills", host_user_briefing["rendered_text"])
-            self.assertIn(
-                "Vibe routed these Skills for direct current-session consultation during discussion",
-                host_user_briefing["rendered_text"],
-            )
-            self.assertIn(
-                "Do not replace this path with Skill(systematic-debugging) unless that skill name is explicitly visible in the host registry.",
-                host_user_briefing["rendered_text"],
-            )
-            self.assertIn("freeze gate: passed", host_user_briefing["rendered_text"])
-            self.assertIn("Vibe approved these Skills for execution dispatch", host_user_briefing["rendered_text"])
+            self.assertNotIn("consultation", host_user_briefing["rendered_text"].lower())
             self.assertIn("systematic-debugging", host_user_briefing["rendered_text"])
             self.assertIn(host_user_briefing["rendered_text"], host_user_briefing_doc)
             self.assertEqual(artifacts["host_user_briefing"], payload["host_user_briefing_path"])
             self.assertEqual(host_user_briefing, payload["host_user_briefing"])
-            self.assertIn("## Specialist Consultation", requirement_doc)
-            self.assertIn("## Specialist Consultation", execution_plan)
-            self.assertIn("## Unified Specialist Lifecycle Disclosure", requirement_doc)
-            self.assertIn("## Unified Specialist Lifecycle Disclosure", execution_plan)
+            self.assertNotIn("## Specialist Consultation", requirement_doc)
+            self.assertNotIn("## Specialist Consultation", execution_plan)
+            self.assertIn("## Skill Usage", requirement_doc)
+            self.assertIn("## Binary Skill Usage Plan", execution_plan)
             self.assertIn("systematic-debugging", requirement_doc)
             self.assertIn("systematic-debugging", execution_plan)
 
@@ -1802,6 +1810,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f". {_ps_single_quote(str(EXECUTION_COMMON))}; "
                 f". {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
                 f"$runtime = Get-VibeRuntimeContext -ScriptPath {_ps_single_quote(str(CONSULTATION_SCRIPT))}; "
+                f"$legacyPolicy = {legacy_active_consultation_policy_ps()}; "
                 f"$packet = Get-Content -LiteralPath {_ps_single_quote(str(packet_path))} -Raw -Encoding UTF8 | ConvertFrom-Json; "
                 f"$sessionRoot = Ensure-VibeSessionRoot -RepoRoot $runtime.repo_root -RunId {_ps_single_quote(run_id)} -Runtime $runtime -ArtifactRoot {_ps_single_quote(str(artifact_root))}; "
                 f"$result = Invoke-VibeSpecialistConsultationWindow "
@@ -1812,8 +1821,10 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
                 f"-WindowId 'discussion' "
                 f"-Stage 'deep_interview' "
                 f"-SourceArtifactPath {_ps_single_quote(str(prompt_seed_path))} "
-                f"-Recommendations @($packet.specialist_recommendations | Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }}) "
-                f"-Policy $runtime.specialist_consultation_policy; "
+                f"-Recommendations @($packet.skill_routing.selected | "
+                f"Where-Object {{ [string]$_.skill_id -eq 'systematic-debugging' }} | "
+                f"ForEach-Object {{ $_ | Add-Member -NotePropertyName contract_complete -NotePropertyValue $true -Force; $_ }}) "
+                f"-Policy $legacyPolicy; "
                 "$result | ConvertTo-Json -Depth 20 }"
             )
             completed = subprocess.run(
@@ -1843,7 +1854,7 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
             self.assertTrue(bool(receipt["freeze_gate"]["passed"]))
             self.assertEqual([], list(receipt["freeze_gate"]["errors"]))
 
-    def test_runtime_keeps_freeze_green_when_live_consultation_routes_directly(self) -> None:
+    def test_runtime_keeps_freeze_green_without_default_consultation(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             artifact_root = Path(tempdir)
             completed = run_runtime(
@@ -1860,11 +1871,8 @@ class VibeSpecialistConsultationTests(unittest.TestCase):
 
             self.assertEqual(0, completed.returncode)
             payload = json.loads(completed.stdout)
-            discussion_receipt = load_json(payload["summary"]["artifacts"]["discussion_specialist_consultation"])
-            self.assertEqual([], list(discussion_receipt["consulted_units"]))
-            self.assertEqual([], list(discussion_receipt["degraded"]))
-            self.assertTrue(bool(discussion_receipt["freeze_gate"]["passed"]))
-            routed = require_skill_entry(discussion_receipt["routed_units"], "systematic-debugging")
-            assert_direct_routed_result(self, routed)
+            artifacts = payload["summary"]["artifacts"]
+            self.assertIsNone(artifacts.get("discussion_specialist_consultation"))
+            self.assertIsNone(artifacts.get("planning_specialist_consultation"))
             combined_output = f"{completed.stdout}\n{completed.stderr}"
             self.assertNotIn("specialist consultation freeze gate failed", combined_output)
