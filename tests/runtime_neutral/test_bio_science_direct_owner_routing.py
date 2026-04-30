@@ -64,44 +64,20 @@ class BioScienceDirectOwnerRoutingTests(unittest.TestCase):
     def test_deeptools_routes_as_direct_owner_for_ngs_tracks(self) -> None:
         self.assert_selected("用 deepTools 把 BAM 转 bigWig，并围绕 TSS 画 ChIP-seq heatmap profile", "deeptools")
 
-    def test_bioservices_routes_as_direct_owner_for_cross_database_queries(self) -> None:
-        self.assert_selected("用 BioServices 同时查询 UniProt、KEGG、Reactome 并做 ID mapping", "bioservices")
+    def test_bio_database_evidence_routes_for_cross_database_queries(self) -> None:
+        self.assert_selected("用 BioServices 同时查询 UniProt、KEGG、Reactome 并做 ID mapping", "bio-database-evidence")
 
-    def test_alphafold_routes_as_direct_owner_for_predicted_structures(self) -> None:
-        self.assert_selected("从 AlphaFold Database 按 UniProt ID 下载 mmCIF，并检查 pLDDT 和 PAE", "alphafold-database")
+    def test_bio_database_evidence_routes_for_variant_pathway_and_target_sources(self) -> None:
+        self.assert_selected(
+            "查询 ClinVar、COSMIC、GWAS Catalog、KEGG、Reactome 和 Open Targets 的生物数据库证据",
+            "bio-database-evidence",
+        )
 
-    def test_clinvar_routes_as_direct_owner_for_variant_significance(self) -> None:
-        self.assert_selected("查询 ClinVar 中 BRCA1 variant 的 clinical significance、VUS 和 review stars", "clinvar-database")
-
-    def test_cosmic_routes_as_direct_owner_for_cancer_mutations(self) -> None:
-        self.assert_selected("查询 COSMIC cancer mutation、Cancer Gene Census 和 mutational signatures", "cosmic-database")
-
-    def test_ensembl_routes_as_direct_owner_for_vep_and_orthologs(self) -> None:
-        self.assert_selected("用 Ensembl REST 查询 gene、orthologs、VEP variant effect 和坐标转换", "ensembl-database")
-
-    def test_gene_database_routes_as_direct_owner_for_ncbi_gene(self) -> None:
-        self.assert_selected("用 NCBI Gene 查询 TP53 symbol、RefSeq、GO annotation 和基因位置", "gene-database")
-
-    def test_gwas_routes_as_direct_owner_for_trait_associations(self) -> None:
-        self.assert_selected("查询 GWAS Catalog 中 rs ID、trait association、p-value 和 summary statistics", "gwas-database")
-
-    def test_kegg_routes_as_direct_owner_for_pathway_id_mapping(self) -> None:
-        self.assert_selected("用 KEGG REST 做 pathway mapping、ID conversion 和 metabolic pathway 查询", "kegg-database")
-
-    def test_opentargets_routes_as_direct_owner_for_target_disease_evidence(self) -> None:
-        self.assert_selected("用 Open Targets 查询 target-disease association、tractability、safety 和 known drugs", "opentargets-database")
-
-    def test_pdb_routes_as_direct_owner_for_experimental_structures(self) -> None:
-        self.assert_selected("在 RCSB PDB 按 sequence similarity 搜索结构并下载 PDB/mmCIF 坐标", "pdb-database")
-
-    def test_reactome_routes_as_direct_owner_for_pathway_enrichment(self) -> None:
-        self.assert_selected("用 Reactome 做 pathway enrichment、gene-pathway mapping 和 disease pathway 分析", "reactome-database")
-
-    def test_string_routes_as_direct_owner_for_ppi_networks(self) -> None:
-        self.assert_selected("用 STRING API 查询 protein-protein interaction network、GO enrichment 和 hub proteins", "string-database")
-
-    def test_cellxgene_routes_as_direct_owner_for_census_queries(self) -> None:
-        self.assert_selected("查询 CZ CELLxGENE Census 的 human lung epithelial cells expression data 和 metadata", "cellxgene-census")
+    def test_bio_database_evidence_routes_for_structure_ppi_and_census_sources(self) -> None:
+        self.assert_selected(
+            "查询 AlphaFold Database、RCSB PDB、STRING API 和 CZ CELLxGENE Census 的 evidence metadata",
+            "bio-database-evidence",
+        )
 
 
 if __name__ == "__main__":

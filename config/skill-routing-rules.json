@@ -1528,6 +1528,7 @@
                                                                           "BioServices",
                                                                           "gget",
                                                                           "RefSeq",
+                                                                          "scanpy",
                                                                           "生物数据库证据",
                                                                           "基因注释",
                                                                           "变异临床意义",
@@ -1537,10 +1538,12 @@
                                                                           "蛋白互作网络"
                                                                       ],
                                                 "negative_keywords":  [
-                                                                          "scanpy",
                                                                           "single-cell clustering",
                                                                           "marker genes",
                                                                           "Leiden",
+                                                                          "UMAP",
+                                                                          "单细胞聚类",
+                                                                          "细胞注释",
                                                                           "scVI",
                                                                           "scANVI",
                                                                           "DESeq2",

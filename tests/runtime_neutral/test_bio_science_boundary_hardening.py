@@ -118,11 +118,11 @@ class BioScienceBoundaryHardeningTests(unittest.TestCase):
             "scvi-tools",
         )
 
-    def test_cellxgene_owns_census_queries(self) -> None:
+    def test_bio_database_evidence_owns_census_queries(self) -> None:
         self.assert_selected(
             "查询 CELLxGENE Census 里 human lung epithelial cells 的 tissue disease metadata",
             "bio-science",
-            "cellxgene-census",
+            "bio-database-evidence",
         )
 
     def test_pydeseq2_owns_bulk_rnaseq_de(self) -> None:
@@ -146,18 +146,18 @@ class BioScienceBoundaryHardeningTests(unittest.TestCase):
             "deeptools",
         )
 
-    def test_bioservices_owns_explicit_multi_service_aggregation(self) -> None:
+    def test_bio_database_evidence_owns_multi_service_aggregation(self) -> None:
         self.assert_selected(
             "用 BioServices 同时查询 UniProt、KEGG、Reactome 并做跨数据库 ID mapping",
             "bio-science",
-            "bioservices",
+            "bio-database-evidence",
         )
 
-    def test_gget_owns_quick_lookup(self) -> None:
+    def test_bio_database_evidence_owns_quick_lookup(self) -> None:
         self.assert_selected(
             "用 gget 做 quick BLAST、gene symbol 和 transcript lookup",
             "bio-science",
-            "gget",
+            "bio-database-evidence",
         )
 
     def test_cobrapy_owns_flux_balance_analysis(self) -> None:
@@ -188,11 +188,11 @@ class BioScienceBoundaryHardeningTests(unittest.TestCase):
             "anndata",
         )
 
-    def test_scanpy_loses_to_cellxgene_for_census_query(self) -> None:
+    def test_scanpy_loses_to_bio_database_evidence_for_census_query(self) -> None:
         self.assert_selected(
             "从 CELLxGENE Census 下载细胞图谱，然后在后续可能用 scanpy 分析",
             "bio-science",
-            "cellxgene-census",
+            "bio-database-evidence",
         )
 
     def test_biopython_loses_to_pysam_for_bam_vcf_files(self) -> None:
@@ -202,25 +202,25 @@ class BioScienceBoundaryHardeningTests(unittest.TestCase):
             "pysam",
         )
 
-    def test_bioservices_loses_to_kegg_for_explicit_kegg_rest(self) -> None:
+    def test_bio_database_evidence_owns_explicit_kegg_rest(self) -> None:
         self.assert_selected(
             "用 KEGG REST 做 pathway mapping、ID conversion 和 metabolic pathway 查询，不使用 BioServices",
             "bio-science",
-            "kegg-database",
+            "bio-database-evidence",
         )
 
-    def test_bioservices_loses_to_reactome_for_explicit_reactome(self) -> None:
+    def test_bio_database_evidence_owns_explicit_reactome(self) -> None:
         self.assert_selected(
             "用 Reactome API 做 pathway enrichment 和 gene-pathway mapping，不使用 BioServices",
             "bio-science",
-            "reactome-database",
+            "bio-database-evidence",
         )
 
-    def test_gget_loses_to_opentargets_for_target_evidence(self) -> None:
+    def test_bio_database_evidence_owns_target_evidence(self) -> None:
         self.assert_selected(
             "用 Open Targets 做 target-disease association、tractability 和 known drugs evidence，不使用 gget",
             "bio-science",
-            "opentargets-database",
+            "bio-database-evidence",
         )
 
     def test_rdkit_smiles_stays_in_chem_drug_pack(self) -> None:
