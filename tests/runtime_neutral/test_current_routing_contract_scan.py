@@ -45,6 +45,12 @@ class CurrentRoutingContractScanTests(unittest.TestCase):
         self.assertEqual(0, int(payload["current_runtime_old_format_fallback_count"]))
         self.assertIn("retired_old_format_reference_count", payload)
         self.assertIn("historical_reference_count", payload)
+        self.assertIn("hard_cleanup_current_doc_retired_term_violation_count", payload)
+        self.assertIn("hard_cleanup_current_behavior_test_retired_field_read_count", payload)
+        self.assertIn("hard_cleanup_historical_doc_unmarked_retired_term_count", payload)
+        self.assertEqual(0, int(payload["hard_cleanup_current_doc_retired_term_violation_count"]))
+        self.assertEqual(0, int(payload["hard_cleanup_current_behavior_test_retired_field_read_count"]))
+        self.assertEqual(0, int(payload["hard_cleanup_historical_doc_unmarked_retired_term_count"]))
         self.assertEqual([], payload["findings"])
 
     def test_scan_script_plain_output_has_pass_gate(self) -> None:
@@ -63,4 +69,5 @@ class CurrentRoutingContractScanTests(unittest.TestCase):
 
         self.assertIn("VCO Current Routing Contract Scan", completed.stdout)
         self.assertIn("Retired old-format references:", completed.stdout)
+        self.assertIn("Hard cleanup current behavior test retired-field reads: 0", completed.stdout)
         self.assertIn("Gate Result: PASS", completed.stdout)

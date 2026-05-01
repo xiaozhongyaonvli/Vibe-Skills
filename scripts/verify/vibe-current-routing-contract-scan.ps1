@@ -156,13 +156,30 @@ foreach ($root in $historicalRoots) {
     }
 }
 
+$hardCleanupScript = Join-Path $RepoRoot 'scripts\verify\vibe-routing-terminology-hard-cleanup-scan.ps1'
+$hardCleanup = $null
+if (Test-Path -LiteralPath $hardCleanupScript) {
+    $hardJson = & $hardCleanupScript -RepoRoot $RepoRoot -Json
+    $hardCleanup = ($hardJson -join "`n") | ConvertFrom-Json
+}
+
 $summary = [pscustomobject]@{
     current_surface_violation_count = @($findings | Where-Object { $_.category -eq 'current_surface_violation' }).Count
     current_runtime_old_format_fallback_count = @($findings | Where-Object { $_.category -eq 'current_runtime_old_format_fallback' }).Count
     retired_old_format_reference_count = [int]$legacyReferenceCount
     historical_reference_count = [int]$historicalReferenceCount
+    hard_cleanup_current_doc_retired_term_violation_count = if ($hardCleanup) { [int]$hardCleanup.current_doc_retired_term_violation_count } else { 0 }
+    hard_cleanup_current_behavior_test_retired_field_read_count = if ($hardCleanup) { [int]$hardCleanup.current_behavior_test_retired_field_read_count } else { 0 }
+    hard_cleanup_historical_doc_unmarked_retired_term_count = if ($hardCleanup) { [int]$hardCleanup.historical_doc_unmarked_retired_term_count } else { 0 }
+    hard_cleanup_execution_internal_specialist_dispatch_reference_count = if ($hardCleanup) { [int]$hardCleanup.execution_internal_specialist_dispatch_reference_count } else { 0 }
     findings = [object[]]$findings.ToArray()
 }
+
+$hardCleanupBlockingViolationCount = (
+    [int]$summary.hard_cleanup_current_doc_retired_term_violation_count +
+    [int]$summary.hard_cleanup_current_behavior_test_retired_field_read_count +
+    [int]$summary.hard_cleanup_historical_doc_unmarked_retired_term_count
+)
 
 if ($Json) {
     $summary | ConvertTo-Json -Depth 20
@@ -172,17 +189,29 @@ if ($Json) {
     ('Current runtime old-format fallbacks: {0}' -f [int]$summary.current_runtime_old_format_fallback_count)
     ('Retired old-format references: {0}' -f [int]$summary.retired_old_format_reference_count)
     ('Historical doc references: {0}' -f [int]$summary.historical_reference_count)
+    ('Hard cleanup current docs retired-term violations: {0}' -f [int]$summary.hard_cleanup_current_doc_retired_term_violation_count)
+    ('Hard cleanup current behavior test retired-field reads: {0}' -f [int]$summary.hard_cleanup_current_behavior_test_retired_field_read_count)
+    ('Hard cleanup historical docs without retired marker: {0}' -f [int]$summary.hard_cleanup_historical_doc_unmarked_retired_term_count)
+    ('Hard cleanup execution-internal specialist_dispatch references: {0}' -f [int]$summary.hard_cleanup_execution_internal_specialist_dispatch_reference_count)
     foreach ($finding in @($summary.findings)) {
         '[FAIL] {0}:{1} [{2}] {3}' -f $finding.path, $finding.line, $finding.pattern, $finding.text
     }
-    if ([int]$summary.current_surface_violation_count -eq 0 -and [int]$summary.current_runtime_old_format_fallback_count -eq 0) {
+    if (
+        [int]$summary.current_surface_violation_count -eq 0 -and
+        [int]$summary.current_runtime_old_format_fallback_count -eq 0 -and
+        [int]$hardCleanupBlockingViolationCount -eq 0
+    ) {
         'Gate Result: PASS'
     } else {
         'Gate Result: FAIL'
     }
 }
 
-if ([int]$summary.current_surface_violation_count -gt 0 -or [int]$summary.current_runtime_old_format_fallback_count -gt 0) {
+if (
+    [int]$summary.current_surface_violation_count -gt 0 -or
+    [int]$summary.current_runtime_old_format_fallback_count -gt 0 -or
+    [int]$hardCleanupBlockingViolationCount -gt 0
+) {
     exit 1
 }
 exit 0
