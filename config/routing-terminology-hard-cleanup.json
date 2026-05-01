@@ -44,6 +44,30 @@
     "tests/runtime_neutral/test_plan_execute_receipts.py"
   ],
   "execution_internal_allowed_specialist_dispatch_reference_count": 0,
+  "current_policy_helper_files": [
+    "config/runtime-input-packet-policy.json",
+    "scripts/runtime/VibeRuntime.Common.ps1",
+    "scripts/runtime/Freeze-RuntimeInputPacket.ps1",
+    "scripts/runtime/Write-RequirementDoc.ps1",
+    "scripts/runtime/Write-XlPlan.ps1",
+    "scripts/runtime/Invoke-PlanExecute.ps1",
+    "packages/runtime-core/src/vgo_runtime/canonical_entry.py"
+  ],
+  "current_policy_helper_forbidden_patterns": [
+    "specialist_dispatch_contract",
+    "host_specialist_dispatch_contract",
+    "interactive_specialist_disclosure",
+    "Get-VibeRuntimeSpecialistDispatchProjection",
+    "Get-VibeHostSpecialistDispatchContract",
+    "Get-VibeHostSpecialistDispatchDecisionMarkdownLines",
+    "Get-VibeInteractiveSpecialistDisclosurePolicy",
+    "host_specialist_dispatch_decision",
+    "specialist_dispatch_decision",
+    "approved_specialist_dispatch_count",
+    "Host Specialist Dispatch Decision",
+    "approved_dispatch_only",
+    "dispatch_unit_count ="
+  ],
   "retired_terms": [
     "legacy_skill_routing",
     "specialist_recommendations",

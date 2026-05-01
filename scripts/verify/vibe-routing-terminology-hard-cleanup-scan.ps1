@@ -147,11 +147,40 @@ foreach ($relative in @($config.execution_internal_scan_files)) {
     }
 }
 
+$currentPolicyHelperCount = 0
+$currentPolicyHelperFiles = if ($config.PSObject.Properties.Name -contains 'current_policy_helper_files') {
+    @($config.current_policy_helper_files)
+} else {
+    @()
+}
+$currentPolicyHelperForbiddenPatterns = if ($config.PSObject.Properties.Name -contains 'current_policy_helper_forbidden_patterns') {
+    @($config.current_policy_helper_forbidden_patterns)
+} else {
+    @()
+}
+foreach ($relative in @($currentPolicyHelperFiles)) {
+    $fullPath = Join-Path $RepoRoot ([string]$relative)
+    $lines = @(Get-TextFileLines -Path $fullPath)
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        $lineText = [string]$lines[$index]
+        foreach ($pattern in @($currentPolicyHelperForbiddenPatterns)) {
+            if ([string]::IsNullOrWhiteSpace([string]$pattern)) {
+                continue
+            }
+            if ($lineText.IndexOf([string]$pattern, [System.StringComparison]::Ordinal) -ge 0) {
+                $currentPolicyHelperCount += 1
+                $findings.Add((New-Finding -Category 'current_policy_helper_dispatch_vocabulary_reference' -Path ([string]$relative) -Line ($index + 1) -Pattern ([string]$pattern) -Text $lineText)) | Out-Null
+            }
+        }
+    }
+}
+
 $summary = [pscustomobject]@{
     current_doc_retired_term_violation_count = @($findings | Where-Object { $_.category -eq 'current_doc_retired_term' }).Count
     current_behavior_test_retired_field_read_count = @($findings | Where-Object { $_.category -eq 'current_behavior_test_retired_field_read' }).Count
     historical_doc_unmarked_retired_term_count = @($findings | Where-Object { $_.category -eq 'historical_doc_unmarked_retired_term' }).Count
     execution_internal_specialist_dispatch_reference_count = [int]$executionInternalCount
+    current_policy_helper_dispatch_vocabulary_reference_count = [int]$currentPolicyHelperCount
     findings = [object[]]$findings.ToArray()
 }
 
@@ -163,6 +192,7 @@ if ($Json) {
     ('Current behavior test retired-field reads: {0}' -f [int]$summary.current_behavior_test_retired_field_read_count)
     ('Historical docs without retired marker: {0}' -f [int]$summary.historical_doc_unmarked_retired_term_count)
     ('Execution-internal specialist_dispatch allowlist references: {0}' -f [int]$summary.execution_internal_specialist_dispatch_reference_count)
+    ('Current policy/helper dispatch vocabulary references: {0}' -f [int]$summary.current_policy_helper_dispatch_vocabulary_reference_count)
     foreach ($finding in @($summary.findings)) {
         '[FAIL] {0}:{1} [{2}] {3}' -f $finding.path, $finding.line, $finding.pattern, $finding.text
     }

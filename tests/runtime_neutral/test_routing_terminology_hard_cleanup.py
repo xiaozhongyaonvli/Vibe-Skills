@@ -78,7 +78,9 @@ class RoutingTerminologyHardCleanupTests(unittest.TestCase):
         self.assertIn("current_behavior_test_retired_field_read_count", payload)
         self.assertIn("historical_doc_unmarked_retired_term_count", payload)
         self.assertIn("execution_internal_specialist_dispatch_reference_count", payload)
+        self.assertIn("current_policy_helper_dispatch_vocabulary_reference_count", payload)
         self.assertEqual(0, payload["execution_internal_specialist_dispatch_reference_count"])
+        self.assertEqual(0, payload["current_policy_helper_dispatch_vocabulary_reference_count"])
         self.assertEqual([], payload["findings"])
 
 

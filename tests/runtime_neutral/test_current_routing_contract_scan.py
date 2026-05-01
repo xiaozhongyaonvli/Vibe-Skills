@@ -49,10 +49,12 @@ class CurrentRoutingContractScanTests(unittest.TestCase):
         self.assertIn("hard_cleanup_current_behavior_test_retired_field_read_count", payload)
         self.assertIn("hard_cleanup_historical_doc_unmarked_retired_term_count", payload)
         self.assertIn("hard_cleanup_execution_internal_specialist_dispatch_reference_count", payload)
+        self.assertIn("hard_cleanup_current_policy_helper_dispatch_vocabulary_reference_count", payload)
         self.assertEqual(0, int(payload["hard_cleanup_current_doc_retired_term_violation_count"]))
         self.assertEqual(0, int(payload["hard_cleanup_current_behavior_test_retired_field_read_count"]))
         self.assertEqual(0, int(payload["hard_cleanup_historical_doc_unmarked_retired_term_count"]))
         self.assertEqual(0, int(payload["hard_cleanup_execution_internal_specialist_dispatch_reference_count"]))
+        self.assertEqual(0, int(payload["hard_cleanup_current_policy_helper_dispatch_vocabulary_reference_count"]))
         self.assertEqual([], payload["findings"])
 
     def test_scan_script_plain_output_has_pass_gate(self) -> None:
@@ -72,4 +74,5 @@ class CurrentRoutingContractScanTests(unittest.TestCase):
         self.assertIn("VCO Current Routing Contract Scan", completed.stdout)
         self.assertIn("Retired old-format references:", completed.stdout)
         self.assertIn("Hard cleanup current behavior test retired-field reads: 0", completed.stdout)
+        self.assertIn("Hard cleanup current policy/helper dispatch vocabulary references: 0", completed.stdout)
         self.assertIn("Gate Result: PASS", completed.stdout)

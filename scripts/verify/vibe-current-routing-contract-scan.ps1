@@ -78,8 +78,6 @@ $oldFormatFallbackPatterns = @(
 )
 
 $allowedCurrentExecutionPhrases = @(
-    'host_specialist_dispatch_decision',
-    'specialist_dispatch_decision',
     'derived_from_skill_routing_selected',
     'source = ''skill_routing.selected''',
     'no_specialist_recommendations'
@@ -172,13 +170,15 @@ $summary = [pscustomobject]@{
     hard_cleanup_current_behavior_test_retired_field_read_count = if ($hardCleanup) { [int]$hardCleanup.current_behavior_test_retired_field_read_count } else { 0 }
     hard_cleanup_historical_doc_unmarked_retired_term_count = if ($hardCleanup) { [int]$hardCleanup.historical_doc_unmarked_retired_term_count } else { 0 }
     hard_cleanup_execution_internal_specialist_dispatch_reference_count = if ($hardCleanup) { [int]$hardCleanup.execution_internal_specialist_dispatch_reference_count } else { 0 }
+    hard_cleanup_current_policy_helper_dispatch_vocabulary_reference_count = if ($hardCleanup) { [int]$hardCleanup.current_policy_helper_dispatch_vocabulary_reference_count } else { 0 }
     findings = [object[]]$findings.ToArray()
 }
 
 $hardCleanupBlockingViolationCount = (
     [int]$summary.hard_cleanup_current_doc_retired_term_violation_count +
     [int]$summary.hard_cleanup_current_behavior_test_retired_field_read_count +
-    [int]$summary.hard_cleanup_historical_doc_unmarked_retired_term_count
+    [int]$summary.hard_cleanup_historical_doc_unmarked_retired_term_count +
+    [int]$summary.hard_cleanup_current_policy_helper_dispatch_vocabulary_reference_count
 )
 
 if ($Json) {
@@ -193,6 +193,7 @@ if ($Json) {
     ('Hard cleanup current behavior test retired-field reads: {0}' -f [int]$summary.hard_cleanup_current_behavior_test_retired_field_read_count)
     ('Hard cleanup historical docs without retired marker: {0}' -f [int]$summary.hard_cleanup_historical_doc_unmarked_retired_term_count)
     ('Hard cleanup execution-internal specialist_dispatch references: {0}' -f [int]$summary.hard_cleanup_execution_internal_specialist_dispatch_reference_count)
+    ('Hard cleanup current policy/helper dispatch vocabulary references: {0}' -f [int]$summary.hard_cleanup_current_policy_helper_dispatch_vocabulary_reference_count)
     foreach ($finding in @($summary.findings)) {
         '[FAIL] {0}:{1} [{2}] {3}' -f $finding.path, $finding.line, $finding.pattern, $finding.text
     }
