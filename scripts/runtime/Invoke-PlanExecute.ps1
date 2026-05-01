@@ -909,8 +909,8 @@ function Get-VibePlanDerivedExecutionShadow {
 
     $sections = Get-VibePlanSections -PlanPath $PlanPath
     $units = @()
-    $specialistSections = @('Specialist Skill Dispatch Plan', 'Specialist Consultation', 'Unified Specialist Lifecycle Disclosure')
-    $sectionOrder = @('Wave Plan', 'Specialist Skill Dispatch Plan', 'Specialist Consultation', 'Unified Specialist Lifecycle Disclosure', 'Verification Commands', 'Phase Cleanup Contract')
+    $specialistSections = @('Specialist Skill Dispatch Plan', 'Skill Routing And Usage Evidence')
+    $sectionOrder = @('Wave Plan', 'Specialist Skill Dispatch Plan', 'Skill Routing And Usage Evidence', 'Verification Commands', 'Phase Cleanup Contract')
     $unitIndex = 0
 
     foreach ($sectionName in $sectionOrder) {
@@ -931,7 +931,7 @@ function Get-VibePlanDerivedExecutionShadow {
 
             if ($specialistSections -contains $sectionName) {
                 $classification = 'specialist_dispatch_unit'
-                $reason = if ($sectionName -eq 'Specialist Skill Dispatch Plan') { 'bounded_native_specialist_dispatch_declared' } else { 'specialist_consultation_or_lifecycle_declared' }
+                $reason = if ($sectionName -eq 'Specialist Skill Dispatch Plan') { 'bounded_native_specialist_dispatch_declared' } else { 'skill_routing_usage_declared' }
             } elseif (@($inlineCommands).Count -gt 0) {
                 $classification = 'executable_unit'
                 $reason = 'inline_command_detected'

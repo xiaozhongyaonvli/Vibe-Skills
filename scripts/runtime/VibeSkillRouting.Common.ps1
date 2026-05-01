@@ -189,6 +189,7 @@ function Convert-VibeSkillRoutingSelectedToDispatch {
         $entry = $_
         [pscustomobject]@{
             skill_id = [string](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'skill_id' -DefaultValue '')
+            phase_id = Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'phase_id' -DefaultValue $null
             reason = [string](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'reason' -DefaultValue '')
             task_slice = [string](Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'task_slice' -DefaultValue '')
             native_skill_entrypoint = Get-VibeSkillRoutingProperty -InputObject $entry -PropertyName 'native_skill_entrypoint' -DefaultValue $null

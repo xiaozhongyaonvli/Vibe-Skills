@@ -329,7 +329,7 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 self.assertIn("## Assumptions", requirement_doc)
                 self.assertIn("## Runtime Input Truth", requirement_doc)
                 self.assertIn("## Specialist Decision", requirement_doc)
-                self.assertIn("## Specialist Recommendations", requirement_doc)
+                self.assertIn("## Selected Skill", requirement_doc)
                 self.assertIn("## Artifact Review Requirements", requirement_doc)
                 self.assertIn("## Code Task TDD Evidence Requirements", requirement_doc)
                 self.assertIn("- Record failing-first evidence for the changed behavior before implementation or defect correction.", requirement_doc)
@@ -341,20 +341,21 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
                 self.assertIn("No baseline UI quality dimensions were frozen for this run.", requirement_doc)
                 self.assertIn("## Task-Specific Acceptance Extensions", requirement_doc)
                 self.assertIn("## Research Augmentation Sources", requirement_doc)
-                self.assertIn("Only host-adopted or effective approved specialist dispatch is shown here", requirement_doc)
+                self.assertIn("The current work surface records selected skills here", requirement_doc)
             self.assertEqual("requirements", requirement_doc_path.parent.name)
             self.assertEqual("plans", execution_plan_path.parent.name)
             execution_plan = execution_plan_path.read_text(encoding="utf-8")
             self.assertIn("## Specialist Decision Plan", execution_plan)
-            self.assertIn("## Specialist Consultation", execution_plan)
-            self.assertIn("## Unified Specialist Lifecycle Disclosure", execution_plan)
+            self.assertNotIn("## Specialist Consultation", execution_plan)
+            self.assertIn("## Binary Skill Usage Plan", execution_plan)
+            self.assertIn("## Skill Routing And Usage Evidence", execution_plan)
             self.assertIn("## Code Task TDD Evidence Plan", execution_plan)
             self.assertIn("## Baseline Document Quality Mapping", execution_plan)
             self.assertIn("## Baseline UI Quality Mapping", execution_plan)
 
             runtime_input_packet = json.loads(runtime_input_packet_path.read_text(encoding="utf-8"))
-            legacy_skill_routing = runtime_input_packet["legacy_skill_routing"]
             selected_skill_ids = [item["skill_id"] for item in runtime_input_packet["skill_routing"]["selected"]]
+            candidate_skill_ids = [item["skill_id"] for item in runtime_input_packet["skill_routing"]["candidates"]]
             governance_capsule = json.loads(governance_capsule_path.read_text(encoding="utf-8"))
             stage_lineage = json.loads(stage_lineage_path.read_text(encoding="utf-8"))
             execute_receipt = json.loads(execute_receipt_path.read_text(encoding="utf-8"))
@@ -375,13 +376,11 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
             self.assertNotIn("specialist_recommendations", runtime_input_packet)
             self.assertNotIn("stage_assistant_hints", runtime_input_packet)
             self.assertNotIn("specialist_dispatch", runtime_input_packet)
-            self.assertGreaterEqual(len(legacy_skill_routing["specialist_recommendations"]), 1)
+            self.assertNotIn("legacy_skill_routing", runtime_input_packet)
+            self.assertGreaterEqual(len(candidate_skill_ids), 1)
             self.assertIn("specialist_decision", runtime_input_packet)
             self.assertIn("systematic-debugging", selected_skill_ids)
-            self.assertIn(
-                "systematic-debugging",
-                [item["skill_id"] for item in legacy_skill_routing["specialist_recommendations"]],
-            )
+            self.assertIn("systematic-debugging", candidate_skill_ids)
             self.assertNotEqual("execution-contract-prepared", execute_receipt["status"])
             self.assertGreaterEqual(execute_receipt["executed_unit_count"], 2)
             self.assertTrue(Path(execute_receipt["plan_shadow_path"]).exists())
@@ -428,7 +427,7 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
             self.assertEqual("approved_dispatch", specialist_decision["decision_state"])
             self.assertEqual("approved_dispatch", specialist_decision["resolution_mode"])
             self.assertEqual(
-                legacy_skill_routing["specialist_dispatch"]["surfaced_skill_ids"],
+                selected_skill_ids,
                 specialist_decision["surfaced_skill_ids"],
             )
             self.assertIn("systematic-debugging", specialist_decision["surfaced_skill_ids"])
@@ -438,46 +437,28 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
             )
             self.assertEqual(specialist_decision, summary["specialist_decision"])
 
-            consultation_summary = summary["specialist_consultation"]
-            self.assertTrue(bool(consultation_summary["enabled"]))
-            self.assertEqual(2, int(consultation_summary["window_count"]))
-            self.assertEqual(
-                ["discussion", "planning"],
-                [str(window["window_id"]) for window in list(consultation_summary["windows"])],
-            )
-            self.assertGreaterEqual(int(consultation_summary["approved_consultation_count"]), 2)
-            self.assertGreaterEqual(int(consultation_summary["user_disclosure_count"]), 2)
-            self.assertIn("discussion_specialist_consultation", artifacts)
-            self.assertIn("planning_specialist_consultation", artifacts)
+            self.assertIsNone(summary.get("specialist_consultation"))
+            self.assertIsNone(artifacts.get("discussion_specialist_consultation"))
+            self.assertIsNone(artifacts.get("planning_specialist_consultation"))
             self.assertIn("specialist_lifecycle_disclosure", artifacts)
             self.assertIn("host_stage_disclosure", artifacts)
-            discussion_receipt = json.loads(
-                resolve_artifact_path("discussion_specialist_consultation").read_text(encoding="utf-8")
-            )
-            planning_receipt = json.loads(
-                resolve_artifact_path("planning_specialist_consultation").read_text(encoding="utf-8")
-            )
             lifecycle_disclosure = json.loads(
                 resolve_artifact_path("specialist_lifecycle_disclosure").read_text(encoding="utf-8")
             )
             host_stage_disclosure = json.loads(resolve_artifact_path("host_stage_disclosure").read_text(encoding="utf-8"))
-            self.assertGreaterEqual(len(list(discussion_receipt["approved_consultation"])), 1)
-            self.assertGreaterEqual(len(list(planning_receipt["approved_consultation"])), 1)
-            self.assertGreaterEqual(len(list(discussion_receipt["user_disclosures"])), 1)
-            self.assertGreaterEqual(len(list(planning_receipt["user_disclosures"])), 1)
-            self.assertEqual("routing_consultation_execution_separated", lifecycle_disclosure["truth_model"])
+            self.assertEqual("skill_routing_usage_evidence", lifecycle_disclosure["truth_model"])
             self.assertEqual(
-                ["discussion_routing", "discussion_consultation", "planning_consultation", "execution_dispatch"],
+                ["discussion_routing", "execution_dispatch"],
                 [str(layer["layer_id"]) for layer in list(lifecycle_disclosure["layers"])],
             )
             self.assertIn("systematic-debugging", lifecycle_disclosure["rendered_text"])
             self.assertEqual(lifecycle_disclosure, summary["specialist_lifecycle_disclosure"])
             self.assertEqual("progressive_host_stage_disclosure", host_stage_disclosure["mode"])
             self.assertEqual(
-                ["discussion_routing", "discussion_consultation", "planning_consultation", "execution_dispatch"],
+                ["discussion_routing", "execution_dispatch"],
                 [str(event["segment_id"]) for event in list(host_stage_disclosure["events"])],
             )
-            self.assertEqual([1, 2, 3, 4], [int(event["sequence"]) for event in list(host_stage_disclosure["events"])])
+            self.assertEqual([1, 2], [int(event["sequence"]) for event in list(host_stage_disclosure["events"])])
             self.assertEqual(host_stage_disclosure, summary["host_stage_disclosure"])
 
             self.assertTrue(bool(execution_manifest["dispatch_integrity"]["proof_passed"]))

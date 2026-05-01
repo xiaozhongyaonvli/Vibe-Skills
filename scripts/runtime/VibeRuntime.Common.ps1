@@ -2750,8 +2750,6 @@ function New-VibeRuntimeSummaryArtifactProjection {
         [AllowEmptyString()] [string]$ExecutionManifestPath = '',
         [AllowEmptyString()] [string]$ExecutionTopologyPath = '',
         [AllowEmptyString()] [string]$ExecutionProofManifestPath = '',
-        [AllowEmptyString()] [string]$DiscussionSpecialistConsultationPath = '',
-        [AllowEmptyString()] [string]$PlanningSpecialistConsultationPath = '',
         [AllowEmptyString()] [string]$SpecialistLifecycleDisclosurePath = '',
         [AllowEmptyString()] [string]$HostStageDisclosurePath = '',
         [AllowEmptyString()] [string]$HostUserBriefingPath = '',
@@ -2778,8 +2776,6 @@ function New-VibeRuntimeSummaryArtifactProjection {
         execution_manifest = if ([string]::IsNullOrWhiteSpace($ExecutionManifestPath)) { $null } else { $ExecutionManifestPath }
         execution_topology = if ([string]::IsNullOrWhiteSpace($ExecutionTopologyPath)) { $null } else { $ExecutionTopologyPath }
         execution_proof_manifest = if ([string]::IsNullOrWhiteSpace($ExecutionProofManifestPath)) { $null } else { $ExecutionProofManifestPath }
-        discussion_specialist_consultation = if ([string]::IsNullOrWhiteSpace($DiscussionSpecialistConsultationPath)) { $null } else { $DiscussionSpecialistConsultationPath }
-        planning_specialist_consultation = if ([string]::IsNullOrWhiteSpace($PlanningSpecialistConsultationPath)) { $null } else { $PlanningSpecialistConsultationPath }
         specialist_lifecycle_disclosure = if ([string]::IsNullOrWhiteSpace($SpecialistLifecycleDisclosurePath)) { $null } else { $SpecialistLifecycleDisclosurePath }
         host_stage_disclosure = if ([string]::IsNullOrWhiteSpace($HostStageDisclosurePath)) { $null } else { $HostStageDisclosurePath }
         host_user_briefing = if ([string]::IsNullOrWhiteSpace($HostUserBriefingPath)) { $null } else { $HostUserBriefingPath }
