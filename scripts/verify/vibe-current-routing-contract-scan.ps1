@@ -39,6 +39,14 @@ $currentSurfaceFiles = @(
     'scripts/runtime/invoke-vibe-runtime.ps1'
 )
 
+$currentRuntimeFiles = @(
+    'scripts/runtime/VibeSkillRouting.Common.ps1',
+    'scripts/runtime/VibeRuntime.Common.ps1',
+    'scripts/runtime/Write-RequirementDoc.ps1',
+    'scripts/runtime/Write-XlPlan.ps1',
+    'scripts/runtime/invoke-vibe-runtime.ps1'
+)
+
 $legacyAllowedFiles = @(
     'scripts/runtime/VibeConsultation.Common.ps1',
     'tests/runtime_neutral/test_vibe_specialist_consultation.py',
@@ -60,6 +68,23 @@ $activeForbiddenPatterns = @(
     'consulted units'
 )
 
+$oldFormatFallbackPatterns = @(
+    'legacy_skill_routing',
+    'specialist_recommendations',
+    'stage_assistant_hints',
+    '## Specialist Consultation',
+    'DiscussionConsultationPath',
+    'PlanningConsultationPath'
+)
+
+$allowedCurrentExecutionPhrases = @(
+    'host_specialist_dispatch_decision',
+    'specialist_dispatch_decision',
+    'derived_from_skill_routing_selected',
+    'source = ''skill_routing.selected''',
+    'no_specialist_recommendations'
+)
+
 $findings = New-Object System.Collections.Generic.List[object]
 
 foreach ($relative in $currentSurfaceFiles) {
@@ -77,6 +102,30 @@ foreach ($relative in $currentSurfaceFiles) {
                 if (-not $isLegacyLine) {
                     $findings.Add((New-Finding -Category 'current_surface_violation' -Path $relative -Line ($index + 1) -Pattern $pattern -Text $lineText)) | Out-Null
                 }
+            }
+        }
+    }
+}
+
+foreach ($relative in $currentRuntimeFiles) {
+    $fullPath = Join-Path $RepoRoot $relative
+    $lines = @(Get-TextFileLines -Path $fullPath)
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        $lineText = [string]$lines[$index]
+        foreach ($pattern in $oldFormatFallbackPatterns) {
+            if ($lineText.IndexOf($pattern, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) {
+                continue
+            }
+
+            $allowed = $false
+            foreach ($allowedPhrase in $allowedCurrentExecutionPhrases) {
+                if ($lineText.IndexOf($allowedPhrase, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                    $allowed = $true
+                    break
+                }
+            }
+            if (-not $allowed) {
+                $findings.Add((New-Finding -Category 'current_runtime_old_format_fallback' -Path $relative -Line ($index + 1) -Pattern $pattern -Text $lineText)) | Out-Null
             }
         }
     }
@@ -109,7 +158,8 @@ foreach ($root in $historicalRoots) {
 
 $summary = [pscustomobject]@{
     current_surface_violation_count = @($findings | Where-Object { $_.category -eq 'current_surface_violation' }).Count
-    legacy_reference_count = [int]$legacyReferenceCount
+    current_runtime_old_format_fallback_count = @($findings | Where-Object { $_.category -eq 'current_runtime_old_format_fallback' }).Count
+    retired_old_format_reference_count = [int]$legacyReferenceCount
     historical_reference_count = [int]$historicalReferenceCount
     findings = [object[]]$findings.ToArray()
 }
@@ -119,19 +169,20 @@ if ($Json) {
 } else {
     '=== VCO Current Routing Contract Scan ==='
     ('Current surface violations: {0}' -f [int]$summary.current_surface_violation_count)
-    ('Legacy compatibility references: {0}' -f [int]$summary.legacy_reference_count)
+    ('Current runtime old-format fallbacks: {0}' -f [int]$summary.current_runtime_old_format_fallback_count)
+    ('Retired old-format references: {0}' -f [int]$summary.retired_old_format_reference_count)
     ('Historical doc references: {0}' -f [int]$summary.historical_reference_count)
     foreach ($finding in @($summary.findings)) {
         '[FAIL] {0}:{1} [{2}] {3}' -f $finding.path, $finding.line, $finding.pattern, $finding.text
     }
-    if ([int]$summary.current_surface_violation_count -eq 0) {
+    if ([int]$summary.current_surface_violation_count -eq 0 -and [int]$summary.current_runtime_old_format_fallback_count -eq 0) {
         'Gate Result: PASS'
     } else {
         'Gate Result: FAIL'
     }
 }
 
-if ([int]$summary.current_surface_violation_count -gt 0) {
+if ([int]$summary.current_surface_violation_count -gt 0 -or [int]$summary.current_runtime_old_format_fallback_count -gt 0) {
     exit 1
 }
 exit 0

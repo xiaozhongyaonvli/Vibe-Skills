@@ -42,7 +42,8 @@ class CurrentRoutingContractScanTests(unittest.TestCase):
         payload = json.loads(completed.stdout)
 
         self.assertEqual(0, int(payload["current_surface_violation_count"]))
-        self.assertIn("legacy_reference_count", payload)
+        self.assertEqual(0, int(payload["current_runtime_old_format_fallback_count"]))
+        self.assertIn("retired_old_format_reference_count", payload)
         self.assertIn("historical_reference_count", payload)
         self.assertEqual([], payload["findings"])
 
@@ -61,4 +62,5 @@ class CurrentRoutingContractScanTests(unittest.TestCase):
         )
 
         self.assertIn("VCO Current Routing Contract Scan", completed.stdout)
+        self.assertIn("Retired old-format references:", completed.stdout)
         self.assertIn("Gate Result: PASS", completed.stdout)

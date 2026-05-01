@@ -22,7 +22,7 @@ should teach.
 | `used` | A selected or loaded skill shaped an artifact and appears in `skill_usage.used` with evidence. |
 | `unused` | A selected or loaded skill did not shape an artifact and appears in `skill_usage.unused`. |
 | `evidence` | A stage, artifact reference, and impact summary proving material skill use. |
-| `legacy compatibility` | Old routing, consultation, or dispatch records remain readable for history, but they do not define current behavior. |
+| `retired old-format fields` | Old routing, consultation, and dispatch fields are not current inputs, current outputs, or maintained compatibility targets. |
 
 ## Usage Proof
 
@@ -48,12 +48,12 @@ skill_usage.evidence
 ```
 
 Current runtime outputs should not teach old routing mechanisms as active
-behavior. Historical fields may appear only in clearly labeled legacy
-compatibility sections.
+behavior.
 
-## Legacy Compatibility Boundary
+## Retired Old-Format Fields
 
-The following old fields may exist only for compatibility with old artifacts:
+The following old fields are retired. Current runtime code must not use them to
+infer selected skills, material skill use, or current execution ownership:
 
 ```text
 legacy_skill_routing
@@ -68,8 +68,9 @@ discussion_consultation
 planning_consultation
 ```
 
-When current and legacy fields are both present, current code should prefer
-`skill_routing` and `skill_usage`.
+When current and retired fields are both present in an old artifact, current
+runtime code should prefer `skill_routing` and `skill_usage` and ignore retired
+fields for current behavior.
 
 ## Non-Goals
 
