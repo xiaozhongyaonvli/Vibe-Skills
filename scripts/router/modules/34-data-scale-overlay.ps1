@@ -584,7 +584,7 @@ function Get-DataScaleOverlayAdvice {
     $csvDefaultSkill = "spreadsheet"
     $csvLargeSkill = "xan"
     $workbookSkill = "xlsx"
-    $workbookAnalysisSkill = "excel-analysis"
+    $workbookAnalysisSkill = "spreadsheet"
     $operationKeywords = @("join", "groupby", "dedup", "frequency", "sort", "filter", "pipeline", "aggregate", "window", "parallel", "merge", "split", "分组", "去重", "聚合", "连接", "排序", "过滤", "管道", "流式")
     if ($DataScaleOverlayPolicy.recommendations) {
         if ($DataScaleOverlayPolicy.recommendations.csv_default_skill) { $csvDefaultSkill = [string]$DataScaleOverlayPolicy.recommendations.csv_default_skill }
@@ -686,5 +686,4 @@ function Get-DataScaleOverlayAdvice {
         override_candidate_allowed = $overrideCandidateAllowed
     }
 }
-
 

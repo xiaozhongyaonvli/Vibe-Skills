@@ -114,12 +114,12 @@ Tool: None (Claude native reasoning)
 
 ### A2: Structured Analysis (by estimated grade)
 
-| Estimated Grade | Tool | Source |
-|----------------|------|--------|
-| M | claude-code-settings:think-harder | 4-phase analysis |
-| L | claude-code-settings:think-ultra | 7-phase analysis |
-| XL | superpowers:brainstorming | Socratic dialogue |
-| Any | sc:analyze | Code-focused analysis |
+| Estimated Grade | Native Vibe Method | Stage |
+|----------------|--------------------|-------|
+| M | concise risk and objective check | `deep_interview` |
+| L | structured options, constraints, and acceptance criteria | `deep_interview` -> `requirement_doc` |
+| XL | Socratic clarification plus explicit tradeoff comparison | `deep_interview` -> `xl_plan` |
+| Any code-heavy case | repository evidence probe before plan text | `skeleton_check` -> `xl_plan` |
 
 ### A3: Classification Decision
 Based on analysis output, determine:
@@ -131,11 +131,11 @@ Based on analysis output, determine:
 
 ### Compound Task Decomposition
 
-| Grade | Tool | Source |
-|-------|------|--------|
-| M | everything-claude-code:planner agent | Everything-CC |
-| L | superpowers:writing-plans | Superpowers |
-| XL | ruflo workflow_create | Claude-flow |
+| Grade | Native Vibe Method | Stage |
+|-------|--------------------|-------|
+| M | short serial checklist | `xl_plan` |
+| L | phase plan with owners, verification, and rollback notes | `xl_plan` |
+| XL | wave-sequential plan with bounded parallel windows | `xl_plan` -> `plan_execute` |
 
 Output: ordered phases, each with protocol, quality gate, and handoff context.
 
@@ -143,7 +143,7 @@ Output: ordered phases, each with protocol, quality gate, and handoff context.
 
 ```
 Phase 1: Requirements (vibe-think)
-  Tool: superpowers:brainstorming
+  Native method: vibe.deep_interview
   Gate: Requirements document approved by user
 
 Phase 2: Architecture (vibe-think)
@@ -162,10 +162,10 @@ Phase 4: Security Review (vibe-review)
 ## Phase B: Planning & Design Execution (L Grade)
 
 ### B1: Requirements Discovery
-Tool: superpowers:brainstorming
-- Socratic dialogue pattern
-- HARD-GATE: No implementation until design is approved
-- Output: Clarified requirements, user stories, acceptance criteria
+Native method: `vibe.deep_interview`
+- ask one high-value clarification when ambiguity blocks requirement quality
+- compare options before choosing an implementation direction
+- output clarified requirements, assumptions, acceptance criteria, and user-visible tradeoffs
 
 Governed runtime requirement:
 - persist an intent contract that can be turned into a file under `docs/requirements/`
@@ -177,7 +177,7 @@ Tool: sc:design
 
 ### B2 Self-Check (All Design Tasks)
 
-After generating initial design (via sc:design or brainstorming):
+After generating initial design through `vibe.deep_interview` or `sc:design`:
 1. List 3 ways this design could fail in production
 2. If any failure mode suggests a fundamentally different approach → generate alternative
 3. If alternative is equally viable → present both to user with trade-off comparison
@@ -187,7 +187,7 @@ Note: If user explicitly requested dialectic think-tank mode, skip B2 Self-Check
 team.md Dialectic Mode instead.
 
 ### B3: Plan Documentation
-Tool: superpowers:writing-plans
+Native method: `vibe.xl_plan`
 - Generates plan at docs/plans/YYYY-MM-DD-<topic>.md
 - Output: Actionable implementation plan with phases
 
@@ -245,8 +245,8 @@ When task is purely research (no implementation):
 
 ## Conflict Avoidance
 - Do NOT write code during this protocol (respect HARD-GATE)
-- Do NOT invoke both brainstorming systems simultaneously
-- think-harder/think-ultra = problem analysis, brainstorming = requirements discovery
+- Do not create a second requirement or plan surface outside the active `vibe` session
+- deep analysis, option comparison, and plan writing are native methods inside `deep_interview` and `xl_plan`
 - Analysis (Phase A) completes BEFORE implementation begins, not in parallel with execution
 - superpowers planning/process skills remain discipline-only and must not create a second requirement or plan truth once VCO artifacts are frozen
 - any planning aid that is not the governed runtime must feed the canonical `docs/requirements/` and `docs/plans/` surfaces rather than invent parallel artifacts

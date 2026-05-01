@@ -18,7 +18,7 @@
 > | 6 | `phase_cleanup` | Clean up temp artifacts and produce a final report |
 >
 > **Key terms used below:**
-> - **Canonical router**: The internal logic that picks which skill handles your task.
+> - **Internal specialist recommender**: The internal logic that suggests bounded specialist help after `vibe` is already the runtime authority.
 > - **Root/Child lane**: In multi-agent tasks, "root" is the coordinator; "child" lanes are workers. Only root makes final completion claims.
 > - **Frozen requirement/plan**: Once you approve the requirements or plan, they are locked -- the system will not silently change scope.
 > - **Proof bundle**: Evidence that a task was actually completed -- test results, output logs, verification commands.
@@ -28,8 +28,8 @@
 Governed runtime contract for `vibe`.
 
 This protocol defines the user-facing runtime path that all host syntaxes share.
-It does not replace the canonical router.
-It defines what must happen after `vibe` is selected.
+It does not create a second router or second runtime surface.
+It defines what must happen after `$vibe` enters the governed runtime.
 
 ## Runtime Identity
 
@@ -43,7 +43,7 @@ These are syntax variants for the same governed runtime, not separate entrypoint
 
 ## Contract Priorities
 
-1. Canonical router authority stays intact.
+1. `vibe` runtime authority stays intact.
 2. User-facing runtime path stays fixed.
 3. `M`, `L`, `XL` remain internal execution grades only.
 4. Requirement freezing happens before plan execution.
@@ -164,15 +164,15 @@ Rules:
 - later stages must append a matching lineage entry for the same governed run
 - spawned subagent prompts must end with `$vibe`
 - milestone evidence must be written before phase completion
-- governed `vibe` runs must record bounded native specialist recommendations under `vibe` governance and must not leave the recommendation surface empty
-- eligible specialist recommendations should auto-promote into bounded native units; only blocked, degraded, or forced-escalation ideas remain advisory escalation requests
-- when effective `approved_dispatch` is non-empty, governed `vibe` must emit one unified pre-execution disclosure that lists only actually executing specialist Skills and each real `native_skill_entrypoint`
+- governed `vibe` runs must record bounded native skill execution candidates under `vibe` governance and must not leave the candidate surface empty
+- eligible selected skill execution candidates should auto-promote into bounded native units; only blocked, degraded, or forced-escalation ideas remain advisory escalation requests
+- when `selected_skill_execution` is non-empty, governed `vibe` must emit one unified pre-execution disclosure that lists only actually executing Skills and each real `native_skill_entrypoint`
 - when routed or consulted specialist activity becomes stage-confirmed, governed `vibe` must append a host-stage disclosure event rather than waiting until the final runtime summary to expose that fact
-- approved specialist dispatch must be phase-bound as `pre_execution`, `in_execution`, `post_execution`, or `verification`
-- approved specialist dispatch must carry lane policy, write scope, and review mode so execution remains deterministic and conflict-aware
-- `L` uses explicit serial specialist steps; `XL` may use bounded parallel specialist lanes only when root-approved and write-scope-safe
-- runtime-selected skill stays `vibe` for governed entry even when route truth points at a specialist
-- specialist use must preserve native workflow, required inputs, expected outputs, and validation style
+- selected skill execution must be phase-bound as `pre_execution`, `in_execution`, `post_execution`, or `verification`
+- selected skill execution must carry lane policy, write scope, and review mode so execution remains deterministic and conflict-aware
+- `L` uses explicit serial skill execution steps; `XL` may use bounded parallel skill execution lanes only when root-approved and write-scope-safe
+- runtime-selected skill stays `vibe` for governed entry even when route truth points at a selected skill
+- selected skill use must preserve native workflow, required inputs, expected outputs, and validation style
 - child-governed lanes inherit root-frozen requirement/plan context and must not open second canonical requirement or plan truth surfaces
 - child-governed startup requires a root-authored `delegation-envelope.json`
 - child-governed startup must emit `delegation-validation-receipt.json` before bounded work
@@ -207,10 +207,10 @@ The runtime may delegate stage internals to existing protocols:
 
 Delegation must not bypass the fixed stage order.
 
-## Router Integration Rules
+## Specialist Recommender Integration Rules
 
-- route authority remains in `scripts/router/resolve-pack-route.ps1`
-- `confirm_required` stays on the existing white-box confirm surface
+- specialist recommendation logic remains in `scripts/router/resolve-pack-route.ps1`
+- `confirm_required` stays on the existing white-box confirm surface when specialist choice needs host confirmation
 - unattended routing is interpreted as a governed runtime mode choice, not as a second runtime
 - provider-backed intelligence remains advice-only
 - fallback or degraded paths must emit an explicit hazard alert rather than a silent warning
@@ -222,10 +222,10 @@ The ecosystem may carry multiple helpful layers, but runtime authority must stay
 
 Layer ownership is:
 
-- canonical router: route selection authority
-- VCO governed runtime: stage order, requirement freeze, plan traceability, execution receipts, cleanup receipts
+- VCO governed runtime: public entry, stage order, requirement freeze, plan traceability, execution receipts, cleanup receipts
+- internal specialist recommender: bounded specialist suggestions inside the governed runtime
 - host bridge: hidden governance context attachment and host-hook wiring only
-- superpowers and similar process layers: workflow discipline only
+- process-method layers: workflow discipline only, never a second runtime surface
 
 Explicitly forbidden:
 
@@ -244,7 +244,7 @@ During XL delegation, governed execution is hierarchical rather than recursive t
 - `root_governed` lane:
   - owns canonical requirement freeze
   - owns canonical plan freeze
-  - owns global specialist dispatch approval
+  - owns global selected skill execution approval
   - owns final completion claim for the full task
 - `child_governed` lane:
   - inherits root-frozen requirement and plan context
@@ -258,13 +258,13 @@ Explicitly forbidden for child-governed lanes:
 - writing a second canonical requirement document under `docs/requirements/`
 - writing a second canonical execution plan under `docs/plans/`
 - issuing final completion claims for the root-governed task
-- silently activating new global specialist dispatch without root approval
+- silently activating new global selected skill execution without root approval
 
-Specialist dispatch semantics under hierarchy:
+Selected skill execution semantics under hierarchy:
 
-- `approved_dispatch`: specialist execution approved by root and recorded in frozen plan, including same-round auto-absorb approval for safe child-lane recommendations
-- approved dispatch must include phase binding, lane policy, write scope, and review mode so downstream child lanes do not improvise governance semantics
-- `local_suggestion`: residual child-surfaced specialist suggestion that remains advisory only when root-governed execution blocks it, degrades it, or explicit policy forces escalation instead of same-round auto-absorb
+- `selected_skill_execution`: skill execution approved by root and recorded in the frozen plan, including same-round auto-absorb approval for safe child-lane recommendations
+- selected skill execution must include phase binding, lane policy, write scope, and review mode so downstream child lanes do not improvise governance semantics
+- `local_suggestion`: residual child-surfaced skill suggestion that remains advisory only when root-governed execution blocks it, degrades it, or explicit policy forces escalation instead of same-round auto-absorb
 
 ## Artifact Contract
 
@@ -272,16 +272,16 @@ Expected runtime artifacts:
 
 - `outputs/runtime/vibe-sessions/<run-id>/skeleton-receipt.json`
 - `outputs/runtime/vibe-sessions/<run-id>/intent-contract.json`
-- `outputs/runtime/vibe-sessions/<run-id>/runtime-input-packet.json` with non-empty `route_snapshot` and specialist surfaces
+- `outputs/runtime/vibe-sessions/<run-id>/runtime-input-packet.json` with non-empty `route_snapshot` and selected skill execution surfaces
 - requirement document
 - execution plan
 - phase receipts
 - cleanup receipt
-- execution-manifest specialist accounting/disclosure receipts
-- runtime-input packet specialist recommendations when bounded specialist help is available
-- execution-manifest specialist dispatch accounting when the plan uses bounded specialist help
+- execution-manifest skill execution accounting/disclosure receipts
+- runtime-input packet selected skill execution candidates when bounded skill help is available
+- execution-manifest skill execution accounting when the plan uses bounded skill help
 - hierarchy-scoped authority markers indicating `root_governed` versus `child_governed` lane
-- explicit escalation artifacts when child-governed lanes propose non-approved specialist dispatch
+- explicit escalation artifacts when child-governed lanes propose non-approved skill execution
 - delivery-acceptance report proving whether full downstream completion language is allowed
 
 ## Success Criteria
@@ -297,4 +297,4 @@ The governed runtime is considered healthy only when:
 - downstream delivery truth is evaluated separately from runtime/process truth before full completion wording is allowed
 - no fallback or degraded path is presented as equivalent success
 - any fallback or degraded path emits a standalone hazard alert
-- no run claims canonical vibe entry without verified `host-launch-receipt.json`, `runtime-input-packet.json` (including `route_snapshot` and specialist surfaces), `governance-capsule.json`, `stage-lineage.json`, and required specialist dispatch accounting artifacts
+- no run claims canonical vibe entry without verified `host-launch-receipt.json`, `runtime-input-packet.json` (including `route_snapshot` and selected skill execution surfaces), `governance-capsule.json`, `stage-lineage.json`, and required skill execution accounting artifacts

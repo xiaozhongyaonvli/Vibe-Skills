@@ -120,7 +120,6 @@ class RouterBridgeTests(unittest.TestCase):
                         {"skill": "skill-e", "score": 0.51},
                         {"skill": "selected-skill", "score": 0.42},
                     ],
-                    "stage_assistant_candidates": [],
                 }
             ],
         }
@@ -161,6 +160,27 @@ class RouterBridgeTests(unittest.TestCase):
                     self.assertEqual(expected["selected_pack"], result["selected"]["pack_id"])
                 if "selected_skill" in expected:
                     self.assertEqual(expected["selected_skill"], result["selected"]["skill"])
+                if "blocked_pack" in expected:
+                    self.assertNotEqual(expected["blocked_pack"], result["selected"]["pack_id"])
+                    ranked_pack_ids = {
+                        str(row.get("pack_id") or "")
+                        for row in result["ranked"]
+                        if isinstance(row, dict)
+                    }
+                    self.assertNotIn(expected["blocked_pack"], ranked_pack_ids)
+                if "blocked_skill_prefix" in expected:
+                    blocked_prefix = expected["blocked_skill_prefix"]
+                    ranked_skills = {str(result["selected"].get("skill") or "")}
+                    for row in result["ranked"]:
+                        if not isinstance(row, dict):
+                            continue
+                        for item in row.get("candidate_ranking") or []:
+                            if isinstance(item, dict):
+                                ranked_skills.add(str(item.get("skill") or ""))
+                    self.assertFalse(
+                        [skill for skill in sorted(ranked_skills) if skill.startswith(blocked_prefix)],
+                        ranked_skills,
+                    )
 
     def test_confirm_required_returns_batched_clarification_bundle(self) -> None:
         result = run_bridge(
@@ -206,7 +226,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertNotIn(CONFIRM_UI_BATCH_PROMPT, result["confirm_ui"]["rendered_text"])
         self.assertNotIn(DEEP_DISCOVERY_FIRST_QUESTION, result["confirm_ui"]["rendered_text"])
 
-    def test_ml_critical_discussion_routes_to_lqf_ml_expert(self) -> None:
+    def test_ml_critical_discussion_routes_to_data_leakage_guard(self) -> None:
         result = run_bridge(
             "请你作为机器学习专家和我进行三轮批判式讨论：这个分类方案有没有数据泄漏、基线是否充分、是否该先用简单模型",
             "L",
@@ -215,7 +235,7 @@ class RouterBridgeTests(unittest.TestCase):
 
         self.assertEqual("pack_overlay", result["route_mode"])
         self.assertEqual("data-ml", result["selected"]["pack_id"])
-        self.assertEqual("LQF_Machine_Learning_Expert_Guide", result["selected"]["skill"])
+        self.assertEqual("ml-data-leakage-guard", result["selected"]["skill"])
 
     def test_ml_threshold_question_does_not_false_positive_to_vibe(self) -> None:
         result = run_bridge(
@@ -227,17 +247,17 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertNotEqual("vibe", result["selected"]["skill"])
         self.assertEqual("data-ml", result["selected"]["pack_id"])
 
-    def test_requested_mixed_case_skill_routes_authoritatively_in_runtime_neutral_lane(self) -> None:
+    def test_requested_mixed_case_active_skill_routes_authoritatively_in_runtime_neutral_lane(self) -> None:
         result = run_bridge(
             "请用机器学习专家视角审视这个分类方案",
             "L",
             "research",
-            requested_skill="LQF_Machine_Learning_Expert_Guide",
+            requested_skill="Scikit-Learn",
         )
 
         self.assertEqual("pack_overlay", result["route_mode"])
         self.assertEqual("data-ml", result["selected"]["pack_id"])
-        self.assertEqual("LQF_Machine_Learning_Expert_Guide", result["selected"]["skill"])
+        self.assertEqual("scikit-learn", result["selected"]["skill"])
 
     def test_wrapper_entry_intent_does_not_override_runtime_neutral_router_selection(self) -> None:
         prompt = (
@@ -264,7 +284,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("vibe-what-do-i-want", wrapped["alias"]["entry_intent_id"])
         self.assertIsNone(wrapped["alias"]["requested_input"])
 
-    def test_vibe_keeps_route_authority_while_plan_helpers_move_to_stage_assistants(self) -> None:
+    def test_vibe_keeps_selected_skill_while_plan_helpers_stay_bounded(self) -> None:
         result = run_bridge(
             "请持续更新 task_plan.md 和 progress.md，按阶段推进这个复杂任务",
             "L",
@@ -272,15 +292,12 @@ class RouterBridgeTests(unittest.TestCase):
             requested_skill="vibe",
         )
 
-        self.assertEqual("orchestration-core", result["selected"]["pack_id"])
-        self.assertEqual("vibe", result["selected"]["skill"])
+        self.assertEqual("vibe", result["alias"]["requested_canonical"])
+        self.assertNotEqual("orchestration-core", result["selected"]["pack_id"])
+        self.assertIn("brainstorm_planning", result["intent_contract"]["capabilities"])
+        self.assertEqual(["vibe"], result["deep_discovery_advice"]["recommended_skills"])
 
-        orchestration_row = next(row for row in result["ranked"] if row["pack_id"] == "orchestration-core")
-        self.assertEqual("vibe", orchestration_row["selected_candidate"])
-        self.assertEqual(["vibe"], [row["skill"] for row in orchestration_row["candidate_ranking"]])
-        self.assertIn("planning-with-files", [row["skill"] for row in orchestration_row["stage_assistant_candidates"]])
-
-    def test_scientific_figure_route_keeps_plotting_libraries_out_of_main_candidate_pool(self) -> None:
+    def test_scientific_figure_route_uses_only_direct_figure_candidates(self) -> None:
         result = run_bridge(
             "帮我做科研绘图，产出期刊级 figure，多面板、颜色无障碍、矢量导出",
             "L",
@@ -291,17 +308,19 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("scientific-visualization", result["selected"]["skill"])
 
         figure_row = next(row for row in result["ranked"] if row["pack_id"] == "science-figures-visualization")
+        ranking_by_skill = {row["skill"]: row for row in figure_row["candidate_ranking"]}
         self.assertEqual(
-            ["scientific-visualization", "scientific-schematics"],
-            [row["skill"] for row in figure_row["candidate_ranking"]],
+            {"scientific-visualization", "scientific-schematics"},
+            set(ranking_by_skill),
         )
-        self.assertTrue(
-            {"matplotlib", "seaborn", "plotly"}.issubset(
-                {row["skill"] for row in figure_row["stage_assistant_candidates"]}
-            )
-        )
+        self.assertNotIn("legacy_role", ranking_by_skill["scientific-visualization"])
+        self.assertNotIn("route_authority_eligible", ranking_by_skill["scientific-visualization"])
+        self.assertNotIn("legacy_role", ranking_by_skill["scientific-schematics"])
+        self.assertNotIn("route_authority_eligible", ranking_by_skill["scientific-schematics"])
+        self.assertNotIn("stage_assistant_candidates", figure_row)
+        self.assertNotIn("route_authority_eligible", figure_row)
 
-    def test_full_text_evidence_table_prefers_bgpt_structured_paper_search(self) -> None:
+    def test_full_text_evidence_table_is_absorbed_by_literature_review(self) -> None:
         result = run_bridge(
             "请帮我做 full-text 文献检索，提取样本量、effect size、方法学细节，做系统综述证据表",
             "L",
@@ -310,9 +329,9 @@ class RouterBridgeTests(unittest.TestCase):
 
         self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
         self.assertEqual("science-literature-citations", result["selected"]["pack_id"])
-        self.assertEqual("bgpt-paper-search", result["selected"]["skill"])
+        self.assertEqual("literature-review", result["selected"]["skill"])
 
-    def test_deep_research_pack_keeps_deepagent_helpers_out_of_main_candidate_pool(self) -> None:
+    def test_deep_research_pack_has_no_legacy_stage_assistants(self) -> None:
         result = run_bridge(
             "我要做 deep research，多跳浏览网页并保留 trace.jsonl 和 sources.json 证据链",
             "L",
@@ -323,10 +342,14 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("webthinker-deep-research", result["selected"]["skill"])
 
         deep_research_row = next(row for row in result["ranked"] if row["pack_id"] == "ruc-nlpir-augmentation")
-        self.assertEqual(
-            ["webthinker-deep-research", "flashrag-evidence"],
-            [row["skill"] for row in deep_research_row["candidate_ranking"]],
-        )
+        ranking_by_skill = {row["skill"]: row for row in deep_research_row["candidate_ranking"]}
+        self.assertEqual({"flashrag-evidence", "webthinker-deep-research"}, set(ranking_by_skill))
+        self.assertNotIn("legacy_role", ranking_by_skill["webthinker-deep-research"])
+        self.assertNotIn("route_authority_eligible", ranking_by_skill["webthinker-deep-research"])
+        self.assertNotIn("legacy_role", ranking_by_skill["flashrag-evidence"])
+        self.assertNotIn("route_authority_eligible", ranking_by_skill["flashrag-evidence"])
+        self.assertNotIn("stage_assistant_candidates", deep_research_row)
+        self.assertNotIn("route_authority_eligible", deep_research_row)
 
     def test_data_leakage_audit_can_route_to_ml_data_leakage_guard(self) -> None:
         result = run_bridge(
@@ -361,7 +384,7 @@ class RouterBridgeTests(unittest.TestCase):
         self.assertEqual("code-quality", result["selected"]["pack_id"])
         self.assertEqual("generating-test-reports", result["selected"]["skill"])
 
-    def test_regression_analysis_routes_to_regression_owner(self) -> None:
+    def test_regression_analysis_routes_to_data_ml_owner(self) -> None:
         result = run_bridge(
             "请对这个实验数据做回归分析：线性回归或 GLM 建模、残差诊断、系数解释和拟合优度比较",
             "L",
@@ -369,27 +392,26 @@ class RouterBridgeTests(unittest.TestCase):
         )
 
         self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
-        self.assertEqual("research-design", result["selected"]["pack_id"])
-        self.assertEqual("performing-regression-analysis", result["selected"]["skill"])
+        self.assertEqual("data-ml", result["selected"]["pack_id"])
+        self.assertEqual("scikit-learn", result["selected"]["skill"])
 
-    def test_preprocessing_pipeline_surfaces_stage_assistant_without_taking_main_route(self) -> None:
+    def test_preprocessing_pipeline_routes_as_direct_data_ml_owner(self) -> None:
         result = run_bridge(
-            "请用 scikit-learn 设计数据预处理流水线：清洗、编码、标准化、ETL pipeline，但先不要做数据泄漏审计",
+            "机器学习 data preprocessing pipeline：清洗数据、feature encoding、standardize data、validate input data，输出可复用预处理流水线",
             "L",
-            "research",
+            "coding",
         )
 
         self.assertIn(result["route_mode"], {"pack_overlay", "confirm_required"})
+        self.assertEqual("data-ml", result["selected"]["pack_id"])
+        self.assertEqual("preprocessing-data-with-automated-pipelines", result["selected"]["skill"])
+
         data_ml_row = next(row for row in result["ranked"] if row["pack_id"] == "data-ml")
-        self.assertEqual("scikit-learn", data_ml_row["selected_candidate"])
-        self.assertNotIn(
-            "preprocessing-data-with-automated-pipelines",
-            [row["skill"] for row in data_ml_row["candidate_ranking"]],
-        )
-        self.assertIn(
-            "preprocessing-data-with-automated-pipelines",
-            [row["skill"] for row in data_ml_row["stage_assistant_candidates"]],
-        )
+        ranking_by_skill = {row["skill"]: row for row in data_ml_row["candidate_ranking"]}
+        self.assertNotIn("legacy_role", ranking_by_skill["preprocessing-data-with-automated-pipelines"])
+        self.assertNotIn("route_authority_eligible", ranking_by_skill["preprocessing-data-with-automated-pipelines"])
+        self.assertNotIn("stage_assistant_candidates", data_ml_row)
+        self.assertNotIn("route_authority_eligible", data_ml_row)
 
     def test_research_report_authoring_stays_on_scientific_reporting(self) -> None:
         result = run_bridge(
@@ -411,10 +433,10 @@ class RouterBridgeTests(unittest.TestCase):
         )
 
         self.assertEqual("pack_overlay", result["route_mode"])
-        self.assertEqual("orchestration-core", result["selected"]["pack_id"])
-        self.assertEqual("vibe", result["selected"]["skill"])
+        self.assertEqual("code-quality", result["selected"]["pack_id"])
+        self.assertEqual("systematic-debugging", result["selected"]["skill"])
         self.assertEqual("vibe", result["alias"]["requested_canonical"])
-        self.assertEqual("vibe", result["ranked"][0]["selected_candidate"])
+        self.assertNotEqual("orchestration-core", result["selected"]["pack_id"])
         self.assertIn("confirm_ui", result)
         self.assertTrue(result["confirm_ui"]["enabled"])
 
@@ -427,9 +449,7 @@ class RouterBridgeTests(unittest.TestCase):
         )
 
         self.assertEqual("pack_overlay", result["route_mode"])
-        self.assertEqual("candidate_signal_auto_route", result["route_reason"])
-        self.assertEqual("orchestration-core", result["selected"]["pack_id"])
-        self.assertEqual("vibe", result["selected"]["skill"])
+        self.assertNotEqual("orchestration-core", result["selected"]["pack_id"])
         self.assertEqual("vibe", result["alias"]["requested_canonical"])
 
 

@@ -4,7 +4,13 @@ from pathlib import Path
 
 from .custom_admission import load_custom_admission
 from .router_contract_presentation import build_confirm_ui, build_fallback_truth
-from .router_contract_selection import get_pack_default_candidate, select_pack_candidate
+from .router_contract_selection import (
+    INTERNAL_SELECTION_USABLE,
+    get_pack_default_candidate,
+    get_pack_skill_candidates,
+    public_candidate_rows,
+    select_pack_candidate,
+)
 from .router_contract_support import (
     RepoContext,
     candidate_name_score,
@@ -363,6 +369,39 @@ def _relax_deep_discovery_confirm(
     return True
 
 
+INTERNAL_ROUTE_USABLE = "_route_usable"
+
+
+def _public_custom_metadata(value: object) -> object:
+    if not isinstance(value, dict):
+        return value
+    public = dict(value)
+    public.pop(INTERNAL_ROUTE_USABLE, None)
+    public.pop("route_authority_eligible", None)
+    return public
+
+
+def _public_pack_row(row: dict[str, object]) -> dict[str, object]:
+    public = dict(row)
+    public.pop(INTERNAL_ROUTE_USABLE, None)
+    public.pop("route_authority_eligible", None)
+    public.pop("stage_assistant_candidates", None)
+    public["candidate_ranking"] = public_candidate_rows(list(public.get("candidate_ranking") or []))
+    public["custom_admission"] = _public_custom_metadata(public.get("custom_admission"))
+    return public
+
+
+def _public_admitted_candidates(rows: object) -> list[dict[str, object]]:
+    public_rows: list[dict[str, object]] = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        public_row = dict(row)
+        public_row.pop("route_authority_eligible", None)
+        public_rows.append(public_row)
+    return public_rows
+
+
 def _get_preferred_host_selection(pack_row: dict[str, object] | None) -> dict[str, object] | None:
     if not pack_row:
         return None
@@ -412,9 +451,6 @@ def _get_preferred_host_selection(pack_row: dict[str, object] | None) -> dict[st
     selected_skill = str(pack_row.get("selected_candidate") or "").strip()
     add_candidate(None, float(pack_row.get("candidate_selection_score") or 0.0), selected_skill, True)
     for row in pack_row.get("candidate_ranking", []) or []:
-        if isinstance(row, dict):
-            add_candidate(row, 0.0, "", str(row.get("skill") or "").strip() == selected_skill)
-    for row in pack_row.get("stage_assistant_candidates", []) or []:
         if isinstance(row, dict):
             add_candidate(row, 0.0, "", str(row.get("skill") or "").strip() == selected_skill)
 
@@ -487,13 +523,10 @@ def route_prompt(
         if task_allow and task_type not in task_allow:
             continue
 
+        pack_candidates = get_pack_skill_candidates(pack)
         selection = select_pack_candidate(
             prompt_lower=prompt_lower,
-            candidates=[
-                str(item).strip()
-                for item in (pack.get("skill_candidates") or [])
-                if str(item).strip()
-            ],
+            candidates=pack_candidates,
             task_type=task_type,
             requested_canonical=requested_canonical,
             skill_keyword_index=skill_keyword_index,
@@ -502,11 +535,11 @@ def route_prompt(
             candidate_selection_config=candidate_selection_cfg,
         )
         trigger_ratio = keyword_ratio(prompt_lower, pack.get("trigger_keywords") or [])
-        intent_score = _pack_intent_score(prompt_lower, str(pack.get("id") or ""), list(pack.get("skill_candidates") or []))
+        intent_score = _pack_intent_score(prompt_lower, str(pack.get("id") or ""), pack_candidates)
         workspace_score = _workspace_signal_score(
             prompt_lower,
             requested_canonical,
-            list(pack.get("skill_candidates") or []),
+            pack_candidates,
         )
         priority_signal = min(max(float(pack.get("priority", 0)) / 100.0, 0.0), 1.0)
         relevance_score = float(selection.get("relevance_score", selection["score"]))
@@ -528,11 +561,13 @@ def route_prompt(
             4,
         )
         custom_metadata = pack.get("custom_admission")
-        route_authority_eligible = bool(selection.get("route_authority_eligible", selection.get("selected") is not None))
+        route_usable = bool(selection.get(INTERNAL_SELECTION_USABLE, selection.get("selected") is not None))
         if isinstance(custom_metadata, dict):
-            route_authority_eligible = route_authority_eligible and bool(custom_metadata.get("route_authority_eligible", False))
+            route_usable = route_usable and bool(
+                custom_metadata.get(INTERNAL_ROUTE_USABLE, custom_metadata.get("route_authority_eligible", False))
+            )
         if weak_fallback:
-            route_authority_eligible = False
+            route_usable = False
         pack_results.append(
             {
                 "pack_id": normalize_text(pack.get("id")),
@@ -544,18 +579,18 @@ def route_prompt(
                 "candidate_selection_score": round(float(selection["score"]), 4),
                 "candidate_relevance_score": round(relevance_score, 4),
                 "candidate_ranking": selection["ranking"],
-                "stage_assistant_candidates": selection.get("stage_assistant_candidates", []),
                 "candidate_top1_top2_gap": round(float(selection["top1_top2_gap"]), 4),
                 "candidate_signal": candidate_signal,
                 "candidate_filtered_out_by_task": selection["filtered_out_by_task"],
-                "route_authority_eligible": route_authority_eligible,
+                INTERNAL_ROUTE_USABLE: route_usable,
                 "custom_admission": custom_metadata,
             }
         )
 
     ranked = sorted(pack_results, key=lambda row: (-row["score"], row["pack_id"]))
-    authority_ranked = [row for row in ranked if bool(row.get("route_authority_eligible", True))]
-    selection_pool = authority_ranked if authority_ranked else ranked
+    authority_ranked = [row for row in ranked if bool(row.get(INTERNAL_ROUTE_USABLE, True))]
+    selectable_ranked = [row for row in ranked if _optional_text(row.get("selected_candidate"))]
+    selection_pool = authority_ranked if authority_ranked else (selectable_ranked if selectable_ranked else ranked)
     top = selection_pool[0] if selection_pool else None
     confidence = float(top["score"]) if top else 0.0
     top_gap = float(top["candidate_top1_top2_gap"]) if top else 0.0
@@ -624,7 +659,7 @@ def route_prompt(
         confidence = max(confidence, confirm_required_threshold)
         legacy_fallback_guard_applied = True
 
-    preferred_selection = _get_preferred_host_selection(top) if top and not bool(top.get("route_authority_eligible", True)) else None
+    preferred_selection = _get_preferred_host_selection(top) if top and not bool(top.get(INTERNAL_ROUTE_USABLE, True)) else None
     selected_skill = (
         str(preferred_selection["skill"])
         if preferred_selection
@@ -686,7 +721,7 @@ def route_prompt(
             if top
             else None
         ),
-        "ranked": ranked[:3],
+        "ranked": [_public_pack_row(row) for row in ranked[:3]],
         "intent_contract": intent_contract,
         "deep_discovery_route_filter_applied": deep_discovery_route_filter_applied,
         "deep_discovery_route_mode_override": bool(
@@ -704,7 +739,7 @@ def route_prompt(
             "manifests_present": custom_admission.get("manifests_present"),
             "invalid_entries": custom_admission.get("invalid_entries"),
             "dependency_failures": custom_admission.get("dependency_failures"),
-            "admitted_candidates": custom_admission.get("admitted_candidates"),
+            "admitted_candidates": _public_admitted_candidates(custom_admission.get("admitted_candidates")),
         },
     }
     if deep_discovery_advice:

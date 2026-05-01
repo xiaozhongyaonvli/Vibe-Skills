@@ -20,7 +20,6 @@
         ],
         "skill_allow": [
             "scikit-learn",
-            "training-machine-learning-models",
             "ml-pipeline-workflow",
             "transformers",
             "embedding-strategies",
@@ -124,6 +123,5 @@
         "on_analyzer_failure": "continue_advisory"
     }
 }
-
 
 

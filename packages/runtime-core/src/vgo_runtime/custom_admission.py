@@ -221,7 +221,7 @@ def _build_admitted_candidate(
         "parallelizable_in_root_xl": admitted["parallelizable_in_root_xl"],
         "native_usage_required": admitted["native_usage_required"],
         "must_preserve_workflow": admitted["must_preserve_workflow"],
-        "route_authority_eligible": admitted["route_authority_eligible"],
+        "_route_usable": admitted["route_authority_eligible"],
         "skill_md_path": admitted["skill_md_path"],
         "description": admitted["description"],
     }

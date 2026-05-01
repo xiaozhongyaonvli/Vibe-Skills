@@ -101,7 +101,6 @@ Write-Host "=== VCO Keyword Precision Audit (Bilingual + Interference) ==="
 # 1) Keyword health: all packs must have non-empty triggers.
 # Core packs should be bilingual (EN + ZH) to avoid regressions for Chinese-first workflows.
 $corePacks = @(
-    "orchestration-core",
     "code-quality",
     "data-ml",
     "bio-science",
@@ -133,7 +132,7 @@ foreach ($pack in $packManifest.packs) {
 
 # 2) Pack-level bilingual routing and interference gap checks.
 $probeCases = @(
-    [pscustomobject]@{ Pack = "orchestration-core"; Grade = "L"; Task = "planning"; En = "Need workflow orchestration and subagent planning for this system"; Zh = "请做工作流编排和子代理规划方案" },
+    [pscustomobject]@{ Pack = "workflow-compatibility"; Grade = "L"; Task = "planning"; En = "/speckit.plan create the technical plan"; Zh = "/speckit.plan 生成技术计划" },
     [pscustomobject]@{ Pack = "code-quality"; Grade = "M"; Task = "review"; En = "Run code review, lint, and debugging quality checks"; Zh = "请做代码审查、调试和质量检查" },
     [pscustomobject]@{ Pack = "data-ml"; Grade = "L"; Task = "research"; En = "Machine learning model training with regression and feature engineering"; Zh = "请做机器学习模型训练、回归和特征工程分析" },
     [pscustomobject]@{ Pack = "bio-science"; Grade = "L"; Task = "research"; En = "Bioinformatics genomics sequencing pathway analysis"; Zh = "请做生物信息基因组测序和通路分析" },
@@ -165,7 +164,7 @@ foreach ($case in $probeCases) {
 
 # 3) Skill-level sweep: every migrated skill should stably map to its pack in EN/ZH prompts.
 $packContext = @{
-    "orchestration-core" = @{ Grade = "L"; Task = "planning" }
+    "workflow-compatibility" = @{ Grade = "L"; Task = "planning" }
     "code-quality"       = @{ Grade = "M"; Task = "review" }
     "data-ml"            = @{ Grade = "L"; Task = "research" }
     "bio-science"        = @{ Grade = "L"; Task = "research" }

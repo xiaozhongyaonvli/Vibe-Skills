@@ -44,8 +44,7 @@ MINIMUM_TRUTH_ARTIFACTS = {
 REQUIRED_TRUTH_PACKET_FIELDS = (
     "canonical_router",
     "route_snapshot",
-    "specialist_recommendations",
-    "specialist_dispatch",
+    "skill_routing",
     "divergence_shadow",
 )
 STRUCTURED_REENTRY_APPROVAL_ACTIONS: dict[str, frozenset[str]] = {
@@ -468,12 +467,12 @@ def _inherit_frozen_host_decision_fields_from_bounded_reentry(
             governance_scope = str(hierarchy.get("governance_scope") or "").strip()
     if (
         governance_scope.lower() == "root"
-        and effective_decision.get("specialist_dispatch_decision") is None
+        and effective_decision.get("skill_execution_decision") is None
     ):
-        prior_specialist_dispatch_decision = runtime_packet.get("host_specialist_dispatch_decision")
-        if isinstance(prior_specialist_dispatch_decision, dict):
-            effective_decision["specialist_dispatch_decision"] = copy.deepcopy(
-                prior_specialist_dispatch_decision
+        prior_skill_execution_decision = runtime_packet.get("host_skill_execution_decision")
+        if isinstance(prior_skill_execution_decision, dict):
+            effective_decision["skill_execution_decision"] = copy.deepcopy(
+                prior_skill_execution_decision
             )
 
     return effective_decision
@@ -1401,6 +1400,23 @@ def _runtime_packet_records_no_specialist_resolution(runtime_packet: dict[str, A
     )
 
 
+def _skill_routing_selected_skill_ids(runtime_packet: dict[str, Any]) -> list[str]:
+    skill_routing = runtime_packet.get("skill_routing")
+    if not isinstance(skill_routing, dict):
+        return []
+    selected_rows = skill_routing.get("selected")
+    if not isinstance(selected_rows, list):
+        return []
+    selected_skill_ids: list[str] = []
+    for row in selected_rows:
+        if not isinstance(row, dict):
+            continue
+        skill_id = str(row.get("skill_id") or "").strip()
+        if skill_id and skill_id not in selected_skill_ids:
+            selected_skill_ids.append(skill_id)
+    return selected_skill_ids
+
+
 def assert_minimum_truth_consistency(
     *,
     receipt: HostLaunchReceipt,
@@ -1458,18 +1474,14 @@ def assert_minimum_truth_consistency(
     if not selected_skill:
         raise RuntimeError("canonical truth packet missing route_snapshot selected_skill")
 
-    specialist_recommendations = runtime_packet.get("specialist_recommendations")
-    if not isinstance(specialist_recommendations, list):
-        raise RuntimeError("canonical truth packet missing specialist recommendation evidence")
-    if not specialist_recommendations and not _runtime_packet_records_no_specialist_resolution(runtime_packet):
-        raise RuntimeError("canonical truth packet must preserve specialist recommendation or no-specialist resolution evidence")
-
-    specialist_dispatch = runtime_packet.get("specialist_dispatch")
-    if not isinstance(specialist_dispatch, dict):
-        raise RuntimeError("canonical truth packet missing specialist_dispatch object")
-    for dispatch_key in ("approved_dispatch", "local_specialist_suggestions"):
-        if dispatch_key not in specialist_dispatch:
-            raise RuntimeError(f"canonical truth packet missing specialist_dispatch.{dispatch_key}")
+    skill_routing = runtime_packet.get("skill_routing")
+    if not isinstance(skill_routing, dict):
+        raise RuntimeError("canonical truth packet missing skill_routing object")
+    selected_skill_ids = _skill_routing_selected_skill_ids(runtime_packet)
+    if not selected_skill_ids and not _runtime_packet_records_no_specialist_resolution(runtime_packet):
+        raise RuntimeError("canonical truth packet must preserve selected skill or no-specialist resolution evidence")
+    if selected_skill_ids and selected_skill not in selected_skill_ids:
+        raise RuntimeError("route_snapshot selected_skill mismatch with skill_routing.selected")
 
     governance_capsule = _load_json_dict(Path(governance_capsule_path), label="governance-capsule")
     runtime_selected_skill = str(governance_capsule.get("runtime_selected_skill") or "").strip()

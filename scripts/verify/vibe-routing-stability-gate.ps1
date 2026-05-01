@@ -37,6 +37,7 @@ function New-TestCase {
         [string]$Grade,
         [string]$TaskType,
         [string]$ExpectedPack,
+        [string]$BlockedPack,
         [string]$RequestedSkill
     )
 
@@ -46,6 +47,7 @@ function New-TestCase {
         grade = $Grade
         task_type = $TaskType
         expected_pack = $ExpectedPack
+        blocked_pack = $BlockedPack
         requested_skill = $RequestedSkill
     }
 }
@@ -91,9 +93,9 @@ $minGapBaseline = if ($thresholds -and ($thresholds.PSObject.Properties.Name -co
 
 $testCases = @(
     # Synonym groups (same task/grade)
-    (New-TestCase -Group "orchestration-planning" -Prompt "create implementation plan and task breakdown" -Grade "L" -TaskType "planning" -ExpectedPack "orchestration-core"),
-    (New-TestCase -Group "orchestration-planning" -Prompt "请输出实施计划和任务拆解" -Grade "L" -TaskType "planning" -ExpectedPack "orchestration-core"),
-    (New-TestCase -Group "orchestration-planning" -Prompt "need milestone roadmap and execution plan" -Grade "L" -TaskType "planning" -ExpectedPack "orchestration-core"),
+    (New-TestCase -Group "planning-no-orchestration-core" -Prompt "create implementation plan and task breakdown" -Grade "L" -TaskType "planning" -BlockedPack "orchestration-core"),
+    (New-TestCase -Group "planning-no-orchestration-core" -Prompt "请输出实施计划和任务拆解" -Grade "L" -TaskType "planning" -BlockedPack "orchestration-core"),
+    (New-TestCase -Group "planning-no-orchestration-core" -Prompt "need milestone roadmap and execution plan" -Grade "L" -TaskType "planning" -BlockedPack "orchestration-core"),
 
     (New-TestCase -Group "code-quality-review" -Prompt "run code review and quality checks" -Grade "M" -TaskType "review" -ExpectedPack "code-quality"),
     (New-TestCase -Group "code-quality-review" -Prompt "做一次代码评审和质量检查" -Grade "M" -TaskType "review" -ExpectedPack "code-quality"),
@@ -126,11 +128,11 @@ $testCases = @(
     (New-TestCase -Group "research-design-planning" -Prompt "设计准实验方案，比较DiD和ITS" -Grade "L" -TaskType "planning" -ExpectedPack "research-design"),
     (New-TestCase -Group "research-design-planning" -Prompt "research methodology and experimental design" -Grade "L" -TaskType "planning" -ExpectedPack "research-design"),
 
-    (New-TestCase -Group "aios-core-planning-pm" -Prompt "create PRD and backlog with user stories" -Grade "L" -TaskType "planning" -ExpectedPack "aios-core"),
-    (New-TestCase -Group "aios-core-planning-pm" -Prompt "输出用户故事和产品需求文档" -Grade "L" -TaskType "planning" -ExpectedPack "aios-core"),
-    (New-TestCase -Group "aios-core-planning-pm" -Prompt "draft product roadmap and PRD scope for next release" -Grade "L" -TaskType "planning" -ExpectedPack "aios-core"),
-    (New-TestCase -Group "aios-core-planning-po" -Prompt "product owner style backlog prioritization and acceptance criteria" -Grade "L" -TaskType "planning" -ExpectedPack "aios-core"),
-    (New-TestCase -Group "aios-core-planning-po" -Prompt "按PO视角做backlog优先级排序和验收标准" -Grade "L" -TaskType "planning" -ExpectedPack "aios-core"),
+    (New-TestCase -Group "aios-core-removed-planning" -Prompt "create PRD and backlog with user stories" -Grade "L" -TaskType "planning" -BlockedPack "aios-core"),
+    (New-TestCase -Group "aios-core-removed-planning" -Prompt "输出用户故事和产品需求文档" -Grade "L" -TaskType "planning" -BlockedPack "aios-core"),
+    (New-TestCase -Group "aios-core-removed-planning" -Prompt "draft product roadmap and PRD scope for next release" -Grade "L" -TaskType "planning" -BlockedPack "aios-core"),
+    (New-TestCase -Group "aios-core-removed-product-owner" -Prompt "product owner style backlog prioritization and acceptance criteria" -Grade "L" -TaskType "planning" -BlockedPack "aios-core"),
+    (New-TestCase -Group "aios-core-removed-product-owner" -Prompt "按PO视角做backlog优先级排序和验收标准" -Grade "L" -TaskType "planning" -BlockedPack "aios-core"),
 
     # Task-type cross checks
     (New-TestCase -Group "cross-ml-planning" -Prompt "build ML workflow and rollout plan" -Grade "L" -TaskType "planning" -ExpectedPack "data-ml"),
@@ -156,6 +158,8 @@ foreach ($case in $testCases) {
     $isMisroute = $false
     if ($case.expected_pack) {
         $isMisroute = ($selectedPack -ne $case.expected_pack)
+    } elseif ($case.blocked_pack) {
+        $isMisroute = ($selectedPack -eq $case.blocked_pack)
     } else {
         $isMisroute = ($route.route_mode -ne "legacy_fallback")
     }
@@ -168,6 +172,7 @@ foreach ($case in $testCases) {
         grade = $case.grade
         task_type = $case.task_type
         expected_pack = $case.expected_pack
+        blocked_pack = $case.blocked_pack
         route_mode = [string]$route.route_mode
         route_reason = [string]$route.route_reason
         selected_pack = $selectedPack

@@ -39,7 +39,7 @@ def resolve_repo_root(start_path: Path) -> Path:
 
     git_candidates = [candidate for candidate in candidates if (candidate / ".git").exists()]
     if git_candidates:
-        return git_candidates[-1]
+        return git_candidates[0]
     # Installed-host layouts can place host-level config files above skills/vibe.
     # Without a git root, prefer the nearest governed root to preserve installed
     # runtime routing semantics.
@@ -109,22 +109,57 @@ def normalize_keyword_list(values: list[Any] | None) -> list[str]:
     return normalized
 
 
+NEGATION_SCOPE_PATTERN = re.compile(
+    r"(不是|并非|不属于|不涉及|不做|不使用|不调用|不指定|不限定|不需要|不要|不用|无需|避免|排除|without\b|no\b|not\s+using\b|do\s+not\s+use\b|don't\s+use\b|not\b)",
+    re.IGNORECASE,
+)
+NEGATION_SCOPE_BOUNDARY_PATTERN = re.compile(r"[，。；;,.!?！？\r\n]")
+NEGATION_CONTRAST_PATTERN = re.compile(
+    r"(但使用|但是使用|但要使用|but\s+use|but\s+using|except\s+use|instead\s+use)",
+    re.IGNORECASE,
+)
+
+
+def _keyword_pattern(needle: str) -> re.Pattern[str]:
+    escaped = re.escape(needle)
+    if re.search(r"[\u4e00-\u9fff]", needle):
+        return re.compile(escaped)
+    if re.search(r"[a-z0-9]", needle):
+        return re.compile(rf"(?<![a-z0-9]){escaped}(?![a-z0-9])")
+    return re.compile(escaped)
+
+
+def _keyword_is_negation_phrase(needle: str) -> bool:
+    return NEGATION_SCOPE_PATTERN.search(needle) is not None
+
+
+def _match_is_in_negated_scope(prompt_lower: str, match_start: int) -> bool:
+    prefix = prompt_lower[max(0, match_start - 80):match_start]
+    boundaries = list(NEGATION_SCOPE_BOUNDARY_PATTERN.finditer(prefix))
+    if boundaries:
+        prefix = prefix[boundaries[-1].end():]
+
+    negation_matches = list(NEGATION_SCOPE_PATTERN.finditer(prefix))
+    if not negation_matches:
+        return False
+
+    scoped_prefix = prefix[negation_matches[-1].start():]
+    return NEGATION_CONTRAST_PATTERN.search(scoped_prefix) is None
+
+
 def keyword_hit(prompt_lower: str, keyword: str | None) -> bool:
     needle = normalize_text(keyword)
     if not prompt_lower or not needle:
         return False
 
-    # CJK terms are better handled as raw substring matches.
-    if re.search(r"[\u4e00-\u9fff]", needle):
-        return needle in prompt_lower
+    matches = list(_keyword_pattern(needle).finditer(prompt_lower))
+    if not matches:
+        return False
 
-    # ASCII-ish tokens should respect word boundaries to avoid "implementation"
-    # accidentally matching "implement".
-    if re.search(r"[a-z0-9]", needle):
-        escaped = re.escape(needle)
-        return re.search(rf"(?<![a-z0-9]){escaped}(?![a-z0-9])", prompt_lower) is not None
+    if _keyword_is_negation_phrase(needle):
+        return True
 
-    return needle in prompt_lower
+    return any(not _match_is_in_negated_scope(prompt_lower, match.start()) for match in matches)
 
 
 def keyword_ratio(prompt_lower: str, keywords: list[Any] | None) -> float:

@@ -40,18 +40,18 @@ def match_skills_to_task(task_description: str, task_category: str, skills_guide
 
     # Category-based matching
     category_skills = {
-        "code_review": ["code-reviewer", "code-review-excellence"],
+        "code_review": ["code-reviewer"],
         "data_analysis": ["exploratory-data-analysis", "statistical-analysis"],
         "data_visualization": ["data-artist", "matplotlib", "plotly"],
         "ml_training": ["senior-ml-engineer", "pytorch-lightning", "scikit-learn"],
         "ml_evaluation": ["evaluating-machine-learning-models", "shap"],
         "scientific_writing": ["scientific-writing", "scientific-schematics"],
         "documentation": ["docs-write", "writing-docs"],
-        "debugging": ["debugging-strategies", "error-resolver"],
+        "debugging": ["systematic-debugging"],
         "architecture": ["architecture-patterns"],
-        "bioinformatics": ["biopython", "bioservices", "gget"],
+        "bioinformatics": ["biopython", "bio-database-evidence"],
         "drug_discovery": ["torchdrug", "rdkit", "uniprot-database"],
-        "protein_analysis": ["uniprot-database", "alphafold-database"],
+        "protein_analysis": ["uniprot-database", "bio-database-evidence"],
         "testing": ["property-based-testing", "performance-testing"],
     }
 
@@ -76,19 +76,19 @@ def match_skills_to_task(task_description: str, task_category: str, skills_guide
 
 | Task Category | Recommended Skills | Priority |
 |--------------|-------------------|----------|
-| **代码审查** | code-reviewer, code-review-excellence | High |
+| **代码审查** | code-reviewer | High |
 | **数据分析** | exploratory-data-analysis, statistical-analysis | High |
 | **数据可视化** | data-artist, matplotlib, plotly, seaborn | High |
 | **机器学习训练** | senior-ml-engineer, pytorch-lightning, scikit-learn | High |
 | **模型评估** | evaluating-machine-learning-models, shap | High |
 | **科学写作** | scientific-writing, scientific-schematics | Medium |
 | **文档编写** | docs-write, writing-docs, documentation-lookup | Medium |
-| **调试排错** | debugging-strategies, error-resolver | High |
+| **调试排错** | systematic-debugging | High |
 | **架构设计** | architecture-patterns | High |
 | **测试编写** | property-based-testing, performance-testing | Medium |
-| **生物信息学** | biopython, bioservices, gget | Domain-specific |
+| **生物信息学** | biopython, bio-database-evidence | Domain-specific |
 | **药物发现** | torchdrug, rdkit, uniprot-database | Domain-specific |
-| **蛋白质分析** | uniprot-database, alphafold-database | Domain-specific |
+| **蛋白质分析** | uniprot-database, bio-database-evidence | Domain-specific |
 
 ### By Feature Type
 
@@ -103,7 +103,7 @@ def match_skills_to_task(task_description: str, task_category: str, skills_guide
     "visualization": ["data-artist", "matplotlib", "plotly"],
     "documentation": ["docs-write", "writing-docs"],
     "testing": ["property-based-testing", "performance-testing"],
-    "optimization": ["performance-testing", "debugging-strategies"],
+    "optimization": ["performance-testing", "systematic-debugging"],
     "security": ["code-reviewer"]
   }
 }
@@ -271,7 +271,7 @@ When creating features.json, each feature includes recommended skills:
     ],
 
     "available_skills": [
-      "code-reviewer", "data-artist", "debugging-strategies",
+      "code-reviewer", "data-artist", "systematic-debugging",
       "scientific-writing", "exploratory-data-analysis"
     ],
 
@@ -325,7 +325,7 @@ When creating features.json, each feature includes recommended skills:
 Feature: Data Analysis Pipeline
 Steps:
   1. Load data → invoke: exploratory-data-analysis
-  2. Clean data → invoke: data-quality-checker
+  2. Clean data → invoke: exploratory-data-analysis
   3. Analyze → invoke: statistical-analysis
   4. Visualize → invoke: data-artist
   5. Report → invoke: report-generator
@@ -336,7 +336,7 @@ Steps:
 ```yaml
 Feature: ML Model Training
 Steps:
-  1. Feature engineering → invoke: engineering-features-for-machine-learning
+  1. Feature engineering → invoke: preprocessing-data-with-automated-pipelines
   2. Model training → invoke: pytorch-lightning
   3. Evaluation → invoke: evaluating-machine-learning-models
   4. Interpretation → invoke: shap
@@ -349,7 +349,7 @@ Steps:
 Feature: Code Refactoring
 Steps:
   1. Review code → invoke: code-reviewer
-  2. Debug issues → invoke: debugging-strategies
+  2. Debug issues -> invoke: systematic-debugging
   3. Optimize performance → invoke: performance-testing
   4. Update architecture → invoke: architecture-patterns
   5. Write tests → invoke: property-based-testing

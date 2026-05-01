@@ -115,9 +115,10 @@ if ($hasReceipt -and $hasRuntimePacket -and $hasGovernanceCapsule -and $hasStage
     Add-Assertion -Assertions $assertions -Pass ([string]$receipt.launch_status -eq 'verified') -Message 'host launch receipt launch_status is verified'
     Add-Assertion -Assertions $assertions -Pass (-not [string]::IsNullOrWhiteSpace([string]$receipt.host_id)) -Message 'host launch receipt records host id'
 
-    foreach ($propertyName in @('canonical_router', 'route_snapshot', 'specialist_recommendations', 'specialist_dispatch', 'divergence_shadow')) {
+    foreach ($propertyName in @('canonical_router', 'route_snapshot', 'skill_routing', 'divergence_shadow')) {
         Add-Assertion -Assertions $assertions -Pass (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName $propertyName) -Message ("runtime packet includes {0}" -f $propertyName)
     }
+    $legacySkillRouting = if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'legacy_skill_routing') { $runtimePacket.legacy_skill_routing } else { $null }
 
     if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'canonical_router') {
         $canonicalRouter = $runtimePacket.canonical_router
@@ -139,8 +140,8 @@ if ($hasReceipt -and $hasRuntimePacket -and $hasGovernanceCapsule -and $hasStage
         Add-Assertion -Assertions $assertions -Pass (-not [string]::IsNullOrWhiteSpace($selectedSkill)) -Message 'runtime packet route_snapshot records routed specialist truth'
     }
 
-    if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'specialist_recommendations') {
-        $hasSpecialistRecommendations = @($runtimePacket.specialist_recommendations).Count -ge 1
+    if ($null -ne $legacySkillRouting -and (Test-ObjectHasProperty -InputObject $legacySkillRouting -PropertyName 'specialist_recommendations')) {
+        $hasSpecialistRecommendations = @($legacySkillRouting.specialist_recommendations).Count -ge 1
         $hasNoSpecialistResolution = $false
         if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'specialist_decision') {
             $specialistDecision = $runtimePacket.specialist_decision
@@ -154,10 +155,26 @@ if ($hasReceipt -and $hasRuntimePacket -and $hasGovernanceCapsule -and $hasStage
         Add-Assertion -Assertions $assertions -Pass ($hasSpecialistRecommendations -or $hasNoSpecialistResolution) -Message 'runtime packet carries specialist recommendations or no-specialist resolution'
     }
 
-    if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'specialist_dispatch') {
-        $specialistDispatch = $runtimePacket.specialist_dispatch
-        Add-Assertion -Assertions $assertions -Pass (Test-ObjectHasProperty -InputObject $specialistDispatch -PropertyName 'approved_dispatch') -Message 'runtime packet specialist_dispatch exposes approved_dispatch'
-        Add-Assertion -Assertions $assertions -Pass (Test-ObjectHasProperty -InputObject $specialistDispatch -PropertyName 'local_specialist_suggestions') -Message 'runtime packet specialist_dispatch exposes local_specialist_suggestions'
+    if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'skill_routing') {
+        $selectedSkillIds = @($runtimePacket.skill_routing.selected | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+        Add-Assertion -Assertions $assertions -Pass ($selectedSkillIds.Count -ge 0) -Message 'runtime packet exposes canonical skill_routing.selected'
+        $hasNoSpecialistResolution = $false
+        if (Test-ObjectHasProperty -InputObject $runtimePacket -PropertyName 'specialist_decision') {
+            $specialistDecision = $runtimePacket.specialist_decision
+            $hasNoSpecialistResolution = (
+                (Test-ObjectHasProperty -InputObject $specialistDecision -PropertyName 'decision_state') -and
+                (Test-ObjectHasProperty -InputObject $specialistDecision -PropertyName 'resolution_mode') -and
+                [string]$specialistDecision.decision_state -eq 'no_specialist_recommendations' -and
+                [string]$specialistDecision.resolution_mode -in @('no_matching_specialist', 'no_specialist_needed')
+            )
+        }
+        Add-Assertion -Assertions $assertions -Pass ($selectedSkillIds.Count -ge 1 -or $hasNoSpecialistResolution) -Message 'runtime packet records selected skills or no-specialist resolution'
+    }
+
+    if ($null -ne $legacySkillRouting -and (Test-ObjectHasProperty -InputObject $legacySkillRouting -PropertyName 'specialist_dispatch')) {
+        $specialistDispatch = $legacySkillRouting.specialist_dispatch
+        Add-Assertion -Assertions $assertions -Pass (Test-ObjectHasProperty -InputObject $specialistDispatch -PropertyName 'approved_dispatch') -Message 'runtime packet legacy_skill_routing.specialist_dispatch exposes approved_dispatch'
+        Add-Assertion -Assertions $assertions -Pass (Test-ObjectHasProperty -InputObject $specialistDispatch -PropertyName 'local_specialist_suggestions') -Message 'runtime packet legacy_skill_routing.specialist_dispatch exposes local_specialist_suggestions'
     }
 
     Add-Assertion -Assertions $assertions -Pass ([string]$governanceCapsule.runtime_selected_skill -eq 'vibe') -Message 'governance capsule keeps vibe as runtime authority'

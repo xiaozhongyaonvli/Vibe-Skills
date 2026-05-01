@@ -26,8 +26,8 @@ function Get-RouteMetrics {
     )
 
     $cases = @(
-        [pscustomobject]@{ expected = "orchestration-core"; grade = "L"; task = "planning"; prompt = "Design a workflow orchestration strategy for multi-agent delivery" },
-        [pscustomobject]@{ expected = "orchestration-core"; grade = "M"; task = "planning"; prompt = "Route this task and classify the execution path" },
+        [pscustomobject]@{ blocked = "orchestration-core"; grade = "L"; task = "planning"; prompt = "Design a workflow orchestration strategy for multi-agent delivery" },
+        [pscustomobject]@{ blocked = "orchestration-core"; grade = "M"; task = "planning"; prompt = "Route this task and classify the execution path" },
         [pscustomobject]@{ expected = "code-quality"; grade = "M"; task = "review"; prompt = "Run code review and identify behavioral regressions" },
         [pscustomobject]@{ expected = "code-quality"; grade = "L"; task = "debug"; prompt = "Perform root cause investigation for this failing build" },
         [pscustomobject]@{ expected = "data-ml"; grade = "L"; task = "research"; prompt = "Train a machine learning model and evaluate feature engineering quality" },
@@ -51,7 +51,11 @@ function Get-RouteMetrics {
         $total++
 
         $selectedPack = [string]$route.selected.pack_id
-        $isCorrect = $selectedPack -eq $case.expected
+        $isCorrect = if ($case.PSObject.Properties.Name -contains "blocked" -and $case.blocked) {
+            $selectedPack -ne $case.blocked
+        } else {
+            $selectedPack -eq $case.expected
+        }
         if ($isCorrect) { $correct++ }
         if ($route.route_mode -eq "legacy_fallback") { $fallback++ }
 
@@ -62,7 +66,8 @@ function Get-RouteMetrics {
 
         $details.Add([pscustomobject]@{
             prompt = $case.prompt
-            expected_pack = $case.expected
+            expected_pack = if ($case.PSObject.Properties.Name -contains "expected") { $case.expected } else { $null }
+            blocked_pack = if ($case.PSObject.Properties.Name -contains "blocked") { $case.blocked } else { $null }
             selected_pack = $selectedPack
             route_mode = [string]$route.route_mode
             correct = $isCorrect

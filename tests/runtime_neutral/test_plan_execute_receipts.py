@@ -295,6 +295,29 @@ def set_directory_writable(path: Path) -> None:
 
 
 class PlanExecuteReceiptTests(unittest.TestCase):
+    def test_plan_execute_receipt_and_proof_manifest_expose_current_execution_fields(self) -> None:
+        script_path = REPO_ROOT / "scripts" / "runtime" / "Invoke-PlanExecute.ps1"
+        text = script_path.read_text(encoding="utf-8")
+        proof_block = text.split("$proofManifest = [pscustomobject]@{", 1)[1].split(
+            "$proofManifestPath =",
+            1,
+        )[0]
+        receipt_block = text.split("$receipt = [pscustomobject]@{", 1)[1].split(
+            "$receiptPath =",
+            1,
+        )[0]
+
+        for field in [
+            "skill_execution_unit_count",
+            "selected_skill_execution_count",
+            "blocked_skill_execution_unit_count",
+            "degraded_skill_execution_unit_count",
+            "execution_skill_outcome_count",
+            "skill_execution_resolution_path",
+        ]:
+            self.assertIn(field, proof_block)
+            self.assertIn(field, receipt_block)
+
     def test_native_specialist_prompt_references_declared_entrypoint_rule(self) -> None:
         powershell = resolve_powershell()
         if powershell is None:
@@ -336,6 +359,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
 
@@ -368,7 +393,7 @@ class PlanExecuteReceiptTests(unittest.TestCase):
             "$outcome = [pscustomobject]@{ "
             "lane_id = 'lane-1'; "
             "lane_entry = [pscustomobject]@{ "
-            "lane_kind = 'specialist_dispatch'; "
+            "lane_kind = 'skill_execution'; "
             "source_unit_id = 'unit-1'; "
             "write_scope = 'read_only'; "
             "dispatch = [pscustomobject]@{ "
@@ -403,6 +428,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
 
@@ -447,6 +474,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
 
@@ -485,6 +514,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
 
@@ -493,7 +524,7 @@ class PlanExecuteReceiptTests(unittest.TestCase):
         self.assertFalse(result["prompt_injection_complete"])
         self.assertEqual([], result["missing_prompt_injection_fields"])
 
-    def test_specialist_dispatch_bypasses_codex_repo_check_for_non_git_roots(self) -> None:
+    def test_retired_host_subprocess_mode_routes_skill_execution_in_current_session(self) -> None:
         powershell = resolve_powershell()
         if powershell is None:
             self.skipTest("PowerShell not available")
@@ -542,6 +573,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={
                     **os.environ,
@@ -554,11 +587,14 @@ class PlanExecuteReceiptTests(unittest.TestCase):
 
             result = json.loads(completed.stdout)
             self.assertEqual("completed", result["status"])
-            self.assertTrue(result["live_native_execution"])
-            self.assertEqual(non_git_root.resolve(), Path(result["cwd"]).resolve())
-            self.assertIn("--skip-git-repo-check", list(result["arguments"]))
-            self.assertTrue(Path(result["response_json_path"]).exists())
-            self.assertEqual([], list(result["observed_changed_files"]))
+            self.assertFalse(result["live_native_execution"])
+            self.assertTrue(result["direct_route"])
+            self.assertEqual("direct_current_session_route", result["execution_driver"])
+            self.assertEqual(session_root.resolve(), Path(result["cwd"]).resolve())
+            self.assertEqual([], list(result["arguments"]))
+            self.assertIn("hidden_host_subprocess:false", list(result["verification_notes"]))
+            self.assertNotIn("response_json_path", result)
+            self.assertEqual([], list(result["changed_files"]))
 
     def test_delegated_lane_receipt_normalizes_legacy_usage_required_dispatch(self) -> None:
         powershell = resolve_powershell()
@@ -612,7 +648,7 @@ class PlanExecuteReceiptTests(unittest.TestCase):
                 json.dumps(
                     {
                         "lane_id": lane_id,
-                        "lane_kind": "specialist_dispatch",
+                        "lane_kind": "skill_execution",
                         "lane_root": str(lane_root.resolve()),
                         "run_id": lane_id,
                         "mode": "interactive_governed",
@@ -661,6 +697,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={
                     **os.environ,
@@ -675,11 +713,12 @@ class PlanExecuteReceiptTests(unittest.TestCase):
             receipt = payload["receipt"]
             self.assertTrue(bool(receipt["native_usage_required"]))
             self.assertTrue(bool(receipt["usage_required"]))
+            self.assertEqual("direct_current_session_route", receipt["execution_driver"])
             notes = Path(payload["lane_notes_path"]).read_text(encoding="utf-8")
             self.assertIn("native_usage_required: True", notes)
             self.assertIn("usage_required: True", notes)
 
-    def test_specialist_dispatch_falls_back_to_requirement_workspace_when_repo_root_is_read_only(self) -> None:
+    def test_retired_host_subprocess_mode_stays_in_session_when_repo_root_is_read_only(self) -> None:
         powershell = resolve_powershell()
         if powershell is None:
             self.skipTest("PowerShell executable not available in PATH")
@@ -733,6 +772,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
                     cwd=REPO_ROOT,
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     check=True,
                     env={
                         **os.environ,
@@ -747,11 +788,15 @@ class PlanExecuteReceiptTests(unittest.TestCase):
 
             result = json.loads(completed.stdout)
             self.assertEqual("completed", result["status"])
-            self.assertEqual(temp_path.resolve(), Path(result["cwd"]).resolve())
-            self.assertIn("--skip-git-repo-check", list(result["arguments"]))
-            self.assertTrue(Path(result["response_json_path"]).exists())
+            self.assertFalse(result["live_native_execution"])
+            self.assertTrue(result["direct_route"])
+            self.assertEqual("direct_current_session_route", result["execution_driver"])
+            self.assertEqual(session_root.resolve(), Path(result["cwd"]).resolve())
+            self.assertEqual([], list(result["arguments"]))
+            self.assertIn("hidden_host_subprocess:false", list(result["verification_notes"]))
+            self.assertNotIn("response_json_path", result)
 
-    def test_specialist_dispatch_uses_sidecar_codex_home_with_materialized_skill_surface(self) -> None:
+    def test_retired_host_subprocess_mode_does_not_create_sidecar_codex_home(self) -> None:
         powershell = resolve_powershell()
         if powershell is None:
             self.skipTest("PowerShell executable not available in PATH")
@@ -800,6 +845,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={
                     **os.environ,
@@ -812,19 +859,14 @@ class PlanExecuteReceiptTests(unittest.TestCase):
 
             result = json.loads(completed.stdout)
             self.assertEqual("completed", result["status"])
-            self.assertTrue(result["live_native_execution"])
-            self.assertEqual(non_git_root.resolve(), Path(result["cwd"]).resolve())
-            codex_home_line = require_preview_line(result["stdout_preview"], "CODEX_HOME=")
-            codex_home = codex_home_line.split("=", 1)[1]
-            self.assertNotIn(str(session_root), codex_home)
-            self.assertNotIn(str(temp_path), codex_home)
-            self.assertFalse(Path(codex_home).exists())
-            skill_surface_line = require_preview_line(result["stdout_preview"], "SKILL_SURFACE=")
-            skill_surface = skill_surface_line.split("=", 1)[1]
-            self.assertFalse(Path(skill_surface).exists())
-            self.assertEqual("SKILL.md", Path(skill_surface).name)
+            self.assertFalse(result["live_native_execution"])
+            self.assertTrue(result["direct_route"])
+            self.assertEqual("direct_current_session_route", result["execution_driver"])
+            self.assertEqual(session_root.resolve(), Path(result["cwd"]).resolve())
+            self.assertEqual([], list(result["stdout_preview"]))
+            self.assertIn("hidden_host_subprocess:false", list(result["verification_notes"]))
 
-    def test_specialist_dispatch_seeds_sidecar_codex_home_from_current_host(self) -> None:
+    def test_retired_host_subprocess_mode_does_not_seed_sidecar_codex_home(self) -> None:
         powershell = resolve_powershell()
         if powershell is None:
             self.skipTest("PowerShell executable not available in PATH")
@@ -880,6 +922,8 @@ class PlanExecuteReceiptTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=True,
                 env={
                     **os.environ,
@@ -893,11 +937,12 @@ class PlanExecuteReceiptTests(unittest.TestCase):
 
             result = json.loads(completed.stdout)
             self.assertEqual("completed", result["status"])
-            self.assertTrue(result["live_native_execution"])
-            codex_home_line = require_preview_line(result["stdout_preview"], "CODEX_HOME=")
-            codex_home = codex_home_line.split("=", 1)[1]
-            self.assertIn("CODEX_HOME_SEEDED=1", list(result["stdout_preview"]))
-            self.assertFalse(Path(codex_home).exists())
+            self.assertFalse(result["live_native_execution"])
+            self.assertTrue(result["direct_route"])
+            self.assertEqual("direct_current_session_route", result["execution_driver"])
+            self.assertEqual(session_root.resolve(), Path(result["cwd"]).resolve())
+            self.assertEqual([], list(result["stdout_preview"]))
+            self.assertIn("hidden_host_subprocess:false", list(result["verification_notes"]))
 
 
 if __name__ == "__main__":

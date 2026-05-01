@@ -6,7 +6,7 @@
       "diff review prompt"
     ],
     "category_hints": ["coding"],
-    "tag_hints": ["code-review", "checklist"],
+    "tag_hints": ["code-reviewer", "checklist"],
     "type_hints": ["TEXT"],
     "limit": 10
   },
@@ -27,4 +27,3 @@
   ],
   "rationale": "mock fixture for vibe-prompt-asset-boost-gate"
 }
-

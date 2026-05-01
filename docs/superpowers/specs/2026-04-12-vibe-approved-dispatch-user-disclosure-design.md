@@ -1,5 +1,10 @@
 # Vibe Approved Dispatch User Disclosure Design
 
+> Historical / Retired Note: This document records a previous routing design or
+> migration state. Current routing authority is defined by
+> `docs/governance/current-routing-contract.md` and
+> `docs/governance/current-runtime-field-contract.md`.
+
 ## Goal
 
 Make governed `vibe` runs tell the user, before specialist execution begins, which routed Skills will actually run and where each Skill is being executed from.

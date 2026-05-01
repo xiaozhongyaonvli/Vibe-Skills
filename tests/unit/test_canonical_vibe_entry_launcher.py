@@ -72,6 +72,12 @@ def _write_valid_truth_artifacts(
                 "route_mode": "governed",
                 "confirm_required": False,
             },
+            "skill_routing": {
+                "schema_version": "simplified_skill_routing_v1",
+                "candidates": [{"skill_id": router_selected_skill}],
+                "selected": [{"skill_id": router_selected_skill}],
+                "rejected": [],
+            },
             "specialist_recommendations": [
                 {
                     "skill_id": router_selected_skill,
@@ -96,6 +102,64 @@ def _write_valid_truth_artifacts(
         {
             "last_stage_name": requested_stage_stop if stage_lineage_last_stage_name is None else stage_lineage_last_stage_name,
             "stages": [{"stage_name": requested_stage_stop}] if stage_lineage_stages is None else stage_lineage_stages,
+        },
+    )
+
+
+def _write_current_truth_artifacts(
+    session_root: Path,
+    *,
+    host_id: str = "codex",
+    entry_intent_id: str = "vibe",
+    router_selected_skill: str = "systematic-debugging",
+    requested_stage_stop: str = "requirement_doc",
+) -> None:
+    _write_json(
+        session_root / "runtime-input-packet.json",
+        {
+            "host_id": host_id,
+            "entry_intent_id": entry_intent_id,
+            "requested_stage_stop": requested_stage_stop,
+            "requested_grade_floor": None,
+            "canonical_router": {
+                "host_id": host_id,
+                "requested_skill": None,
+            },
+            "route_snapshot": {
+                "selected_skill": router_selected_skill,
+                "route_mode": "governed",
+                "confirm_required": False,
+            },
+            "skill_routing": {
+                "schema_version": "simplified_skill_routing_v1",
+                "candidates": [{"skill_id": router_selected_skill}],
+                "selected": [{"skill_id": router_selected_skill}],
+                "rejected": [],
+            },
+            "skill_usage": {
+                "state_model": "binary_used_unused",
+                "used": [],
+                "unused": [{"skill_id": router_selected_skill}],
+                "evidence": [],
+            },
+            "specialist_decision": {
+                "decision_state": "approved_dispatch",
+                "resolution_mode": "approved_dispatch",
+                "selected_skill_ids": [router_selected_skill],
+            },
+            "divergence_shadow": {
+                "router_selected_skill": router_selected_skill,
+                "runtime_selected_skill": "vibe",
+                "skill_mismatch": router_selected_skill != "vibe",
+            },
+        },
+    )
+    _write_json(session_root / "governance-capsule.json", {"runtime_selected_skill": "vibe"})
+    _write_json(
+        session_root / "stage-lineage.json",
+        {
+            "last_stage_name": requested_stage_stop,
+            "stages": [{"stage_name": requested_stage_stop}],
         },
     )
 
@@ -1635,6 +1699,44 @@ def test_canonical_entry_rejects_when_runtime_packet_drops_requested_stop(
             requested_stage_stop="xl_plan",
             artifact_root=tmp_path,
         )
+
+
+def test_canonical_entry_accepts_current_skill_routing_truth_packet(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    run_id = "pytest-canonical-entry-current-routing"
+    session_root = tmp_path / "outputs" / "runtime" / "vibe-sessions" / run_id
+
+    monkeypatch.setattr(
+        canonical_entry,
+        "resolve_canonical_vibe_contract",
+        lambda repo_root, host_id: {"fallback_policy": "blocked", "allow_skill_doc_fallback": False},
+    )
+
+    def fake_invoke_runtime(**kwargs: object) -> dict[str, object]:
+        _write_current_truth_artifacts(session_root)
+        return {
+            "run_id": run_id,
+            "session_root": str(session_root),
+            "summary_path": str(session_root / "runtime-summary.json"),
+            "summary": {"run_id": run_id},
+        }
+
+    monkeypatch.setattr(canonical_entry, "invoke_vibe_runtime_entrypoint", fake_invoke_runtime)
+
+    result = canonical_entry.launch_canonical_vibe(
+        repo_root=tmp_path,
+        host_id="codex",
+        entry_id="vibe",
+        prompt="x",
+        requested_stage_stop="requirement_doc",
+        artifact_root=tmp_path,
+    )
+
+    assert result.host_launch_receipt_path == session_root / "host-launch-receipt.json"
+    receipt = json.loads(result.host_launch_receipt_path.read_text(encoding="utf-8"))
+    assert receipt["launch_status"] == "verified"
 
 
 def test_canonical_entry_rejects_when_runtime_packet_drops_requested_grade_floor(

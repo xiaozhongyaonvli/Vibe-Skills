@@ -15,6 +15,11 @@
 
 ## Start Here
 
+- current routing and runtime field contracts:
+  - [`current-routing-contract.md`](current-routing-contract.md)
+  - [`current-runtime-field-contract.md`](current-runtime-field-contract.md)
+  - [`historical-routing-terminology.md`](historical-routing-terminology.md) is
+    only for reading old cleanup records; it is not the current routing model.
 - keep-root governance entry surfaces stay in the docs root:
   - [`../developer-change-governance.md`](../developer-change-governance.md)
   - [`../repo-cleanliness-governance.md`](../repo-cleanliness-governance.md)
@@ -29,7 +34,6 @@ Representative moved leaves:
 - [`distribution-governance.md`](distribution-governance.md)
 - [`ecosystem-absorption-dedup-governance.md`](ecosystem-absorption-dedup-governance.md)
 - [`source-neutral-link-governance.md`](source-neutral-link-governance.md)
-- [`specialist-dispatch-governance.md`](specialist-dispatch-governance.md)
 - [`vibe-governed-project-delivery-acceptance-governance.md`](vibe-governed-project-delivery-acceptance-governance.md)
 - [`skill-admission-hardening.md`](skill-admission-hardening.md)
 

@@ -116,17 +116,6 @@ def _order_confirm_ranking(
         seen_skills.add(skill)
 
     if selected_row is None:
-        for pack_row in route_result.get("ranked", []):
-            if str(pack_row.get("pack_id") or "").strip() != selected_pack:
-                continue
-            for candidate in pack_row.get("stage_assistant_candidates", []) or []:
-                if str(candidate.get("skill") or "").strip() == selected_skill:
-                    selected_row = candidate
-                    break
-            if selected_row is not None:
-                break
-
-    if selected_row is None:
         selected_row = {"skill": selected_skill, "score": route_result["selected"].get("selection_score")}
 
     ordered = [selected_row]

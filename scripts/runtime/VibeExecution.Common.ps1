@@ -1479,7 +1479,7 @@ function New-VibeDegradedSpecialistDispatchResult {
     $usageRequirementState = Get-VibeDispatchUsageRequirementState -Dispatch $Dispatch
     $unitResult = [pscustomobject]@{
         unit_id = $UnitId
-        kind = 'specialist_dispatch'
+        kind = 'skill_execution'
         status = [string]$Policy.degrade_contract.status
         started_at = $startedAt
         finished_at = $finishedAt
@@ -1564,7 +1564,7 @@ function New-VibeDirectRoutedSpecialistDispatchResult {
 
     $unitResult = [pscustomobject]@{
         unit_id = $UnitId
-        kind = 'specialist_dispatch'
+        kind = 'skill_execution'
         status = 'completed'
         started_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.ffffffZ')
         finished_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.ffffffZ')
@@ -1651,7 +1651,7 @@ function New-VibeBlockedSpecialistDispatchResult {
     $usageRequirementState = Get-VibeDispatchUsageRequirementState -Dispatch $Dispatch
     $unitResult = [pscustomobject]@{
         unit_id = $UnitId
-        kind = 'specialist_dispatch'
+        kind = 'skill_execution'
         status = 'blocked'
         started_at = $startedAt
         finished_at = $finishedAt
@@ -1896,7 +1896,7 @@ function Invoke-VibeSpecialistDispatchUnit {
     $usageRequirementState = Get-VibeDispatchUsageRequirementState -Dispatch $Dispatch
     $unitResult = [pscustomobject]@{
         unit_id = $UnitId
-        kind = 'specialist_dispatch'
+        kind = 'skill_execution'
         status = $effectiveStatus
         started_at = $startedAt
         finished_at = $finishedAt
@@ -2046,7 +2046,7 @@ function New-VibeSpecialistLaneEntry {
 
     return [pscustomobject]@{
         lane_id = "specialist-{0}-{1}-{2}" -f $dispatchPhase, $phaseId, [string]$Dispatch.skill_id
-        lane_kind = 'specialist_dispatch'
+        lane_kind = 'skill_execution'
         source_unit_id = [string]$Dispatch.skill_id
         specialist_skill_id = [string]$Dispatch.skill_id
         dispatch_phase = $dispatchPhase
@@ -2150,12 +2150,14 @@ function New-VibeExecutionTopology {
         [Parameter(Mandatory)] [string]$GovernanceScope,
         [Parameter(Mandatory)] [object]$ExecutionPolicy,
         [Parameter(Mandatory)] [object]$TopologyPolicy,
-        [Parameter(Mandatory)] [AllowEmptyCollection()] [object[]]$ApprovedDispatch
+        [AllowEmptyCollection()] [object[]]$ApprovedDispatch = @(),
+        [AllowEmptyCollection()] [object[]]$SelectedSkills = @()
     )
 
     $profileDef = Get-VibeExecutionTopologyProfile -ExecutionPolicy $ExecutionPolicy -TopologyPolicy $TopologyPolicy -Grade $Grade
+    $effectiveSelectedSkills = if (@($SelectedSkills).Count -gt 0) { @($SelectedSkills) } else { @($ApprovedDispatch) }
     $effectiveSpecialistExecutionMode = [string]$profileDef.specialist_execution_mode
-    if (@($ApprovedDispatch).Count -gt 0) {
+    if (@($effectiveSelectedSkills).Count -gt 0) {
         $effectiveSpecialistExecutionMode = 'native_bounded_units'
     }
     $steps = @()
@@ -2165,7 +2167,7 @@ function New-VibeExecutionTopology {
         post_execution = @()
         verification = @()
     }
-    foreach ($dispatch in @($ApprovedDispatch)) {
+    foreach ($dispatch in @($effectiveSelectedSkills)) {
         $phase = if ($dispatch.PSObject.Properties.Name -contains 'dispatch_phase' -and -not [string]::IsNullOrWhiteSpace([string]$dispatch.dispatch_phase)) {
             [string]$dispatch.dispatch_phase
         } else {
@@ -2260,7 +2262,7 @@ function New-VibeExecutionTopology {
             }
         }
 
-        if ($effectiveSpecialistExecutionMode -eq 'native_bounded_units' -and @($ApprovedDispatch).Count -gt 0) {
+        if ($effectiveSpecialistExecutionMode -eq 'native_bounded_units' -and @($effectiveSelectedSkills).Count -gt 0) {
             $prependedSteps = @()
             $appendedSteps = @()
 
@@ -2326,7 +2328,7 @@ function New-VibeExecutionTopology {
             post_execution = @($specialistPhaseBuckets.post_execution)
             verification = @($specialistPhaseBuckets.verification)
         }
-        parallelizable_specialist_unit_count = @($ApprovedDispatch | Where-Object { [bool]$_.parallelizable_in_root_xl }).Count
+        parallelizable_specialist_unit_count = @($effectiveSelectedSkills | Where-Object { [bool]$_.parallelizable_in_root_xl }).Count
         waves = @($steps)
     }
 }

@@ -44,13 +44,13 @@ function Invoke-Route {
 $results = @()
 Write-Host "=== Canonical Routing Practice Tests ==="
 
-# Case 1: canonical code-review request routes through code-quality pack.
-Write-Host "[INFO] Case 1: code-review canonical"
-$c1 = Invoke-Route -Prompt "run code review and security scan" -Grade "M" -TaskType "review" -RequestedSkill "code-review"
-$results += Assert-True -Condition ($c1.alias.alias_hit -eq $false) -Message "code-review is canonical (no alias hit)"
-$results += Assert-True -Condition ($c1.alias.canonical -eq "code-review") -Message "code-review canonical remains code-review"
-$results += Assert-True -Condition ($c1.selected.pack_id -eq "code-quality") -Message "code-review chooses code-quality pack"
-$results += Assert-True -Condition ($c1.route_mode -eq "pack_overlay") -Message "code-review uses pack overlay"
+# Case 1: canonical code-reviewer request routes through code-quality pack.
+Write-Host "[INFO] Case 1: code-reviewer canonical"
+$c1 = Invoke-Route -Prompt "run code review and security scan" -Grade "M" -TaskType "review" -RequestedSkill "code-reviewer"
+$results += Assert-True -Condition ($c1.alias.alias_hit -eq $false) -Message "code-reviewer is canonical (no alias hit)"
+$results += Assert-True -Condition ($c1.alias.canonical -eq "code-reviewer") -Message "code-reviewer canonical remains code-reviewer"
+$results += Assert-True -Condition ($c1.selected.pack_id -eq "code-quality") -Message "code-reviewer chooses code-quality pack"
+$results += Assert-True -Condition ($c1.route_mode -eq "pack_overlay") -Message "code-reviewer uses pack overlay"
 
 # Case 2: canonical xlsx request routes through docs-media pack.
 Write-Host "[INFO] Case 2: xlsx canonical"

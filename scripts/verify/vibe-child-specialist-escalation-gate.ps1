@@ -94,8 +94,9 @@ if ($hasRootSummary) {
     Add-Assertion -Results ([ref]$results) -Condition ($rootRuntimeInputPacket.governance_scope -eq 'root') -Message 'root specialist escalation probe is in root scope'
     Add-Assertion -Results ([ref]$results) -Condition ($rootRuntimeInputPacket.authority_flags.explicit_runtime_skill -eq 'vibe') -Message 'root specialist escalation probe keeps vibe authority'
 
-    $rootApprovedDispatch = if ($rootRuntimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch') {
-        @($rootRuntimeInputPacket.specialist_dispatch.approved_dispatch)
+    $rootSelectedSkillExecution = Get-VibeRuntimeSelectedSkillExecutionProjection -RuntimeInputPacket $rootRuntimeInputPacket
+    $rootApprovedDispatch = if ($null -ne $rootSelectedSkillExecution -and $rootSelectedSkillExecution.PSObject.Properties.Name -contains 'selected_skill_execution') {
+        @($rootSelectedSkillExecution.selected_skill_execution)
     } elseif ($rootRuntimeInputPacket.PSObject.Properties.Name -contains 'approved_specialist_dispatch') {
         @($rootRuntimeInputPacket.approved_specialist_dispatch)
     } else {
@@ -140,23 +141,17 @@ if ($hasChildSummary) {
     $executionManifest = Get-Content -LiteralPath $childSummary.summary.artifacts.execution_manifest -Raw -Encoding UTF8 | ConvertFrom-Json
     $delegationValidation = Get-Content -LiteralPath $childSummary.summary.artifacts.delegation_validation_receipt -Raw -Encoding UTF8 | ConvertFrom-Json
 
-    $specialistDispatch = if ($runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch') {
-        $runtimeInputPacket.specialist_dispatch
-    } else {
-        $null
-    }
+    $selectedSkillExecution = Get-VibeRuntimeSelectedSkillExecutionProjection -RuntimeInputPacket $runtimeInputPacket
 
-    $approvedDispatch = if ($null -ne $specialistDispatch -and $specialistDispatch.PSObject.Properties.Name -contains 'approved_dispatch') {
-        @($specialistDispatch.approved_dispatch)
+    $approvedDispatch = if ($null -ne $selectedSkillExecution -and $selectedSkillExecution.PSObject.Properties.Name -contains 'selected_skill_execution') {
+        @($selectedSkillExecution.selected_skill_execution)
     } elseif ($runtimeInputPacket.PSObject.Properties.Name -contains 'approved_specialist_dispatch') {
         @($runtimeInputPacket.approved_specialist_dispatch)
     } else {
         @()
     }
 
-    $localSuggestions = if ($null -ne $specialistDispatch -and $specialistDispatch.PSObject.Properties.Name -contains 'local_specialist_suggestions') {
-        @($specialistDispatch.local_specialist_suggestions)
-    } elseif ($runtimeInputPacket.PSObject.Properties.Name -contains 'local_specialist_suggestions') {
+    $localSuggestions = if ($runtimeInputPacket.PSObject.Properties.Name -contains 'local_specialist_suggestions') {
         @($runtimeInputPacket.local_specialist_suggestions)
     } else {
         @()
@@ -188,9 +183,14 @@ if ($hasChildSummary) {
     Add-Assertion -Results ([ref]$results) -Condition ($executionManifest.route_runtime_alignment.runtime_selected_skill -eq 'vibe') -Message 'execution manifest keeps explicit vibe authority'
     $specialistAccounting = if ($executionManifest.PSObject.Properties.Name -contains 'specialist_accounting') { $executionManifest.specialist_accounting } else { $null }
     if ($null -ne $specialistAccounting -and $specialistAccounting.PSObject.Properties.Name -contains 'auto_absorb_gate') {
-        Add-Assertion -Results ([ref]$results) -Condition ([bool]$specialistAccounting.auto_absorb_gate.enabled) -Message 'child execution manifest exposes enabled same-round auto-absorb gate'
-        if ($specialistAccounting.auto_absorb_gate.receipt_path) {
-            Add-Assertion -Results ([ref]$results) -Condition (Test-Path -LiteralPath ([string]$specialistAccounting.auto_absorb_gate.receipt_path)) -Message 'same-round auto-absorb gate emits receipt'
+        $autoAbsorbGate = $specialistAccounting.auto_absorb_gate
+        $bypassedByCanonicalRouting = (
+            $autoAbsorbGate.PSObject.Properties.Name -contains 'reason' -and
+            [string]$autoAbsorbGate.reason -eq 'skill_routing_selected_is_authority'
+        )
+        Add-Assertion -Results ([ref]$results) -Condition (([bool]$autoAbsorbGate.enabled) -or $bypassedByCanonicalRouting) -Message 'child execution manifest enables same-round auto-absorb or bypasses it for canonical skill routing'
+        if ([bool]$autoAbsorbGate.enabled -and $autoAbsorbGate.receipt_path) {
+            Add-Assertion -Results ([ref]$results) -Condition (Test-Path -LiteralPath ([string]$autoAbsorbGate.receipt_path)) -Message 'same-round auto-absorb gate emits receipt'
         }
     }
 

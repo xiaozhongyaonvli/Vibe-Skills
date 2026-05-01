@@ -331,8 +331,7 @@
         "status":  "direct-map",
         "codex_flow":  "debug workflow",
         "codex_skills":  [
-                             "systematic-debugging",
-                             "debugging-strategies"
+                             "systematic-debugging"
                          ],
         "notes":  "Debugging coverage is directly available.",
         "source_file":  "C:\\Users\\羽裳\\.codex\\SuperClaude_Framework\\src\\superclaude\\commands\\troubleshoot.md"

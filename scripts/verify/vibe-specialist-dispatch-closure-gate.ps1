@@ -47,6 +47,7 @@ function Invoke-ClosureScenario {
         [AllowEmptyString()] [string]$ParentUnitId = '',
         [AllowEmptyString()] [string]$InheritedRequirementDocPath = '',
         [AllowEmptyString()] [string]$InheritedExecutionPlanPath = '',
+        [AllowEmptyString()] [string]$DelegationEnvelopePath = '',
         [string[]]$ApprovedSpecialistSkillIds = @()
     )
 
@@ -62,7 +63,34 @@ function Invoke-ClosureScenario {
         -ParentUnitId $ParentUnitId `
         -InheritedRequirementDocPath $InheritedRequirementDocPath `
         -InheritedExecutionPlanPath $InheritedExecutionPlanPath `
+        -DelegationEnvelopePath $DelegationEnvelopePath `
         -ApprovedSpecialistSkillIds $ApprovedSpecialistSkillIds
+}
+
+function New-ClosureDelegationEnvelopeForGate {
+    param(
+        [Parameter(Mandatory)] [object]$RootSummary,
+        [Parameter(Mandatory)] [string]$ChildRunId,
+        [Parameter(Mandatory)] [string]$ParentUnitId,
+        [AllowNull()] [string[]]$ApprovedSpecialists = @()
+    )
+
+    $sessionRoot = [string]$RootSummary.summary.session_root
+    $childSessionRoot = Join-Path ([System.IO.Path]::GetDirectoryName($sessionRoot)) $ChildRunId
+    New-Item -ItemType Directory -Path $childSessionRoot -Force | Out-Null
+    $envelopePath = Get-VibeGovernanceArtifactPath -SessionRoot $childSessionRoot -ArtifactName 'delegation_envelope'
+    Write-VibeDelegationEnvelope `
+        -Path $envelopePath `
+        -RootRunId ([string]$RootSummary.summary.run_id) `
+        -ParentRunId ([string]$RootSummary.summary.run_id) `
+        -ParentUnitId $ParentUnitId `
+        -ChildRunId $ChildRunId `
+        -RequirementDocPath ([string]$RootSummary.summary.artifacts.requirement_doc) `
+        -ExecutionPlanPath ([string]$RootSummary.summary.artifacts.execution_plan) `
+        -WriteScope 'gate:specialist-dispatch-closure' `
+        -ApprovedSpecialists @($ApprovedSpecialists) `
+        -ReviewMode 'native_contract' | Out-Null
+    return $envelopePath
 }
 
 $context = Get-VgoGovernanceContext -ScriptPath $PSCommandPath -EnforceExecutionContext
@@ -136,7 +164,12 @@ try {
         $customExecutionManifest = Get-Content -LiteralPath $custom.summary.artifacts.execution_manifest -Raw -Encoding UTF8 | ConvertFrom-Json
 
         Add-Assertion -Results ([ref]$results) -Condition ([bool]$customExecutionManifest.dispatch_integrity.proof_passed) -Message 'custom smoke dispatch integrity proof passes'
-        Add-Assertion -Results ([ref]$results) -Condition ((@($customExecutionManifest.dispatch_integrity.executed_specialist_skill_ids) -contains 'genomics-qc-flow')) -Message 'custom smoke executes admitted custom specialist'
+        $customResolvedSkillIds = @(
+            @($customExecutionManifest.dispatch_integrity.executed_specialist_skill_ids) +
+            @($customExecutionManifest.dispatch_integrity.direct_routed_specialist_skill_ids) +
+            @($customExecutionManifest.dispatch_integrity.resolved_specialist_skill_ids)
+        ) | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
+        Add-Assertion -Results ([ref]$results) -Condition ($customResolvedSkillIds -contains 'genomics-qc-flow') -Message 'custom smoke resolves admitted custom specialist'
         Add-Assertion -Results ([ref]$results) -Condition ([bool]$customExecutionManifest.dispatch_integrity.native_contract_complete_for_approved_dispatch) -Message 'custom smoke approved dispatch carries native entrypoint metadata'
     } finally {
         $env:VCO_HOST_ID = $originalHostId
@@ -150,20 +183,34 @@ try {
         -ArtifactRoot $artifactRoot `
         -RuntimeConfig $context.runtimeConfig
     $rootRuntimeInput = Get-Content -LiteralPath $root.summary.artifacts.runtime_input_packet -Raw -Encoding UTF8 | ConvertFrom-Json
-    $rootApprovedDispatch = if ($rootRuntimeInput.specialist_dispatch) { @($rootRuntimeInput.specialist_dispatch.approved_dispatch) } else { @() }
+    $rootSelectedSkillExecution = Get-VibeRuntimeSelectedSkillExecutionProjection -RuntimeInputPacket $rootRuntimeInput
+    $rootApprovedDispatch = if ($null -ne $rootSelectedSkillExecution -and $rootSelectedSkillExecution.PSObject.Properties.Name -contains 'selected_skill_execution') {
+        @($rootSelectedSkillExecution.selected_skill_execution)
+    } else {
+        @()
+    }
     $approvedSkillIds = @($rootApprovedDispatch | Select-Object -First 1 | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+    $childRunId = 'closure-child-' + [System.Guid]::NewGuid().ToString('N').Substring(0, 8)
+    $childParentUnitId = 'closure-child-unit'
+    $childDelegationEnvelopePath = New-ClosureDelegationEnvelopeForGate `
+        -RootSummary $root `
+        -ChildRunId $childRunId `
+        -ParentUnitId $childParentUnitId `
+        -ApprovedSpecialists $approvedSkillIds
 
     $child = Invoke-ClosureScenario `
         -RepoRoot $repoRoot `
         -Task 'Child specialist escalation advisory smoke.' `
-        -RunId ('closure-child-' + [System.Guid]::NewGuid().ToString('N').Substring(0, 8)) `
+        -RunId $childRunId `
         -ArtifactRoot $artifactRoot `
         -GovernanceScope 'child' `
         -RootRunId ([string]$root.summary.run_id) `
         -ParentRunId ([string]$root.summary.run_id) `
-        -ParentUnitId 'closure-child-unit' `
+        -ParentUnitId $childParentUnitId `
         -InheritedRequirementDocPath ([string]$root.summary.artifacts.requirement_doc) `
         -InheritedExecutionPlanPath ([string]$root.summary.artifacts.execution_plan) `
+        -DelegationEnvelopePath $childDelegationEnvelopePath `
         -ApprovedSpecialistSkillIds $approvedSkillIds `
         -RuntimeConfig $context.runtimeConfig
     $childExecutionManifest = Get-Content -LiteralPath $child.summary.artifacts.execution_manifest -Raw -Encoding UTF8 | ConvertFrom-Json

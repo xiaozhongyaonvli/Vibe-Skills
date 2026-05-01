@@ -1,5 +1,7 @@
 # Vibe Discussion-Time Specialist Consultation Requirement
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Summary
 
 Add a governed consultation layer so `vibe` can truly consult appropriate routed specialist Skills during discussion and plan formation, then disclose those consultations progressively while remaining the only runtime authority and the only front-facing speaker.

@@ -303,10 +303,10 @@ class SkillPromotionMetricsTests(unittest.TestCase):
             self.assertGreaterEqual(int(funnel["blocked_due_to_destructive"]), 1)
             self.assertEqual(0, int(funnel["executed"]))
 
-    def test_specialist_dispatch_outcomes_do_not_duplicate_degraded_results(self) -> None:
+    def test_execution_skill_outcomes_do_not_duplicate_degraded_results(self) -> None:
         degraded_expr = extract_expression(r"^\$degradedSpecialistUnits = (.+)$")
         non_degraded_expr = extract_expression(r"^\$nonDegradedExecutedSpecialistUnits = (.+)$")
-        outcomes_expr = extract_expression(r"^\s*specialist_dispatch_outcomes = (.+)$")
+        outcomes_expr = extract_expression(r"^\s*execution_skill_outcomes = (.+)$")
         payload = run_powershell_json(
             (
                 "& { "
@@ -320,9 +320,9 @@ class SkillPromotionMetricsTests(unittest.TestCase):
                 "); "
                 f"$degradedSpecialistUnits = {degraded_expr}; "
                 f"$nonDegradedExecutedSpecialistUnits = {non_degraded_expr}; "
-                f"$specialist_dispatch_outcomes = {outcomes_expr}; "
+                f"$execution_skill_outcomes = {outcomes_expr}; "
                 "[pscustomobject]@{ "
-                "result_paths = @($specialist_dispatch_outcomes | ForEach-Object { [string]$_.result_path }); "
+                "result_paths = @($execution_skill_outcomes | ForEach-Object { [string]$_.result_path }); "
                 "degraded_paths = @($degradedSpecialistUnits | ForEach-Object { [string]$_.result_path }) "
                 "} | ConvertTo-Json -Depth 20 }"
             )

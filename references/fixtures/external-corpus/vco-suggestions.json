@@ -216,18 +216,6 @@
                         ],
     "pack_suggestions":  [
                              {
-                                 "pack_id":  "orchestration-core",
-                                 "advisory_trigger_candidates":  [
-                                                                     "agent",
-                                                                     "model",
-                                                                     "test",
-                                                                     "tests",
-                                                                     "mcp",
-                                                                     "security",
-                                                                     "testing"
-                                                                 ]
-                             },
-                             {
                                  "pack_id":  "code-quality",
                                  "advisory_trigger_candidates":  [
                                                                      "agent",

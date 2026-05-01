@@ -24,15 +24,19 @@ function Get-CaseMetrics {
 
     $expectedPack = if ($Case.expected_pack) { [string]$Case.expected_pack } else { "" }
     $expectedSkill = if ($Case.expected_skill) { [string]$Case.expected_skill } else { "" }
+    $blockedPack = if ($Case.blocked_pack) { [string]$Case.blocked_pack } else { "" }
+    $blockedSkill = if ($Case.blocked_skill) { [string]$Case.blocked_skill } else { "" }
 
-    $packMatch = if ($expectedPack) { ($selectedPack -eq $expectedPack) } else { $null }
-    $skillMatch = if ($expectedSkill) { ($selectedSkill -eq $expectedSkill) } else { $null }
+    $packMatch = if ($expectedPack) { ($selectedPack -eq $expectedPack) } elseif ($blockedPack) { ($selectedPack -ne $blockedPack) } else { $null }
+    $skillMatch = if ($expectedSkill) { ($selectedSkill -eq $expectedSkill) } elseif ($blockedSkill) { ($selectedSkill -ne $blockedSkill) } else { $null }
 
     return [pscustomobject]@{
         pack_match = $packMatch
         skill_match = $skillMatch
         selected_pack = $selectedPack
         selected_skill = $selectedSkill
+        blocked_pack = $blockedPack
+        blocked_skill = $blockedSkill
     }
 }
 
@@ -97,7 +101,7 @@ $cases = @(
     [pscustomobject]@{
         name = "lit_pubmed_pmid_bibtex"
         group = "science-literature-citations"
-        prompt = "/vibe 用 PubMed 根据 PMID 12345 拉取文献信息，并导出 BibTeX 引用"
+        prompt = "/vibe 在 PubMed 检索文献并导出 BibTeX"
         grade = "M"
         task_type = "research"
         expected_pack = "science-literature-citations"
@@ -105,23 +109,83 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "lit_zotero_bibtex"
+        name = "lit_pyzotero_library_bibtex"
         group = "science-literature-citations"
-        prompt = "/vibe 用 Zotero 管理参考文献，去重并导出 BibTeX"
+        prompt = "/vibe 用 pyzotero 连接 Zotero library，批量整理条目并导出 BibTeX"
         grade = "M"
-        task_type = "planning"
+        task_type = "coding"
         expected_pack = "science-literature-citations"
-        expected_skill = $null
+        expected_skill = "pyzotero"
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "lit_peer_review"
+        name = "lit_citation_formatting"
         group = "science-literature-citations"
-        prompt = "/vibe 请对这篇论文做 peer review：指出方法学缺陷、统计问题和可复现性风险"
+        prompt = "/vibe 整理参考文献格式，修正 DOI，生成 Nature 格式 bibliography"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "science-literature-citations"
+        expected_skill = "citation-management"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lit_systematic_review_prisma"
+        group = "science-literature-citations"
+        prompt = "/vibe 做系统综述和 meta-analysis，输出 PRISMA 流程和纳排标准"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "science-literature-citations"
+        expected_skill = "literature-review"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lit_full_text_evidence_table"
+        group = "science-literature-citations"
+        prompt = "/vibe 做 full-text 文献检索，提取样本量、effect size、方法学细节，生成系统综述证据表"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "science-literature-citations"
+        expected_skill = "literature-review"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lit_biorxiv_preprint_review"
+        group = "science-literature-citations"
+        prompt = "/vibe 把 bioRxiv 预印本纳入文献综述，检索最近两年的 life sciences preprints"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "science-literature-citations"
+        expected_skill = "literature-review"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "peer_review_formal"
+        group = "science-peer-review"
+        prompt = "/vibe 请对这篇论文做 peer review，指出方法学缺陷和可复现性风险"
         grade = "L"
         task_type = "review"
         expected_pack = "science-peer-review"
         expected_skill = "peer-review"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "peer_review_scholareval"
+        group = "science-peer-review"
+        prompt = "/vibe 用 ScholarEval rubric 评估这篇论文的问题 formulation、methodology、analysis 和 writing"
+        grade = "L"
+        task_type = "review"
+        expected_pack = "science-peer-review"
+        expected_skill = "scholar-evaluation"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "peer_review_critical_evidence"
+        group = "science-peer-review"
+        prompt = "/vibe 批判性分析这篇论文的证据强度、偏倚和混杂因素"
+        grade = "L"
+        task_type = "review"
+        expected_pack = "science-peer-review"
+        expected_skill = "scientific-critical-thinking"
         requested_skill = $null
     },
 
@@ -139,7 +203,7 @@ $cases = @(
     [pscustomobject]@{
         name = "chem_chembl_ic50"
         group = "science-chem-drug"
-        prompt = "/vibe 在 ChEMBL 查询某靶点的 IC50 / Ki 活性数据，并输出结构化表格"
+        prompt = "/vibe 在 ChEMBL 查询某靶点的 IC50 / Ki / Kd 活性数据，并输出结构化表格"
         grade = "M"
         task_type = "research"
         expected_pack = "science-chem-drug"
@@ -147,13 +211,119 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "chem_diffdock_pose"
+        name = "chem_medchem_sar"
         group = "science-chem-drug"
-        prompt = "/vibe 用 DiffDock 做 docking pose prediction：给定 PDB + SMILES 输出结合构象"
+        prompt = "/vibe 做药物化学 SAR 分析、PAINS 过滤和先导化合物优化建议"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "science-chem-drug"
+        expected_skill = "medchem"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "chem_datamol_standardize_routes_rdkit"
+        group = "science-chem-drug"
+        prompt = "/vibe 用 datamol 批量标准化 SMILES 并生成分子指纹"
         grade = "M"
         task_type = "coding"
         expected_pack = "science-chem-drug"
-        expected_skill = "diffdock"
+        expected_skill = "rdkit"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_drugbank_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 查询 DrugBank 药物相互作用、药物靶点和药理信息"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "drugbank-database"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_pubchem_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 查询 PubChem CID、PUG-REST 和化合物编号"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "pubchem-database"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_zinc_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 从 ZINC 下载可购买小分子库用于 virtual screening"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "zinc-database"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_brenda_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 在 BRENDA 查询 EC number 的 Km、kcat 和酶动力学参数"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "brenda-database"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_hmdb_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 在 HMDB 里按 MS/MS 谱和代谢物名称做 metabolite identification"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "hmdb-database"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_diffdock_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 用 DiffDock 做 docking pose prediction，输入 PDB 和 ligand"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "diffdock"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_deepchem_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 用 DeepChem 训练 MoleculeNet 毒性预测模型和 GNN"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "deepchem"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_chem_pytdc_blocked"
+        group = "deleted-science-chem-drug"
+        prompt = "/vibe 用 Therapeutics Data Commons / PyTDC 加载 benchmark 数据集并做 scaffold split"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-chem-drug"
+        blocked_skill = "pytdc"
         requested_skill = $null
     },
 
@@ -188,6 +358,56 @@ $cases = @(
         expected_skill = "clinical-decision-support"
         requested_skill = $null
     },
+    [pscustomobject]@{
+        name = "clinical_clinpgx_cpic_lookup"
+        group = "science-clinical-regulatory"
+        prompt = "/vibe 查询 CPIC 药物基因组指南，解释 CYP2C19 和 clopidogrel 的 gene-drug 用药建议"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "science-clinical-regulatory"
+        expected_skill = "clinpgx-database"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "clinical_report_care"
+        group = "science-clinical-regulatory"
+        prompt = "/vibe 撰写 CARE guidelines 病例报告，包含临床时间线、诊断、治疗、知情同意和去标识化检查"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "science-clinical-regulatory"
+        expected_skill = "clinical-reports"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "clinical_report_review"
+        group = "science-clinical-regulatory"
+        prompt = "/vibe 审查 clinical report 的 HIPAA 合规性、去标识化、完整性和医学术语规范"
+        grade = "M"
+        task_type = "review"
+        expected_pack = "science-clinical-regulatory"
+        expected_skill = "clinical-reports"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "clinical_treatment_plan"
+        group = "science-clinical-regulatory"
+        prompt = "/vibe 为糖尿病患者生成一页式 treatment plan，包含 SMART 目标、用药方案和随访计划"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "science-clinical-regulatory"
+        expected_skill = "treatment-plans"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "clinical_iso_13485_qms"
+        group = "science-clinical-regulatory"
+        prompt = "/vibe 准备 ISO 13485 医疗器械 QMS 认证差距分析、质量手册和 CAPA 程序文件"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "science-clinical-regulatory"
+        expected_skill = "iso-13485-certification"
+        requested_skill = $null
+    },
 
     # science-medical-imaging
     [pscustomobject]@{
@@ -211,35 +431,129 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
+        name = "imaging_histolab_tiles"
+        group = "science-medical-imaging"
+        prompt = "/vibe 用 histolab 对 whole slide image 做 tissue detection 和 tile extraction"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-medical-imaging"
+        expected_skill = "histolab"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "imaging_omero_roi"
+        group = "science-medical-imaging"
+        prompt = "/vibe 用 OMERO 读取 microscopy image server 里的 ROI annotations"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-medical-imaging"
+        expected_skill = "omero-integration"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
         name = "imaging_pathml_wsi"
         group = "science-medical-imaging"
-        prompt = "/vibe 用 PathML 做 WSI patch extraction，并准备一个最小可复现实验脚本"
+        prompt = "/vibe 用 PathML 构建 computational pathology WSI pipeline，包含 nucleus segmentation、spatial graph 和 multiplex pathology，并准备最小可复现实验脚本"
         grade = "L"
         task_type = "coding"
         expected_pack = "science-medical-imaging"
         expected_skill = "pathml"
         requested_skill = $null
     },
-
-    # science-lab-automation
     [pscustomobject]@{
-        name = "lab_opentrons_ot2_protocol"
-        group = "science-lab-automation"
-        prompt = "/vibe 写一个 Opentrons OT-2 protocol：96孔板分液 + 混匀，输出可运行脚本"
+        name = "imaging_generic_datacommons_blocked"
+        group = "science-medical-imaging"
+        prompt = "/vibe 用 Data Commons 查询 population indicators、statistical variables 和 DCID，不涉及 Imaging Data Commons 或 DICOMWeb"
         grade = "M"
-        task_type = "coding"
-        expected_pack = "science-lab-automation"
-        expected_skill = "opentrons-integration"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-medical-imaging"
+        blocked_skill = "imaging-data-commons"
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "lab_protocolsio_pcr"
-        group = "science-lab-automation"
-        prompt = "/vibe 在 protocols.io 查找 PCR protocol，并总结关键步骤与关键试剂"
+        name = "imaging_pubmed_evidence_blocked"
+        group = "science-medical-imaging"
+        prompt = "/vibe 查询 PubMed 文献并整理 PMID citation evidence table"
         grade = "M"
         task_type = "research"
-        expected_pack = "science-lab-automation"
-        expected_skill = "protocolsio-integration"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-medical-imaging"
+        blocked_skill = $null
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "imaging_generic_image_processing_blocked"
+        group = "science-medical-imaging"
+        prompt = "/vibe 对普通 PNG 图片做 OCR、截图裁剪和图像增强，不涉及 DICOM、WSI、OMERO 或 PathML"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-medical-imaging"
+        blocked_skill = $null
+        requested_skill = $null
+    },
+
+    # longtail-science-ml
+    [pscustomobject]@{ name = "longtail_simpy_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 SimPy 建一个离散事件仿真 queue resource process，并输出 resource utilization"; grade = "M"; task_type = "coding"; expected_pack = "science-simpy-simulation"; expected_skill = "simpy"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_fluidsim_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 FluidSim 做 Navier-Stokes CFD turbulence spectra 分析"; grade = "M"; task_type = "coding"; expected_pack = "science-fluidsim-cfd"; expected_skill = "fluidsim"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_matchms_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 matchms 处理 MS/MS mass spectra 并计算 spectral similarity"; grade = "M"; task_type = "coding"; expected_pack = "science-matchms-spectra"; expected_skill = "matchms"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_matlab_explicit"; group = "longtail-science-ml"; prompt = "/vibe 写 MATLAB/Octave .m script 并连接 Simulink 模型"; grade = "M"; task_type = "coding"; expected_pack = "science-matlab-octave"; expected_skill = "matlab"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_neuropixels_explicit"; group = "longtail-science-ml"; prompt = "/vibe 分析 Neuropixels SpikeGLX 数据，运行 Kilosort spike sorting 并整理 probe channel map"; grade = "M"; task_type = "research"; expected_pack = "science-neuropixels"; expected_skill = "neuropixels-analysis"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_pymc_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 PyMC 建立 Bayesian hierarchical model，运行 NUTS MCMC 和 posterior predictive checks"; grade = "M"; task_type = "coding"; expected_pack = "science-pymc-bayesian"; expected_skill = "pymc"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_pymoo_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 pymoo 做 NSGA-II multi-objective optimization，输出 Pareto front"; grade = "M"; task_type = "coding"; expected_pack = "science-pymoo-optimization"; expected_skill = "pymoo"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_rowan_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 Rowan rowan-python 调用 labs.rowansci.com API 管理计算任务"; grade = "M"; task_type = "coding"; expected_pack = "science-rowan-chemistry"; expected_skill = "rowan"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_sb3_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 Stable-Baselines3 SB3 训练 PPO reinforcement learning agent"; grade = "M"; task_type = "coding"; expected_pack = "ml-stable-baselines3"; expected_skill = "stable-baselines3"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_timesfm_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 TimesFM 做 zero-shot forecasting，设置 forecast horizon 和 prediction intervals"; grade = "M"; task_type = "coding"; expected_pack = "science-timesfm-forecasting"; expected_skill = "timesfm-forecasting"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_torch_geometric_explicit"; group = "longtail-science-ml"; prompt = "/vibe 用 PyTorch Geometric torch_geometric 写 PyG GNN node classification pipeline"; grade = "M"; task_type = "coding"; expected_pack = "ml-torch-geometric"; expected_skill = "torch-geometric"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_blocks_generic_simulation"; group = "longtail-science-ml"; prompt = "/vibe 设计一个普通 agent-based simulation 和 Monte Carlo simulation，不使用 SimPy 或离散事件资源队列"; grade = "M"; task_type = "planning"; blocked_pack = "science-simpy-simulation"; blocked_skill = "simpy"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_blocks_numpy_matlab"; group = "longtail-science-ml"; prompt = "/vibe 用 NumPy 做 Python matrix multiplication，在 Jupyter 里做 scientific visualization，不使用 MATLAB 或 Octave"; grade = "M"; task_type = "coding"; blocked_pack = "science-matlab-octave"; blocked_skill = "matlab"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_blocks_generic_chemistry_rowan"; group = "longtail-science-ml"; prompt = "/vibe 用 RDKit、PubChem、ChEMBL 做 generic chemistry、docking、pKa、conformer search 和 molecular ML，不调用 Rowan"; grade = "M"; task_type = "research"; blocked_pack = "science-rowan-chemistry"; blocked_skill = "rowan"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_blocks_sklearn_sb3"; group = "longtail-science-ml"; prompt = "/vibe 用 scikit-learn 训练 supervised classification 模型，不是 reinforcement learning 或 SB3"; grade = "M"; task_type = "coding"; blocked_pack = "ml-stable-baselines3"; blocked_skill = "stable-baselines3"; requested_skill = $null },
+    [pscustomobject]@{ name = "longtail_blocks_generic_forecast_timesfm"; group = "longtail-science-ml"; prompt = "/vibe 做普通 business forecast、ARIMA baseline 和 tabular regression，不使用 TimesFM 或 foundation forecasting"; grade = "M"; task_type = "research"; blocked_pack = "science-timesfm-forecasting"; blocked_skill = "timesfm-forecasting"; requested_skill = $null },
+
+    # deleted science-lab-automation regressions
+    [pscustomobject]@{ name = "deleted_lab_opentrons_ot2_blocked"; group = "deleted-science-lab-automation"; prompt = "/vibe 写一个 Opentrons OT-2 protocol：96孔板分液 + 混匀，输出可运行脚本"; grade = "M"; task_type = "coding"; expected_pack = $null; expected_skill = $null; blocked_pack = "science-lab-automation"; blocked_skill = "opentrons-integration"; requested_skill = $null },
+    [pscustomobject]@{ name = "deleted_lab_opentrons_flex_blocked"; group = "deleted-science-lab-automation"; prompt = "/vibe 用 Opentrons Flex 和 thermocycler module 写一个 PCR setup protocol"; grade = "M"; task_type = "coding"; expected_pack = $null; expected_skill = $null; blocked_pack = "science-lab-automation"; blocked_skill = "opentrons-integration"; requested_skill = $null },
+    [pscustomobject]@{ name = "deleted_lab_pylabrobot_blocked"; group = "deleted-science-lab-automation"; prompt = "/vibe 用 PyLabRobot 控制 Hamilton 和 Tecan 液体处理机器人，统一调度 plate reader"; grade = "M"; task_type = "coding"; expected_pack = $null; expected_skill = $null; blocked_pack = "science-lab-automation"; blocked_skill = "pylabrobot"; requested_skill = $null },
+    [pscustomobject]@{ name = "deleted_lab_protocolsio_blocked"; group = "deleted-science-lab-automation"; prompt = "/vibe 用 protocols.io API 创建并发布一个实验 protocol，包含 workspace 和文件附件"; grade = "M"; task_type = "coding"; expected_pack = $null; expected_skill = $null; blocked_pack = "science-lab-automation"; blocked_skill = "protocolsio-integration"; requested_skill = $null },
+    [pscustomobject]@{ name = "deleted_lab_benchling_blocked"; group = "deleted-science-lab-automation"; prompt = "/vibe 查询 Benchling registry 里的 DNA sequence 和 inventory containers，并导出样品表"; grade = "M"; task_type = "coding"; expected_pack = $null; expected_skill = $null; blocked_pack = "science-lab-automation"; blocked_skill = "benchling-integration"; requested_skill = $null },
+    [pscustomobject]@{ name = "deleted_lab_labarchives_blocked"; group = "deleted-science-lab-automation"; prompt = "/vibe 备份 LabArchives notebook，导出 entries、attachments 和 JSON metadata"; grade = "M"; task_type = "coding"; expected_pack = $null; expected_skill = $null; blocked_pack = "science-lab-automation"; blocked_skill = "labarchive-integration"; requested_skill = $null },
+    [pscustomobject]@{ name = "deleted_lab_ginkgo_blocked"; group = "deleted-science-lab-automation"; prompt = "/vibe 在 Ginkgo Cloud Lab / cloud.ginkgo.bio 准备下单输入并估算 protocol pricing"; grade = "M"; task_type = "planning"; expected_pack = $null; expected_skill = $null; blocked_pack = "science-lab-automation"; blocked_skill = "ginkgo-cloud-lab"; requested_skill = $null },
+    [pscustomobject]@{
+        name = "lab_generic_eln_negated_vendors_not_lab_automation"
+        group = "science-lab-automation"
+        prompt = "/vibe 帮我整理电子实验记录 ELN 模板，不指定 Benchling 或 LabArchives"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-lab-automation"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lab_generic_attachments_negated_vendors_not_lab_automation"
+        group = "science-lab-automation"
+        prompt = "/vibe 把实验图片和 CSV 附件整理到实验记录里，不使用 LabArchives 或 Benchling"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-lab-automation"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "lab_generic_markdown_protocol_not_lab_automation"
+        group = "science-lab-automation"
+        prompt = "/vibe 写一个普通 wet-lab protocol 的 Markdown 文档，不使用 protocols.io 或机器人"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-lab-automation"
         requested_skill = $null
     },
 
@@ -255,13 +569,83 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "comm_mermaid_flowchart"
+        name = "comm_slidev_as_code"
         group = "science-communication-slides"
+        prompt = "/vibe 用 Slidev 做组会汇报并导出 PDF"
+        grade = "L"
+        task_type = "coding"
+        expected_pack = "science-communication-slides"
+        expected_skill = "slides-as-code"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "figures_matplotlib_library_wording"
+        group = "science-figures-visualization"
+        prompt = "/vibe 用 matplotlib 绘制 publication-ready result figure，600dpi TIFF，带误差棒和显著性标注"
+        grade = "L"
+        task_type = "coding"
+        expected_pack = "science-figures-visualization"
+        expected_skill = "scientific-visualization"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "figures_seaborn_library_wording"
+        group = "science-figures-visualization"
+        prompt = "/vibe 用 seaborn 画模型评估结果图和投稿图，要求色盲友好配色"
+        grade = "L"
+        task_type = "coding"
+        expected_pack = "science-figures-visualization"
+        expected_skill = "scientific-visualization"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "figures_plotly_library_wording"
+        group = "science-figures-visualization"
+        prompt = "/vibe 用 plotly 做 interactive result figure，并导出 HTML figure 给科研报告使用"
+        grade = "L"
+        task_type = "coding"
+        expected_pack = "science-figures-visualization"
+        expected_skill = "scientific-visualization"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "figures_mermaid_flowchart"
+        group = "science-figures-visualization"
         prompt = "/vibe 用 Mermaid 写一个实验流程图（flowchart），并给出可复制的 markdown"
         grade = "M"
         task_type = "coding"
+        expected_pack = "science-figures-visualization"
+        expected_skill = "scientific-schematics"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "reporting_html_pdf_direct_owner"
+        group = "science-reporting"
+        prompt = "/vibe 科研技术报告：包含方法结果讨论，输出 HTML 和 PDF，附录写清复现步骤"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = "science-reporting"
+        expected_skill = "scientific-reporting"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "comm_pptx_poster"
+        group = "science-communication-slides"
+        prompt = "/vibe 制作 PowerPoint PPTX 学术海报"
+        grade = "L"
+        task_type = "planning"
         expected_pack = "science-communication-slides"
-        expected_skill = "markdown-mermaid-writing"
+        expected_skill = "pptx-posters"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "publishing_plain_conference_poster"
+        group = "scholarly-publishing-workflow"
+        prompt = "/vibe 制作学术海报 conference poster"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = "scholarly-publishing-workflow"
+        expected_skill = "latex-posters"
         requested_skill = $null
     },
     [pscustomobject]@{
@@ -306,26 +690,106 @@ $cases = @(
         expected_skill = "alpha-vantage"
         requested_skill = $null
     },
-
-    # science-quantum
     [pscustomobject]@{
-        name = "quantum_qiskit_bell"
-        group = "science-quantum"
-        prompt = "/vibe 用 Qiskit 创建 Bell state quantum circuit，并在模拟器上运行"
+        name = "finance_usfiscal_debt"
+        group = "finance-edgar-macro"
+        prompt = "/vibe 用 U.S. Treasury Fiscal Data 查询 national debt 和 federal spending"
         grade = "M"
-        task_type = "coding"
-        expected_pack = "science-quantum"
-        expected_skill = "qiskit"
+        task_type = "research"
+        expected_pack = "finance-edgar-macro"
+        expected_skill = "usfiscaldata"
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "quantum_pennylane_qml"
-        group = "science-quantum"
+        name = "finance_hedgefundmonitor"
+        group = "finance-edgar-macro"
+        prompt = "/vibe 查询 OFR Hedge Fund Monitor 和 Form PF aggregate statistics"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "finance-edgar-macro"
+        expected_skill = "hedgefundmonitor"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "finance_market_research_report"
+        group = "finance-edgar-macro"
+        prompt = "/vibe 生成 consulting-style market research report 和 competitive analysis"
+        grade = "M"
+        task_type = "planning"
+        expected_pack = "finance-edgar-macro"
+        expected_skill = "market-research-reports"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "finance_datacommons_public_stats"
+        group = "finance-edgar-macro"
+        prompt = "/vibe 用 Data Commons 查询 public statistical data 和人口经济指标"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "finance-edgar-macro"
+        expected_skill = "datacommons-client"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "finance_generic_public_data_blocked"
+        group = "finance-edgar-macro"
+        prompt = "/vibe 搜索公共数据集和 open dataset 下载链接，不限定 Data Commons 或人口经济指标"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "finance-edgar-macro"
+        blocked_skill = "datacommons-client"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "finance_scientific_report_pdf_blocked"
+        group = "finance-edgar-macro"
+        prompt = "/vibe 写一篇科研报告，包含 methods results discussion 并导出 PDF"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "finance-edgar-macro"
+        blocked_skill = "market-research-reports"
+        requested_skill = $null
+    },
+
+    # deleted science-quantum regressions
+    [pscustomobject]@{
+        name = "quantum_qiskit_deleted_pack_blocked"
+        group = "deleted-science-quantum"
+        prompt = "/vibe 用 Qiskit 创建 Bell state quantum circuit，并在模拟器上运行"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-quantum"
+        blocked_skill = "qiskit"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "quantum_pennylane_deleted_pack_blocked"
+        group = "deleted-science-quantum"
         prompt = "/vibe 用 PennyLane 做 quantum machine learning 的最小示例（QML）"
         grade = "M"
         task_type = "coding"
-        expected_pack = "science-quantum"
-        expected_skill = "pennylane"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-quantum"
+        blocked_skill = "pennylane"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "quantum_chemistry_no_deleted_quantum_pack"
+        group = "deleted-science-quantum"
+        prompt = "/vibe 调研 quantum chemistry 论文和 pKa 预测，不写量子电路"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-quantum"
+        blocked_skill = "qiskit"
         requested_skill = $null
     },
 
@@ -386,6 +850,17 @@ $cases = @(
         expected_skill = "geomaster"
         requested_skill = $null
     },
+    [pscustomobject]@{
+        name = "geo_ncbi_geo_not_geospatial"
+        group = "science-geospatial"
+        prompt = "/vibe 查询 NCBI GEO 的 GSE 和 GSM gene expression dataset"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = "science-geospatial"
+        requested_skill = $null
+    },
 
     # science-zarr-polars
     [pscustomobject]@{
@@ -396,6 +871,16 @@ $cases = @(
         task_type = "coding"
         expected_pack = "science-zarr-polars"
         expected_skill = "polars"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bigdata_vaex_out_of_core"
+        group = "science-zarr-polars"
+        prompt = "/vibe 用 Vaex 做 out-of-core big dataframe filtering"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = "science-zarr-polars"
+        expected_skill = "vaex"
         requested_skill = $null
     },
     [pscustomobject]@{
@@ -431,6 +916,16 @@ $cases = @(
         requested_skill = $null
     },
     [pscustomobject]@{
+        name = "research_hypogenic_absorbed"
+        group = "research-design"
+        prompt = "/vibe 用 HypoGeniC 从数据和文献中生成并测试科研假设"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "research-design"
+        expected_skill = "hypothesis-generation"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
         name = "research_grant_outline"
         group = "research-design"
         prompt = "/vibe 写一份 NIH grant proposal outline：Specific Aims + Significance + Approach"
@@ -440,26 +935,260 @@ $cases = @(
         expected_skill = "research-grants"
         requested_skill = $null
     },
-
-    # bio-science extensions
     [pscustomobject]@{
-        name = "bio_esm_embeddings"
-        group = "bio-science"
-        prompt = "/vibe 用 ESM 生成 protein embeddings，并说明输出向量如何用于下游任务"
-        grade = "M"
-        task_type = "coding"
-        expected_pack = "bio-science"
-        expected_skill = "esm"
+        name = "research_experiment_failure_absorbed"
+        group = "research-design"
+        prompt = "/vibe 分析科学实验失败原因，设计下一轮验证实验，判断是否继续优化还是放弃该方案"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = "research-design"
+        expected_skill = "designing-experiments"
         requested_skill = $null
     },
     [pscustomobject]@{
-        name = "bio_cobrapy_fba"
-        group = "bio-science"
+        name = "research_design_no_modeling_design"
+        group = "research-design"
+        prompt = "/vibe 帮我设计准实验方案，先决定 DiD 还是中断时间序列，不要开始建模"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = "research-design"
+        expected_skill = "designing-experiments"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "research_literature_matrix_absorbed"
+        group = "research-design"
+        prompt = "/vibe 构建论文组合矩阵，寻找 A+B 的研究创新点"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = "research-design"
+        expected_skill = "scientific-brainstorming"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "research_existing_data_causal_effect"
+        group = "research-design"
+        prompt = "/vibe 我已有面板数据，请用 DiD 估计政策的因果效应并做稳健性检验"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "research-design"
+        expected_skill = "performing-causal-analysis"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "research_regression_moves_to_data_ml"
+        group = "data-ml"
+        prompt = "/vibe 做回归分析并解释系数、置信区间和诊断结果"
+        grade = "L"
+        task_type = "research"
+        expected_pack = "data-ml"
+        expected_skill = "scikit-learn"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "research_open_scientific_ideation"
+        group = "research-design"
+        prompt = "/vibe 开放式科研构思：围绕这个机制发散研究方向，不要求形成可检验假设报告"
+        grade = "L"
+        task_type = "planning"
+        expected_pack = "research-design"
+        expected_skill = "scientific-brainstorming"
+        requested_skill = $null
+    },
+
+    # bio-science extensions
+    [pscustomobject]@{
+        name = "deleted_bio_esm_embeddings_blocked"
+        group = "deleted-bio-science"
+        prompt = "/vibe 用 ESM 生成 protein embeddings，并说明输出向量如何用于下游任务"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = $null
+        blocked_skill = "esm"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_bio_cobrapy_fba_blocked"
+        group = "deleted-bio-science"
         prompt = "/vibe 用 COBRApy 做 FBA 代谢通量分析，并解释约束条件"
         grade = "M"
         task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = $null
+        blocked_skill = "cobrapy"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_scanpy_h5ad_marker_genes"
+        group = "bio-science"
+        prompt = "/vibe 读取 h5ad，做 Leiden clustering 和 marker genes"
+        grade = "M"
+        task_type = "research"
         expected_pack = "bio-science"
-        expected_skill = "cobrapy"
+        expected_skill = "scanpy"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_pydeseq2_bulk_de"
+        group = "bio-science"
+        prompt = "/vibe 进行 bulk RNA-seq 差异表达分析并画 volcano plot"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "pydeseq2"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_bio_pysam_bam_vcf_coverage_blocked"
+        group = "deleted-bio-science"
+        prompt = "/vibe 解析 BAM 和 VCF 文件并统计 coverage"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = $null
+        blocked_skill = "pysam"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_quick_gene_symbol"
+        group = "bio-science"
+        prompt = "/vibe 快速查询 gene symbol 和 Ensembl ID"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "bio-database-evidence"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_bio_flowio_fcs_blocked"
+        group = "deleted-bio-science"
+        prompt = "/vibe 读取 FCS 流式细胞文件并提取通道矩阵"
+        grade = "M"
+        task_type = "coding"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = $null
+        blocked_skill = "flowio"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_bio_arboreto_grn_blocked"
+        group = "deleted-bio-science"
+        prompt = "/vibe 用 pySCENIC 和 arboreto 推断 gene regulatory network"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = $null
+        blocked_skill = "arboreto"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_bio_geniml_embedding_blocked"
+        group = "deleted-bio-science"
+        prompt = "/vibe 用 geniml 做 genomic ML 和 genome embedding"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = $null
+        blocked_skill = "geniml"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_anndata_h5ad_container"
+        group = "bio-science"
+        prompt = "/vibe 用 AnnData 读写 h5ad，管理 obs/var 元数据和 backed mode 稀疏矩阵"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "scanpy"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_scvi_latent_model"
+        group = "bio-science"
+        prompt = "/vibe 用 scVI 和 scANVI 做 single-cell batch correction、latent model 和 cell type annotation"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "scanpy"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "deleted_bio_deeptools_tracks_blocked"
+        group = "deleted-bio-science"
+        prompt = "/vibe 用 deepTools 把 BAM 转 bigWig，并围绕 TSS 画 ChIP-seq heatmap profile"
+        grade = "M"
+        task_type = "research"
+        expected_pack = $null
+        expected_skill = $null
+        blocked_pack = $null
+        blocked_skill = "deeptools"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_clinvar_significance"
+        group = "bio-science"
+        prompt = "/vibe 查询 ClinVar 中 BRCA1 variant 的 clinical significance、VUS 和 review stars"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "bio-database-evidence"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_kegg_pathway_mapping"
+        group = "bio-science"
+        prompt = "/vibe 用 KEGG REST 做 pathway mapping、ID conversion 和 metabolic pathway 查询"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "bio-database-evidence"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_reactome_enrichment"
+        group = "bio-science"
+        prompt = "/vibe 用 Reactome 做 pathway enrichment、gene-pathway mapping 和 disease pathway 分析"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "bio-database-evidence"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_alphafold_structure"
+        group = "bio-science"
+        prompt = "/vibe 从 AlphaFold Database 按 UniProt ID 下载 mmCIF，并检查 pLDDT 和 PAE"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "bio-database-evidence"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_string_ppi"
+        group = "bio-science"
+        prompt = "/vibe 用 STRING API 查询 protein-protein interaction network、GO enrichment 和 hub proteins"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "bio-database-evidence"
+        requested_skill = $null
+    },
+    [pscustomobject]@{
+        name = "bio_cellxgene_census"
+        group = "bio-science"
+        prompt = "/vibe 查询 CZ CELLxGENE Census 的 human lung epithelial cells expression data 和 metadata"
+        grade = "M"
+        task_type = "research"
+        expected_pack = "bio-science"
+        expected_skill = "bio-database-evidence"
         requested_skill = $null
     }
 )
@@ -510,6 +1239,8 @@ foreach ($case in $cases) {
         probe_reference = if ($result -and $result.probe_reference) { [string]$result.probe_reference } else { "" }
         expected_pack = [string]$case.expected_pack
         expected_skill = [string]$case.expected_skill
+        blocked_pack = $metrics.blocked_pack
+        blocked_skill = $metrics.blocked_skill
     }
 }
 
@@ -565,4 +1296,3 @@ Write-MarkdownReport -Path $reportPath -Rows $rows -GroupSummary $groupSummary -
 
 Write-Host ("Probe complete: {0}" -f $reportPath)
 Write-Host ("Summary JSON: {0}" -f $summaryPath)
-

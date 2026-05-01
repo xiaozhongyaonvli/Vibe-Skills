@@ -97,25 +97,34 @@ def _write_valid_canonical_entry_artifacts(
                 "unattended_override_applied": False,
                 "custom_admission_status": "not_required",
             },
-            "specialist_recommendations": [
-                {
-                    "skill_id": router_selected_skill,
-                    "native_skill_entrypoint": "skills/systematic-debugging/SKILL.md",
-                }
-            ],
-            "specialist_dispatch": {
-                "approved_dispatch": [],
-                "local_specialist_suggestions": [],
-                "status": "no_dispatch",
-                "approved_skill_ids": [],
-                "local_suggestion_skill_ids": [],
-                "blocked_skill_ids": [],
-                "degraded_skill_ids": [],
-                "matched_skill_ids": [],
-                "surfaced_skill_ids": [],
-                "ghost_match_skill_ids": [],
-                "escalation_required": False,
-                "escalation_status": "not_required",
+            "skill_routing": {
+                "schema_version": "simplified_skill_routing_v1",
+                "candidates": [{"skill_id": router_selected_skill}],
+                "selected": [{"skill_id": router_selected_skill, "skill_md_path": "skills/systematic-debugging/SKILL.md"}],
+                "rejected": [],
+            },
+            "legacy_skill_routing": {
+                "specialist_recommendations": [
+                    {
+                        "skill_id": router_selected_skill,
+                        "native_skill_entrypoint": "skills/systematic-debugging/SKILL.md",
+                    }
+                ],
+                "stage_assistant_hints": [],
+                "specialist_dispatch": {
+                    "approved_dispatch": [],
+                    "local_specialist_suggestions": [],
+                    "status": "no_dispatch",
+                    "approved_skill_ids": [],
+                    "local_suggestion_skill_ids": [],
+                    "blocked_skill_ids": [],
+                    "degraded_skill_ids": [],
+                    "matched_skill_ids": [],
+                    "surfaced_skill_ids": [],
+                    "ghost_match_skill_ids": [],
+                    "escalation_required": False,
+                    "escalation_status": "not_required",
+                },
             },
             "divergence_shadow": {
                 "skill_mismatch": entry_intent_id != "vibe",
@@ -184,7 +193,7 @@ def test_truth_gate_rejects_missing_runtime_packet_proof_fields(tmp_path: Path) 
         session_root / "runtime-input-packet.json",
         {
             "canonical_router": {"host_id": "codex"},
-            "specialist_recommendations": [],
+            "legacy_skill_routing": {"specialist_recommendations": []},
         },
     )
 
@@ -193,7 +202,7 @@ def test_truth_gate_rejects_missing_runtime_packet_proof_fields(tmp_path: Path) 
     combined = result.stdout + result.stderr
     assert result.returncode != 0
     assert "route_snapshot" in combined
-    assert "specialist_dispatch" in combined
+    assert "skill_routing" in combined
     assert "divergence_shadow" in combined
 
 
@@ -253,7 +262,7 @@ def test_truth_gate_accepts_explicit_no_specialist_decision(tmp_path: Path) -> N
     _write_valid_canonical_entry_artifacts(session_root)
     runtime_packet_path = session_root / "runtime-input-packet.json"
     runtime_packet = json.loads(runtime_packet_path.read_text(encoding="utf-8"))
-    runtime_packet["specialist_recommendations"] = []
+    runtime_packet["legacy_skill_routing"]["specialist_recommendations"] = []
     runtime_packet["specialist_decision"] = {
         "decision_state": "no_specialist_recommendations",
         "resolution_mode": "no_specialist_needed",
@@ -278,6 +287,21 @@ def test_truth_gate_accepts_verified_canonical_entry_session(tmp_path: Path) -> 
     assert result.returncode == 0, result.stdout + result.stderr
     assert "[PASS] host-launch-receipt.json exists" in result.stdout
     assert "[PASS] runtime packet includes route_snapshot" in result.stdout
+
+
+def test_truth_gate_accepts_current_skill_routing_without_legacy_fields(tmp_path: Path) -> None:
+    session_root = tmp_path / "session"
+    _write_valid_canonical_entry_artifacts(session_root)
+    runtime_packet_path = session_root / "runtime-input-packet.json"
+    runtime_packet = json.loads(runtime_packet_path.read_text(encoding="utf-8"))
+    runtime_packet.pop("legacy_skill_routing")
+    _write_json(runtime_packet_path, runtime_packet)
+
+    result = _run_truth_gate(session_root)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "[PASS] runtime packet includes skill_routing" in result.stdout
+    assert "[PASS] runtime packet exposes canonical skill_routing.selected" in result.stdout
 
 
 def test_truth_gate_accepts_presentational_entry_intent_with_canonical_authority(tmp_path: Path) -> None:

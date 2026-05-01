@@ -10,9 +10,12 @@
       "task_type": "planning",
       "prompt": "create implementation plan and task breakdown",
       "expected": {
-        "allowed_route_modes": ["pack_overlay", "confirm_required"],
-        "selected_pack": "orchestration-core",
-        "selected_skill": "vibe"
+        "allowed_route_modes": [
+          "pack_overlay",
+          "confirm_required"
+        ],
+        "selected_pack": "scholarly-publishing-workflow",
+        "selected_skill": "scholarly-publishing"
       }
     },
     {
@@ -22,8 +25,8 @@
       "prompt": "design a migration plan for cross-module routing and governance",
       "expected": {
         "route_mode": "pack_overlay",
-        "selected_pack": "orchestration-core",
-        "selected_skill": "vibe"
+        "selected_pack": "scholarly-publishing-workflow",
+        "selected_skill": "scholarly-publishing"
       }
     },
     {
@@ -32,8 +35,12 @@
       "task_type": "planning",
       "prompt": "create PRD and user story backlog with quality gate",
       "expected": {
-        "allowed_route_modes": ["pack_overlay", "confirm_required"],
-        "selected_pack": "aios-core"
+        "allowed_route_modes": [
+          "pack_overlay",
+          "confirm_required"
+        ],
+        "blocked_pack": "aios-core",
+        "blocked_skill_prefix": "aios-"
       }
     },
     {
@@ -42,7 +49,10 @@
       "task_type": "research",
       "prompt": "help me with this",
       "expected": {
-        "allowed_route_modes": ["pack_overlay", "confirm_required"]
+        "allowed_route_modes": [
+          "pack_overlay",
+          "confirm_required"
+        ]
       }
     },
     {
@@ -75,7 +85,7 @@
       "expected": {
         "route_mode": "pack_overlay",
         "selected_pack": "data-ml",
-        "selected_skill": "LQF_Machine_Learning_Expert_Guide"
+        "selected_skill": "ml-data-leakage-guard"
       }
     },
     {
@@ -84,9 +94,12 @@
       "task_type": "research",
       "prompt": "请帮我做 full-text 文献检索，提取样本量、effect size、方法学细节，做系统综述证据表",
       "expected": {
-        "allowed_route_modes": ["pack_overlay", "confirm_required"],
+        "allowed_route_modes": [
+          "pack_overlay",
+          "confirm_required"
+        ],
         "selected_pack": "science-literature-citations",
-        "selected_skill": "bgpt-paper-search"
+        "selected_skill": "literature-review"
       }
     },
     {
@@ -95,7 +108,10 @@
       "task_type": "review",
       "prompt": "请检查这个特征工程流程有没有数据泄漏，尤其是 fit before split 和 prediction time 问题",
       "expected": {
-        "allowed_route_modes": ["pack_overlay", "confirm_required"],
+        "allowed_route_modes": [
+          "pack_overlay",
+          "confirm_required"
+        ],
         "selected_pack": "data-ml",
         "selected_skill": "ml-data-leakage-guard"
       }
@@ -106,7 +122,10 @@
       "task_type": "review",
       "prompt": "请根据 pytest 和 coverage 输出生成测试报告，整理失败摘要、覆盖率和质量门禁结论",
       "expected": {
-        "allowed_route_modes": ["pack_overlay", "confirm_required"],
+        "allowed_route_modes": [
+          "pack_overlay",
+          "confirm_required"
+        ],
         "selected_pack": "code-quality",
         "selected_skill": "generating-test-reports"
       }
@@ -117,9 +136,12 @@
       "task_type": "research",
       "prompt": "请对这个实验数据做回归分析：线性回归或 GLM 建模、残差诊断、系数解释和拟合优度比较",
       "expected": {
-        "allowed_route_modes": ["pack_overlay", "confirm_required"],
-        "selected_pack": "research-design",
-        "selected_skill": "performing-regression-analysis"
+        "allowed_route_modes": [
+          "pack_overlay",
+          "confirm_required"
+        ],
+        "selected_pack": "data-ml",
+        "selected_skill": "scikit-learn"
       }
     },
     {

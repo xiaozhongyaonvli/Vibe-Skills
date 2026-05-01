@@ -226,7 +226,12 @@ class RootChildHierarchyBridgeTests(unittest.TestCase):
             runtime_input_packet = json.loads(runtime_input_packet_path.read_text(encoding="utf-8"))
             execution_manifest = json.loads(execution_manifest_path.read_text(encoding="utf-8"))
 
-            self.assertEqual("vibe", runtime_input_packet["route_snapshot"]["selected_skill"])
+            selected_skill_ids = {
+                str(skill.get("skill_id", "")).strip()
+                for skill in list(runtime_input_packet["skill_routing"]["selected"])
+                if str(skill.get("skill_id", "")).strip()
+            }
+            self.assertIn(runtime_input_packet["route_snapshot"]["selected_skill"], selected_skill_ids)
             self.assertEqual("vibe", runtime_input_packet["authority_flags"]["explicit_runtime_skill"])
             self.assertEqual("root", runtime_input_packet["governance_scope"])
             self.assertTrue(runtime_input_packet["authority_flags"]["allow_requirement_freeze"])
@@ -271,13 +276,11 @@ class RootChildHierarchyBridgeTests(unittest.TestCase):
                 Path(root_artifacts["runtime_input_packet"]).read_text(encoding="utf-8")
             )
 
-            root_approved_dispatch = list(
-                (root_runtime_input_packet.get("specialist_dispatch") or {}).get("approved_dispatch") or []
-            )
+            root_selected_skills = list(root_runtime_input_packet["skill_routing"]["selected"])
             approved_skill_ids: list[str] = []
-            if root_approved_dispatch:
-                first_skill_id = str(root_approved_dispatch[0].get("skill_id", "")).strip()
-                if first_skill_id:
+            if root_selected_skills:
+                first_skill_id = str(root_selected_skills[0].get("skill_id", "")).strip()
+                if first_skill_id and first_skill_id != "vibe":
                     approved_skill_ids = [first_skill_id]
 
             child_run_id = "pytest-child-lane-" + uuid.uuid4().hex[:10]
@@ -326,19 +329,25 @@ class RootChildHierarchyBridgeTests(unittest.TestCase):
                 str(Path(plan_receipt["execution_plan_path"]).resolve()),
             )
 
-            specialist_dispatch = runtime_input_packet["specialist_dispatch"]
-            local_suggestions = list(specialist_dispatch.get("local_specialist_suggestions") or [])
-            approved_dispatch = list(specialist_dispatch.get("approved_dispatch") or [])
-            approved_ids = {str(entry.get("skill_id", "")) for entry in approved_dispatch}
+            self.assertNotIn("specialist_dispatch", runtime_input_packet)
+            specialist_decision = runtime_input_packet["specialist_decision"]
+            local_suggestions = list(specialist_decision.get("local_suggestion_skill_ids") or [])
+            approved_ids = {
+                str(skill_id)
+                for skill_id in list(specialist_decision.get("approved_dispatch_skill_ids") or [])
+                if str(skill_id).strip()
+            }
 
             if local_suggestions:
-                self.assertTrue(bool(specialist_dispatch.get("escalation_required", False)))
-                self.assertEqual("root_approval_required", str(specialist_dispatch.get("escalation_status", "")))
-                for suggestion in local_suggestions:
-                    with self.subTest(suggestion=str(suggestion.get("skill_id", ""))):
-                        self.assertNotIn(str(suggestion.get("skill_id", "")), approved_ids)
-
-            self.assertEqual("auto_promote_when_safe_same_round", str(specialist_dispatch.get("status", "")))
+                self.assertEqual("local_suggestion_only", str(specialist_decision.get("decision_state", "")))
+                for suggestion_skill_id in local_suggestions:
+                    with self.subTest(suggestion=str(suggestion_skill_id)):
+                        self.assertNotIn(str(suggestion_skill_id), approved_ids)
+            else:
+                self.assertIn(
+                    str(specialist_decision.get("decision_state", "")),
+                    {"approved_dispatch", "no_specialist_recommendations"},
+                )
             self.assertEqual("child", execution_manifest["governance_scope"])
             self.assertFalse(execution_manifest["authority"]["completion_claim_allowed"])
             self.assertEqual("vibe", execution_manifest["route_runtime_alignment"]["runtime_selected_skill"])

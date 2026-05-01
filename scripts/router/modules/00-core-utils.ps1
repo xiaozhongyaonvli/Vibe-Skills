@@ -176,6 +176,40 @@ function Resolve-RequestedCanonicalForRouting {
     return $requestedCanonical
 }
 
+function Test-KeywordIsNegationPhrase {
+    param([string]$Needle)
+
+    if ([string]::IsNullOrWhiteSpace($Needle)) { return $false }
+    $pattern = "(不是|并非|不属于|不涉及|不做|不使用|不调用|不指定|不限定|不需要|不要|不用|无需|避免|排除|without\b|no\b|not\s+using\b|do\s+not\s+use\b|don't\s+use\b|not\b)"
+    return [Regex]::IsMatch($Needle, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+}
+
+function Test-KeywordMatchInNegatedScope {
+    param(
+        [string]$PromptLower,
+        [int]$MatchIndex
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PromptLower) -or $MatchIndex -le 0) { return $false }
+
+    $start = [Math]::Max(0, $MatchIndex - 80)
+    $prefix = $PromptLower.Substring($start, $MatchIndex - $start)
+    $boundaryPattern = "[，。；;,.!?！？\r\n]"
+    $boundaries = [Regex]::Matches($prefix, $boundaryPattern)
+    if ($boundaries.Count -gt 0) {
+        $prefix = $prefix.Substring($boundaries[$boundaries.Count - 1].Index + $boundaries[$boundaries.Count - 1].Length)
+    }
+
+    $negationPattern = "(不是|并非|不属于|不涉及|不做|不使用|不调用|不指定|不限定|不需要|不要|不用|无需|避免|排除|without\b|no\b|not\s+using\b|do\s+not\s+use\b|don't\s+use\b|not\b)"
+    $negationMatches = [Regex]::Matches($prefix, $negationPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if ($negationMatches.Count -eq 0) { return $false }
+
+    $lastNegation = $negationMatches[$negationMatches.Count - 1]
+    $scopedPrefix = $prefix.Substring($lastNegation.Index)
+    $contrastPattern = "(但使用|但是使用|但要使用|but\s+use|but\s+using|except\s+use|instead\s+use)"
+    return -not [Regex]::IsMatch($scopedPrefix, $contrastPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+}
+
 function Test-KeywordHit {
     param(
         [string]$PromptLower,
@@ -186,18 +220,26 @@ function Test-KeywordHit {
     $needle = $Keyword.ToLowerInvariant()
     if (-not $needle) { return $false }
 
-    # CJK terms are best handled as substring matches.
+    $matches = @()
     if ([Regex]::IsMatch($needle, "[\p{IsCJKUnifiedIdeographs}]")) {
-        return $PromptLower.Contains($needle)
-    }
-
-    # ASCII-like terms should match on token boundaries to reduce cross-pack noise.
-    if ([Regex]::IsMatch($needle, "[a-z0-9]")) {
+        $matches = @([Regex]::Matches($PromptLower, [Regex]::Escape($needle)))
+    } elseif ([Regex]::IsMatch($needle, "[a-z0-9]")) {
         $escaped = [Regex]::Escape($needle)
-        return [Regex]::IsMatch($PromptLower, "(?<![a-z0-9])$escaped(?![a-z0-9])")
+        $matches = @([Regex]::Matches($PromptLower, "(?<![a-z0-9])$escaped(?![a-z0-9])"))
+    } else {
+        $matches = @([Regex]::Matches($PromptLower, [Regex]::Escape($needle)))
     }
 
-    return $PromptLower.Contains($needle)
+    if ($matches.Count -eq 0) { return $false }
+    if (Test-KeywordIsNegationPhrase -Needle $needle) { return $true }
+
+    foreach ($match in $matches) {
+        if (-not (Test-KeywordMatchInNegatedScope -PromptLower $PromptLower -MatchIndex ([int]$match.Index))) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 function Get-KeywordRatio {
@@ -401,5 +443,3 @@ function Test-OverlayConfirmRequired {
     if ($Result.daily_dialectic_advice -and [bool]$Result.daily_dialectic_advice.confirm_required) { return $true }
     return $false
 }
-
-

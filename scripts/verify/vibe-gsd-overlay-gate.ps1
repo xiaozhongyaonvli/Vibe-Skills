@@ -75,7 +75,7 @@ try {
     Set-OverlayStage -Stage "soft-lxl-planning"
 
     $routeLPlanning = Invoke-Route -Prompt "create implementation plan and task breakdown with milestones" -Grade "L" -TaskType "planning" -RequestedSkill $null
-    $results += Assert-True -Condition ($routeLPlanning.selected.pack_id -eq "orchestration-core") -Message "[soft] routing unchanged for L planning"
+    $results += Assert-True -Condition ($routeLPlanning.selected.pack_id -ne "orchestration-core") -Message "[soft] routing does not use orchestration-core for L planning"
     $results += Assert-True -Condition ($null -ne $routeLPlanning.gsd_overlay_advice) -Message "[soft] gsd_overlay_advice exists"
     $results += Assert-True -Condition ($routeLPlanning.gsd_overlay_advice.enabled -eq $true) -Message "[soft] overlay enabled"
     $results += Assert-True -Condition ($routeLPlanning.gsd_overlay_advice.scope_applicable -eq $true) -Message "[soft] scope applicable for L planning"

@@ -21,7 +21,7 @@ $payloadPath = Join-Path $laneRoot 'lane-payload.json'
 $receipt = $null
 $resultPath = $null
 $expectedSkillId = if (
-    $laneKind -eq 'specialist_dispatch' -and
+    $laneKind -eq 'skill_execution' -and
     $laneSpec.PSObject.Properties.Name -contains 'dispatch' -and
     $null -ne $laneSpec.dispatch
 ) {
@@ -95,7 +95,7 @@ switch ($laneKind) {
             "- result_path: $resultPath"
         )
     }
-    'specialist_dispatch' {
+    'skill_execution' {
         $dispatch = $laneSpec.dispatch
         $usageRequirementState = Get-VibeDispatchUsageRequirementState -Dispatch $dispatch
         $executed = Invoke-VibeSpecialistDispatchUnit `
@@ -144,7 +144,7 @@ switch ($laneKind) {
             generated_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
         }
         Write-VibeMarkdownArtifact -Path $notesPath -Lines @(
-            "# Native Specialist Dispatch Receipt",
+            "# Native Skill Execution Receipt",
             '',
             "- specialist_skill_id: $([string]$dispatch.skill_id)",
             "- execution_driver: $([string]$executed.result.execution_driver)",

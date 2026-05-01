@@ -67,22 +67,23 @@ function Invoke-Route {
 
 $cases = @(
     [pscustomobject]@{
-        Name = "L planning orchestration"
+        Name = "L planning no orchestration core"
         Prompt = "create implementation plan and task breakdown with milestones"
         Grade = "L"
         TaskType = "planning"
         RequestedSkill = $null
-        ExpectedPack = "orchestration-core"
+        ExpectedPack = $null
         ExpectedProfile = "full"
         ExpectedEnforcement = "required"
     },
     [pscustomobject]@{
-        Name = "L planning aios-core"
+        Name = "L planning aios-core removed"
         Prompt = "create PRD and user story backlog with quality gate"
         Grade = "L"
         TaskType = "planning"
         RequestedSkill = $null
-        ExpectedPack = "aios-core"
+        ExpectedPack = $null
+        BlockedPack = "aios-core"
         ExpectedProfile = "full"
         ExpectedEnforcement = "required"
     },
@@ -112,7 +113,7 @@ $cases = @(
         Grade = "M"
         TaskType = "planning"
         RequestedSkill = $null
-        ExpectedPack = "orchestration-core"
+        ExpectedPack = $null
         ExpectedProfile = "full"
         ExpectedEnforcement = "required"
     },
@@ -121,7 +122,7 @@ $cases = @(
         Prompt = "run code review and security scan"
         Grade = "M"
         TaskType = "review"
-        RequestedSkill = "code-review"
+        RequestedSkill = "code-reviewer"
         ExpectedPack = "code-quality"
         ExpectedProfile = "full"
         ExpectedEnforcement = "none"
@@ -130,11 +131,11 @@ $cases = @(
     },
     [pscustomobject]@{
         Name = "Requested skill whitelist bypass"
-        Prompt = "plan implementation milestones for module refactor"
+        Prompt = "/speckit.plan implementation milestones for module refactor"
         Grade = "M"
         TaskType = "planning"
-        RequestedSkill = "writing-plans"
-        ExpectedPack = "orchestration-core"
+        RequestedSkill = "spec-kit-vibe-compat"
+        ExpectedPack = "workflow-compatibility"
         ExpectedProfile = "full"
         ExpectedEnforcement = "none"
         ExpectedBypass = $true
@@ -165,7 +166,7 @@ try {
     $policyObj.profile_by_grade.XL = "full"
     $policyObj.required_task_types_by_profile.full = @("planning")
     $policyObj.exemptions.requested_skill_bypass = $true
-    $policyObj.exemptions.requested_skill_whitelist = @("sc:design", "brainstorming", "writing-plans")
+    $policyObj.exemptions.requested_skill_whitelist = @("sc:design", "spec-kit-vibe-compat")
 
     Write-Utf8NoBomText -Path $policyPath -Content ($policyObj | ConvertTo-Json -Depth 30)
 
@@ -175,6 +176,9 @@ try {
         $results += Assert-True -Condition ($null -ne $route.selected) -Message "[$($case.Name)] selected route exists"
         if ($case.ExpectedPack) {
             $results += Assert-True -Condition ($route.selected.pack_id -eq $case.ExpectedPack) -Message "[$($case.Name)] selected pack unchanged ($($case.ExpectedPack))"
+        }
+        if ($case.BlockedPack) {
+            $results += Assert-True -Condition ($route.selected.pack_id -ne $case.BlockedPack) -Message "[$($case.Name)] blocked pack not selected ($($case.BlockedPack))"
         }
         $results += Assert-True -Condition ($null -ne $route.openspec_advice) -Message "[$($case.Name)] openspec_advice exists"
         $results += Assert-True -Condition ($route.openspec_advice.enabled -eq $true) -Message "[$($case.Name)] openspec advice enabled"
@@ -199,7 +203,7 @@ try {
         -NoAutoCreateLite
     $governanceObj = $governance | ConvertFrom-Json
     $results += Assert-True -Condition ($governanceObj.status -in @("full_ready", "full_missing")) -Message "[governance script] full profile handling status"
-    $results += Assert-True -Condition ($governanceObj.selected_pack -eq "orchestration-core") -Message "[governance script] selected pack preserved"
+    $results += Assert-True -Condition ($governanceObj.selected_pack -ne "orchestration-core") -Message "[governance script] does not preserve orchestration-core"
 
     $strictTaskId = "governance-gate-{0}" -f ([guid]::NewGuid().ToString("N").Substring(0, 12))
     $strictGovernance = & $governanceScript `

@@ -1,5 +1,10 @@
 # Vibe Aggressive Specialist Routing Design
 
+> Historical / Retired Note: This document records a previous routing design or
+> migration state. Current routing authority is defined by
+> `docs/governance/current-routing-contract.md` and
+> `docs/governance/current-runtime-field-contract.md`.
+
 ## Goal
 
 Make `vibe` treat specialist routing as a default governed behavior instead of an optional side path. Every governed `vibe` run must surface bounded specialist recommendations, and every eligible recommendation should promote to executable `approved_dispatch` as aggressively as safety allows.

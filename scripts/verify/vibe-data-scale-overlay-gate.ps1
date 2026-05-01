@@ -107,6 +107,9 @@ try {
     $results += Assert-True -Condition ($routeWorkbook.data_scale_advice.recommended_skill -eq "xlsx") -Message "[shadow] workbook path recommends xlsx"
     $results += Assert-True -Condition ($routeWorkbook.data_scale_advice.is_workbook -eq $true) -Message "[shadow] workbook extension detected"
 
+    $routeWorkbookPivot = Invoke-Route -Prompt "analyze workbook at $workbook and create pivot table 数据透视" -Grade "M" -TaskType "research"
+    $results += Assert-True -Condition ($routeWorkbookPivot.data_scale_advice.recommended_skill -eq "spreadsheet") -Message "[shadow] pivot-like workbook analysis recommends spreadsheet"
+
     Set-DataScaleOverlayStage -ConfigPath $policyPath -Stage "soft"
     $routeLargeSoft = Invoke-Route -Prompt "edit spreadsheet csv at $largeCsv and dedup rows" -Grade "M" -TaskType "coding"
     $results += Assert-True -Condition ($routeLargeSoft.data_scale_advice.data_scale -eq "large") -Message "[soft] large dataset detected"

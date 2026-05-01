@@ -24,7 +24,6 @@
         "skill_allow": [
             "ml-pipeline-workflow",
             "scikit-learn",
-            "training-machine-learning-models",
             "evaluating-machine-learning-models",
             "ml-data-leakage-guard",
             "embedding-strategies",
@@ -236,6 +235,5 @@
         "on_analyzer_failure": "continue_advisory"
     }
 }
-
 
 

@@ -104,24 +104,19 @@ class PythonValidationContractTests(unittest.TestCase):
 
         self.assertEqual([], forbidden_paths)
 
-    def test_pack_defaults_do_not_point_to_non_authority_stage_assistants(self) -> None:
+    def test_pack_defaults_point_to_unified_skill_candidates(self) -> None:
         manifest = json.loads(PACK_MANIFEST.read_text(encoding="utf-8-sig"))
         mismatches: dict[str, dict[str, str]] = {}
 
         for pack in manifest["packs"]:
-            authority_source = (
-                pack.get("route_authority_candidates")
-                if "route_authority_candidates" in pack
-                else pack.get("skill_candidates")
-            )
-            authority = {skill.casefold() for skill in (authority_source or [])}
-            if not authority:
+            skill_candidates = {skill.casefold() for skill in (pack.get("skill_candidates") or [])}
+            if not skill_candidates:
                 continue
 
             bad_defaults = {
                 task: skill
                 for task, skill in (pack.get("defaults_by_task") or {}).items()
-                if skill.casefold() not in authority
+                if skill.casefold() not in skill_candidates
             }
             if bad_defaults:
                 mismatches[pack["id"]] = bad_defaults
@@ -131,7 +126,11 @@ class PythonValidationContractTests(unittest.TestCase):
     def test_pack_route_overrides_stay_inside_authority_ranked_results(self) -> None:
         text = RESOLVE_PACK_ROUTE.read_text(encoding="utf-8-sig")
         normalized_text = re.sub(r"\s+", " ", text)
-        selection_pool = "$selectionPool = if ($authorityRanked.Count -gt 0) { @($authorityRanked) } else { @($ranked) }"
+        selectable_ranked = '$selectableRanked = @($ranked | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.selected_candidate) })'
+        selection_pool = (
+            "$selectionPool = if ($authorityRanked.Count -gt 0) { @($authorityRanked) } "
+            "elseif ($selectableRanked.Count -gt 0) { @($selectableRanked) } else { @($ranked) }"
+        )
         selection_lookup = (
             "$overrideTop = $selectionPool | Where-Object { [string]$_.pack_id -eq $overridePackId } | "
             "Select-Object -First 1"
@@ -141,6 +140,7 @@ class PythonValidationContractTests(unittest.TestCase):
             "Select-Object -First 1"
         )
 
+        self.assertIn(selectable_ranked, normalized_text)
         self.assertIn(selection_pool, normalized_text)
         self.assertEqual(2, normalized_text.count(selection_lookup))
         self.assertNotIn(ranked_lookup, normalized_text)

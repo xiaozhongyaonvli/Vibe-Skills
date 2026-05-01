@@ -68,9 +68,11 @@ function Invoke-SupportedHostRuntimeTruthProbe {
         $routeSelectedSkill = if ($routeSnapshot -and $routeSnapshot.PSObject.Properties.Name -contains 'selected_skill') { [string]$routeSnapshot.selected_skill } else { '' }
         Add-Assertion -Assertions $Assertions -Pass ($routeSnapshot -and -not [string]::IsNullOrWhiteSpace($routeSelectedSkill)) -Message "$HostId route_snapshot records routed specialist truth"
         Add-Assertion -Assertions $Assertions -Pass ($runtimeInput.PSObject.Properties.Name -contains 'divergence_shadow') -Message "$HostId runtime-input-packet contains divergence_shadow artifact"
-        Add-Assertion -Assertions $Assertions -Pass ($runtimeInput.PSObject.Properties.Name -contains 'specialist_dispatch') -Message "$HostId runtime-input-packet contains specialist_dispatch artifact"
-        $hasSpecialistRecommendations = ($runtimeInput.PSObject.Properties['specialist_recommendations'] -ne $null)
-        $specialistRecommendationCount = if ($hasSpecialistRecommendations) { @($runtimeInput.specialist_recommendations).Count } else { 0 }
+        Add-Assertion -Assertions $Assertions -Pass ($runtimeInput.PSObject.Properties.Name -contains 'skill_routing') -Message "$HostId runtime-input-packet contains canonical skill_routing artifact"
+        Add-Assertion -Assertions $Assertions -Pass ($runtimeInput.PSObject.Properties.Name -contains 'legacy_skill_routing') -Message "$HostId runtime-input-packet contains legacy_skill_routing artifact"
+        $legacySkillRouting = if ($runtimeInput.PSObject.Properties.Name -contains 'legacy_skill_routing') { $runtimeInput.legacy_skill_routing } else { $null }
+        $hasSpecialistRecommendations = ($legacySkillRouting -and $legacySkillRouting.PSObject.Properties['specialist_recommendations'] -ne $null)
+        $specialistRecommendationCount = if ($hasSpecialistRecommendations) { @($legacySkillRouting.specialist_recommendations).Count } else { 0 }
         $specialistDecision = if ($runtimeInput.PSObject.Properties.Name -contains 'specialist_decision') { $runtimeInput.specialist_decision } else { $null }
         $noSpecialistResolved = (
             $null -ne $specialistDecision -and
@@ -79,7 +81,7 @@ function Invoke-SupportedHostRuntimeTruthProbe {
             [string]$specialistDecision.decision_state -eq 'no_specialist_recommendations' -and
             [string]$specialistDecision.resolution_mode -in @('no_matching_specialist', 'no_specialist_needed')
         )
-        Add-Assertion -Assertions $Assertions -Pass $hasSpecialistRecommendations -Message "$HostId runtime-input-packet contains specialist_recommendations artifact"
+        Add-Assertion -Assertions $Assertions -Pass $hasSpecialistRecommendations -Message "$HostId runtime-input-packet contains legacy specialist_recommendations artifact"
         Add-Assertion -Assertions $Assertions -Pass (($specialistRecommendationCount -ge 1) -or $noSpecialistResolved) -Message "$HostId runtime-input-packet preserves specialist recommendation or no-specialist resolution evidence"
         $divergenceShadow = if ($runtimeInput.PSObject.Properties.Name -contains 'divergence_shadow') { $runtimeInput.divergence_shadow } else { $null }
         $runtimeSelectedSkill = if ($divergenceShadow -and $divergenceShadow.PSObject.Properties.Name -contains 'runtime_selected_skill') { [string]$divergenceShadow.runtime_selected_skill } else { '' }
@@ -176,19 +178,27 @@ Add-Assertion -Assertions $assertions -Pass ($runtimeProtocol.Contains('speciali
 Add-Assertion -Assertions $assertions -Pass (Test-Path -LiteralPath $truthGatePath) -Message 'canonical truth gate script exists' -Details $truthGatePath
 Add-Assertion -Assertions $assertions -Pass ($truthGate.Contains('host-launch-receipt.json')) -Message 'canonical truth gate requires host-launch-receipt.json'
 Add-Assertion -Assertions $assertions -Pass ($truthGate.Contains('reading SKILL.md alone is not canonical vibe entry')) -Message 'canonical truth gate rejects SKILL.md-only activation claims'
-Add-Assertion -Assertions $assertions -Pass ($skillText.Contains('Reading `SKILL.md`, wrapper markdown, or bootstrap text alone is not proof of canonical vibe entry.')) -Message 'SKILL.md documents that prose-only activation is not proof of canonical vibe entry'
+Add-Assertion -Assertions $assertions -Pass ($skillText.Contains('proof of canonical entry')) -Message 'SKILL.md documents that prose-only activation is not proof of canonical vibe entry'
 Add-Assertion -Assertions $assertions -Pass ($runtimeProtocol.Contains('Reading `SKILL.md`, wrapper markdown, or bootstrap text alone is not proof of canonical vibe entry.')) -Message 'runtime protocol documents that prose-only activation is not proof of canonical vibe entry'
 
 $route = & $routeScriptPath -Prompt 'help me with this' -Grade 'M' -TaskType 'research' | ConvertFrom-Json
-Add-Assertion -Assertions $assertions -Pass ([bool]$route.fallback_active) -Message 'low-signal route marks fallback_active'
-Add-Assertion -Assertions $assertions -Pass ([bool]$route.hazard_alert_required) -Message 'low-signal route requires hazard alert'
-Add-Assertion -Assertions $assertions -Pass ([string]$route.truth_level -eq 'non_authoritative') -Message 'low-signal route truth_level is non_authoritative'
-Add-Assertion -Assertions $assertions -Pass ([string]$route.degradation_state -in @('fallback_active', 'fallback_guarded')) -Message 'low-signal route records fallback degradation state'
-Add-Assertion -Assertions $assertions -Pass ($route.hazard_alert -and [string]$route.hazard_alert.title -eq 'FALLBACK HAZARD ALERT') -Message 'low-signal route emits fallback hazard alert object'
-Add-Assertion -Assertions $assertions -Pass (
+$lowSignalHasFallbackGuard = (
+    [bool]$route.fallback_active -and
+    [bool]$route.hazard_alert_required -and
+    [string]$route.truth_level -eq 'non_authoritative' -and
+    [string]$route.degradation_state -in @('fallback_active', 'fallback_guarded') -and
+    $route.hazard_alert -and
+    [string]$route.hazard_alert.title -eq 'FALLBACK HAZARD ALERT' -and
     $route.confirm_ui -and
     [string]$route.confirm_ui.rendered_text -match 'FALLBACK HAZARD ALERT'
-) -Message 'confirm UI renders standalone fallback hazard alert'
+)
+$lowSignalHasHostSelectionGuard = (
+    -not [bool]$route.fallback_active -and
+    [string]$route.route_reason -eq 'host_selection_required' -and
+    $route.confirm_ui -and
+    [bool]$route.confirm_ui.enabled
+)
+Add-Assertion -Assertions $assertions -Pass ($lowSignalHasFallbackGuard -or $lowSignalHasHostSelectionGuard) -Message 'low-signal route is guarded by fallback hazard or explicit host selection'
 
 foreach ($hostId in @('codex', 'claude-code', 'opencode')) {
     Invoke-SupportedHostRuntimeTruthProbe -RepoRoot $repoRoot -RuntimeEntrypointPath $runtimeEntrypointPath -HostId $hostId -Assertions $assertions

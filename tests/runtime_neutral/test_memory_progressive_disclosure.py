@@ -552,7 +552,9 @@ class MemoryProgressiveDisclosureTests(unittest.TestCase):
                         "authority_flags": {
                             "explicit_runtime_skill": "vibe",
                         },
-                        "specialist_recommendations": [],
+                        "skill_routing": {
+                            "selected": []
+                        },
                         "specialist_decision": {
                             "decision_state": "no_specialist_recommendations",
                             "resolution_mode": "pending_resolution",
@@ -579,7 +581,7 @@ class MemoryProgressiveDisclosureTests(unittest.TestCase):
             )
 
             requirement_text = Path(requirement["requirement_doc_path"]).read_text(encoding="utf-8")
-            self.assertIn("specialist-decision.json", requirement_text)
+            self.assertIn("skill execution decision payload", requirement_text)
             self.assertIn("legal basis", requirement_text)
 
 

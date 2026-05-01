@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -16,7 +17,7 @@ SUPPORTED_HOSTS = ("codex", "claude-code", "opencode")
 
 
 def _resolve_python() -> str:
-    python_bin = shutil.which("python3") or shutil.which("python")
+    python_bin = sys.executable or shutil.which("python") or shutil.which("python3")
     if not python_bin:
         raise RuntimeError("python interpreter not available")
     return python_bin
@@ -41,6 +42,8 @@ def _run_cli_canonical_entry(*, host_id: str, artifact_root: Path) -> dict[str, 
     env["VCO_HOST_ID"] = host_id
     env["VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION"] = "1"
     env["VGO_ENABLE_NATIVE_SPECIALIST_EXECUTION"] = "0"
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
 
     run_id = f"pytest-cli-canonical-{host_id}-{uuid.uuid4().hex[:8]}"
     command = [
@@ -69,6 +72,7 @@ def _run_cli_canonical_entry(*, host_id: str, artifact_root: Path) -> dict[str, 
         capture_output=True,
         text=True,
         encoding="utf-8",
+        errors="replace",
         env=env,
         check=True,
     )
@@ -101,12 +105,16 @@ def test_cli_canonical_entry_proves_runtime_backed_truth_for_supported_hosts() -
 
             runtime_packet = json.loads(runtime_packet_path.read_text(encoding="utf-8"))
             assert "route_snapshot" in runtime_packet, host_id
-            assert runtime_packet["route_snapshot"]["selected_skill"] == "vibe", host_id
-            assert "specialist_dispatch" in runtime_packet, host_id
-            assert "specialist_recommendations" in runtime_packet, host_id
+            assert runtime_packet["route_snapshot"]["selected_skill"], host_id
+            governance_capsule = json.loads(governance_capsule_path.read_text(encoding="utf-8"))
+            assert governance_capsule["runtime_selected_skill"] == "vibe", host_id
+            assert "skill_routing" in runtime_packet, host_id
+            assert "specialist_dispatch" not in runtime_packet, host_id
+            assert "specialist_recommendations" not in runtime_packet, host_id
             specialist_decision = runtime_packet.get("specialist_decision") or {}
             no_specialist_resolved = (
                 specialist_decision.get("decision_state") == "no_specialist_recommendations"
                 and specialist_decision.get("resolution_mode") in {"no_matching_specialist", "no_specialist_needed"}
             )
-            assert len(runtime_packet["specialist_recommendations"]) >= 1 or no_specialist_resolved, host_id
+            selected = runtime_packet["skill_routing"].get("selected") or []
+            assert len(selected) >= 1 or no_specialist_resolved, host_id

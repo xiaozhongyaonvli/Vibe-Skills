@@ -33,7 +33,6 @@ if ($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.Platform -eq 'Wi
 }
 
 . (Join-Path $PSScriptRoot 'VibeRuntime.Common.ps1')
-. (Join-Path $PSScriptRoot 'VibeConsultation.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeMemoryBackends.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeMemoryActivation.Common.ps1')
 
@@ -81,8 +80,6 @@ function Complete-VibeGovernedRuntimeStop {
         [AllowNull()] [object]$Plan = $null,
         [AllowNull()] [object]$Execute = $null,
         [AllowNull()] [object]$Cleanup = $null,
-        [AllowNull()] [object]$DiscussionConsultation = $null,
-        [AllowNull()] [object]$PlanningConsultation = $null,
         [AllowNull()] [object]$HostStageDisclosure = $null,
         [AllowEmptyString()] [string]$HostStageDisclosurePath = '',
         [AllowNull()] [object]$HostUserBriefing = $null,
@@ -142,8 +139,6 @@ function Complete-VibeGovernedRuntimeStop {
         $(if ($Execute) { [string]$Execute.execution_manifest_path } else { '' }),
         $(if ($Execute) { [string]$Execute.execution_topology_path } else { '' }),
         $(if ($Execute) { [string]$Execute.execution_proof_manifest_path } else { '' }),
-        $(if ($DiscussionConsultation) { [string]$DiscussionConsultation.receipt_path } else { '' }),
-        $(if ($PlanningConsultation) { [string]$PlanningConsultation.receipt_path } else { '' }),
         [string]$SpecialistLifecycleDisclosurePath,
         $(if ($Cleanup) { [string]$Cleanup.receipt_path } else { '' }),
         [string]$DeliveryAcceptanceReportPath,
@@ -181,8 +176,6 @@ function Complete-VibeGovernedRuntimeStop {
         -ExecutionManifestPath $(if ($Execute) { [string]$Execute.execution_manifest_path } else { '' }) `
         -ExecutionTopologyPath $(if ($Execute) { [string]$Execute.execution_topology_path } else { '' }) `
         -ExecutionProofManifestPath $(if ($Execute) { [string]$Execute.execution_proof_manifest_path } else { '' }) `
-        -DiscussionSpecialistConsultationPath $(if ($DiscussionConsultation) { [string]$DiscussionConsultation.receipt_path } else { '' }) `
-        -PlanningSpecialistConsultationPath $(if ($PlanningConsultation) { [string]$PlanningConsultation.receipt_path } else { '' }) `
         -SpecialistLifecycleDisclosurePath ([string]$SpecialistLifecycleDisclosurePath) `
         -HostStageDisclosurePath $(if ($HostStageDisclosure) { [string]$HostStageDisclosurePath } else { '' }) `
         -HostUserBriefingPath ([string]$HostUserBriefingPath) `
@@ -210,7 +203,6 @@ function Complete-VibeGovernedRuntimeStop {
         -DeliveryAcceptanceReport $DeliveryAcceptanceReport `
         -SpecialistDecision $(if ($ExecutionManifestDocument -and $ExecutionManifestDocument.PSObject.Properties.Name -contains 'specialist_decision' -and $null -ne $ExecutionManifestDocument.specialist_decision) { $ExecutionManifestDocument.specialist_decision } elseif ($Execute -and $Execute.receipt -and $Execute.receipt.PSObject.Properties.Name -contains 'specialist_decision' -and $null -ne $Execute.receipt.specialist_decision) { $Execute.receipt.specialist_decision } else { $null }) `
         -SpecialistUserDisclosure $(if ($Execute -and $Execute.receipt -and $Execute.receipt.PSObject.Properties.Name -contains 'specialist_user_disclosure') { $Execute.receipt.specialist_user_disclosure } else { $null }) `
-        -SpecialistConsultation (New-VibeSpecialistConsultationRuntimeProjection -Receipts @($(if ($DiscussionConsultation) { $DiscussionConsultation.receipt } else { $null }), $(if ($PlanningConsultation) { $PlanningConsultation.receipt } else { $null }))) `
         -SpecialistLifecycleDisclosure $SpecialistLifecycleDisclosure `
         -HostStageDisclosure $HostStageDisclosure `
         -HostUserBriefing $HostUserBriefing `
@@ -374,7 +366,7 @@ if ($confirmRequired) {
             }
         })
     } else {
-        @($runtimeInputPacket.specialist_recommendations | ForEach-Object {
+        @(Get-VibeRuntimeSpecialistRecommendations -RuntimeInputPacket $runtimeInputPacket | ForEach-Object {
             [pscustomobject]@{
                 skill_id = if ($_.PSObject.Properties.Name -contains 'skill_id') { [string]$_.skill_id } else { $null }
                 description = if ($_.PSObject.Properties.Name -contains 'rationale') { [string]$_.rationale } else { $null }
@@ -451,24 +443,6 @@ if (-not $structuredBoundedReentry) {
     $requirementContextReads = @($memoryDeepInterviewRead, $memorySkeletonCognee, $memorySkeletonDigest)
 }
 $requirementMemoryContext = New-VibeRequirementContextPack -Runtime $runtime -ReadActions $requirementContextReads -SessionRoot ([string]$skeleton.session_root)
-$discussionConsultation = Invoke-VibeSpecialistConsultationWindow `
-    -Task $Task `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -RepoRoot ([string]$runtime.repo_root) `
-    -WindowId 'discussion' `
-    -Stage 'deep_interview' `
-    -SourceArtifactPath ([string]$interview.receipt_path) `
-    -Recommendations @($(if ($runtimeInputPacket) { $runtimeInputPacket.specialist_recommendations } else { @() })) `
-    -Policy $runtime.specialist_consultation_policy
-$discussionConsultationLayer = New-VibeSpecialistConsultationLifecycleLayerProjection -ConsultationReceipt $discussionConsultation.receipt
-if ($discussionConsultationLayer) {
-    $discussionConsultationSegment = New-VibeHostUserBriefingSegmentProjection `
-        -LifecycleLayer $discussionConsultationLayer `
-        -ConsultationReceipt $discussionConsultation.receipt
-    $discussionConsultationEvent = New-VibeHostStageDisclosureEventProjection -Segment $discussionConsultationSegment
-    Add-VibeHostStageDisclosureEvent -SessionRoot ([string]$skeleton.session_root) -DisclosureEvent $discussionConsultationEvent | Out-Null
-}
 $requirementArgs = @{
     Task = $Task
     Mode = $Mode
@@ -476,7 +450,6 @@ $requirementArgs = @{
     IntentContractPath = $interview.receipt_path
     RuntimeInputPacketPath = $runtimeInput.packet_path
     MemoryContextPath = $requirementMemoryContext.context_path
-    DiscussionConsultationPath = $discussionConsultation.receipt_path
     ArtifactRoot = $ArtifactRoot
 }
 foreach ($key in @($hierarchyArgs.Keys)) {
@@ -525,7 +498,6 @@ if ($requestedStop -eq 'requirement_doc') {
         -StageLineage $stageLineage `
         -Interview $interview `
         -Requirement $requirement `
-        -DiscussionConsultation $discussionConsultation `
         -HostStageDisclosure $hostStageDisclosure `
         -HostStageDisclosurePath $hostStageDisclosurePath `
         -HostUserBriefing $hostUserBriefing `
@@ -554,27 +526,7 @@ if (-not $structuredBoundedReentry) {
     $xlPlanReadActions = @($memoryPlanSerena, $memoryPlanCognee)
 }
 $planMemoryContext = New-VibePlanMemoryContextPack -Runtime $runtime -ReadActions $xlPlanReadActions -SessionRoot ([string]$skeleton.session_root) -Stage 'xl_plan' -ArtifactName 'plan-context-pack.json'
-$planningConsultation = Invoke-VibeSpecialistConsultationWindow `
-    -Task $Task `
-    -RunId $RunId `
-    -SessionRoot ([string]$skeleton.session_root) `
-    -RepoRoot ([string]$runtime.repo_root) `
-    -WindowId 'planning' `
-    -Stage 'requirement_doc' `
-    -SourceArtifactPath ([string]$requirement.requirement_doc_path) `
-    -Recommendations @($(if ($runtimeInputPacket) { $runtimeInputPacket.specialist_recommendations } else { @() })) `
-    -Policy $runtime.specialist_consultation_policy
-$planningConsultationLayer = New-VibeSpecialistConsultationLifecycleLayerProjection -ConsultationReceipt $planningConsultation.receipt
-if ($planningConsultationLayer) {
-    $planningConsultationSegment = New-VibeHostUserBriefingSegmentProjection `
-        -LifecycleLayer $planningConsultationLayer `
-        -ConsultationReceipt $planningConsultation.receipt
-    $planningConsultationEvent = New-VibeHostStageDisclosureEventProjection -Segment $planningConsultationSegment
-    Add-VibeHostStageDisclosureEvent -SessionRoot ([string]$skeleton.session_root) -DisclosureEvent $planningConsultationEvent | Out-Null
-}
 $planArgs.PlanMemoryContextPath = $planMemoryContext.context_path
-$planArgs.DiscussionConsultationPath = $discussionConsultation.receipt_path
-$planArgs.PlanningConsultationPath = $planningConsultation.receipt_path
 $plan = & (Join-Path $PSScriptRoot 'Write-XlPlan.ps1') @planArgs
 $stageLineage = Add-VibeStageLineageEntry `
     -SessionRoot ([string]$skeleton.session_root) `
@@ -619,8 +571,6 @@ if ($requestedStop -eq 'xl_plan') {
         -Interview $interview `
         -Requirement $requirement `
         -Plan $plan `
-        -DiscussionConsultation $discussionConsultation `
-        -PlanningConsultation $planningConsultation `
         -HostStageDisclosure $hostStageDisclosure `
         -HostStageDisclosurePath $hostStageDisclosurePath `
         -HostUserBriefing $hostUserBriefing `
@@ -687,8 +637,6 @@ if ($requestedStop -eq 'plan_execute') {
         -Requirement $requirement `
         -Plan $plan `
         -Execute $execute `
-        -DiscussionConsultation $discussionConsultation `
-        -PlanningConsultation $planningConsultation `
         -HostStageDisclosure $hostStageDisclosure `
         -HostStageDisclosurePath $hostStageDisclosurePath `
         -ExecutionManifestDocument $executionManifestDocument `
@@ -775,16 +723,12 @@ $deliveryAcceptanceMarkdownArtifactPath = if (Test-Path -LiteralPath $deliveryAc
 }
 $specialistLifecycleDisclosure = New-VibeSpecialistLifecycleDisclosureProjection `
     -RuntimeInputPacket $runtimeInputPacket `
-    -DiscussionConsultationReceipt $discussionConsultation.receipt `
-    -PlanningConsultationReceipt $planningConsultation.receipt `
     -SpecialistUserDisclosure $(if ($execute -and $execute.receipt -and $execute.receipt.PSObject.Properties.Name -contains 'specialist_user_disclosure') { $execute.receipt.specialist_user_disclosure } else { $null }) `
     -ExecutionManifest $executionManifestDocument
 $specialistLifecycleDisclosurePath = Get-VibeSpecialistLifecycleDisclosurePath -SessionRoot ([string]$skeleton.session_root)
 Write-VibeJsonArtifact -Path $specialistLifecycleDisclosurePath -Value $specialistLifecycleDisclosure
 $hostUserBriefing = New-VibeHostUserBriefingProjection `
     -LifecycleDisclosure $specialistLifecycleDisclosure `
-    -DiscussionConsultationReceipt $discussionConsultation.receipt `
-    -PlanningConsultationReceipt $planningConsultation.receipt `
     -DeliveryAcceptanceReport $deliveryAcceptanceReport
 $hostStageDisclosurePath = Get-VibeHostStageDisclosurePath -SessionRoot ([string]$skeleton.session_root)
 $hostStageDisclosure = if (Test-Path -LiteralPath $hostStageDisclosurePath) {
@@ -842,13 +786,11 @@ $criticalArtifactPaths = @(
     [string]$execute.execution_manifest_path,
     [string]$execute.execution_topology_path,
     [string]$execute.execution_proof_manifest_path,
-    [string]$discussionConsultation.receipt_path,
-    [string]$planningConsultation.receipt_path,
     [string]$specialistLifecycleDisclosurePath,
     [string]$cleanup.receipt_path,
     [string]$memoryActivation.report_path,
     [string]$memoryActivation.markdown_path
-)
+) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }
 if (-not [string]::IsNullOrWhiteSpace($deliveryAcceptanceReportArtifactPath)) {
     $criticalArtifactPaths += $deliveryAcceptanceReportArtifactPath
 }
@@ -882,8 +824,6 @@ $summaryArtifacts = New-VibeRuntimeSummaryArtifactProjection `
     -ExecutionManifestPath ([string]$execute.execution_manifest_path) `
     -ExecutionTopologyPath ([string]$execute.execution_topology_path) `
     -ExecutionProofManifestPath ([string]$execute.execution_proof_manifest_path) `
-    -DiscussionSpecialistConsultationPath ([string]$discussionConsultation.receipt_path) `
-    -PlanningSpecialistConsultationPath ([string]$planningConsultation.receipt_path) `
     -SpecialistLifecycleDisclosurePath ([string]$specialistLifecycleDisclosurePath) `
     -HostStageDisclosurePath $(if ($hostStageDisclosure) { [string]$hostStageDisclosurePath } else { '' }) `
     -HostUserBriefingPath ([string]$hostUserBriefingPath) `
@@ -911,7 +851,6 @@ $summary = New-VibeRuntimeSummaryProjection `
     -DeliveryAcceptanceReport $deliveryAcceptanceReport `
     -SpecialistDecision $(if ($executionManifestDocument -and $executionManifestDocument.PSObject.Properties.Name -contains 'specialist_decision' -and $null -ne $executionManifestDocument.specialist_decision) { $executionManifestDocument.specialist_decision } elseif ($execute -and $execute.receipt -and $execute.receipt.PSObject.Properties.Name -contains 'specialist_decision' -and $null -ne $execute.receipt.specialist_decision) { $execute.receipt.specialist_decision } else { $null }) `
     -SpecialistUserDisclosure $(if ($execute -and $execute.receipt -and $execute.receipt.PSObject.Properties.Name -contains 'specialist_user_disclosure') { $execute.receipt.specialist_user_disclosure } else { $null }) `
-    -SpecialistConsultation (New-VibeSpecialistConsultationRuntimeProjection -Receipts @($discussionConsultation.receipt, $planningConsultation.receipt)) `
     -SpecialistLifecycleDisclosure $specialistLifecycleDisclosure `
     -HostStageDisclosure $hostStageDisclosure `
     -HostUserBriefing $hostUserBriefing `

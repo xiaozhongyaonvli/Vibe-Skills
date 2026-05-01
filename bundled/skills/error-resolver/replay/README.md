@@ -227,9 +227,9 @@ react-*.yaml
    - Remove obsolete solutions
    - Add timestamps for relevance
 
-## Integration with Error Resolver
+## Integration With The Retained Archive
 
-When using the error-resolver skill:
+When consulting this retained error-resolution archive:
 
 1. **Automatic Lookup**: Check replay history first
 2. **Match Scoring**: Rate match quality (exact > pattern > category)

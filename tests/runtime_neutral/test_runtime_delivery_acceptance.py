@@ -62,6 +62,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         specialist_decision_path: str | None = None,
         specialist_execution_path: str | None = None,
         omit_default_specialist_decision: bool = False,
+        skill_usage: dict[str, object] | None = None,
+        skill_routing: dict[str, object] | None = None,
     ) -> Path:
         tempdir = tempfile.TemporaryDirectory()
         self.addCleanup(tempdir.cleanup)
@@ -161,14 +163,18 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             "failed_unit_count": failed_unit_count,
             "timed_out_unit_count": 0,
         }
-        approved_dispatch_payload = list(approved_dispatch or [])
+        selected_skill_execution_payload = list(approved_dispatch or [])
         if approved_dispatch is not None or specialist_accounting is not None:
             default_specialist_accounting = {
-                "approved_dispatch": approved_dispatch_payload,
-                "approved_dispatch_count": len(approved_dispatch_payload),
+                "selected_skill_execution": selected_skill_execution_payload,
+                "selected_skill_execution_count": len(selected_skill_execution_payload),
+                "blocked_skill_execution_unit_count": 0,
+                "blocked_skill_execution_units": [],
+                "degraded_skill_execution_unit_count": 0,
+                "degraded_skill_execution_units": [],
                 "degraded_skill_ids": [],
                 "blocked_skill_ids": [],
-                "effective_execution_status": "live_native_executed" if approved_dispatch_payload else "none",
+                "effective_execution_status": "live_native_executed" if selected_skill_execution_payload else "none",
             }
             if specialist_accounting:
                 default_specialist_accounting.update(specialist_accounting)
@@ -180,31 +186,41 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 "explicit_runtime_skill": "vibe",
             }
         }
+        if skill_routing is not None:
+            runtime_input_packet_payload["skill_routing"] = skill_routing
         if approved_dispatch is not None:
             approved_skill_ids = [
                 str(item["skill_id"]).strip()
-                for item in approved_dispatch_payload
+                for item in selected_skill_execution_payload
                 if str(item.get("skill_id", "")).strip()
             ]
-            runtime_input_packet_payload["specialist_dispatch"] = {
-                "approved_dispatch": approved_dispatch_payload,
-                "local_specialist_suggestions": [],
-                "blocked": [],
-                "degraded": [],
-                "approved_skill_ids": approved_skill_ids,
-                "local_suggestion_skill_ids": [],
+            runtime_input_packet_payload["specialist_decision"] = {
+                "decision_state": "approved_dispatch" if approved_skill_ids else "no_specialist_recommendations",
+                "resolution_mode": "approved_dispatch" if approved_skill_ids else "no_matching_specialist",
+                "recommendation_count": len(approved_skill_ids),
+                "candidate_skill_ids_reviewed": approved_skill_ids,
+                "selected_skill_ids": approved_skill_ids,
+                "rejected_candidates": [],
                 "matched_skill_ids": approved_skill_ids,
                 "surfaced_skill_ids": approved_skill_ids,
+                "approved_dispatch_skill_ids": approved_skill_ids,
+                "local_suggestion_skill_ids": [],
                 "blocked_skill_ids": [],
                 "degraded_skill_ids": [],
-                "ghost_match_skill_ids": [],
-                "promotion_outcomes": [],
-                "escalation_required": False,
-                "escalation_status": "not_required",
-                "approval_owner": "root_vibe",
-                "status": "auto_promote_when_safe_same_round",
+                "repo_asset_fallback": {
+                    "used": False,
+                    "asset_paths": [],
+                    "reason": "",
+                    "legal_basis": "",
+                    "traceability_basis": [],
+                },
+                "notes": "Fixture specialist decision generated from approved skill execution.",
+                "source": "runtime_structural_projection",
+                "override_source_path": None,
             }
         write_json(runtime_input_packet_path, runtime_input_packet_payload)
+        if skill_usage is not None:
+            write_json(session_root / "skill-usage.json", skill_usage)
         phase_execute_payload = {
             "run_id": run_id,
             "requirement_doc_path": str(requirement_doc_path),
@@ -220,7 +236,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         if phase_execute_specialist_decision is not None:
             phase_execute_payload["specialist_decision"] = phase_execute_specialist_decision
         elif not omit_default_specialist_decision and sidecar_specialist_decision is None and not specialist_decision_path:
-            if approved_dispatch_payload:
+            if selected_skill_execution_payload:
                 phase_execute_payload["specialist_decision"] = {
                     "decision_state": "approved_dispatch",
                     "resolution_mode": "approved_dispatch",
@@ -274,6 +290,125 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         if sidecar_specialist_execution is not None:
             write_json(session_root / "specialist-execution.json", sidecar_specialist_execution)
         return session_root
+
+    def test_binary_skill_usage_passes_with_full_load_and_artifact_impact(self) -> None:
+        session_root = self._build_session(
+            skill_usage={
+                "schema_version": 1,
+                "state_model": "binary_used_unused",
+                "used_skills": ["scanpy"],
+                "unused_skills": [],
+                "loaded_skills": [
+                    {
+                        "skill_id": "scanpy",
+                        "skill_md_path": "bundled/skills/scanpy/SKILL.md",
+                        "skill_md_sha256": "a" * 64,
+                        "load_status": "loaded_full_skill_md",
+                        "loaded_at_stage": "skeleton_check",
+                    }
+                ],
+                "evidence": [
+                    {
+                        "skill_id": "scanpy",
+                        "stage": "xl_plan",
+                        "artifact_ref": "xl_plan.md",
+                        "impact_summary": "Plan adopts the loaded scanpy workflow.",
+                    }
+                ],
+                "unused_reasons": [],
+            }
+        )
+
+        report = evaluate(REPO_ROOT, session_root)
+        self.assertEqual("PASS", report["skill_usage_truth"]["state"])
+        self.assertEqual(["scanpy"], report["skill_usage_truth"]["used_skill_ids"])
+
+    def test_binary_skill_usage_fails_when_used_skill_lacks_artifact_impact(self) -> None:
+        session_root = self._build_session(
+            skill_usage={
+                "schema_version": 1,
+                "state_model": "binary_used_unused",
+                "used_skills": ["scanpy"],
+                "unused_skills": [],
+                "loaded_skills": [
+                    {
+                        "skill_id": "scanpy",
+                        "skill_md_path": "bundled/skills/scanpy/SKILL.md",
+                        "skill_md_sha256": "b" * 64,
+                        "load_status": "loaded_full_skill_md",
+                        "loaded_at_stage": "skeleton_check",
+                    }
+                ],
+                "evidence": [],
+                "unused_reasons": [],
+            }
+        )
+
+        report = evaluate(REPO_ROOT, session_root)
+        self.assertEqual("FAIL", report["skill_usage_truth"]["state"])
+        self.assertIn("missing_artifact_impact", report["skill_usage_truth"]["failure_reasons"])
+
+    def test_legacy_dispatch_without_skill_routing_selected_does_not_count_as_selected(self) -> None:
+        session_root = self._build_session(
+            approved_dispatch=[
+                {
+                    "skill_id": "scanpy",
+                    "native_skill_entrypoint": "bundled/skills/scanpy/SKILL.md",
+                }
+            ],
+            skill_routing={"candidates": [], "selected": [], "rejected": []},
+            skill_usage={"schema_version": 2, "state_model": "binary_used_unused", "used": [], "unused": []},
+        )
+
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("PASS", report["skill_usage_truth"]["state"])
+        self.assertEqual([], report["execution_context"]["selected_skill_ids"])
+
+    def test_selected_skill_without_load_evidence_fails_usage_truth(self) -> None:
+        session_root = self._build_session(
+            skill_routing={
+                "candidates": [{"skill_id": "scanpy"}],
+                "selected": [{"skill_id": "scanpy", "skill_md_path": "bundled/skills/scanpy/SKILL.md"}],
+                "rejected": [],
+            },
+            skill_usage={
+                "schema_version": 2,
+                "state_model": "binary_used_unused",
+                "used": [],
+                "unused": [{"skill_id": "scanpy", "reason": "selected_but_not_loaded"}],
+                "loaded_skills": [],
+            },
+        )
+
+        report = evaluate(REPO_ROOT, session_root)
+
+        self.assertEqual("FAIL", report["skill_usage_truth"]["state"])
+        self.assertIn("selected_skill_missing_load_evidence", report["skill_usage_truth"]["failure_reasons"])
+
+    def test_approved_dispatch_without_skill_usage_does_not_count_as_used(self) -> None:
+        session_root = self._build_session(
+            approved_dispatch=[
+                {
+                    "skill_id": "scanpy",
+                    "native_skill_entrypoint": "bundled/skills/scanpy/SKILL.md",
+                }
+            ],
+            skill_usage={
+                "schema_version": 1,
+                "state_model": "binary_used_unused",
+                "used_skills": [],
+                "unused_skills": ["scanpy"],
+                "loaded_skills": [],
+                "evidence": [],
+                "unused_reasons": [{"skill_id": "scanpy", "reason": "dispatch_without_verified_artifact_impact"}],
+            },
+        )
+
+        report = evaluate(REPO_ROOT, session_root)
+        self.assertEqual("PASS", report["skill_usage_truth"]["state"])
+        self.assertEqual([], report["skill_usage_truth"]["used_skill_ids"])
+        self.assertEqual(["scanpy"], report["skill_usage_truth"]["unused_skill_ids"])
 
     def test_runtime_delivery_acceptance_passes_for_clean_root_run(self) -> None:
         session_root = self._build_session(
@@ -374,8 +509,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "live_native_executed",
             },
         )
@@ -399,7 +534,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -411,8 +546,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "live_native_executed",
             },
         )
@@ -436,7 +571,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -448,8 +583,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
             },
         )
@@ -478,7 +613,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -490,10 +625,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -524,7 +659,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -536,10 +671,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -569,8 +704,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=stale_runtime_dispatch,
             specialist_accounting={
-                "approved_dispatch": [],
-                "approved_dispatch_count": 0,
+                "selected_skill_execution": [],
+                "selected_skill_execution_count": 0,
                 "effective_execution_status": "none",
             },
             phase_execute_specialist_decision={
@@ -603,7 +738,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-pass",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -615,10 +750,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -671,7 +806,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             execution_status="running",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -683,10 +818,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -726,7 +861,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-sidecar-only",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -738,8 +873,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
             },
             sidecar_specialist_execution={
@@ -760,7 +895,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
 
         self.assertEqual("PASS", report["summary"]["gate_result"])
         self.assertFalse(report["execution_context"]["specialist_host_continuation_pending"])
-        self.assertEqual(["unit-1"], report["execution_context"]["direct_routed_specialist_unit_ids"])
+        self.assertEqual(["unit-1"], report["execution_context"]["direct_routed_skill_execution_unit_ids"])
         self.assertEqual("host_current_session_executed", report["execution_context"]["specialist_effective_execution_status"])
 
     def test_runtime_delivery_acceptance_normalizes_entrypoint_separators_before_comparison(self) -> None:
@@ -774,7 +909,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-entrypoint-normalized",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -786,10 +921,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -832,7 +967,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-posix-drive-entrypoint-normalized",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -844,10 +979,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -890,7 +1025,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-derived-status",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -902,10 +1037,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -950,7 +1085,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-degraded",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -962,10 +1097,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -1014,7 +1149,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-failed",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1026,10 +1161,10 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "effective_execution_status": "direct_current_session_routed",
-                "direct_routed_specialist_units": [
+                "direct_routed_skill_execution_units": [
                     {
                         "unit_id": "unit-1",
                         "skill_id": "systematic-debugging",
@@ -1082,7 +1217,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1099,8 +1234,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 2,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 2,
                 "effective_execution_status": "live_native_executed",
             },
             phase_execute_specialist_decision={
@@ -1132,7 +1267,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1144,8 +1279,8 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 ],
             },
             specialist_accounting={
-                "approved_dispatch": approved_dispatch,
-                "approved_dispatch_count": 1,
+                "selected_skill_execution": approved_dispatch,
+                "selected_skill_execution_count": 1,
                 "degraded_skill_ids": ["systematic-debugging"],
                 "effective_execution_status": "explicitly_degraded",
             },

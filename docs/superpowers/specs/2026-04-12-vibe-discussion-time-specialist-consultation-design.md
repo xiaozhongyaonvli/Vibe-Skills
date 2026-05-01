@@ -1,5 +1,10 @@
 # Vibe Discussion-Time Specialist Consultation Design
 
+> Historical / Retired Note: This document records a previous routing design or
+> migration state. Current routing authority is defined by
+> `docs/governance/current-routing-contract.md` and
+> `docs/governance/current-runtime-field-contract.md`.
+
 ## Goal
 
 Allow governed `vibe` runs to consult suitable routed specialist Skills during discussion and plan formation, while keeping `vibe` as the only runtime authority and the only outward-facing speaker.

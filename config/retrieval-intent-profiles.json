@@ -103,7 +103,6 @@
             "rerank_mode": "code",
             "recommended_packs": [
                 "integration-devops",
-                "orchestration-core",
                 "code-quality"
             ],
             "recommended_skills": [
@@ -157,8 +156,7 @@
             "rerank_mode": "docs",
             "recommended_packs": [
                 "ai-llm",
-                "integration-devops",
-                "orchestration-core"
+                "integration-devops"
             ],
             "recommended_skills": [
                 "openai-docs",
@@ -203,16 +201,14 @@
             ],
             "rerank_mode": "balanced",
             "recommended_packs": [
-                "orchestration-core",
                 "research-design",
-                "integration-devops"
+                "integration-devops",
+                "code-quality"
             ],
             "recommended_skills": [
                 "vibe",
-                "brainstorming",
                 "verification-before-completion"
             ]
         }
     ]
 }
-

@@ -17,6 +17,8 @@ Set-StrictMode -Off
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'VibeRuntime.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeSkillUsage.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeSkillRouting.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeExecution.Common.ps1')
 
 function New-VibeDelegatedLaneSpec {
@@ -520,7 +522,7 @@ function Invoke-VibeDirectLaneEntry {
                 lane_result = $executed.result
             }
         }
-        'specialist_dispatch' {
+        'skill_execution' {
             $executed = Invoke-VibeSpecialistDispatchUnit `
                 -UnitId ("{0}-specialist" -f [string]$LaneEntry.lane_id) `
                 -Dispatch $LaneEntry.dispatch `
@@ -578,10 +580,10 @@ function ConvertTo-VibeExecutedUnitReceipt {
         verification_passed = if ($Outcome.lane_result) { [bool]$Outcome.lane_result.verification_passed } else { [bool]$Outcome.lane_receipt.verification_passed }
         result_path = [string]$Outcome.lane_result_path
         lane_receipt_path = if ($Outcome.lane_receipt_path) { [string]$Outcome.lane_receipt_path } else { $null }
-        skill_id = if ([string]$Outcome.lane_entry.lane_kind -eq 'specialist_dispatch') { [string]$Outcome.lane_entry.dispatch.skill_id } else { $null }
-        dispatch_phase = if ([string]$Outcome.lane_entry.lane_kind -eq 'specialist_dispatch' -and $Outcome.lane_entry.dispatch.PSObject.Properties.Name -contains 'dispatch_phase') { [string]$Outcome.lane_entry.dispatch.dispatch_phase } else { $null }
-        binding_profile = if ([string]$Outcome.lane_entry.lane_kind -eq 'specialist_dispatch' -and $Outcome.lane_entry.dispatch.PSObject.Properties.Name -contains 'binding_profile') { [string]$Outcome.lane_entry.dispatch.binding_profile } else { $null }
-        lane_policy = if ([string]$Outcome.lane_entry.lane_kind -eq 'specialist_dispatch' -and $Outcome.lane_entry.dispatch.PSObject.Properties.Name -contains 'lane_policy') { [string]$Outcome.lane_entry.dispatch.lane_policy } else { $null }
+        skill_id = if ([string]$Outcome.lane_entry.lane_kind -eq 'skill_execution') { [string]$Outcome.lane_entry.dispatch.skill_id } else { $null }
+        dispatch_phase = if ([string]$Outcome.lane_entry.lane_kind -eq 'skill_execution' -and $Outcome.lane_entry.dispatch.PSObject.Properties.Name -contains 'dispatch_phase') { [string]$Outcome.lane_entry.dispatch.dispatch_phase } else { $null }
+        binding_profile = if ([string]$Outcome.lane_entry.lane_kind -eq 'skill_execution' -and $Outcome.lane_entry.dispatch.PSObject.Properties.Name -contains 'binding_profile') { [string]$Outcome.lane_entry.dispatch.binding_profile } else { $null }
+        lane_policy = if ([string]$Outcome.lane_entry.lane_kind -eq 'skill_execution' -and $Outcome.lane_entry.dispatch.PSObject.Properties.Name -contains 'lane_policy') { [string]$Outcome.lane_entry.dispatch.lane_policy } else { $null }
         write_scope = [string]$Outcome.lane_entry.write_scope
         execution_driver = if ($Outcome.lane_result -and $Outcome.lane_result.PSObject.Properties.Name -contains 'execution_driver') { [string]$Outcome.lane_result.execution_driver } else { $null }
         live_native_execution = if ($Outcome.lane_result -and $Outcome.lane_result.PSObject.Properties.Name -contains 'live_native_execution') { [bool]$Outcome.lane_result.live_native_execution } else { $false }
@@ -602,7 +604,7 @@ function Test-VibeReceiptCountsAsSuccessful {
     }
 
     if (
-        [string]$Receipt.lane_kind -eq 'specialist_dispatch' -and
+        [string]$Receipt.lane_kind -eq 'skill_execution' -and
         [bool]$Receipt.degraded -and
         [string]$Receipt.status -eq 'degraded_non_authoritative' -and
         [int]$Receipt.exit_code -eq 0
@@ -627,13 +629,14 @@ function Resolve-VibeEffectiveSpecialistDispatch {
     $originalLocalSuggestions = @($LocalSuggestions)
     $frozenApprovedSkillIds = @($frozenApprovedDispatch | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
     $originalLocalSkillIds = @($originalLocalSuggestions | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
-    $originalEscalationRequired = if ($RuntimeInputPacket -and $RuntimeInputPacket.specialist_dispatch) {
-        [bool]$RuntimeInputPacket.specialist_dispatch.escalation_required
+    $runtimeSelectedSkillExecution = Get-VibeRuntimeSelectedSkillExecutionProjection -RuntimeInputPacket $RuntimeInputPacket
+    $originalEscalationRequired = if ($runtimeSelectedSkillExecution) {
+        [bool]$runtimeSelectedSkillExecution.escalation_required
     } else {
         @($originalLocalSuggestions).Count -gt 0
     }
-    $originalEscalationStatus = if ($RuntimeInputPacket -and $RuntimeInputPacket.specialist_dispatch -and $RuntimeInputPacket.specialist_dispatch.escalation_status) {
-        [string]$RuntimeInputPacket.specialist_dispatch.escalation_status
+    $originalEscalationStatus = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.escalation_status) {
+        [string]$runtimeSelectedSkillExecution.escalation_status
     } elseif ($originalEscalationRequired) {
         'root_approval_required'
     } else {
@@ -641,11 +644,11 @@ function Resolve-VibeEffectiveSpecialistDispatch {
     }
 
     $result = [ordered]@{
-        frozen_approved_dispatch = @($frozenApprovedDispatch)
+        frozen_selected_skill_execution = @($frozenApprovedDispatch)
         frozen_approved_skill_ids = @($frozenApprovedSkillIds)
-        effective_approved_dispatch = @($frozenApprovedDispatch)
+        selected_skill_execution = @($frozenApprovedDispatch)
         effective_approved_skill_ids = @($frozenApprovedSkillIds)
-        auto_approved_dispatch = @()
+        auto_selected_skill_execution = @()
         auto_approved_skill_ids = @()
         original_local_specialist_suggestions = @($originalLocalSuggestions)
         original_local_suggestion_skill_ids = @($originalLocalSkillIds)
@@ -757,12 +760,10 @@ function Resolve-VibeEffectiveSpecialistDispatch {
     }
 
     $recommendationLookup = @{}
-    if ($RuntimeInputPacket -and $RuntimeInputPacket.PSObject.Properties.Name -contains 'specialist_recommendations') {
-        foreach ($recommendation in @($RuntimeInputPacket.specialist_recommendations)) {
-            $skillId = [string]$recommendation.skill_id
-            if (-not [string]::IsNullOrWhiteSpace($skillId) -and -not $recommendationLookup.ContainsKey($skillId)) {
-                $recommendationLookup[$skillId] = $recommendation
-            }
+    foreach ($recommendation in @(Get-VibeRuntimeSpecialistRecommendations -RuntimeInputPacket $RuntimeInputPacket)) {
+        $skillId = [string]$recommendation.skill_id
+        if (-not [string]::IsNullOrWhiteSpace($skillId) -and -not $recommendationLookup.ContainsKey($skillId)) {
+            $recommendationLookup[$skillId] = $recommendation
         }
     }
 
@@ -816,9 +817,9 @@ function Resolve-VibeEffectiveSpecialistDispatch {
     $effectiveApprovedDispatch = @($frozenApprovedDispatch + $autoApprovedDispatch)
     $effectiveApprovedSkillIds = @($effectiveApprovedDispatch | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
 
-    $result.effective_approved_dispatch = @($effectiveApprovedDispatch)
+    $result.selected_skill_execution = @($effectiveApprovedDispatch)
     $result.effective_approved_skill_ids = @($effectiveApprovedSkillIds)
-    $result.auto_approved_dispatch = @($autoApprovedDispatch)
+    $result.auto_selected_skill_execution = @($autoApprovedDispatch)
     $result.auto_approved_skill_ids = @($autoApprovedDispatch | ForEach-Object { [string]$_.skill_id } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
     $result.residual_local_specialist_suggestions = @($residualSuggestions)
     $result.residual_local_suggestion_skill_ids = @($residualSkillIds)
@@ -908,8 +909,8 @@ function Get-VibePlanDerivedExecutionShadow {
 
     $sections = Get-VibePlanSections -PlanPath $PlanPath
     $units = @()
-    $specialistSections = @('Specialist Skill Dispatch Plan', 'Specialist Consultation', 'Unified Specialist Lifecycle Disclosure')
-    $sectionOrder = @('Wave Plan', 'Specialist Skill Dispatch Plan', 'Specialist Consultation', 'Unified Specialist Lifecycle Disclosure', 'Verification Commands', 'Phase Cleanup Contract')
+    $specialistSections = @('Selected Skill Execution Plan', 'Skill Routing And Usage Evidence')
+    $sectionOrder = @('Wave Plan', 'Selected Skill Execution Plan', 'Skill Routing And Usage Evidence', 'Verification Commands', 'Phase Cleanup Contract')
     $unitIndex = 0
 
     foreach ($sectionName in $sectionOrder) {
@@ -929,8 +930,8 @@ function Get-VibePlanDerivedExecutionShadow {
             $inlineCommands = [regex]::Matches($trimmed, '`([^`]+)`') | ForEach-Object { $_.Groups[1].Value }
 
             if ($specialistSections -contains $sectionName) {
-                $classification = 'specialist_dispatch_unit'
-                $reason = if ($sectionName -eq 'Specialist Skill Dispatch Plan') { 'bounded_native_specialist_dispatch_declared' } else { 'specialist_consultation_or_lifecycle_declared' }
+                $classification = 'skill_execution_unit'
+                $reason = if ($sectionName -eq 'Selected Skill Execution Plan') { 'bounded_native_skill_execution_declared' } else { 'skill_routing_usage_declared' }
             } elseif (@($inlineCommands).Count -gt 0) {
                 $classification = 'executable_unit'
                 $reason = 'inline_command_detected'
@@ -959,7 +960,7 @@ function Get-VibePlanDerivedExecutionShadow {
         execution_plan_path = $PlanPath
         candidate_unit_count = @($units).Count
         executable_unit_count = @($units | Where-Object { $_.classification -eq 'executable_unit' }).Count
-        specialist_dispatch_unit_count = @($units | Where-Object { $_.classification -eq 'specialist_dispatch_unit' }).Count
+        skill_execution_unit_count = @($units | Where-Object { $_.classification -eq 'skill_execution_unit' }).Count
         advisory_only_unit_count = @($units | Where-Object { $_.classification -eq 'advisory_only_unit' }).Count
         ambiguous_unit_count = @($units | Where-Object { $_.classification -eq 'ambiguous_unit' }).Count
         unsafe_unit_count = @($units | Where-Object { $_.classification -eq 'unsafe_unit' }).Count
@@ -1146,6 +1147,25 @@ $runtimeInputPacket = if (Test-Path -LiteralPath $runtimeInputPath) {
 } else {
     $null
 }
+$skillUsage = if ($runtimeInputPacket -and $runtimeInputPacket.PSObject.Properties.Name -contains 'skill_usage') {
+    Read-VibeSkillUsageArtifact -SessionRoot $sessionRoot -Fallback $runtimeInputPacket.skill_usage
+} else {
+    Read-VibeSkillUsageArtifact -SessionRoot $sessionRoot -Fallback $null
+}
+$selectedUsageSkill = if ($runtimeInputPacket -and $runtimeInputPacket.route_snapshot) {
+    [string]$runtimeInputPacket.route_snapshot.selected_skill
+} else {
+    ''
+}
+if ($skillUsage -and -not [string]::IsNullOrWhiteSpace($selectedUsageSkill)) {
+    $skillUsage = Update-VibeSkillUsageArtifactImpact `
+        -SkillUsage $skillUsage `
+        -SkillId $selectedUsageSkill `
+        -Stage 'plan_execute' `
+        -ArtifactRef 'execution-manifest.json' `
+        -ImpactSummary ('Execution manifest preserves binary skill usage truth for {0}; execution cannot use routing, hints, consultation, or dispatch alone as usage proof.' -f $selectedUsageSkill)
+    Write-VibeJsonArtifact -Path (Get-VibeSkillUsagePath -SessionRoot $sessionRoot) -Value $skillUsage
+}
 $hierarchyState = Get-VibeHierarchyState `
     -GovernanceScope $(if ($runtimeInputPacket) { [string]$runtimeInputPacket.governance_scope } else { $GovernanceScope }) `
     -RunId $RunId `
@@ -1182,27 +1202,89 @@ $tokens = @{
     '${ROOT_RUN_ID}' = [string]$hierarchyState.root_run_id
 }
 $planShadow = Get-VibePlanDerivedExecutionShadow -PlanPath $planPath -RunId $RunId -SessionRoot $sessionRoot
-$specialistRecommendations = if ($runtimeInputPacket) { @($runtimeInputPacket.specialist_recommendations) } else { @() }
-$frozenApprovedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.approved_dispatch) } else { @() }
-$frozenLocalSuggestions = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch) { @($runtimeInputPacket.specialist_dispatch.local_specialist_suggestions) } else { @() }
-$frozenBlockedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'blocked' -and $null -ne $runtimeInputPacket.specialist_dispatch.blocked) { @($runtimeInputPacket.specialist_dispatch.blocked) } else { @() }
-$frozenDegradedDispatch = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'degraded' -and $null -ne $runtimeInputPacket.specialist_dispatch.degraded) { @($runtimeInputPacket.specialist_dispatch.degraded) } else { @() }
-$matchedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'matched_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.matched_skill_ids) { @($runtimeInputPacket.specialist_dispatch.matched_skill_ids) } else { @() }
-$surfacedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'surfaced_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.surfaced_skill_ids) { @($runtimeInputPacket.specialist_dispatch.surfaced_skill_ids) } else { @() }
-$blockedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'blocked_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.blocked_skill_ids) { @($runtimeInputPacket.specialist_dispatch.blocked_skill_ids) } else { @() }
-$degradedSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'degraded_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.degraded_skill_ids) { @($runtimeInputPacket.specialist_dispatch.degraded_skill_ids) } else { @() }
-$ghostMatchSkillIds = if ($runtimeInputPacket -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'ghost_match_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.ghost_match_skill_ids) { @($runtimeInputPacket.specialist_dispatch.ghost_match_skill_ids) } else { @() }
-$specialistDispatchResolution = Resolve-VibeEffectiveSpecialistDispatch `
-    -SessionRoot $sessionRoot `
-    -HierarchyState $hierarchyState `
-    -RuntimeInputPacket $runtimeInputPacket `
-    -ApprovedDispatch @($frozenApprovedDispatch) `
-    -LocalSuggestions @($frozenLocalSuggestions) `
-    -SuggestionContract $runtime.runtime_input_packet_policy.child_specialist_suggestion_contract
-$approvedDispatch = @($specialistDispatchResolution.effective_approved_dispatch)
+$runtimeSelectedSkillExecution = Get-VibeRuntimeSelectedSkillExecutionProjection -RuntimeInputPacket $runtimeInputPacket
+$specialistRecommendations = @(Get-VibeRuntimeSpecialistRecommendations -RuntimeInputPacket $runtimeInputPacket)
+$skillRouting = if ($runtimeInputPacket -and $runtimeInputPacket.PSObject.Properties.Name -contains 'skill_routing') {
+    $runtimeInputPacket.skill_routing
+} else {
+    $null
+}
+$selectedSkills = @(Convert-VibeSkillRoutingSelectedToDispatch -RuntimeInputPacket $runtimeInputPacket -SkillRouting $skillRouting)
+$frozenApprovedDispatch = @($selectedSkills)
+$frozenLocalSuggestions = @()
+$frozenBlockedDispatch = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.PSObject.Properties.Name -contains 'blocked_skill_execution' -and $null -ne $runtimeSelectedSkillExecution.blocked_skill_execution) { @($runtimeSelectedSkillExecution.blocked_skill_execution) } else { @() }
+$frozenDegradedDispatch = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.PSObject.Properties.Name -contains 'degraded_skill_execution' -and $null -ne $runtimeSelectedSkillExecution.degraded_skill_execution) { @($runtimeSelectedSkillExecution.degraded_skill_execution) } else { @() }
+$matchedSkillIds = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.PSObject.Properties.Name -contains 'matched_skill_ids' -and $null -ne $runtimeSelectedSkillExecution.matched_skill_ids) { @($runtimeSelectedSkillExecution.matched_skill_ids) } else { @() }
+$surfacedSkillIds = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.PSObject.Properties.Name -contains 'surfaced_skill_ids' -and $null -ne $runtimeSelectedSkillExecution.surfaced_skill_ids) { @($runtimeSelectedSkillExecution.surfaced_skill_ids) } else { @() }
+$blockedSkillIds = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.PSObject.Properties.Name -contains 'blocked_skill_ids' -and $null -ne $runtimeSelectedSkillExecution.blocked_skill_ids) { @($runtimeSelectedSkillExecution.blocked_skill_ids) } else { @() }
+$degradedSkillIds = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.PSObject.Properties.Name -contains 'degraded_skill_ids' -and $null -ne $runtimeSelectedSkillExecution.degraded_skill_ids) { @($runtimeSelectedSkillExecution.degraded_skill_ids) } else { @() }
+$ghostMatchSkillIds = if ($runtimeSelectedSkillExecution -and $runtimeSelectedSkillExecution.PSObject.Properties.Name -contains 'ghost_match_skill_ids' -and $null -ne $runtimeSelectedSkillExecution.ghost_match_skill_ids) { @($runtimeSelectedSkillExecution.ghost_match_skill_ids) } else { @() }
+$blockedSkillIds = @($blockedSkillIds | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+$degradedSkillIds = @($degradedSkillIds | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+$existingBlockedDispatchSkillIds = @($frozenBlockedDispatch | ForEach-Object {
+        if ($null -ne $_ -and $_.PSObject.Properties.Name -contains 'skill_id') { [string]$_.skill_id } else { '' }
+    } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+foreach ($blockedSkillId in @($blockedSkillIds)) {
+    if (@($existingBlockedDispatchSkillIds) -contains [string]$blockedSkillId) {
+        continue
+    }
+    $sourceDispatch = @(
+        @($selectedSkills) +
+        @($specialistRecommendations)
+    ) | Where-Object {
+        $null -ne $_ -and
+        $_.PSObject.Properties.Name -contains 'skill_id' -and
+        [string]::Equals([string]$_.skill_id, [string]$blockedSkillId, [System.StringComparison]::OrdinalIgnoreCase)
+    } | Select-Object -First 1
+    if ($null -ne $sourceDispatch) {
+        $frozenBlockedDispatch += $sourceDispatch
+    } else {
+        $frozenBlockedDispatch += [pscustomobject]@{
+            skill_id = [string]$blockedSkillId
+            reason = 'blocked_by_specialist_decision'
+            recommended_promotion_action = 'require_confirmation'
+            write_scope = ''
+            review_mode = 'native_contract'
+        }
+    }
+    $existingBlockedDispatchSkillIds += [string]$blockedSkillId
+}
+$nonExecutableSelectedSkillIds = @(@($blockedSkillIds) + @($degradedSkillIds)) | Select-Object -Unique
+if (@($nonExecutableSelectedSkillIds).Count -gt 0) {
+    $selectedSkills = @($selectedSkills | Where-Object {
+            $candidateSkillId = if ($null -ne $_ -and $_.PSObject.Properties.Name -contains 'skill_id') { [string]$_.skill_id } else { '' }
+            [string]::IsNullOrWhiteSpace($candidateSkillId) -or ($candidateSkillId -notin @($nonExecutableSelectedSkillIds))
+        })
+    $frozenApprovedDispatch = @($selectedSkills)
+}
+$hasCanonicalSelectedSkills = $null -ne $skillRouting -and $skillRouting.PSObject.Properties.Name -contains 'selected' -and @($skillRouting.selected).Count -gt 0
+if ($hasCanonicalSelectedSkills) {
+    $specialistDispatchResolution = [pscustomobject]@{
+        selected_skill_execution = @($selectedSkills)
+        residual_local_specialist_suggestions = @()
+        auto_selected_skill_execution = @()
+        auto_absorb_gate = [pscustomobject]@{
+            enabled = $false
+            receipt_path = $null
+            reason = 'skill_routing_selected_is_authority'
+        }
+        escalation_required = $false
+        approval_owner = 'root'
+        escalation_status = 'not_required'
+    }
+} else {
+    $specialistDispatchResolution = Resolve-VibeEffectiveSpecialistDispatch `
+        -SessionRoot $sessionRoot `
+        -HierarchyState $hierarchyState `
+        -RuntimeInputPacket $runtimeInputPacket `
+        -ApprovedDispatch @($frozenApprovedDispatch) `
+        -LocalSuggestions @($frozenLocalSuggestions) `
+        -SuggestionContract $runtime.runtime_input_packet_policy.child_specialist_suggestion_contract
+}
+$approvedDispatch = @($specialistDispatchResolution.selected_skill_execution)
 $localSuggestions = @($specialistDispatchResolution.residual_local_specialist_suggestions)
-$autoApprovedDispatch = @($specialistDispatchResolution.auto_approved_dispatch)
-$interactiveSpecialistDisclosurePolicy = Get-VibeInteractiveSpecialistDisclosurePolicy -RuntimeInputPacketPolicy $runtime.runtime_input_packet_policy
+$autoApprovedDispatch = @($specialistDispatchResolution.auto_selected_skill_execution)
+$interactiveSpecialistDisclosurePolicy = Get-VibeInteractiveSkillExecutionDisclosurePolicy -RuntimeInputPacketPolicy $runtime.runtime_input_packet_policy
 $specialistUserDisclosure = New-VibeSpecialistUserDisclosureProjection `
     -ApprovedDispatch @($approvedDispatch) `
     -Policy $interactiveSpecialistDisclosurePolicy
@@ -1497,7 +1579,7 @@ foreach ($topologyWave in @($executionTopology.waves)) {
                 $failedUnitCount += 1
             }
 
-            if ([string]$unitReceipt.lane_kind -eq 'specialist_dispatch') {
+            if ([string]$unitReceipt.lane_kind -eq 'skill_execution') {
                 $executedSpecialistUnits += [pscustomobject]@{
                     unit_id = [string]$unitReceipt.unit_id
                     skill_id = [string]$unitReceipt.skill_id
@@ -1815,7 +1897,8 @@ $topLevelProofPassed = [bool](
 $baseStatus = if ($failedUnitCount -eq 0 -and $executedUnitCount -ge [int]$profile.expected_minimum_units) { 'completed' } elseif ($executedUnitCount -eq 0) { 'failed' } else { 'completed_with_failures' }
 $degradedSpecialistUnits = @(@($executedSpecialistUnits | Where-Object { [bool]$_.degraded }) + @($preDispatchDegradedUnits))
 $nonDegradedExecutedSpecialistUnits = @($executedSpecialistUnits | Where-Object { -not [bool]$_.degraded })
-$totalSpecialistDispatchOutcomeCount = @($nonDegradedExecutedSpecialistUnits).Count + @($blockedSpecialistUnits).Count + @($degradedSpecialistUnits).Count
+$skillExecutionOutcomes = @(@($nonDegradedExecutedSpecialistUnits) + @($blockedSpecialistUnits) + @($degradedSpecialistUnits))
+$totalSpecialistDispatchOutcomeCount = @($skillExecutionOutcomes).Count
 $effectiveSpecialistExecutionStatus = if (@($liveSpecialistUnits).Count -gt 0 -and @($failedLiveSpecialistUnits).Count -eq 0) {
     'live_native_executed'
 } elseif (@($liveSpecialistUnits).Count -gt 0 -and @($failedLiveSpecialistUnits).Count -gt 0) {
@@ -1839,8 +1922,8 @@ $specialistDecision = New-VibeSpecialistDecisionProjection `
     -LocalSuggestions @($localSuggestions) `
     -BlockedDispatch @($blockedSpecialistUnits) `
     -DegradedDispatch @($degradedSpecialistUnits) `
-    -MatchedSkillIds $(if ($runtimeInputPacket -and $runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch' -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'matched_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.matched_skill_ids) { @($runtimeInputPacket.specialist_dispatch.matched_skill_ids) } else { @() }) `
-    -SurfacedSkillIds $(if ($runtimeInputPacket -and $runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch' -and $runtimeInputPacket.specialist_dispatch -and $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'surfaced_skill_ids' -and $null -ne $runtimeInputPacket.specialist_dispatch.surfaced_skill_ids) { @($runtimeInputPacket.specialist_dispatch.surfaced_skill_ids) } else { @() }) `
+    -MatchedSkillIds @($matchedSkillIds) `
+    -SurfacedSkillIds @($surfacedSkillIds) `
     -RecommendationCount @($specialistRecommendations).Count `
     -OverridePayload $(if ($specialistDecisionOverride) { $specialistDecisionOverride.payload } else { $null }) `
     -OverrideSourcePath $(if ($specialistDecisionOverride) { [string]$specialistDecisionOverride.path } else { '' })
@@ -1848,6 +1931,21 @@ $runtimePacketHostAdapterIdentity = Get-VibeRuntimePacketHostAdapterAlignment -R
 $routeRuntimeAlignment = New-VibeRouteRuntimeAlignmentProjection -RuntimeInputPacket $runtimeInputPacket -DefaultRuntimeSkill 'vibe'
 $hierarchyProjection = New-VibeHierarchyProjection -HierarchyState $hierarchyState -IncludeGovernanceScope
 $authorityProjection = New-VibeExecutionAuthorityProjection -HierarchyState $hierarchyState
+$selectedSkillExecution = @($approvedDispatch)
+$selectedSkillExecutionCount = @($selectedSkillExecution).Count
+$frozenSelectedSkillExecution = @($frozenApprovedDispatch)
+$frozenSelectedSkillExecutionCount = @($frozenSelectedSkillExecution).Count
+$autoSelectedSkillExecution = @($autoApprovedDispatch)
+$autoSelectedSkillExecutionCount = @($autoSelectedSkillExecution).Count
+$blockedSkillExecutionUnits = @($blockedSpecialistUnits)
+$blockedSkillExecutionUnitCount = @($blockedSkillExecutionUnits).Count
+$degradedSkillExecutionUnits = @($degradedSpecialistUnits)
+$degradedSkillExecutionUnitCount = @($degradedSkillExecutionUnits).Count
+$skillExecutionResolutionPath = if ($specialistDispatchResolution.auto_absorb_gate.receipt_path) {
+    [string]$specialistDispatchResolution.auto_absorb_gate.receipt_path
+} else {
+    $null
+}
 $executionManifest = [pscustomobject]@{
     stage = 'plan_execute'
     run_id = $RunId
@@ -1860,6 +1958,10 @@ $executionManifest = [pscustomobject]@{
     execution_plan_path = $planPath
     execution_topology_path = $executionTopologyPath
     runtime_input_packet_path = $runtimeInputPath
+    skill_usage = $skillUsage
+    skill_routing_path = $runtimeInputPath
+    skill_routing_summary = New-VibeSkillRoutingSummary -SkillRouting $skillRouting -SkillUsage $skillUsage
+    selected_skill_ids = @(Get-VibeSkillRoutingSelectedSkillIds -RuntimeInputPacket $runtimeInputPacket -SkillRouting $skillRouting)
     execution_memory_context_path = if ([string]::IsNullOrWhiteSpace($ExecutionMemoryContextPath)) { $null } else { $ExecutionMemoryContextPath }
     generated_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
     planned_wave_count = @($profile.waves).Count
@@ -1890,11 +1992,12 @@ $executionManifest = [pscustomobject]@{
         review_mode = [string]$executionTopology.review_mode
         specialist_phase_bindings = if ($executionTopology.PSObject.Properties.Name -contains 'specialist_phase_bindings') { $executionTopology.specialist_phase_bindings } else { $null }
         dispatch_resolution = [pscustomobject]@{
-            source = 'plan_execute_effective_dispatch'
-            frozen_approved_dispatch_count = @($frozenApprovedDispatch).Count
-            effective_approved_dispatch_count = @($approvedDispatch).Count
-            auto_approved_dispatch_count = @($autoApprovedDispatch).Count
-            same_round_auto_absorb_applied = [bool](@($autoApprovedDispatch).Count -gt 0)
+            source = 'plan_execute_selected_skill_execution'
+            frozen_selected_skill_execution_count = [int]$frozenSelectedSkillExecutionCount
+            selected_skill_execution_count = [int]$selectedSkillExecutionCount
+            auto_selected_skill_execution_count = [int]$autoSelectedSkillExecutionCount
+            same_round_auto_absorb_applied = [bool]($autoSelectedSkillExecutionCount -gt 0)
+            skill_execution_resolution_path = $skillExecutionResolutionPath
         }
         two_stage_review = [pscustomobject]@{
             enabled = [bool]([string]$executionTopology.review_mode -eq 'two_stage_after_unit')
@@ -1906,7 +2009,7 @@ $executionManifest = [pscustomobject]@{
         path = $planShadow.path
         candidate_unit_count = [int]$planShadow.payload.candidate_unit_count
         executable_unit_count = [int]$planShadow.payload.executable_unit_count
-        specialist_dispatch_unit_count = [int]$planShadow.payload.specialist_dispatch_unit_count
+        skill_execution_unit_count = [int]$planShadow.payload.skill_execution_unit_count
         advisory_only_unit_count = [int]$planShadow.payload.advisory_only_unit_count
         ambiguous_unit_count = [int]$planShadow.payload.ambiguous_unit_count
     }
@@ -1919,14 +2022,14 @@ $executionManifest = [pscustomobject]@{
         native_usage_required = [bool](@($specialistRecommendations | Where-Object { $_.native_usage_required }).Count -gt 0)
         execution_mode = if (@($approvedDispatch).Count -gt 0) { 'native_bounded_units' } else { [string]$executionTopology.specialist_execution_mode }
         effective_execution_status = $effectiveSpecialistExecutionStatus
-        dispatch_unit_count = [int]$specialistDispatchUnitCount
+        skill_execution_unit_count = [int]$specialistDispatchUnitCount
         recommendations = @($specialistRecommendations)
-        frozen_approved_dispatch_count = @($frozenApprovedDispatch).Count
-        frozen_approved_dispatch = @($frozenApprovedDispatch)
-        approved_dispatch_count = @($approvedDispatch).Count
-        approved_dispatch = @($approvedDispatch)
-        auto_approved_dispatch_count = @($autoApprovedDispatch).Count
-        auto_approved_dispatch = @($autoApprovedDispatch)
+        selected_skill_execution_count = [int]$selectedSkillExecutionCount
+        selected_skill_execution = @($selectedSkillExecution)
+        frozen_selected_skill_execution_count = [int]$frozenSelectedSkillExecutionCount
+        frozen_selected_skill_execution = @($frozenSelectedSkillExecution)
+        auto_selected_skill_execution_count = [int]$autoSelectedSkillExecutionCount
+        auto_selected_skill_execution = @($autoSelectedSkillExecution)
         requested_host_adapter_id = $runtimePacketHostAdapterIdentity.requested_host_id
         effective_host_adapter_id = $runtimePacketHostAdapterIdentity.effective_host_id
         phase_binding_counts = [pscustomobject]@{
@@ -1935,22 +2038,24 @@ $executionManifest = [pscustomobject]@{
             post_execution = @($approvedDispatch | Where-Object { [string]$_.dispatch_phase -eq 'post_execution' }).Count
             verification = @($approvedDispatch | Where-Object { [string]$_.dispatch_phase -eq 'verification' }).Count
         }
-        parallelizable_dispatch_count = @($approvedDispatch | Where-Object { [bool]$_.parallelizable_in_root_xl }).Count
+        parallelizable_skill_execution_count = @($selectedSkillExecution | Where-Object { [bool]$_.parallelizable_in_root_xl }).Count
         attempted_specialist_unit_count = @($liveAttemptedSpecialistUnits).Count
         executed_specialist_unit_count = @($verifiedSpecialistUnits).Count
         failed_specialist_unit_count = @($failedLiveSpecialistUnits).Count
-        direct_routed_specialist_unit_count = @($directRoutedSpecialistUnits).Count
-        direct_routed_specialist_units = @($directRoutedSpecialistUnits)
-        executed_specialist_units = @($verifiedSpecialistUnits)
-        failed_specialist_units = @($failedLiveSpecialistUnits)
-        blocked_specialist_unit_count = @($blockedSpecialistUnits).Count
-        blocked_specialist_units = @($blockedSpecialistUnits)
-        degraded_specialist_unit_count = @($degradedSpecialistUnits).Count
-        degraded_specialist_units = @($degradedSpecialistUnits)
+        direct_routed_skill_execution_unit_count = @($directRoutedSpecialistUnits).Count
+        direct_routed_skill_execution_units = @($directRoutedSpecialistUnits)
+        executed_skill_execution_units = @($verifiedSpecialistUnits)
+        failed_skill_execution_units = @($failedLiveSpecialistUnits)
+        blocked_skill_execution_unit_count = [int]$blockedSkillExecutionUnitCount
+        blocked_skill_execution_units = @($blockedSkillExecutionUnits)
+        degraded_skill_execution_unit_count = [int]$degradedSkillExecutionUnitCount
+        degraded_skill_execution_units = @($degradedSkillExecutionUnits)
         blocked_skill_ids = @($blockedSkillIds)
         degraded_skill_ids = @($degradedSkillIds)
         ghost_match_skill_ids = @($ghostMatchSkillIds)
-        specialist_dispatch_outcomes = @(@($nonDegradedExecutedSpecialistUnits) + @($blockedSpecialistUnits) + @($degradedSpecialistUnits))
+        execution_skill_outcome_count = $totalSpecialistDispatchOutcomeCount
+        execution_skill_outcomes = @($skillExecutionOutcomes)
+        skill_execution_resolution_path = $skillExecutionResolutionPath
         promotion_funnel = [pscustomobject]@{
             matched = @($matchedSkillIds).Count
             surfaced = @($surfacedSkillIds).Count
@@ -1989,6 +2094,9 @@ $proofManifest = [pscustomobject]@{
     task = $Task
     session_root = $sessionRoot
     execution_manifest_path = $executionManifestPath
+    skill_usage_path = if ($skillUsage) { Get-VibeSkillUsagePath -SessionRoot $sessionRoot } else { $null }
+    used_skill_count = if ($skillUsage) { @($skillUsage.used_skills).Count } else { 0 }
+    unused_skill_count = if ($skillUsage) { @($skillUsage.unused_skills).Count } else { 0 }
     plan_shadow_path = $planShadow.path
     execution_topology_path = $executionTopologyPath
     result_paths = @($resultPaths)
@@ -1999,18 +2107,19 @@ $proofManifest = [pscustomobject]@{
     proof_class = [string]$proofRegistry.artifact_class_defaults.execution_proof_manifest
     promotion_suitable = [string]$proofRegistry.promotion_suitability.runtime
     specialist_recommendation_count = @($specialistRecommendations).Count
-    specialist_dispatch_unit_count = [int]$specialistDispatchUnitCount
+    skill_execution_unit_count = [int]$specialistDispatchUnitCount
+    selected_skill_execution_count = [int]$selectedSkillExecutionCount
+    blocked_skill_execution_unit_count = [int]$blockedSkillExecutionUnitCount
+    degraded_skill_execution_unit_count = [int]$degradedSkillExecutionUnitCount
+    execution_skill_outcome_count = $totalSpecialistDispatchOutcomeCount
+    skill_execution_resolution_path = $skillExecutionResolutionPath
     attempted_specialist_unit_count = @($liveAttemptedSpecialistUnits).Count
     executed_specialist_unit_count = @($verifiedSpecialistUnits).Count
     failed_specialist_unit_count = @($failedLiveSpecialistUnits).Count
-    direct_routed_specialist_unit_count = @($directRoutedSpecialistUnits).Count
-    blocked_specialist_unit_count = @($blockedSpecialistUnits).Count
-    degraded_specialist_unit_count = @($degradedSpecialistUnits).Count
-    specialist_dispatch_outcome_count = $totalSpecialistDispatchOutcomeCount
+    direct_routed_skill_execution_unit_count = @($directRoutedSpecialistUnits).Count
     specialist_execution_status = $effectiveSpecialistExecutionStatus
     auto_approved_specialist_unit_count = @($autoApprovedDispatch).Count
     residual_local_specialist_suggestion_count = @($localSuggestions).Count
-    specialist_dispatch_resolution_path = if ($specialistDispatchResolution.auto_absorb_gate.receipt_path) { [string]$specialistDispatchResolution.auto_absorb_gate.receipt_path } else { $null }
     dispatch_integrity_proof_passed = [bool]$dispatchIntegrity.proof_passed
     delegated_lane_count = [int]$delegatedLaneCount
     review_receipt_count = [int]$reviewReceiptCount
@@ -2034,13 +2143,14 @@ $proofLines = @(
     ('- delegated_lane_count: `{0}`' -f $delegatedLaneCount),
     ('- review_receipt_count: `{0}`' -f $reviewReceiptCount),
     ('- specialist_recommendation_count: `{0}`' -f @($specialistRecommendations).Count),
-    ('- specialist_dispatch_unit_count: `{0}`' -f [int]$specialistDispatchUnitCount),
+    ('- skill_execution_unit_count: `{0}`' -f [int]$specialistDispatchUnitCount),
+    ('- selected_skill_execution_count: `{0}`' -f [int]$selectedSkillExecutionCount),
     ('- attempted_specialist_unit_count: `{0}`' -f @($liveAttemptedSpecialistUnits).Count),
     ('- executed_specialist_unit_count: `{0}`' -f @($verifiedSpecialistUnits).Count),
     ('- failed_specialist_unit_count: `{0}`' -f @($failedLiveSpecialistUnits).Count),
-    ('- direct_routed_specialist_unit_count: `{0}`' -f @($directRoutedSpecialistUnits).Count),
-    ('- blocked_specialist_unit_count: `{0}`' -f @($blockedSpecialistUnits).Count),
-    ('- degraded_specialist_unit_count: `{0}`' -f @($degradedSpecialistUnits).Count),
+    ('- direct_routed_skill_execution_unit_count: `{0}`' -f @($directRoutedSpecialistUnits).Count),
+    ('- blocked_skill_execution_unit_count: `{0}`' -f [int]$blockedSkillExecutionUnitCount),
+    ('- degraded_skill_execution_unit_count: `{0}`' -f [int]$degradedSkillExecutionUnitCount),
     ('- auto_approved_specialist_unit_count: `{0}`' -f @($autoApprovedDispatch).Count),
     ('- residual_local_specialist_suggestion_count: `{0}`' -f @($localSuggestions).Count),
     ('- specialist_execution_status: `{0}`' -f $effectiveSpecialistExecutionStatus),
@@ -2084,6 +2194,8 @@ $receipt = [pscustomobject]@{
     execution_memory_context_path = if ([string]::IsNullOrWhiteSpace($ExecutionMemoryContextPath)) { $null } else { $ExecutionMemoryContextPath }
     plan_shadow_path = $planShadow.path
     execution_manifest_path = $executionManifestPath
+    skill_usage_path = if ($skillUsage) { Get-VibeSkillUsagePath -SessionRoot $sessionRoot } else { $null }
+    skill_usage = $skillUsage
     execution_proof_manifest_path = $proofManifestPath
     execution_topology_path = $executionTopologyPath
     executed_unit_count = $executedUnitCount
@@ -2092,14 +2204,16 @@ $receipt = [pscustomobject]@{
     delegated_lane_count = [int]$delegatedLaneCount
     review_receipt_count = [int]$reviewReceiptCount
     specialist_recommendation_count = @($specialistRecommendations).Count
-    specialist_dispatch_unit_count = [int]$specialistDispatchUnitCount
+    skill_execution_unit_count = [int]$specialistDispatchUnitCount
+    selected_skill_execution_count = [int]$selectedSkillExecutionCount
+    blocked_skill_execution_unit_count = [int]$blockedSkillExecutionUnitCount
+    degraded_skill_execution_unit_count = [int]$degradedSkillExecutionUnitCount
+    execution_skill_outcome_count = $totalSpecialistDispatchOutcomeCount
+    skill_execution_resolution_path = $skillExecutionResolutionPath
     attempted_specialist_unit_count = @($liveAttemptedSpecialistUnits).Count
     executed_specialist_unit_count = @($verifiedSpecialistUnits).Count
     failed_specialist_unit_count = @($failedLiveSpecialistUnits).Count
-    direct_routed_specialist_unit_count = @($directRoutedSpecialistUnits).Count
-    blocked_specialist_unit_count = @($blockedSpecialistUnits).Count
-    degraded_specialist_unit_count = @($degradedSpecialistUnits).Count
-    specialist_dispatch_outcome_count = $totalSpecialistDispatchOutcomeCount
+    direct_routed_skill_execution_unit_count = @($directRoutedSpecialistUnits).Count
     specialist_execution_status = $effectiveSpecialistExecutionStatus
     specialist_skills = @($specialistSkills)
     auto_approved_specialist_unit_count = @($autoApprovedDispatch).Count
@@ -2110,7 +2224,6 @@ $receipt = [pscustomobject]@{
     dispatch_integrity = $dispatchIntegrity
     escalation_required = [bool]$escalationRequired
     escalation_request_path = $escalationPath
-    specialist_dispatch_resolution_path = if ($specialistDispatchResolution.auto_absorb_gate.receipt_path) { [string]$specialistDispatchResolution.auto_absorb_gate.receipt_path } else { $null }
     completion_claim_allowed = [bool]$authorityProjection.completion_claim_allowed
     proof_class = [string]$proofRegistry.artifact_class_defaults.execution_manifest
     verification_contract = @(

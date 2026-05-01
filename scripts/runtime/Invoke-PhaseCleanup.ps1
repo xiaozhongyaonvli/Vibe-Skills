@@ -11,6 +11,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'VibeRuntime.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeSkillUsage.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeSkillRouting.Common.ps1')
 
 $runtime = Get-VibeRuntimeContext -ScriptPath $PSCommandPath
 $Mode = Resolve-VibeRuntimeMode -Mode $Mode -DefaultMode ([string]$runtime.runtime_modes.default_mode)
@@ -96,6 +98,14 @@ if ($shouldExecuteGovernanceCleanup) {
     }
 }
 
+$skillUsage = Read-VibeSkillUsageArtifact -SessionRoot $sessionRoot -Fallback $null
+$skillUsageSummary = [pscustomobject]@{
+    used_skill_count = if ($skillUsage -and $skillUsage.PSObject.Properties.Name -contains 'used') { @($skillUsage.used).Count } elseif ($skillUsage) { @($skillUsage.used_skills).Count } else { 0 }
+    unused_skill_count = if ($skillUsage -and $skillUsage.PSObject.Properties.Name -contains 'unused') { @($skillUsage.unused).Count } elseif ($skillUsage) { @($skillUsage.unused_skills).Count } else { 0 }
+    loaded_skill_count = if ($skillUsage) { @($skillUsage.loaded_skills).Count } else { 0 }
+    evidence_count = if ($skillUsage) { @($skillUsage.evidence).Count } else { 0 }
+}
+
 $receipt = [pscustomobject]@{
     stage = 'phase_cleanup'
     run_id = $RunId
@@ -110,6 +120,9 @@ $receipt = [pscustomobject]@{
     cleanup_error = $cleanupError
     delivery_acceptance = $deliveryAcceptance
     delivery_acceptance_error = $deliveryAcceptanceError
+    skill_usage_path = if ($skillUsage) { Get-VibeSkillUsagePath -SessionRoot $sessionRoot } else { $null }
+    skill_usage = $skillUsage
+    skill_usage_summary = $skillUsageSummary
     proof_class = [string]$runtime.proof_class_registry.artifact_class_defaults.cleanup_receipt
 }
 

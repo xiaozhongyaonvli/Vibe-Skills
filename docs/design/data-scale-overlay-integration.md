@@ -13,7 +13,7 @@ This overlay is designed to:
 
 1. **Single routing authority**: pack router remains the control plane.
 2. **Post-route decision layer**: overlay runs after pack and candidate selection.
-3. **Scoped to tabular surface**: only applies to configured packs/skills (default `docs-media` + `spreadsheet/xlsx/excel-analysis/xan`).
+3. **Scoped to tabular surface**: only applies to configured packs/skills (default `docs-media` + `spreadsheet/xlsx/xan`).
 4. **No model-flow takeover**: does not route ML tasks away from `data-ml`.
 
 ## Config
@@ -59,7 +59,7 @@ Semantics:
 4. Derive scale class (`small|medium|large`) and produce recommendation.
 
 Defaults:
-- workbook -> `xlsx` (or `excel-analysis` for pivot-like intent)
+- workbook -> `xlsx` (or `spreadsheet` for pivot-like analysis intent)
 - large CSV-like -> `xan`
 - small/medium CSV-like -> `spreadsheet` unless operation hints prefer `xan`
 

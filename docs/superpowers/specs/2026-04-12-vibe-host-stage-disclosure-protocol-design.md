@@ -1,5 +1,10 @@
 # Vibe Host Stage Disclosure Protocol Design
 
+> Historical / Retired Note: This document records a previous routing design or
+> migration state. Current routing authority is defined by
+> `docs/governance/current-routing-contract.md` and
+> `docs/governance/current-runtime-field-contract.md`.
+
 ## Goal
 
 Give hosts a stage-by-stage specialist disclosure surface that can be consumed while governed `vibe` is still running.

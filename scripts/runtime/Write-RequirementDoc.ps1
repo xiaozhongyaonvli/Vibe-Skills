@@ -5,7 +5,6 @@
     [string]$IntentContractPath = '',
     [string]$RuntimeInputPacketPath = '',
     [string]$MemoryContextPath = '',
-    [string]$DiscussionConsultationPath = '',
     [string]$ArtifactRoot = '',
     [AllowEmptyString()] [string]$GovernanceScope = '',
     [AllowEmptyString()] [string]$RootRunId = '',
@@ -20,7 +19,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'VibeRuntime.Common.ps1')
-. (Join-Path $PSScriptRoot 'VibeConsultation.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeSkillUsage.Common.ps1')
+. (Join-Path $PSScriptRoot 'VibeSkillRouting.Common.ps1')
 . (Join-Path $PSScriptRoot '..\common\AntiProxyGoalDrift.ps1')
 
 function Get-VibeExplicitNonUiSignalRegex {
@@ -361,6 +361,16 @@ $runtimeInputPacket = if (-not [string]::IsNullOrWhiteSpace($runtimeInputPath) -
 } else {
     $null
 }
+$skillUsage = if ($runtimeInputPacket -and $runtimeInputPacket.PSObject.Properties.Name -contains 'skill_usage') {
+    $runtimeInputPacket.skill_usage
+} else {
+    $null
+}
+$selectedUsageSkill = if ($runtimeInputPacket -and $runtimeInputPacket.route_snapshot) {
+    [string]$runtimeInputPacket.route_snapshot.selected_skill
+} else {
+    ''
+}
 $runtimeTaskType = if (
     $runtimeInputPacket -and
     $runtimeInputPacket.PSObject.Properties.Name -contains 'canonical_router' -and
@@ -455,28 +465,8 @@ $memoryContextPack = if (-not [string]::IsNullOrWhiteSpace($MemoryContextPath) -
 } else {
     $null
 }
-$discussionConsultation = if (-not [string]::IsNullOrWhiteSpace($DiscussionConsultationPath)) {
-    if (-not (Test-Path -LiteralPath $DiscussionConsultationPath)) {
-        throw ("Discussion consultation receipt not found: {0}" -f $DiscussionConsultationPath)
-    }
-    Get-Content -LiteralPath $DiscussionConsultationPath -Raw -Encoding UTF8 | ConvertFrom-Json
-} else {
-    $null
-}
-if ($discussionConsultation) {
-    $discussionFreezeGate = Assert-VibeSpecialistConsultationFreezeGate `
-        -Receipt $discussionConsultation `
-        -Policy $runtime.specialist_consultation_policy `
-        -FreezeTarget 'requirement_doc'
-    if ($discussionConsultation.PSObject.Properties.Name -contains 'freeze_gate') {
-        $discussionConsultation.freeze_gate = $discussionFreezeGate
-    } else {
-        $discussionConsultation | Add-Member -NotePropertyName freeze_gate -NotePropertyValue $discussionFreezeGate
-    }
-}
 $stageLifecycleDisclosure = New-VibeSpecialistLifecycleDisclosureProjection `
-    -RuntimeInputPacket $runtimeInputPacket `
-    -DiscussionConsultationReceipt $discussionConsultation
+    -RuntimeInputPacket $runtimeInputPacket
 $lines = @(
     "# $($intentContract.title)",
     '',
@@ -723,6 +713,24 @@ if ($runtimeInputPacket) {
         $lines += @($executionPhaseLines)
     }
 
+    if ($skillUsage -and -not [string]::IsNullOrWhiteSpace($selectedUsageSkill)) {
+        $skillUsage = Update-VibeSkillUsageArtifactImpact `
+            -SkillUsage $skillUsage `
+            -SkillId $selectedUsageSkill `
+            -Stage 'requirement_doc' `
+            -ArtifactRef ([System.IO.Path]::GetFileName($docPath)) `
+            -ImpactSummary ('Requirement doc adopts the loaded {0} SKILL.md as the workflow authority for downstream planning and completion evidence.' -f $selectedUsageSkill)
+        $lines += @(
+            '',
+            '## Skill Usage',
+            '- Skill usage state model: binary `used` / `unused`.',
+            ('- Used skill candidate: `{0}` is promoted only because full `SKILL.md` load evidence exists and this requirement doc adopts it as workflow authority.' -f $selectedUsageSkill),
+            '- Routing, hints, recommendations, consultation, and dispatch do not by themselves prove skill use.',
+            '- Final completion must read `skill_usage.used` and `skill_usage.evidence` before claiming a skill was used.'
+        )
+        Write-VibeJsonArtifact -Path (Get-VibeSkillUsagePath -SessionRoot $sessionRoot) -Value $skillUsage
+    }
+
     $specialistDecision = if (
         $runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_decision' -and
         $null -ne $runtimeInputPacket.specialist_decision
@@ -734,8 +742,8 @@ if ($runtimeInputPacket) {
     if ($specialistDecision) {
         $lines += @(
             '',
-            '## Specialist Decision',
-            '- Governed `vibe` must explicitly record whether specialist execution is happening, stayed advisory, or remained unresolved before closeout.',
+            '## Skill Execution Decision',
+            '- Governed `vibe` must explicitly record whether selected skill execution is happening, stayed advisory, or remained unresolved before closeout.',
             ('- Decision state: {0}' -f [string]$specialistDecision.decision_state),
             ('- Resolution mode: {0}' -f [string]$specialistDecision.resolution_mode),
             ('- Notes: {0}' -f [string]$specialistDecision.notes)
@@ -749,49 +757,44 @@ if ($runtimeInputPacket) {
                 ('- Repo-asset fallback traceability basis: {0}' -f [string]::Join(', ', @($specialistDecision.repo_asset_fallback.traceability_basis)))
             )
         } elseif ([string]$specialistDecision.resolution_mode -eq 'pending_resolution') {
-            $lines += '- If execution later relies on repo-local assets instead of a dedicated specialist skill, phase execute must record `specialist-decision.json` with the asset paths, fallback reason, legal basis, and traceability basis before closure.'
+            $lines += '- If execution later relies on repo-local assets instead of a dedicated selected skill, phase execute must record the skill execution decision payload with the asset paths, fallback reason, legal basis, and traceability basis before closure.'
         }
     }
 
-    $hostSpecialistDispatchDecision = if (
-        $runtimeInputPacket.PSObject.Properties.Name -contains 'host_specialist_dispatch_decision' -and
-        $null -ne $runtimeInputPacket.host_specialist_dispatch_decision
+    $hostSkillExecutionDecision = if (
+        $runtimeInputPacket.PSObject.Properties.Name -contains 'host_skill_execution_decision' -and
+        $null -ne $runtimeInputPacket.host_skill_execution_decision
     ) {
-        $runtimeInputPacket.host_specialist_dispatch_decision
+        $runtimeInputPacket.host_skill_execution_decision
     } else {
         $null
     }
-    $hostSpecialistDispatchLines = @(Get-VibeHostSpecialistDispatchDecisionMarkdownLines -Decision $hostSpecialistDispatchDecision)
-    if (@($hostSpecialistDispatchLines).Count -gt 0) {
+    $hostSkillExecutionLines = @(Get-VibeHostSkillExecutionDecisionMarkdownLines -Decision $hostSkillExecutionDecision)
+    if (@($hostSkillExecutionLines).Count -gt 0) {
         $lines += @(
             '',
-            '## Host Specialist Dispatch Decision'
+            '## Host Skill Execution Decision'
         )
-        $lines += @($hostSpecialistDispatchLines)
+        $lines += @($hostSkillExecutionLines)
     }
 
-    $approvedSpecialistDispatch = if (
-        $runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch' -and
-        $null -ne $runtimeInputPacket.specialist_dispatch -and
-        $runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'approved_dispatch'
-    ) {
-        @($runtimeInputPacket.specialist_dispatch.approved_dispatch)
-    } else {
-        @()
-    }
-    if (($runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_recommendations' -and @($runtimeInputPacket.specialist_recommendations).Count -gt 0) -or @($approvedSpecialistDispatch).Count -gt 0) {
+    $selectedSkillRouting = @(Get-VibeSkillRoutingSelected -RuntimeInputPacket $runtimeInputPacket)
+    # Compatibility variable name; authority is skill_routing.selected.
+    $approvedSpecialistDispatch = @(Convert-VibeSkillRoutingSelectedToDispatch -RuntimeInputPacket $runtimeInputPacket)
+    $legacySpecialistRecommendations = @(Get-VibeRuntimeSpecialistRecommendations -RuntimeInputPacket $runtimeInputPacket)
+    if (@($selectedSkillRouting).Count -gt 0 -or @($approvedSpecialistDispatch).Count -gt 0) {
         $lines += @(
             '',
-            '## Specialist Recommendations',
-            'Raw router candidates remain in `runtime-input-packet.json` for audit and are not frozen as user-facing requirements.',
-            'Only host-adopted or effective approved specialist dispatch is shown here; non-adopted candidates and stage assistants stay out of the requirement surface.'
+            '## Selected Skill',
+            'Router candidates remain in `runtime-input-packet.json` for audit. The current work surface records selected skills here and material use in `skill_usage.used` / `skill_usage.unused`.',
+            'Rejected candidates stay out of the requirement surface.'
         )
         if (@($approvedSpecialistDispatch).Count -eq 0) {
-            $lines += 'No specialist dispatch was adopted for user-facing execution in this run.'
+            $lines += 'No selected skill was adopted for user-facing execution in this run.'
         }
         foreach ($recommendation in $approvedSpecialistDispatch) {
             $lines += @(
-                "- Adopted Skill: $([string]$recommendation.skill_id)",
+                "- Selected Skill: $([string]$recommendation.skill_id)",
                 "  Role: $([string]$recommendation.bounded_role); native usage required: $([bool]$recommendation.native_usage_required); preserve workflow: $([bool]$recommendation.must_preserve_workflow)",
                 "  Binding: profile=$([string]$recommendation.binding_profile); phase=$([string]$recommendation.dispatch_phase); lane policy=$([string]$recommendation.lane_policy); parallel in XL=$([bool]$recommendation.parallelizable_in_root_xl)",
                 "  Write scope: $([string]$recommendation.write_scope); review mode: $([string]$recommendation.review_mode); execution priority: $([int]$recommendation.execution_priority)",
@@ -804,54 +807,9 @@ if ($runtimeInputPacket) {
     }
 }
 
-if ($discussionConsultation -and [bool]$discussionConsultation.enabled) {
-    $lines += @(
-        '',
-        '## Specialist Consultation',
-        'These are specialists resolved for discussion-time handling under governed `vibe` before this requirement doc was frozen. Depending on policy, they may be consulted live or routed for direct current-session loading.'
-    )
-    foreach ($disclosure in @($discussionConsultation.user_disclosures)) {
-        $lines += @(
-            ('- Consulted Skill: {0}' -f [string]$disclosure.skill_id),
-            ('  Why now: {0}' -f [string]$disclosure.why_now),
-            ('  Loaded from: {0}' -f [string]$disclosure.native_skill_entrypoint)
-        )
-        $consultedUnit = $null
-        foreach ($candidate in @($discussionConsultation.consulted_units)) {
-            if ([string]$candidate.skill_id -eq [string]$disclosure.skill_id) {
-                $consultedUnit = $candidate
-                break
-            }
-        }
-        if ($consultedUnit) {
-            $lines += @(
-                ('  Consultation status: {0}' -f [string]$consultedUnit.status),
-                ('  Summary: {0}' -f [string]$consultedUnit.summary)
-            )
-            foreach ($note in @($consultedUnit.adoption_notes)) {
-                $lines += ('  Adopted into requirement: {0}' -f [string]$note)
-            }
-        }
-    }
-    if (@($discussionConsultation.deferred_to_execution).Count -gt 0) {
-        $lines += @(
-            '',
-            'Deferred specialist follow-up stayed separate from execution truth and remains advisory until execution-time dispatch.'
-        )
-        foreach ($item in @($discussionConsultation.deferred_to_execution)) {
-            $lines += ('- Deferred to execution: {0} ({1})' -f [string]$item.skill_id, [string]$item.reason)
-        }
-    }
-    if (@($discussionConsultation.degraded).Count -gt 0) {
-        foreach ($item in @($discussionConsultation.degraded)) {
-            $lines += ('- Consultation degraded: {0} ({1})' -f [string]$item.skill_id, [string]$item.result_reason)
-        }
-    }
-}
-
 $lifecycleLines = Get-VibeSpecialistLifecycleDisclosureMarkdownLines `
     -LifecycleDisclosure $stageLifecycleDisclosure `
-    -IncludeLayerIds @('discussion_routing', 'discussion_consultation')
+    -IncludeLayerIds @('discussion_routing')
 if (@($lifecycleLines).Count -gt 0) {
     $lines += @('', @($lifecycleLines))
 }
@@ -914,9 +872,8 @@ $receipt = [pscustomobject]@{
     inherited_requirement_doc_path = if ($isChildScope) { $docPath } else { $null }
     runtime_input_packet_path = $runtimeInputPath
     code_task_tdd_decision = $codeTaskTddDecision
-    discussion_consultation_path = if ($discussionConsultation) { $DiscussionConsultationPath } else { $null }
-    discussion_consultation_count = if ($discussionConsultation) { @($discussionConsultation.consulted_units).Count } else { 0 }
-    discussion_consultation_user_disclosure_count = if ($discussionConsultation) { @($discussionConsultation.user_disclosures).Count } else { 0 }
+    skill_usage_path = if ($skillUsage) { Get-VibeSkillUsagePath -SessionRoot $sessionRoot } else { $null }
+    skill_usage = $skillUsage
     memory_context_path = if ($memoryContextPack) { $MemoryContextPath } else { $null }
     memory_context_item_count = if ($memoryContextPack) { @($memoryContextPack.items).Count } else { 0 }
     memory_context_estimated_tokens = if ($memoryContextPack) { [int]$memoryContextPack.estimated_tokens } else { 0 }

@@ -94,7 +94,7 @@ if ($hasSummary) {
     $expectedStageIds = @($runtimeContract.stages | ForEach-Object { [string]$_.id })
 
     Add-Assertion -Results ([ref]$results) -Condition ($summary.mode -eq 'interactive_governed') -Message 'hierarchy smoke runs interactive_governed mode'
-    Add-Assertion -Results ([ref]$results) -Condition ($runtimeInputPacket.route_snapshot.selected_skill -eq 'vibe') -Message 'root hierarchy smoke keeps vibe as frozen route skill'
+    Add-Assertion -Results ([ref]$results) -Condition (-not [string]::IsNullOrWhiteSpace([string]$runtimeInputPacket.route_snapshot.selected_skill)) -Message 'root hierarchy smoke records routed skill separately from runtime authority'
     Add-Assertion -Results ([ref]$results) -Condition ($runtimeInputPacket.authority_flags.explicit_runtime_skill -eq 'vibe') -Message 'root hierarchy smoke keeps vibe as runtime authority'
     Add-Assertion -Results ([ref]$results) -Condition ($governanceCapsule.runtime_selected_skill -eq 'vibe') -Message 'root hierarchy smoke governance capsule keeps vibe authority'
     Add-Assertion -Results ([ref]$results) -Condition ((
@@ -105,9 +105,11 @@ if ($hasSummary) {
     Add-Assertion -Results ([ref]$results) -Condition ([bool]$runtimeInputPacket.authority_flags.allow_plan_freeze) -Message 'root packet allows plan freeze'
     Add-Assertion -Results ([ref]$results) -Condition ([bool]$runtimeInputPacket.authority_flags.allow_global_dispatch) -Message 'root packet allows global specialist dispatch'
     Add-Assertion -Results ([ref]$results) -Condition ([bool]$runtimeInputPacket.authority_flags.allow_completion_claim) -Message 'root packet allows final completion claim'
-    $hasSpecialistDispatchSurface = ($runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch') -or ($runtimeInputPacket.PSObject.Properties.Name -contains 'approved_specialist_dispatch')
-    Add-Assertion -Results ([ref]$results) -Condition $hasSpecialistDispatchSurface -Message 'runtime packet includes specialist dispatch surface'
-    $hasEscalationSurface = ($runtimeInputPacket.PSObject.Properties.Name -contains 'escalation_required') -or (($runtimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch') -and ($runtimeInputPacket.specialist_dispatch.PSObject.Properties.Name -contains 'escalation_required'))
+    $legacySkillRouting = if ($runtimeInputPacket.PSObject.Properties.Name -contains 'legacy_skill_routing') { $runtimeInputPacket.legacy_skill_routing } else { $null }
+    $legacySpecialistDispatch = if ($legacySkillRouting -and $legacySkillRouting.PSObject.Properties.Name -contains 'specialist_dispatch') { $legacySkillRouting.specialist_dispatch } else { $null }
+    $hasSpecialistDispatchSurface = ($runtimeInputPacket.PSObject.Properties.Name -contains 'skill_routing') -and ($runtimeInputPacket.PSObject.Properties.Name -contains 'legacy_skill_routing')
+    Add-Assertion -Results ([ref]$results) -Condition $hasSpecialistDispatchSurface -Message 'runtime packet includes canonical skill routing and legacy routing surfaces'
+    $hasEscalationSurface = ($runtimeInputPacket.PSObject.Properties.Name -contains 'escalation_required') -or ($legacySpecialistDispatch -and ($legacySpecialistDispatch.PSObject.Properties.Name -contains 'escalation_required'))
     Add-Assertion -Results ([ref]$results) -Condition $hasEscalationSurface -Message 'runtime packet includes escalation marker surface'
 
     $hasCompletionAuthority = ($executionManifest.PSObject.Properties.Name -contains 'authority')

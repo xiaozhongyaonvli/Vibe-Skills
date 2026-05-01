@@ -1,5 +1,7 @@
 # Canonical Vibe Runtime Entry Hardening Implementation Plan
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make explicit `$vibe` and `/vibe` on Codex, Claude Code, and OpenCode launch canonical runtime or block, with proof-gated truth and no silent `SKILL.md` fallback.

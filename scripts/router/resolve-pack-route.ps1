@@ -616,14 +616,16 @@ foreach ($pack in $packsForScoring) {
     if ($rules.enforce_grade_boundary -and -not $gradeAllowed) { continue }
     if ($rules.enforce_task_boundary -and -not $taskAllowed) { continue }
 
-    $intent = Get-IntentScore -PromptLower $promptLower -PackId $pack.id -Candidates $pack.skill_candidates
+    $packCandidates = Get-PackSkillCandidates -Pack $pack
+
+    $intent = Get-IntentScore -PromptLower $promptLower -PackId $pack.id -Candidates $packCandidates
     $trigger = Get-TriggerKeywordScore -PromptLower $promptLower -Keywords $pack.trigger_keywords
-    $workspace = Get-WorkspaceSignalScore -PromptLower $promptLower -RequestedCanonical $requestedCanonical -Candidates $pack.skill_candidates
-    $skillSignal = Get-PackSkillSignalScore -PromptLower $promptLower -Candidates $pack.skill_candidates -SkillKeywordIndex $skillKeywordIndex
+    $workspace = Get-WorkspaceSignalScore -PromptLower $promptLower -RequestedCanonical $requestedCanonical -Candidates $packCandidates
+    $skillSignal = Get-PackSkillSignalScore -PromptLower $promptLower -Candidates $packCandidates -SkillKeywordIndex $skillKeywordIndex
     $prior = [double]$pack.priority / 100.0
     $conflictInverse = if ($gradeAllowed -and $taskAllowed) { 1.0 } else { 0.0 }
 
-    $selection = Select-PackCandidate -PromptLower $promptLower -Candidates $pack.skill_candidates -TaskType $TaskType -RequestedCanonical $requestedCanonical -SkillKeywordIndex $skillKeywordIndex -RoutingRules $routingRules -Pack $pack -CandidateSelectionConfig $candidateSelectionConfig
+    $selection = Select-PackCandidate -PromptLower $promptLower -Candidates $packCandidates -TaskType $TaskType -RequestedCanonical $requestedCanonical -SkillKeywordIndex $skillKeywordIndex -RoutingRules $routingRules -Pack $pack -CandidateSelectionConfig $candidateSelectionConfig
     $selectionRelevanceScore = if ($selection.PSObject.Properties.Name -contains 'relevance_score') { [double]$selection.relevance_score } else { [double]$selection.score }
     $score =
         ([double]$weights.intent_match * $intent) +
@@ -635,17 +637,19 @@ foreach ($pack in $packsForScoring) {
     $candidateSignal = ([double]$selection.score * 0.75) + ([double]$selection.top1_top2_gap * 0.25)
     $candidateSignal = [Math]::Round([Math]::Min(1.0, [Math]::Max(0.0, $candidateSignal)), 4)
     $customMetadata = if ($pack.PSObject.Properties.Name -contains 'custom_admission') { $pack.custom_admission } else { $null }
-    $routeAuthorityEligible = if ($selection.PSObject.Properties.Name -contains 'route_authority_eligible') { [bool]$selection.route_authority_eligible } else { -not [string]::IsNullOrWhiteSpace([string]$selection.selected) }
+    $routeUsable = if ($selection.PSObject.Properties.Name -contains '_selection_usable') { [bool]$selection._selection_usable } elseif ($selection.PSObject.Properties.Name -contains 'route_authority_eligible') { [bool]$selection.route_authority_eligible } else { -not [string]::IsNullOrWhiteSpace([string]$selection.selected) }
     $fallbackSelected = ([string]$selection.reason -like 'fallback_*')
     $weakFallback = $fallbackSelected -and [string]::IsNullOrWhiteSpace($requestedCanonical) -and $trigger -lt 0.5 -and $selectionRelevanceScore -lt 0.15 -and $intent -lt 0.2 -and $workspace -lt 0.1
     if ($fallbackSelected -and [string]::IsNullOrWhiteSpace($requestedCanonical)) {
         $score = if ($weakFallback) { $score * 0.35 } else { $score * 0.65 }
     }
-    if ($null -ne $customMetadata -and $customMetadata.PSObject.Properties.Name -contains 'route_authority_eligible') {
-        $routeAuthorityEligible = $routeAuthorityEligible -and [bool]$customMetadata.route_authority_eligible
+    if ($null -ne $customMetadata -and $customMetadata.PSObject.Properties.Name -contains '_route_usable') {
+        $routeUsable = $routeUsable -and [bool]$customMetadata._route_usable
+    } elseif ($null -ne $customMetadata -and $customMetadata.PSObject.Properties.Name -contains 'route_authority_eligible') {
+        $routeUsable = $routeUsable -and [bool]$customMetadata.route_authority_eligible
     }
     if ($weakFallback) {
-        $routeAuthorityEligible = $false
+        $routeUsable = $false
     }
 
     $packResults += [pscustomobject]@{
@@ -658,17 +662,16 @@ foreach ($pack in $packsForScoring) {
         prior = [Math]::Round($prior, 4)
         grade_allowed = $gradeAllowed
         task_allowed = $taskAllowed
-        candidates = @($pack.skill_candidates)
+        candidates = @($packCandidates)
         selected_candidate = $selection.selected
         candidate_selection_reason = $selection.reason
         candidate_selection_score = [Math]::Round([double]$selection.score, 4)
         candidate_relevance_score = [Math]::Round([double]$selectionRelevanceScore, 4)
         candidate_ranking = @($selection.ranking)
-        stage_assistant_candidates = @($selection.stage_assistant_candidates)
         candidate_top1_top2_gap = [Math]::Round([double]$selection.top1_top2_gap, 4)
         candidate_signal = $candidateSignal
         candidate_filtered_out_by_task = @($selection.filtered_out_by_task)
-        route_authority_eligible = [bool]$routeAuthorityEligible
+        _route_usable = [bool]$routeUsable
         custom_admission = $customMetadata
     }
 }
@@ -754,16 +757,6 @@ function Get-PreferredHostSelection {
             -OrdinalRef ([ref]$ordinal)
     }
 
-    foreach ($candidate in @($PackRow.stage_assistant_candidates)) {
-        Add-PreferredHostSelectionCandidate `
-            -PreferredMap $preferred `
-            -CandidateRow $candidate `
-            -FallbackScore 0.0 `
-            -FallbackSkill '' `
-            -IsSelectedCandidate ([string]$candidate.skill -eq [string]$PackRow.selected_candidate) `
-            -OrdinalRef ([ref]$ordinal)
-    }
-
     if ($preferred.Count -eq 0) { return $null }
 
     return @($preferred.Values | Sort-Object -Property @(
@@ -773,12 +766,71 @@ function Get-PreferredHostSelection {
     ) | Select-Object -First 1)[0]
 }
 
+function ConvertTo-PublicRouteCustomMetadata {
+    param([AllowNull()] [object]$Value)
+
+    if ($null -eq $Value) {
+        return $null
+    }
+
+    $public = [ordered]@{}
+    foreach ($property in @($Value.PSObject.Properties)) {
+        if ($property.Name -in @('_route_usable', 'route_authority_eligible')) {
+            continue
+        }
+        $public[$property.Name] = $property.Value
+    }
+    return [pscustomobject]$public
+}
+
+function ConvertTo-PublicAdmittedCandidates {
+    param([AllowNull()] [object[]]$Rows = @())
+
+    $publicRows = @()
+    foreach ($row in @($Rows)) {
+        if ($null -eq $row) {
+            continue
+        }
+        $public = [ordered]@{}
+        foreach ($property in @($row.PSObject.Properties)) {
+            if ($property.Name -in @('_route_usable', 'route_authority_eligible')) {
+                continue
+            }
+            $public[$property.Name] = $property.Value
+        }
+        $publicRows += [pscustomobject]$public
+    }
+    return @($publicRows)
+}
+
+function ConvertTo-PublicRoutePackRow {
+    param([Parameter(Mandatory)] [object]$PackRow)
+
+    $public = [ordered]@{}
+    foreach ($property in @($PackRow.PSObject.Properties)) {
+        if ($property.Name -in @('_route_usable', 'route_authority_eligible', 'stage_assistant_candidates')) {
+            continue
+        }
+        if ($property.Name -eq 'candidate_ranking') {
+            $public[$property.Name] = @(ConvertTo-PublicCandidateRanking -Rows @($property.Value))
+            continue
+        }
+        if ($property.Name -eq 'custom_admission') {
+            $public[$property.Name] = ConvertTo-PublicRouteCustomMetadata -Value $property.Value
+            continue
+        }
+        $public[$property.Name] = $property.Value
+    }
+    return [pscustomobject]$public
+}
+
 $ranked = $packResults | Sort-Object -Property @(
     @{ Expression = "score"; Descending = $true },
     @{ Expression = "pack_id"; Descending = $false }
 )
-$authorityRanked = @($ranked | Where-Object { $_.route_authority_eligible })
-$selectionPool = if ($authorityRanked.Count -gt 0) { @($authorityRanked) } else { @($ranked) }
+$authorityRanked = @($ranked | Where-Object { $_.PSObject.Properties.Name -contains '_route_usable' -and [bool]$_._route_usable })
+$selectableRanked = @($ranked | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_.selected_candidate) })
+$selectionPool = if ($authorityRanked.Count -gt 0) { @($authorityRanked) } elseif ($selectableRanked.Count -gt 0) { @($selectableRanked) } else { @($ranked) }
 $top = $selectionPool | Select-Object -First 1
 $confidence = if ($top) { [double]$top.score } else { 0.0 }
 
@@ -1004,7 +1056,7 @@ $dataScaleAdvice = Get-DataScaleOverlayAdvice `
     -DataScaleOverlayPolicy $dataScaleOverlayPolicy
 
 $dataScaleRouteOverride = $false
-$effectivePreferredSelection = if ($effectiveTop -and -not [bool]$effectiveTop.route_authority_eligible) { Get-PreferredHostSelection -PackRow $effectiveTop } else { $null }
+$effectivePreferredSelection = if ($effectiveTop -and -not [bool]$effectiveTop._route_usable) { Get-PreferredHostSelection -PackRow $effectiveTop } else { $null }
 $effectiveSelectedSkill = if ($effectivePreferredSelection) { [string]$effectivePreferredSelection.skill } elseif ($effectiveTop) { [string]$effectiveTop.selected_candidate } else { $null }
 $effectiveSelectionReason = if ($effectivePreferredSelection) { [string]$effectivePreferredSelection.reason } elseif ($effectiveTop) { [string]$effectiveTop.candidate_selection_reason } else { $null }
 $effectiveSelectionScore = if ($effectivePreferredSelection) { [double]$effectivePreferredSelection.score } elseif ($effectiveTop) { [double]$effectiveTop.candidate_selection_score } else { 0.0 }
@@ -1505,7 +1557,7 @@ $result = [pscustomobject]@{
         manifests_present = $customAdmission.manifests_present
         invalid_entries = @($customAdmission.invalid_entries)
         dependency_failures = @($customAdmission.dependency_failures)
-        admitted_candidates = @($customAdmission.admitted_candidates)
+        admitted_candidates = @(ConvertTo-PublicAdmittedCandidates -Rows @($customAdmission.admitted_candidates))
     }
     selected = if ($effectiveTop) {
         [pscustomobject]@{
@@ -1527,7 +1579,7 @@ $result = [pscustomobject]@{
     } else {
         $null
     }
-    ranked = @($ranked | Select-Object -First 3)
+    ranked = @($ranked | Select-Object -First 3 | ForEach-Object { ConvertTo-PublicRoutePackRow -PackRow $_ })
 }
 
 $confirmSkillOptions = Build-ConfirmSkillOptions `
