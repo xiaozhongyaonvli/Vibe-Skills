@@ -1219,6 +1219,44 @@ $surfacedSkillIds = if ($runtimeSpecialistDispatch -and $runtimeSpecialistDispat
 $blockedSkillIds = if ($runtimeSpecialistDispatch -and $runtimeSpecialistDispatch.PSObject.Properties.Name -contains 'blocked_skill_ids' -and $null -ne $runtimeSpecialistDispatch.blocked_skill_ids) { @($runtimeSpecialistDispatch.blocked_skill_ids) } else { @() }
 $degradedSkillIds = if ($runtimeSpecialistDispatch -and $runtimeSpecialistDispatch.PSObject.Properties.Name -contains 'degraded_skill_ids' -and $null -ne $runtimeSpecialistDispatch.degraded_skill_ids) { @($runtimeSpecialistDispatch.degraded_skill_ids) } else { @() }
 $ghostMatchSkillIds = if ($runtimeSpecialistDispatch -and $runtimeSpecialistDispatch.PSObject.Properties.Name -contains 'ghost_match_skill_ids' -and $null -ne $runtimeSpecialistDispatch.ghost_match_skill_ids) { @($runtimeSpecialistDispatch.ghost_match_skill_ids) } else { @() }
+$blockedSkillIds = @($blockedSkillIds | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+$degradedSkillIds = @($degradedSkillIds | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+$existingBlockedDispatchSkillIds = @($frozenBlockedDispatch | ForEach-Object {
+        if ($null -ne $_ -and $_.PSObject.Properties.Name -contains 'skill_id') { [string]$_.skill_id } else { '' }
+    } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+foreach ($blockedSkillId in @($blockedSkillIds)) {
+    if (@($existingBlockedDispatchSkillIds) -contains [string]$blockedSkillId) {
+        continue
+    }
+    $sourceDispatch = @(
+        @($selectedSkills) +
+        @($specialistRecommendations)
+    ) | Where-Object {
+        $null -ne $_ -and
+        $_.PSObject.Properties.Name -contains 'skill_id' -and
+        [string]::Equals([string]$_.skill_id, [string]$blockedSkillId, [System.StringComparison]::OrdinalIgnoreCase)
+    } | Select-Object -First 1
+    if ($null -ne $sourceDispatch) {
+        $frozenBlockedDispatch += $sourceDispatch
+    } else {
+        $frozenBlockedDispatch += [pscustomobject]@{
+            skill_id = [string]$blockedSkillId
+            reason = 'blocked_by_specialist_decision'
+            recommended_promotion_action = 'require_confirmation'
+            write_scope = ''
+            review_mode = 'native_contract'
+        }
+    }
+    $existingBlockedDispatchSkillIds += [string]$blockedSkillId
+}
+$nonExecutableSelectedSkillIds = @(@($blockedSkillIds) + @($degradedSkillIds)) | Select-Object -Unique
+if (@($nonExecutableSelectedSkillIds).Count -gt 0) {
+    $selectedSkills = @($selectedSkills | Where-Object {
+            $candidateSkillId = if ($null -ne $_ -and $_.PSObject.Properties.Name -contains 'skill_id') { [string]$_.skill_id } else { '' }
+            [string]::IsNullOrWhiteSpace($candidateSkillId) -or ($candidateSkillId -notin @($nonExecutableSelectedSkillIds))
+        })
+    $frozenApprovedDispatch = @($selectedSkills)
+}
 $hasCanonicalSelectedSkills = $null -ne $skillRouting -and $skillRouting.PSObject.Properties.Name -contains 'selected' -and @($skillRouting.selected).Count -gt 0
 if ($hasCanonicalSelectedSkills) {
     $specialistDispatchResolution = [pscustomobject]@{

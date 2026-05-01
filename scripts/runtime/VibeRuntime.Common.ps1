@@ -241,8 +241,47 @@ function Get-VibeRuntimeSpecialistDispatchProjection {
         return $null
     }
 
-    $approvedDispatch = [object[]]@($RuntimeInputPacket.skill_routing.selected)
-    if (@($approvedDispatch).Count -eq 0) {
+    $selectedDispatch = [object[]]@($RuntimeInputPacket.skill_routing.selected)
+    $specialistDecision = if (
+        (Test-VibeObjectHasProperty -InputObject $RuntimeInputPacket -PropertyName 'specialist_decision') -and
+        $null -ne $RuntimeInputPacket.specialist_decision
+    ) {
+        $RuntimeInputPacket.specialist_decision
+    } else {
+        $null
+    }
+    $blockedSkillIds = if (
+        $null -ne $specialistDecision -and
+        (Test-VibeObjectHasProperty -InputObject $specialistDecision -PropertyName 'blocked_skill_ids') -and
+        $null -ne $specialistDecision.blocked_skill_ids
+    ) {
+        @($specialistDecision.blocked_skill_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+    } else {
+        @()
+    }
+    $degradedSkillIds = if (
+        $null -ne $specialistDecision -and
+        (Test-VibeObjectHasProperty -InputObject $specialistDecision -PropertyName 'degraded_skill_ids') -and
+        $null -ne $specialistDecision.degraded_skill_ids
+    ) {
+        @($specialistDecision.degraded_skill_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+    } else {
+        @()
+    }
+    $nonExecutableSkillIds = @(@($blockedSkillIds) + @($degradedSkillIds)) | Select-Object -Unique
+    $approvedDispatch = [object[]]@($selectedDispatch | Where-Object {
+            $skillId = [string](Get-VibePropertySafe -InputObject $_ -PropertyName 'skill_id' -DefaultValue '')
+            [string]::IsNullOrWhiteSpace($skillId) -or ($skillId -notin @($nonExecutableSkillIds))
+        })
+    $blockedDispatch = [object[]]@($selectedDispatch | Where-Object {
+            $skillId = [string](Get-VibePropertySafe -InputObject $_ -PropertyName 'skill_id' -DefaultValue '')
+            -not [string]::IsNullOrWhiteSpace($skillId) -and ($skillId -in @($blockedSkillIds))
+        })
+    $degradedDispatch = [object[]]@($selectedDispatch | Where-Object {
+            $skillId = [string](Get-VibePropertySafe -InputObject $_ -PropertyName 'skill_id' -DefaultValue '')
+            -not [string]::IsNullOrWhiteSpace($skillId) -and ($skillId -in @($degradedSkillIds))
+        })
+    if (@($selectedDispatch).Count -eq 0 -and $null -eq $specialistDecision) {
         return $null
     }
 
@@ -253,12 +292,12 @@ function Get-VibeRuntimeSpecialistDispatchProjection {
     return [pscustomobject]@{
         approved_dispatch = [object[]]@($approvedDispatch)
         local_specialist_suggestions = @()
-        blocked = @()
-        degraded = @()
+        blocked = [object[]]@($blockedDispatch)
+        degraded = [object[]]@($degradedDispatch)
         approved_skill_ids = @($skillIds)
         local_suggestion_skill_ids = @()
-        blocked_skill_ids = @()
-        degraded_skill_ids = @()
+        blocked_skill_ids = @($blockedSkillIds)
+        degraded_skill_ids = @($degradedSkillIds)
         surfaced_skill_ids = @($skillIds)
         matched_skill_ids = @($skillIds)
         status = 'derived_from_skill_routing_selected'

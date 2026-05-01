@@ -141,12 +141,13 @@ class SkillPromotionDestructiveGateTests(unittest.TestCase):
             runtime_input = load_json(summary["artifacts"]["runtime_input_packet"])
             execution_manifest = load_json(summary["artifacts"]["execution_manifest"])
 
-            dispatch = runtime_input["specialist_dispatch"]
-            self.assertEqual([], list(dispatch["approved_dispatch"]))
-            self.assertGreaterEqual(len(as_list(dispatch["blocked_skill_ids"])), 1)
-            self.assertEqual([], as_list(dispatch["ghost_match_skill_ids"]))
+            self.assertNotIn("specialist_dispatch", runtime_input)
+            specialist_decision = runtime_input["specialist_decision"]
+            self.assertEqual([], list(specialist_decision["approved_dispatch_skill_ids"]))
+            self.assertGreaterEqual(len(as_list(specialist_decision["blocked_skill_ids"])), 1)
 
             specialist_accounting = execution_manifest["specialist_accounting"]
+            self.assertEqual([], as_list(specialist_accounting["ghost_match_skill_ids"]))
             self.assertGreaterEqual(int(specialist_accounting["blocked_specialist_unit_count"]), 1)
             self.assertEqual(0, int(specialist_accounting["approved_dispatch_count"]))
 

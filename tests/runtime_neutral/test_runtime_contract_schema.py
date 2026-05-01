@@ -99,11 +99,7 @@ def load_json(path: str | Path) -> dict[str, object]:
 
 
 def get_expected_workspace_root() -> Path:
-    resolved = REPO_ROOT.resolve()
-    parts = list(resolved.parts)
-    if ".worktrees" in parts:
-        return Path(*parts[: parts.index(".worktrees")])
-    return resolved
+    return REPO_ROOT.resolve()
 
 
 class RuntimeContractSchemaTests(unittest.TestCase):
@@ -506,9 +502,11 @@ class RuntimeContractSchemaTests(unittest.TestCase):
         self.assertTrue(payload["route_snapshot"]["confirm_required"])
         self.assertEqual("admitted", payload["custom_admission"]["status"])
         self.assertEqual(2, payload["custom_admission"]["admitted_candidate_count"])
-        self.assertEqual(["systematic-debugging"], payload["specialist_dispatch"]["approved_skill_ids"])
-        self.assertEqual(["think-harder"], payload["specialist_dispatch"]["local_suggestion_skill_ids"])
-        self.assertTrue(payload["specialist_dispatch"]["escalation_required"])
+        self.assertNotIn("specialist_dispatch", payload)
+        specialist_decision = payload["specialist_decision"]
+        self.assertEqual("approved_dispatch", specialist_decision["decision_state"])
+        self.assertEqual(["systematic-debugging"], specialist_decision["approved_dispatch_skill_ids"])
+        self.assertEqual(["think-harder"], specialist_decision["local_suggestion_skill_ids"])
         self.assertEqual("vibe", payload["divergence_shadow"]["runtime_selected_skill"])
         self.assertTrue(payload["divergence_shadow"]["skill_mismatch"])
         self.assertEqual("openclaw", payload["host_adapter"]["requested_host_id"])
@@ -699,21 +697,22 @@ class RuntimeContractSchemaTests(unittest.TestCase):
             runtime_input = load_json(summary["artifacts"]["runtime_input_packet"])
             execution_manifest = load_json(summary["artifacts"]["execution_manifest"])
 
-            dispatch = runtime_input["specialist_dispatch"]
+            self.assertNotIn("specialist_dispatch", runtime_input)
+            specialist_decision = runtime_input["specialist_decision"]
             for field in (
-                "blocked",
-                "degraded",
                 "matched_skill_ids",
                 "surfaced_skill_ids",
+                "approved_dispatch_skill_ids",
+                "local_suggestion_skill_ids",
                 "blocked_skill_ids",
                 "degraded_skill_ids",
-                "ghost_match_skill_ids",
-                "promotion_outcomes",
+                "rejected_candidates",
             ):
                 with self.subTest(field=field):
-                    self.assertIn(field, dispatch)
+                    self.assertIn(field, specialist_decision)
 
             specialist_accounting = execution_manifest["specialist_accounting"]
+            self.assertIn("ghost_match_skill_ids", specialist_accounting)
             self.assertIn("promotion_funnel", specialist_accounting)
             for field in (
                 "matched",

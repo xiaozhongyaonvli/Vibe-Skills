@@ -190,23 +190,29 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
                 for item in approved_dispatch_payload
                 if str(item.get("skill_id", "")).strip()
             ]
-            runtime_input_packet_payload["specialist_dispatch"] = {
-                "approved_dispatch": approved_dispatch_payload,
-                "local_specialist_suggestions": [],
-                "blocked": [],
-                "degraded": [],
-                "approved_skill_ids": approved_skill_ids,
-                "local_suggestion_skill_ids": [],
+            runtime_input_packet_payload["specialist_decision"] = {
+                "decision_state": "approved_dispatch" if approved_skill_ids else "no_specialist_recommendations",
+                "resolution_mode": "approved_dispatch" if approved_skill_ids else "no_matching_specialist",
+                "recommendation_count": len(approved_skill_ids),
+                "candidate_skill_ids_reviewed": approved_skill_ids,
+                "selected_skill_ids": approved_skill_ids,
+                "rejected_candidates": [],
                 "matched_skill_ids": approved_skill_ids,
                 "surfaced_skill_ids": approved_skill_ids,
+                "approved_dispatch_skill_ids": approved_skill_ids,
+                "local_suggestion_skill_ids": [],
                 "blocked_skill_ids": [],
                 "degraded_skill_ids": [],
-                "ghost_match_skill_ids": [],
-                "promotion_outcomes": [],
-                "escalation_required": False,
-                "escalation_status": "not_required",
-                "approval_owner": "root_vibe",
-                "status": "auto_promote_when_safe_same_round",
+                "repo_asset_fallback": {
+                    "used": False,
+                    "asset_paths": [],
+                    "reason": "",
+                    "legal_basis": "",
+                    "traceability_basis": [],
+                },
+                "notes": "Fixture specialist decision generated from approved skill execution.",
+                "source": "runtime_structural_projection",
+                "override_source_path": None,
             }
         write_json(runtime_input_packet_path, runtime_input_packet_payload)
         if skill_usage is not None:

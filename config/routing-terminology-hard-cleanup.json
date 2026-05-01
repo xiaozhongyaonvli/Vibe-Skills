@@ -68,6 +68,7 @@
     "stage assistant"
   ],
   "current_behavior_test_forbidden_patterns": [
+    "[\"specialist_dispatch\"]",
     "runtime_input_packet[\"specialist_dispatch\"]",
     "packet[\"specialist_dispatch\"]",
     ".get(\"specialist_dispatch\")",
