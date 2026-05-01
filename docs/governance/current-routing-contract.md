@@ -2,16 +2,40 @@
 
 Date: 2026-05-01
 
+## Purpose
+
+This is the start-here document for current Vibe-Skills skill routing.
+
+Use it to answer one question: after routing picks a skill, how does that skill
+enter the six-stage work and become a real usage claim?
+
 ## Current Model
 
 The current Vibe-Skills routing model is:
 
 ```text
-skill_candidates -> skill_routing.selected -> skill_usage.used / skill_usage.unused
+skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage.used / skill_usage.unused
 ```
 
 This is the only model current user-facing docs and generated runtime outputs
 should teach.
+
+The model has no extra current states between selection and usage. A skill is
+either selected into the work, then later recorded as used or unused.
+
+## Operating Rules
+
+1. Routing may list possible skills in `skill_candidates`.
+2. The plan may choose skills through `skill_routing.selected`.
+3. Execution may only treat selected skills as work inputs through
+   `selected_skill_execution`.
+4. Completion may only claim a skill was used through `skill_usage.used` with
+   matching `skill_usage.evidence`.
+
+For compound tasks, split the work into bounded task segments and select the
+directly relevant skill for each segment. Multiple selected skills are valid
+when the task has multiple bounded segments; they do not create ranks or extra
+states.
 
 ## Terms
 
@@ -19,6 +43,7 @@ should teach.
 | --- | --- |
 | `candidate` | A skill was considered by routing. This is not a use claim. |
 | `selected` | A skill was chosen into the work surface through `skill_routing.selected`. This is not a use claim. |
+| `selected_skill_execution` | The selected skill list frozen into execution. This connects routing to actual work; it is still not a use claim. |
 | `used` | A selected or loaded skill shaped an artifact and appears in `skill_usage.used` with evidence. |
 | `unused` | A selected or loaded skill did not shape an artifact and appears in `skill_usage.unused`. |
 | `evidence` | A stage, artifact reference, and impact summary proving material skill use. |
@@ -42,6 +67,7 @@ Current runtime outputs should use these names:
 ```text
 skill_candidates
 skill_routing.selected
+selected_skill_execution
 skill_usage.used
 skill_usage.unused
 skill_usage.evidence

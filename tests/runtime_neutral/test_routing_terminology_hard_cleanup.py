@@ -32,7 +32,11 @@ class RoutingTerminologyHardCleanupTests(unittest.TestCase):
         self.assertTrue(CONTRACT_DOC.exists(), "current runtime field contract must exist")
         text = CONTRACT_DOC.read_text(encoding="utf-8")
 
-        self.assertIn("skill_candidates -> skill_routing.selected -> skill_usage.used / skill_usage.unused", text)
+        self.assertIn(
+            "skill_candidates -> skill_routing.selected -> selected_skill_execution -> "
+            "skill_usage.used / skill_usage.unused",
+            text,
+        )
         for required in [
             "## Routing Layer",
             "## Usage Layer",

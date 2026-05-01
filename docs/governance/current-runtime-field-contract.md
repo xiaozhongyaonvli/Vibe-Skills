@@ -9,7 +9,7 @@ This document defines the current Vibe-Skills runtime field vocabulary.
 The current routing and usage model is:
 
 ```text
-skill_candidates -> skill_routing.selected -> skill_usage.used / skill_usage.unused
+skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage.used / skill_usage.unused
 ```
 
 Current docs, runtime packets, generated plans, tests, and gates should use
@@ -68,6 +68,10 @@ execution_skill_outcomes
 Execution anchors: `selected_skill_execution`, `skill_execution_units`, and
 `execution_skill_outcomes`.
 
+`selected_skill_execution` is the execution-side copy of
+`skill_routing.selected`. It connects selected skills to real work, but it is
+not material-use proof by itself.
+
 Current root runtime packets should not expose retired dispatch fields as a
 routing contract surface.
 
@@ -105,8 +109,9 @@ reason.
 ## Current Behavior Rule
 
 Current runtime behavior must derive selected skills from
-`skill_routing.selected`. Current material use must be recorded in
-`skill_usage.used`, `skill_usage.unused`, and `skill_usage.evidence`.
+`skill_routing.selected`, carry them into `selected_skill_execution`, and record
+material use in `skill_usage.used`, `skill_usage.unused`, and
+`skill_usage.evidence`.
 
 Old routing, old consultation, old recommendation, and old stage-assistant
 fields are not maintained compatibility inputs.
