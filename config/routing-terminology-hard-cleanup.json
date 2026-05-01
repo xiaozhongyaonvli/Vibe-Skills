@@ -1,0 +1,84 @@
+{
+  "current_docs": [
+    "README.md",
+    "SKILL.md",
+    "docs/governance/current-routing-contract.md",
+    "docs/governance/current-runtime-field-contract.md"
+  ],
+  "current_runtime_files": [
+    "scripts/runtime/VibeSkillRouting.Common.ps1",
+    "scripts/runtime/VibeRuntime.Common.ps1",
+    "scripts/runtime/Freeze-RuntimeInputPacket.ps1",
+    "scripts/runtime/Write-RequirementDoc.ps1",
+    "scripts/runtime/Write-XlPlan.ps1",
+    "scripts/runtime/invoke-vibe-runtime.ps1"
+  ],
+  "current_behavior_tests": [
+    "tests/runtime_neutral/test_root_child_hierarchy_bridge.py",
+    "tests/runtime_neutral/test_runtime_contract_schema.py",
+    "tests/runtime_neutral/test_runtime_delivery_acceptance.py",
+    "tests/runtime_neutral/test_skill_promotion_destructive_gate.py",
+    "tests/runtime_neutral/test_l_xl_native_execution_topology.py",
+    "tests/runtime_neutral/test_governed_runtime_bridge.py",
+    "tests/runtime_neutral/test_installed_host_runtime_simulation.py"
+  ],
+  "retired_behavior_tests": [
+    "tests/runtime_neutral/test_retired_old_routing_compat.py",
+    "tests/runtime_neutral/test_simplified_skill_routing_contract.py",
+    "tests/runtime_neutral/test_current_routing_contract_cleanup.py"
+  ],
+  "historical_docs": [
+    "docs/governance/binary-skill-usage-routing-2026-04-28.md",
+    "docs/governance/simplified-skill-routing-2026-04-29.md",
+    "docs/governance/terminology-governance.md",
+    "docs/governance/specialist-dispatch-governance.md",
+    "docs/superpowers/specs/2026-04-10-vibe-aggressive-specialist-routing-design.md",
+    "docs/superpowers/specs/2026-04-12-vibe-approved-dispatch-user-disclosure-design.md",
+    "docs/superpowers/specs/2026-04-12-vibe-discussion-time-specialist-consultation-design.md",
+    "docs/superpowers/specs/2026-04-12-vibe-host-stage-disclosure-protocol-design.md"
+  ],
+  "execution_internal_allowlist": [
+    {
+      "path": "scripts/runtime/Invoke-PlanExecute.ps1",
+      "reason": "execution manifest and lane accounting internals derived from skill_routing.selected"
+    },
+    {
+      "path": "scripts/runtime/VibeExecution.Common.ps1",
+      "reason": "execution lane internals derived from selected skill execution units"
+    },
+    {
+      "path": "scripts/runtime/Invoke-DelegatedLaneUnit.ps1",
+      "reason": "delegated execution lane internals"
+    },
+    {
+      "path": "tests/runtime_neutral/test_plan_execute_receipts.py",
+      "reason": "execution-internal receipt tests"
+    }
+  ],
+  "retired_terms": [
+    "legacy_skill_routing",
+    "specialist_recommendations",
+    "stage_assistant_hints",
+    "## Specialist Consultation",
+    "primary skill",
+    "secondary skill",
+    "route owner",
+    "consultation expert",
+    "auxiliary expert",
+    "stage assistant"
+  ],
+  "current_behavior_test_forbidden_patterns": [
+    "runtime_input_packet[\"specialist_dispatch\"]",
+    "packet[\"specialist_dispatch\"]",
+    ".get(\"specialist_dispatch\")",
+    "legacy_skill_routing",
+    "specialist_recommendations",
+    "stage_assistant_hints"
+  ],
+  "historical_markers": [
+    "Historical / Retired Note",
+    "Historical Note",
+    "Retired Note",
+    "Superseded"
+  ]
+}
