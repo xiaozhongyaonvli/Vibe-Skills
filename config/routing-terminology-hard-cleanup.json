@@ -39,6 +39,16 @@
     "docs/superpowers/specs/2026-04-12-vibe-discussion-time-specialist-consultation-design.md",
     "docs/superpowers/specs/2026-04-12-vibe-host-stage-disclosure-protocol-design.md"
   ],
+  "historical_doc_roots": [
+    "docs/governance",
+    "docs/requirements",
+    "docs/superpowers/plans",
+    "docs/superpowers/specs"
+  ],
+  "historical_doc_exemptions": [
+    "docs/governance/current-routing-contract.md",
+    "docs/governance/current-runtime-field-contract.md"
+  ],
   "execution_internal_scan_files": [
     "scripts/runtime/Invoke-PlanExecute.ps1",
     "scripts/runtime/VibeExecution.Common.ps1",

@@ -45,6 +45,20 @@ function Test-LineHasRetiredContext {
     return $false
 }
 
+function ConvertTo-RepoRelativePath {
+    param(
+        [Parameter(Mandatory)] [string]$Path,
+        [Parameter(Mandatory)] [string]$Root
+    )
+
+    $rootFull = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
+    $pathFull = [System.IO.Path]::GetFullPath($Path)
+    if ($pathFull.StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $pathFull.Substring($rootFull.Length).TrimStart('\', '/').Replace('\', '/')
+    }
+    return $pathFull.Replace('\', '/')
+}
+
 $configPath = Join-Path $RepoRoot 'config\routing-terminology-hard-cleanup.json'
 $config = Read-JsonFile -Path $configPath
 $findings = New-Object System.Collections.Generic.List[object]
@@ -100,8 +114,51 @@ foreach ($relative in @($config.current_behavior_tests)) {
     }
 }
 
+$historicalDocFiles = [ordered]@{}
 foreach ($relative in @($config.historical_docs)) {
-    $fullPath = Join-Path $RepoRoot $relative
+    if (-not [string]::IsNullOrWhiteSpace([string]$relative)) {
+        $historicalDocFiles[[string]$relative] = $true
+    }
+}
+
+if ($config.PSObject.Properties.Name -contains 'historical_doc_roots') {
+    foreach ($rootRelative in @($config.historical_doc_roots)) {
+        if ([string]::IsNullOrWhiteSpace([string]$rootRelative)) {
+            continue
+        }
+        $rootPath = Join-Path $RepoRoot ([string]$rootRelative)
+        if (-not (Test-Path -LiteralPath $rootPath)) {
+            continue
+        }
+        foreach ($file in @(Get-ChildItem -LiteralPath $rootPath -Recurse -File -Filter '*.md')) {
+            $relativePath = ConvertTo-RepoRelativePath -Path $file.FullName -Root $RepoRoot
+            $historicalDocFiles[$relativePath] = $true
+        }
+    }
+}
+
+$historicalDocExemptions = @{}
+foreach ($relative in @($config.current_docs)) {
+    if (-not [string]::IsNullOrWhiteSpace([string]$relative)) {
+        $historicalDocExemptions[[string]$relative] = $true
+    }
+}
+if ($config.PSObject.Properties.Name -contains 'historical_doc_exemptions') {
+    foreach ($relative in @($config.historical_doc_exemptions)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$relative)) {
+            $historicalDocExemptions[[string]$relative] = $true
+        }
+    }
+}
+
+$historicalMarkedCount = 0
+$historicalRetiredTermFileCount = 0
+foreach ($relative in @($historicalDocFiles.Keys | Sort-Object)) {
+    if ($historicalDocExemptions.Contains([string]$relative)) {
+        continue
+    }
+
+    $fullPath = Join-Path $RepoRoot ([string]$relative)
     $lines = @(Get-TextFileLines -Path $fullPath)
     if ($lines.Count -eq 0) {
         continue
@@ -121,6 +178,7 @@ foreach ($relative in @($config.historical_docs)) {
         continue
     }
 
+    $historicalRetiredTermFileCount += 1
     $header = (@($lines | Select-Object -First 20) -join "`n")
     $hasMarker = $false
     foreach ($marker in @($config.historical_markers)) {
@@ -129,8 +187,10 @@ foreach ($relative in @($config.historical_docs)) {
             break
         }
     }
-    if (-not $hasMarker) {
-        $findings.Add((New-Finding -Category 'historical_doc_unmarked_retired_term' -Path $relative -Line 1 -Pattern 'historical_marker' -Text 'Historical document contains retired terms but lacks a retired/historical marker in the first 20 lines.')) | Out-Null
+    if ($hasMarker) {
+        $historicalMarkedCount += 1
+    } else {
+        $findings.Add((New-Finding -Category 'historical_doc_unmarked_retired_term' -Path ([string]$relative) -Line 1 -Pattern 'historical_marker' -Text 'Historical document contains retired terms but lacks a retired/historical marker in the first 20 lines.')) | Out-Null
     }
 }
 
@@ -178,6 +238,8 @@ foreach ($relative in @($currentPolicyHelperFiles)) {
 $summary = [pscustomobject]@{
     current_doc_retired_term_violation_count = @($findings | Where-Object { $_.category -eq 'current_doc_retired_term' }).Count
     current_behavior_test_retired_field_read_count = @($findings | Where-Object { $_.category -eq 'current_behavior_test_retired_field_read' }).Count
+    historical_doc_retired_term_file_count = [int]$historicalRetiredTermFileCount
+    historical_doc_marked_retired_term_count = [int]$historicalMarkedCount
     historical_doc_unmarked_retired_term_count = @($findings | Where-Object { $_.category -eq 'historical_doc_unmarked_retired_term' }).Count
     execution_internal_specialist_dispatch_reference_count = [int]$executionInternalCount
     current_policy_helper_dispatch_vocabulary_reference_count = [int]$currentPolicyHelperCount
@@ -190,6 +252,8 @@ if ($Json) {
     '=== VCO Routing Terminology Hard Cleanup Scan ==='
     ('Current docs retired-term violations: {0}' -f [int]$summary.current_doc_retired_term_violation_count)
     ('Current behavior test retired-field reads: {0}' -f [int]$summary.current_behavior_test_retired_field_read_count)
+    ('Historical docs with retired terms: {0}' -f [int]$summary.historical_doc_retired_term_file_count)
+    ('Historical docs with retired marker: {0}' -f [int]$summary.historical_doc_marked_retired_term_count)
     ('Historical docs without retired marker: {0}' -f [int]$summary.historical_doc_unmarked_retired_term_count)
     ('Execution-internal specialist_dispatch allowlist references: {0}' -f [int]$summary.execution_internal_specialist_dispatch_reference_count)
     ('Current policy/helper dispatch vocabulary references: {0}' -f [int]$summary.current_policy_helper_dispatch_vocabulary_reference_count)

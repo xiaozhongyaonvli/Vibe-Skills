@@ -168,6 +168,8 @@ $summary = [pscustomobject]@{
     historical_reference_count = [int]$historicalReferenceCount
     hard_cleanup_current_doc_retired_term_violation_count = if ($hardCleanup) { [int]$hardCleanup.current_doc_retired_term_violation_count } else { 0 }
     hard_cleanup_current_behavior_test_retired_field_read_count = if ($hardCleanup) { [int]$hardCleanup.current_behavior_test_retired_field_read_count } else { 0 }
+    hard_cleanup_historical_doc_retired_term_file_count = if ($hardCleanup) { [int]$hardCleanup.historical_doc_retired_term_file_count } else { 0 }
+    hard_cleanup_historical_doc_marked_retired_term_count = if ($hardCleanup) { [int]$hardCleanup.historical_doc_marked_retired_term_count } else { 0 }
     hard_cleanup_historical_doc_unmarked_retired_term_count = if ($hardCleanup) { [int]$hardCleanup.historical_doc_unmarked_retired_term_count } else { 0 }
     hard_cleanup_execution_internal_specialist_dispatch_reference_count = if ($hardCleanup) { [int]$hardCleanup.execution_internal_specialist_dispatch_reference_count } else { 0 }
     hard_cleanup_current_policy_helper_dispatch_vocabulary_reference_count = if ($hardCleanup) { [int]$hardCleanup.current_policy_helper_dispatch_vocabulary_reference_count } else { 0 }
@@ -191,6 +193,8 @@ if ($Json) {
     ('Historical doc references: {0}' -f [int]$summary.historical_reference_count)
     ('Hard cleanup current docs retired-term violations: {0}' -f [int]$summary.hard_cleanup_current_doc_retired_term_violation_count)
     ('Hard cleanup current behavior test retired-field reads: {0}' -f [int]$summary.hard_cleanup_current_behavior_test_retired_field_read_count)
+    ('Hard cleanup historical docs with retired terms: {0}' -f [int]$summary.hard_cleanup_historical_doc_retired_term_file_count)
+    ('Hard cleanup historical docs with retired marker: {0}' -f [int]$summary.hard_cleanup_historical_doc_marked_retired_term_count)
     ('Hard cleanup historical docs without retired marker: {0}' -f [int]$summary.hard_cleanup_historical_doc_unmarked_retired_term_count)
     ('Hard cleanup execution-internal specialist_dispatch references: {0}' -f [int]$summary.hard_cleanup_execution_internal_specialist_dispatch_reference_count)
     ('Hard cleanup current policy/helper dispatch vocabulary references: {0}' -f [int]$summary.hard_cleanup_current_policy_helper_dispatch_vocabulary_reference_count)
