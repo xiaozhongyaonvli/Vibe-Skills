@@ -421,11 +421,11 @@ class InstalledHostRuntimeSimulationTests(unittest.TestCase):
                 self.assertEqual("direct_current_session_routed", execution_status, host_id)
                 self.assertEqual(
                     0,
-                    int(debug_state["execution_manifest"]["specialist_accounting"]["executed_specialist_unit_count"]),
+                    len(list(debug_state["execution_manifest"]["specialist_accounting"]["executed_skill_execution_units"])),
                     host_id,
                 )
                 self.assertGreaterEqual(
-                    int(debug_state["execution_manifest"]["specialist_accounting"]["direct_routed_specialist_unit_count"]),
+                    int(debug_state["execution_manifest"]["specialist_accounting"]["direct_routed_skill_execution_unit_count"]),
                     1,
                     host_id,
                 )

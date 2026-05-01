@@ -3317,7 +3317,7 @@ function New-VibeSpecialistExecutionLifecycleLayerProjection {
 
     $executedSkillIds = @()
     if ($null -ne $ExecutionManifest -and (Test-VibeObjectHasProperty -InputObject $ExecutionManifest -PropertyName 'specialist_accounting') -and $null -ne $ExecutionManifest.specialist_accounting) {
-        foreach ($unit in @($ExecutionManifest.specialist_accounting.executed_specialist_units)) {
+        foreach ($unit in @($ExecutionManifest.specialist_accounting.executed_skill_execution_units)) {
             if ($null -eq $unit) {
                 continue
             }
@@ -3795,28 +3795,28 @@ function New-VibeHostUserBriefingProjection {
         }
         $directRoutedUnitIds = if (
             $deliveryExecutionContext -and
-            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_specialist_unit_ids') -and
-            $null -ne $deliveryExecutionContext.direct_routed_specialist_unit_ids
+            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_skill_execution_unit_ids') -and
+            $null -ne $deliveryExecutionContext.direct_routed_skill_execution_unit_ids
         ) {
-            @($deliveryExecutionContext.direct_routed_specialist_unit_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            @($deliveryExecutionContext.direct_routed_skill_execution_unit_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
         } else {
             @()
         }
         $directRoutedSkillIds = if (
             $deliveryExecutionContext -and
-            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_specialist_skill_ids') -and
-            $null -ne $deliveryExecutionContext.direct_routed_specialist_skill_ids
+            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_skill_execution_skill_ids') -and
+            $null -ne $deliveryExecutionContext.direct_routed_skill_execution_skill_ids
         ) {
-            @($deliveryExecutionContext.direct_routed_specialist_skill_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            @($deliveryExecutionContext.direct_routed_skill_execution_skill_ids | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
         } else {
             @()
         }
         $rawDirectRoutedUnits = if (
             $deliveryExecutionContext -and
-            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_specialist_units') -and
-            $null -ne $deliveryExecutionContext.direct_routed_specialist_units
+            (Test-VibeObjectHasProperty -InputObject $deliveryExecutionContext -PropertyName 'direct_routed_skill_execution_units') -and
+            $null -ne $deliveryExecutionContext.direct_routed_skill_execution_units
         ) {
-            @($deliveryExecutionContext.direct_routed_specialist_units)
+            @($deliveryExecutionContext.direct_routed_skill_execution_units)
         } else {
             @()
         }

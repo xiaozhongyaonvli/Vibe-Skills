@@ -179,10 +179,10 @@ class MultiHostSpecialistExecutionTests(unittest.TestCase):
                     specialist_accounting = execution_manifest["specialist_accounting"]
 
                     self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
-                    self.assertGreaterEqual(int(specialist_accounting["direct_routed_specialist_unit_count"]), 1)
+                    self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
                     self.assertEqual(host_id, specialist_accounting["effective_host_adapter_id"])
 
-                    routed_units = list(specialist_accounting["direct_routed_specialist_units"])
+                    routed_units = list(specialist_accounting["direct_routed_skill_execution_units"])
                     self.assertGreaterEqual(len(routed_units), 1)
                     for unit in routed_units:
                         result = load_json(unit["result_path"])
@@ -212,10 +212,10 @@ class MultiHostSpecialistExecutionTests(unittest.TestCase):
                     specialist_accounting = execution_manifest["specialist_accounting"]
 
                     self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
-                    self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
-                    self.assertGreaterEqual(int(specialist_accounting["direct_routed_specialist_unit_count"]), 1)
+                    self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
+                    self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
 
-                    routed_units = list(specialist_accounting["direct_routed_specialist_units"])
+                    routed_units = list(specialist_accounting["direct_routed_skill_execution_units"])
                     self.assertGreaterEqual(len(routed_units), 1)
                     for unit in routed_units:
                         result = load_json(unit["result_path"])
@@ -241,9 +241,9 @@ class MultiHostSpecialistExecutionTests(unittest.TestCase):
             specialist_accounting = execution_manifest["specialist_accounting"]
 
             self.assertEqual("explicitly_degraded", specialist_accounting["effective_execution_status"])
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
-            self.assertEqual(0, int(specialist_accounting["direct_routed_specialist_unit_count"]))
-            degraded_units = list(specialist_accounting["degraded_specialist_units"])
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
+            self.assertEqual(0, int(specialist_accounting["direct_routed_skill_execution_unit_count"]))
+            degraded_units = list(specialist_accounting["degraded_skill_execution_units"])
             self.assertGreaterEqual(len(degraded_units), 1)
             first = load_json(degraded_units[0]["result_path"])
             self.assertEqual(
@@ -274,11 +274,11 @@ class MultiHostSpecialistExecutionTests(unittest.TestCase):
                     specialist_accounting = execution_manifest["specialist_accounting"]
 
                     self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
-                    self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
-                    self.assertGreaterEqual(int(specialist_accounting["direct_routed_specialist_unit_count"]), 1)
+                    self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
+                    self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
                     self.assertEqual(host_id, specialist_accounting["effective_host_adapter_id"])
 
-                    routed_units = list(specialist_accounting["direct_routed_specialist_units"])
+                    routed_units = list(specialist_accounting["direct_routed_skill_execution_units"])
                     self.assertGreaterEqual(len(routed_units), 1)
                     for unit in routed_units:
                         result = load_json(unit["result_path"])
@@ -306,8 +306,8 @@ class MultiHostSpecialistExecutionTests(unittest.TestCase):
 
             self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
             self.assertEqual("windsurf", specialist_accounting["effective_host_adapter_id"])
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
-            routed_units = list(specialist_accounting["direct_routed_specialist_units"])
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
+            routed_units = list(specialist_accounting["direct_routed_skill_execution_units"])
             self.assertGreaterEqual(len(routed_units), 1)
             for unit in routed_units:
                 result = load_json(unit["result_path"])

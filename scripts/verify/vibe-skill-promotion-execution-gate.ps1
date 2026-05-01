@@ -75,8 +75,8 @@ foreach ($case in @($cases)) {
         Add-Assertion -Results ([ref]$results) -Condition ([int]$funnel.dispatched -ge 1) -Message 'ML prompt dispatches at least one specialist'
         $resolvedSpecialistOutcomeCount = (
             [int]$executionManifest.specialist_accounting.executed_specialist_unit_count +
-            [int]$executionManifest.specialist_accounting.degraded_specialist_unit_count +
-            [int]$executionManifest.specialist_accounting.direct_routed_specialist_unit_count
+            [int]$executionManifest.specialist_accounting.degraded_skill_execution_unit_count +
+            [int]$executionManifest.specialist_accounting.direct_routed_skill_execution_unit_count
         )
         Add-Assertion -Results ([ref]$results) -Condition ($resolvedSpecialistOutcomeCount -ge 1) -Message 'ML prompt resolves to executed, degraded, or direct-routed specialist outcome'
     } else {

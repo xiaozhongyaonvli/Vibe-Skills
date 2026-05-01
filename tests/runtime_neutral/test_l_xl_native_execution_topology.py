@@ -800,7 +800,7 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             specialist_accounting = execution_manifest["specialist_accounting"]
             self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
             self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
             selected_units = [
                 unit
                 for unit in list(specialist_accounting["execution_skill_outcomes"])
@@ -1104,7 +1104,7 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             )
             self.assertEqual("native_bounded_units", specialist_accounting["execution_mode"])
             self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
             self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
             self.assertEqual(0, int(specialist_accounting["degraded_skill_execution_unit_count"]))
             self.assertEqual("completed", execution_manifest["status"])
@@ -1152,7 +1152,7 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             self.assertEqual("native_bounded_units", specialist_accounting["execution_mode"])
             self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
             self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
             self.assertEqual(0, int(specialist_accounting["degraded_skill_execution_unit_count"]))
             self.assertEqual("completed", execution_manifest["status"])
 
@@ -1204,7 +1204,7 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             specialist_accounting = execution_manifest["specialist_accounting"]
             self.assertEqual("native_bounded_units", specialist_accounting["execution_mode"])
             self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
             self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
             self.assertEqual(0, int(specialist_accounting["degraded_skill_execution_unit_count"]))
             self.assertEqual("completed", execution_manifest["status"])
@@ -1340,7 +1340,7 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             self.assertTrue(set(approved_skill_ids[:1]).issubset(approved_child_ids))
             self.assertEqual(int(specialist_accounting["selected_skill_execution_count"]), len(approved_child_ids))
             self.assertLessEqual(
-                int(specialist_accounting["executed_specialist_unit_count"]),
+                len(list(specialist_accounting["executed_skill_execution_units"])),
                 int(specialist_accounting["selected_skill_execution_count"]),
             )
             self.assertGreaterEqual(int(specialist_accounting["degraded_skill_execution_unit_count"]), 0)
@@ -1477,7 +1477,7 @@ class NativeExecutionTopologyTests(unittest.TestCase):
             specialist_accounting = child_execution_manifest["specialist_accounting"]
             self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
             self.assertEqual(0, int(specialist_accounting["auto_selected_skill_execution_count"]))
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
             self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
             self.assertEqual(0, int(specialist_accounting["degraded_skill_execution_unit_count"]))
             self.assertFalse(bool(child_execution_manifest["authority"]["completion_claim_allowed"]))

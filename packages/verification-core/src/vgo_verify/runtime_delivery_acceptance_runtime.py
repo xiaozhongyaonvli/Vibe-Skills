@@ -355,9 +355,9 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
         raw_specialist_execution_units = [raw_specialist_execution_units] if raw_specialist_execution_units else []
 
     direct_routed_units_key_present = "direct_routed_skill_execution_units" in specialist_accounting
-    raw_direct_routed_specialist_units = specialist_accounting.get("direct_routed_skill_execution_units") or []
+    raw_direct_routed_skill_execution_units = specialist_accounting.get("direct_routed_skill_execution_units") or []
     if not direct_routed_units_key_present and raw_specialist_execution_units:
-        raw_direct_routed_specialist_units = [
+        raw_direct_routed_skill_execution_units = [
             {
                 "unit_id": str(record.get("unit_id") or "").strip(),
                 "skill_id": str(record.get("skill_id") or record.get("specialist_skill_id") or "").strip(),
@@ -366,12 +366,14 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
             for record in raw_specialist_execution_units
             if isinstance(record, dict)
         ]
-    if not isinstance(raw_direct_routed_specialist_units, list):
-        raw_direct_routed_specialist_units = [raw_direct_routed_specialist_units] if raw_direct_routed_specialist_units else []
+    if not isinstance(raw_direct_routed_skill_execution_units, list):
+        raw_direct_routed_skill_execution_units = (
+            [raw_direct_routed_skill_execution_units] if raw_direct_routed_skill_execution_units else []
+        )
 
-    direct_routed_specialist_units: list[dict[str, Any]] = []
+    direct_routed_skill_execution_units: list[dict[str, Any]] = []
     direct_routed_unit_index: dict[str, dict[str, Any]] = {}
-    for item in raw_direct_routed_specialist_units:
+    for item in raw_direct_routed_skill_execution_units:
         if not isinstance(item, dict):
             continue
         unit_id = str(item.get("unit_id") or "").strip()
@@ -387,12 +389,12 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
             "native_skill_entrypoint": disclosure_entrypoint_by_skill_id.get(skill_id, ""),
             "result_path": result_path,
         }
-        direct_routed_specialist_units.append(normalized_unit)
+        direct_routed_skill_execution_units.append(normalized_unit)
         if unit_id and unit_id not in direct_routed_unit_index:
             direct_routed_unit_index[unit_id] = normalized_unit
 
     direct_routed_unit_ids = list(direct_routed_unit_index.keys())
-    direct_routed_skill_ids = _normalize_skill_id_list(direct_routed_specialist_units)
+    direct_routed_skill_ids = _normalize_skill_id_list(direct_routed_skill_execution_units)
 
     specialist_execution_source_path = str(specialist_execution_payload.get("source_path") or "").strip()
     specialist_execution_resolution_mode = str(specialist_execution_payload.get("resolution_mode") or "").strip().lower()
@@ -1203,12 +1205,9 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
             "degraded_skill_execution_unit_count": int(
                 specialist_accounting.get("degraded_skill_execution_unit_count") or len(degraded_skill_execution_units)
             ),
-            "direct_routed_specialist_unit_ids": direct_routed_unit_ids,
-            "direct_routed_specialist_skill_ids": direct_routed_skill_ids,
-            "direct_routed_specialist_units": direct_routed_specialist_units,
             "direct_routed_skill_execution_unit_ids": direct_routed_unit_ids,
             "direct_routed_skill_execution_skill_ids": direct_routed_skill_ids,
-            "direct_routed_skill_execution_units": direct_routed_specialist_units,
+            "direct_routed_skill_execution_units": direct_routed_skill_execution_units,
             "specialist_host_resolution_state": specialist_host_resolution_state,
             "specialist_host_executed_unit_count": specialist_host_executed_unit_count,
             "specialist_host_degraded_unit_count": specialist_host_degraded_unit_count,

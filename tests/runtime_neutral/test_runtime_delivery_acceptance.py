@@ -895,7 +895,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
 
         self.assertEqual("PASS", report["summary"]["gate_result"])
         self.assertFalse(report["execution_context"]["specialist_host_continuation_pending"])
-        self.assertEqual(["unit-1"], report["execution_context"]["direct_routed_specialist_unit_ids"])
+        self.assertEqual(["unit-1"], report["execution_context"]["direct_routed_skill_execution_unit_ids"])
         self.assertEqual("host_current_session_executed", report["execution_context"]["specialist_effective_execution_status"])
 
     def test_runtime_delivery_acceptance_normalizes_entrypoint_separators_before_comparison(self) -> None:

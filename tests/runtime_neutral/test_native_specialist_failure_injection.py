@@ -175,7 +175,7 @@ def create_fake_codex_command(directory: Path, *, mode: str) -> Path:
 class NativeSpecialistFailureInjectionTests(unittest.TestCase):
     TASK = "I have a failing test and stack trace. Debug systematically and execute specialist workflow."
 
-    def run_failure_case(
+    def run_legacy_subprocess_case(
         self, mode: str
     ) -> tuple[dict[str, object], dict[str, object], list[tuple[dict[str, object], dict[str, object]]]]:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -188,92 +188,58 @@ class NativeSpecialistFailureInjectionTests(unittest.TestCase):
                 extra_env={
                     "VGO_ENABLE_NATIVE_SPECIALIST_EXECUTION": "1",
                     "VGO_DISABLE_NATIVE_SPECIALIST_EXECUTION": "0",
+                    "VGO_NATIVE_SPECIALIST_EXECUTION_MODE": "host_subprocess",
+                    "VGO_SPECIALIST_CONSULTATION_MODE": "host_subprocess",
                     "VGO_CODEX_EXECUTABLE": str(fake_codex),
                 },
             )
             summary = payload["summary"]
             execution_manifest = load_json(summary["artifacts"]["execution_manifest"])
             specialist_accounting = execution_manifest["specialist_accounting"]
-            live_failures = [
+            direct_routes = [
                 (unit, load_json(unit["result_path"]))
-                for unit in list(specialist_accounting["failed_specialist_units"])
+                for unit in list(specialist_accounting["direct_routed_skill_execution_units"])
             ]
-            self.assertGreaterEqual(len(live_failures), 1)
-            self.assertEqual("live_native_failed", specialist_accounting["effective_execution_status"])
-            self.assertGreaterEqual(int(specialist_accounting["attempted_specialist_unit_count"]), 1)
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
-            self.assertGreaterEqual(int(specialist_accounting["failed_specialist_unit_count"]), 1)
-            self.assertEqual("completed_with_failures", execution_manifest["status"])
+            self.assertGreaterEqual(len(direct_routes), 1)
+            self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
+            self.assertEqual(0, int(specialist_accounting["attempted_specialist_unit_count"]))
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
+            self.assertEqual(0, len(list(specialist_accounting["failed_skill_execution_units"])))
+            self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
+            self.assertEqual("completed", execution_manifest["status"])
 
             execution_proof = load_json(summary["artifacts"]["execution_proof_manifest"])
-            self.assertEqual("live_native_failed", execution_proof["specialist_execution_status"])
+            self.assertEqual("direct_current_session_routed", execution_proof["specialist_execution_status"])
             self.assertEqual(
-                int(specialist_accounting["failed_specialist_unit_count"]),
-                int(execution_proof["failed_specialist_unit_count"]),
+                int(specialist_accounting["direct_routed_skill_execution_unit_count"]),
+                int(execution_proof["direct_routed_skill_execution_unit_count"]),
             )
-            return payload, execution_manifest, live_failures
+            return payload, execution_manifest, direct_routes
 
-    def test_malformed_json_response_is_recorded_as_live_native_failure(self) -> None:
-        _, _, live_failures = self.run_failure_case("malformed_json")
-        for unit, result in live_failures:
+    def assert_legacy_subprocess_payload_is_direct_routed(self, mode: str) -> None:
+        _, _, direct_routes = self.run_legacy_subprocess_case(mode)
+        for unit, result in direct_routes:
             with self.subTest(unit_id=unit.get("unit_id", "")):
-                expected_artifacts = list(result["expected_artifacts"])
-                self.assertEqual(1, len(expected_artifacts))
-                self.assertEqual("failed", result["status"])
+                self.assertEqual("completed", result["status"])
                 self.assertEqual(0, int(result["exit_code"]))
-                self.assertFalse(bool(result["verification_passed"]))
-                self.assertTrue(bool(result["live_native_execution"]))
+                self.assertTrue(bool(result["verification_passed"]))
+                self.assertFalse(bool(result["live_native_execution"]))
                 self.assertFalse(bool(result["degraded"]))
-                self.assertTrue(bool(expected_artifacts[0]["exists"]))
-                self.assertTrue(result["response_parse_error"])
-                self.assertNotEqual("native_specialist_response_missing", result["response_parse_error"])
+                self.assertTrue(bool(result["direct_route"]))
+                self.assertEqual("direct_current_session_route", result["execution_driver"])
+                self.assertIn("hidden_host_subprocess:false", list(result["verification_notes"]))
 
-    def test_missing_response_file_is_recorded_as_live_native_failure(self) -> None:
-        _, _, live_failures = self.run_failure_case("missing_response")
-        for unit, result in live_failures:
-            with self.subTest(unit_id=unit.get("unit_id", "")):
-                expected_artifacts = list(result["expected_artifacts"])
-                self.assertEqual(1, len(expected_artifacts))
-                self.assertEqual("failed", result["status"])
-                self.assertEqual(0, int(result["exit_code"]))
-                self.assertFalse(bool(result["verification_passed"]))
-                self.assertTrue(bool(result["live_native_execution"]))
-                self.assertFalse(bool(result["degraded"]))
-                self.assertFalse(Path(result["response_json_path"]).exists())
-                self.assertEqual("native_specialist_response_missing", result["response_parse_error"])
-                self.assertFalse(bool(expected_artifacts[0]["exists"]))
+    def test_legacy_malformed_json_subprocess_payload_is_not_executed(self) -> None:
+        self.assert_legacy_subprocess_payload_is_direct_routed("malformed_json")
 
-    def test_missing_required_fields_fail_schema_validation(self) -> None:
-        _, _, live_failures = self.run_failure_case("missing_required_fields")
-        for unit, result in live_failures:
-            with self.subTest(unit_id=unit.get("unit_id", "")):
-                self.assertEqual("failed", result["status"])
-                self.assertEqual(0, int(result["exit_code"]))
-                self.assertFalse(bool(result["verification_passed"]))
-                self.assertTrue(bool(result["live_native_execution"]))
-                self.assertFalse(bool(result["degraded"]))
-                self.assertIsNone(result["response_parse_error"])
-                self.assertIn("missing_required_field:verification_notes", list(result["response_schema_errors"]))
-                self.assertIn("missing_required_field:changed_files", list(result["response_schema_errors"]))
-                self.assertIn("missing_required_field:bounded_output_notes", list(result["response_schema_errors"]))
+    def test_legacy_missing_response_subprocess_payload_is_not_executed(self) -> None:
+        self.assert_legacy_subprocess_payload_is_direct_routed("missing_response")
 
-    def test_nonzero_exit_with_response_is_not_misclassified_as_completed(self) -> None:
-        _, _, live_failures = self.run_failure_case("nonzero_with_response")
-        for unit, result in live_failures:
-            with self.subTest(unit_id=unit.get("unit_id", "")):
-                expected_artifacts = list(result["expected_artifacts"])
-                self.assertEqual(1, len(expected_artifacts))
-                self.assertEqual("failed", result["status"])
-                self.assertEqual(17, int(result["exit_code"]))
-                self.assertFalse(bool(result["verification_passed"]))
-                self.assertTrue(bool(result["live_native_execution"]))
-                self.assertFalse(bool(result["degraded"]))
-                self.assertTrue(bool(expected_artifacts[0]["exists"]))
-                self.assertIsNone(result["response_parse_error"])
-                self.assertEqual(
-                    "fake codex wrote payload before failing",
-                    result["summary"],
-                )
+    def test_legacy_missing_required_fields_subprocess_payload_is_not_executed(self) -> None:
+        self.assert_legacy_subprocess_payload_is_direct_routed("missing_required_fields")
+
+    def test_legacy_nonzero_subprocess_payload_is_not_executed(self) -> None:
+        self.assert_legacy_subprocess_payload_is_direct_routed("nonzero_with_response")
 
 
 if __name__ == "__main__":

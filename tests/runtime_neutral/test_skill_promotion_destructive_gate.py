@@ -175,6 +175,6 @@ class SkillPromotionDestructiveGateTests(unittest.TestCase):
             specialist_accounting = execution_manifest["specialist_accounting"]
 
             self.assertGreaterEqual(int(specialist_accounting["selected_skill_execution_count"]), 1)
-            self.assertEqual(0, int(specialist_accounting["executed_specialist_unit_count"]))
+            self.assertEqual(0, len(list(specialist_accounting["executed_skill_execution_units"])))
             self.assertGreaterEqual(int(specialist_accounting["direct_routed_skill_execution_unit_count"]), 1)
             self.assertEqual("direct_current_session_routed", specialist_accounting["effective_execution_status"])
