@@ -5,7 +5,6 @@
     [string]$IntentContractPath = '',
     [string]$RuntimeInputPacketPath = '',
     [string]$MemoryContextPath = '',
-    [string]$DiscussionConsultationPath = '',
     [string]$ArtifactRoot = '',
     [AllowEmptyString()] [string]$GovernanceScope = '',
     [AllowEmptyString()] [string]$RootRunId = '',
@@ -22,7 +21,6 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'VibeRuntime.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeSkillUsage.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeSkillRouting.Common.ps1')
-. (Join-Path $PSScriptRoot 'VibeConsultation.Common.ps1')
 . (Join-Path $PSScriptRoot '..\common\AntiProxyGoalDrift.ps1')
 
 function Get-VibeExplicitNonUiSignalRegex {
@@ -467,28 +465,8 @@ $memoryContextPack = if (-not [string]::IsNullOrWhiteSpace($MemoryContextPath) -
 } else {
     $null
 }
-$discussionConsultation = if (-not [string]::IsNullOrWhiteSpace($DiscussionConsultationPath)) {
-    if (-not (Test-Path -LiteralPath $DiscussionConsultationPath)) {
-        throw ("Discussion consultation receipt not found: {0}" -f $DiscussionConsultationPath)
-    }
-    Get-Content -LiteralPath $DiscussionConsultationPath -Raw -Encoding UTF8 | ConvertFrom-Json
-} else {
-    $null
-}
-if ($discussionConsultation) {
-    $discussionFreezeGate = Assert-VibeSpecialistConsultationFreezeGate `
-        -Receipt $discussionConsultation `
-        -Policy $runtime.specialist_consultation_policy `
-        -FreezeTarget 'requirement_doc'
-    if ($discussionConsultation.PSObject.Properties.Name -contains 'freeze_gate') {
-        $discussionConsultation.freeze_gate = $discussionFreezeGate
-    } else {
-        $discussionConsultation | Add-Member -NotePropertyName freeze_gate -NotePropertyValue $discussionFreezeGate
-    }
-}
 $stageLifecycleDisclosure = New-VibeSpecialistLifecycleDisclosureProjection `
-    -RuntimeInputPacket $runtimeInputPacket `
-    -DiscussionConsultationReceipt $discussionConsultation
+    -RuntimeInputPacket $runtimeInputPacket
 $lines = @(
     "# $($intentContract.title)",
     '',
@@ -829,54 +807,9 @@ if ($runtimeInputPacket) {
     }
 }
 
-if ($discussionConsultation -and [bool]$discussionConsultation.enabled) {
-    $lines += @(
-        '',
-        '## Specialist Consultation',
-        'These are specialists resolved for discussion-time handling under governed `vibe` before this requirement doc was frozen. Depending on policy, they may be consulted live or routed for direct current-session loading.'
-    )
-    foreach ($disclosure in @($discussionConsultation.user_disclosures)) {
-        $lines += @(
-            ('- Consulted Skill: {0}' -f [string]$disclosure.skill_id),
-            ('  Why now: {0}' -f [string]$disclosure.why_now),
-            ('  Loaded from: {0}' -f [string]$disclosure.native_skill_entrypoint)
-        )
-        $consultedUnit = $null
-        foreach ($candidate in @($discussionConsultation.consulted_units)) {
-            if ([string]$candidate.skill_id -eq [string]$disclosure.skill_id) {
-                $consultedUnit = $candidate
-                break
-            }
-        }
-        if ($consultedUnit) {
-            $lines += @(
-                ('  Consultation status: {0}' -f [string]$consultedUnit.status),
-                ('  Summary: {0}' -f [string]$consultedUnit.summary)
-            )
-            foreach ($note in @($consultedUnit.adoption_notes)) {
-                $lines += ('  Adopted into requirement: {0}' -f [string]$note)
-            }
-        }
-    }
-    if (@($discussionConsultation.deferred_to_execution).Count -gt 0) {
-        $lines += @(
-            '',
-            'Deferred specialist follow-up stayed separate from execution truth and remains advisory until execution-time dispatch.'
-        )
-        foreach ($item in @($discussionConsultation.deferred_to_execution)) {
-            $lines += ('- Deferred to execution: {0} ({1})' -f [string]$item.skill_id, [string]$item.reason)
-        }
-    }
-    if (@($discussionConsultation.degraded).Count -gt 0) {
-        foreach ($item in @($discussionConsultation.degraded)) {
-            $lines += ('- Consultation degraded: {0} ({1})' -f [string]$item.skill_id, [string]$item.result_reason)
-        }
-    }
-}
-
 $lifecycleLines = Get-VibeSpecialistLifecycleDisclosureMarkdownLines `
     -LifecycleDisclosure $stageLifecycleDisclosure `
-    -IncludeLayerIds @('discussion_routing', 'discussion_consultation')
+    -IncludeLayerIds @('discussion_routing')
 if (@($lifecycleLines).Count -gt 0) {
     $lines += @('', @($lifecycleLines))
 }
@@ -941,9 +874,6 @@ $receipt = [pscustomobject]@{
     code_task_tdd_decision = $codeTaskTddDecision
     skill_usage_path = if ($skillUsage) { Get-VibeSkillUsagePath -SessionRoot $sessionRoot } else { $null }
     skill_usage = $skillUsage
-    discussion_consultation_path = if ($discussionConsultation) { $DiscussionConsultationPath } else { $null }
-    discussion_consultation_count = if ($discussionConsultation) { @($discussionConsultation.consulted_units).Count } else { 0 }
-    discussion_consultation_user_disclosure_count = if ($discussionConsultation) { @($discussionConsultation.user_disclosures).Count } else { 0 }
     memory_context_path = if ($memoryContextPack) { $MemoryContextPath } else { $null }
     memory_context_item_count = if ($memoryContextPack) { @($memoryContextPack.items).Count } else { 0 }
     memory_context_estimated_tokens = if ($memoryContextPack) { [int]$memoryContextPack.estimated_tokens } else { 0 }

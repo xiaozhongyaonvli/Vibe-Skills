@@ -5,8 +5,6 @@ param(
     [string]$RequirementDocPath = '',
     [string]$RuntimeInputPacketPath = '',
     [string]$PlanMemoryContextPath = '',
-    [string]$DiscussionConsultationPath = '',
-    [string]$PlanningConsultationPath = '',
     [string]$ArtifactRoot = '',
     [AllowEmptyString()] [string]$GovernanceScope = '',
     [AllowEmptyString()] [string]$RootRunId = '',
@@ -24,7 +22,6 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'VibeSkillUsage.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeSkillRouting.Common.ps1')
 . (Join-Path $PSScriptRoot 'VibeExecution.Common.ps1')
-. (Join-Path $PSScriptRoot 'VibeConsultation.Common.ps1')
 . (Join-Path $PSScriptRoot '..\common\AntiProxyGoalDrift.ps1')
 
 function Get-VibeSelectedCapsuleList {
@@ -203,48 +200,8 @@ $planMemoryContext = if (-not [string]::IsNullOrWhiteSpace($PlanMemoryContextPat
 } else {
     $null
 }
-$planningConsultation = if (-not [string]::IsNullOrWhiteSpace($PlanningConsultationPath)) {
-    if (-not (Test-Path -LiteralPath $PlanningConsultationPath)) {
-        throw ("Planning consultation receipt not found: {0}" -f $PlanningConsultationPath)
-    }
-    Get-Content -LiteralPath $PlanningConsultationPath -Raw -Encoding UTF8 | ConvertFrom-Json
-} else {
-    $null
-}
-$discussionConsultation = if (-not [string]::IsNullOrWhiteSpace($DiscussionConsultationPath)) {
-    if (-not (Test-Path -LiteralPath $DiscussionConsultationPath)) {
-        throw ("Discussion consultation receipt not found: {0}" -f $DiscussionConsultationPath)
-    }
-    Get-Content -LiteralPath $DiscussionConsultationPath -Raw -Encoding UTF8 | ConvertFrom-Json
-} else {
-    $null
-}
-if ($discussionConsultation) {
-    $discussionFreezeGate = Assert-VibeSpecialistConsultationFreezeGate `
-        -Receipt $discussionConsultation `
-        -Policy $runtime.specialist_consultation_policy `
-        -FreezeTarget 'execution_plan'
-    if ($discussionConsultation.PSObject.Properties.Name -contains 'freeze_gate') {
-        $discussionConsultation.freeze_gate = $discussionFreezeGate
-    } else {
-        $discussionConsultation | Add-Member -NotePropertyName freeze_gate -NotePropertyValue $discussionFreezeGate
-    }
-}
-if ($planningConsultation) {
-    $planningFreezeGate = Assert-VibeSpecialistConsultationFreezeGate `
-        -Receipt $planningConsultation `
-        -Policy $runtime.specialist_consultation_policy `
-        -FreezeTarget 'execution_plan'
-    if ($planningConsultation.PSObject.Properties.Name -contains 'freeze_gate') {
-        $planningConsultation.freeze_gate = $planningFreezeGate
-    } else {
-        $planningConsultation | Add-Member -NotePropertyName freeze_gate -NotePropertyValue $planningFreezeGate
-    }
-}
 $stageLifecycleDisclosure = New-VibeSpecialistLifecycleDisclosureProjection `
-    -RuntimeInputPacket $runtimeInputPacket `
-    -DiscussionConsultationReceipt $discussionConsultation `
-    -PlanningConsultationReceipt $planningConsultation
+    -RuntimeInputPacket $runtimeInputPacket
 $selectedSkillRouting = @(Get-VibeSkillRoutingSelected -RuntimeInputPacket $runtimeInputPacket)
 $approvedDispatch = @(Convert-VibeSkillRoutingSelectedToDispatch -RuntimeInputPacket $runtimeInputPacket)
 $localSuggestions = @()
@@ -522,57 +479,7 @@ if (@($localSuggestions).Count -gt 0) {
         ('Local specialist suggestion count: {0}. These suggestions remain audit-only until a host decision adopts them; do not ask the user to delete or manually prune them from the plan.' -f @($localSuggestions).Count)
     )
 }
-if ($planningConsultation -and [bool]$planningConsultation.enabled) {
-    $lines += @(
-        '',
-        '## Specialist Consultation',
-        'These are specialists resolved for plan-time handling under governed `vibe` before this execution plan was frozen. Depending on policy, they may be consulted live or routed for direct current-session loading.'
-    )
-    foreach ($disclosure in @($planningConsultation.user_disclosures)) {
-        $lines += @(
-            ('- Consulted Skill: {0}' -f [string]$disclosure.skill_id),
-            ('  Why now: {0}' -f [string]$disclosure.why_now),
-            ('  Loaded from: {0}' -f [string]$disclosure.native_skill_entrypoint)
-        )
-        $consultedUnit = $null
-        foreach ($candidate in @($planningConsultation.consulted_units)) {
-            if ([string]$candidate.skill_id -eq [string]$disclosure.skill_id) {
-                $consultedUnit = $candidate
-                break
-            }
-        }
-        if ($consultedUnit) {
-            $lines += @(
-                ('  Consultation status: {0}' -f [string]$consultedUnit.status),
-                ('  Summary: {0}' -f [string]$consultedUnit.summary)
-            )
-            foreach ($note in @($consultedUnit.adoption_notes)) {
-                $lines += ('  Adopted into plan: {0}' -f [string]$note)
-            }
-        }
-    }
-    if (@($planningConsultation.deferred_to_execution).Count -gt 0) {
-        $lines += @(
-            '',
-            'Deferred specialist follow-up stayed separate from execution dispatch and remains advisory until execution-time approval.'
-        )
-        foreach ($item in @($planningConsultation.deferred_to_execution)) {
-            $lines += ('- Deferred to execution: {0} ({1})' -f [string]$item.skill_id, [string]$item.reason)
-        }
-    }
-    if (@($planningConsultation.degraded).Count -gt 0) {
-        foreach ($item in @($planningConsultation.degraded)) {
-            $lines += ('- Consultation degraded: {0} ({1})' -f [string]$item.skill_id, [string]$item.result_reason)
-        }
-    }
-}
 $currentLifecycleLayerIds = @('discussion_routing')
-if ($discussionConsultation) {
-    $currentLifecycleLayerIds += 'discussion_consultation'
-}
-if ($planningConsultation) {
-    $currentLifecycleLayerIds += 'planning_consultation'
-}
 $lifecycleLines = Get-VibeSpecialistLifecycleDisclosureMarkdownLines `
     -LifecycleDisclosure $stageLifecycleDisclosure `
     -IncludeLayerIds @($currentLifecycleLayerIds)
@@ -686,9 +593,6 @@ $receipt = [pscustomobject]@{
     runtime_input_packet_path = $runtimeInputPath
     skill_usage_path = if ($skillUsage) { Get-VibeSkillUsagePath -SessionRoot $sessionRoot } else { $null }
     skill_usage = $skillUsage
-    planning_consultation_path = if ($planningConsultation) { $PlanningConsultationPath } else { $null }
-    planning_consultation_count = if ($planningConsultation) { @($planningConsultation.consulted_units).Count } else { 0 }
-    planning_consultation_user_disclosure_count = if ($planningConsultation) { @($planningConsultation.user_disclosures).Count } else { 0 }
     plan_memory_context_path = $PlanMemoryContextPath
     plan_memory_disclosure_level = if ($planMemoryContext -and $planMemoryContext.PSObject.Properties.Name -contains 'disclosure_level') { [string]$planMemoryContext.disclosure_level } else { $null }
     plan_memory_capsule_count = @($selectedPlanMemoryCapsules).Count
