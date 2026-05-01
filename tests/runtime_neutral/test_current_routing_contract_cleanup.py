@@ -220,11 +220,11 @@ class CurrentRoutingContractCleanupTests(unittest.TestCase):
             "`used`",
             "`unused`",
             "`evidence`",
-            "`legacy compatibility`",
+            "`retired old-format fields`",
         ]:
             self.assertIn(required, text)
 
-        active_section = text.split("## Legacy Compatibility Boundary", 1)[0]
+        active_section = text.split("## Retired Old-Format Fields", 1)[0]
         for forbidden in [
             "route owner",
             "primary skill",
