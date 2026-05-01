@@ -1,5 +1,7 @@
 # Execution Internal Vocabulary Cleanup Implementation Plan
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove the remaining execution-internal `specialist_dispatch` vocabulary from current execution artifacts, current tests, and routing terminology gates while preserving the six governed stages and the current `skill_candidates -> skill_routing.selected -> skill_usage.used / skill_usage.unused` model.

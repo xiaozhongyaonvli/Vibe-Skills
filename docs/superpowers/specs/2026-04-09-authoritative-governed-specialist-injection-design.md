@@ -1,5 +1,7 @@
 # Authoritative Governed Specialist Injection Design
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Summary
 Define a host-generic specialist injection model for `vibe` so that router-selected specialist skills participate as real governed specialists even when they are not host-visible top-level skills.
 

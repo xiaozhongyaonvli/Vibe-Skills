@@ -1,5 +1,7 @@
 # Authoritative Governed Specialist Injection Implementation Plan
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make routed specialist skills participate as real governed specialists by injecting authoritative skill path information into root and specialist execution surfaces, and by failing or degrading name-only specialist execution that lacks that proof.

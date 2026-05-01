@@ -1,5 +1,7 @@
 # Vibe Specialist Decision And Repo-Asset Fallback Requirement
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Summary
 
 Add a first-class `specialist_decision` contract so governed `vibe` always records whether specialist execution was approved, stayed advisory, or required an explicit no-match resolution, including traceable repo-asset fallback when no dedicated specialist exists.

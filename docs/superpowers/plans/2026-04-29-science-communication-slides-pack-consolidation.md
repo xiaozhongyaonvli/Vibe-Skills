@@ -1,5 +1,7 @@
 # Science Communication Slides Pack Consolidation Implementation Plan
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Shrink `science-communication-slides` into a focused scientific-presentation pack that owns slide decks, slides-as-code, explicit PPTX posters, and explicit infographics while removing Mermaid, MarkItDown, document dispatcher, and general image-generation noise.

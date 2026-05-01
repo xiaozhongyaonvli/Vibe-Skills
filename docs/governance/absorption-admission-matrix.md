@@ -1,5 +1,7 @@
 # External Resource Admission Matrix
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Scope
 
 这份矩阵记录 15 个 upstream 项目如何进入 VCO，而不制造第二控制面、第二 canonical truth-source、第二默认执行 owner，或重复的 prompt / memory / execution surface。

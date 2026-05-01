@@ -1,5 +1,7 @@
 # ML Skills Pruning Audit Implementation Plan
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 先做一套不删文件的 ML skills 审计工具，找出重复、很薄、模板化的通用 ML skills，并在删除前产出清楚的证据清单。

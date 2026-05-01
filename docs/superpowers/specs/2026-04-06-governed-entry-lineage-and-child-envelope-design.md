@@ -1,5 +1,7 @@
 # Governed Entry Lineage And Child Envelope Design
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Summary
 Strengthen governance only inside the official `vibe` governed entry and the child lanes it derives. The design does not attempt host-level sandboxing, OS-level interception, or prevention of direct manual script execution. Instead, it makes the governed path materially harder to bypass by adding runtime-validated lineage, a root-authored child delegation envelope, and a strict split between canonical truth surfaces and child-local receipts.
 

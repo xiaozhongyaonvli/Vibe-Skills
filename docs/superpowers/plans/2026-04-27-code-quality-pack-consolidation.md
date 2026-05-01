@@ -1,5 +1,7 @@
 # Code-Quality Pack Consolidation Implementation Plan
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 收敛 `code-quality` pack，删除确认安全的闲置薄包装，并修正 CodeRabbit feedback、completion evidence、AI code cleanup 三个已知误路由。

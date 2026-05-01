@@ -1,5 +1,7 @@
 # Canonical Vibe Runtime Entry Hardening Design
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Goal
 
 Make explicit `$vibe` and `/vibe` entry resolve to the canonical `vibe` runtime instead of degrading to "read `SKILL.md` and simulate the workflow in prose".

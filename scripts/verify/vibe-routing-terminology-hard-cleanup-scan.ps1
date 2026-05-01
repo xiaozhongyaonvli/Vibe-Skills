@@ -166,8 +166,10 @@ foreach ($relative in @($historicalDocFiles.Keys | Sort-Object)) {
 
     $hasRetiredTerm = $false
     foreach ($lineText in @($lines)) {
+        $lineString = [string]$lineText
         foreach ($pattern in @($config.retired_terms)) {
-            if ([string]$lineText -and [string]$lineText.IndexOf([string]$pattern, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+            $patternString = [string]$pattern
+            if (-not [string]::IsNullOrWhiteSpace($lineString) -and $lineString.IndexOf($patternString, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
                 $hasRetiredTerm = $true
                 break
             }

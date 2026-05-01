@@ -1,5 +1,7 @@
 # Bio-Science High-Prune Consolidation - 2026-04-30
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Scope
 
 This pass applies a high-strength simplification to `bio-science` after the earlier boundary-hardening and second-pass database consolidation work.

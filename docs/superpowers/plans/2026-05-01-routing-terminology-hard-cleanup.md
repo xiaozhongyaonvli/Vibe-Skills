@@ -1,5 +1,7 @@
 # Routing Terminology Hard Cleanup Implementation Plan
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove retired routing terminology from current docs, tests, scan gates, and packet contracts while preserving the current six-stage runtime and the `skill_candidates -> skill_routing.selected -> skill_usage.used / skill_usage.unused` model.

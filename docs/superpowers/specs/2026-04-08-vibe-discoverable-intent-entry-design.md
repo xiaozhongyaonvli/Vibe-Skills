@@ -1,5 +1,7 @@
 # Vibe Discoverable Intent Entry Design
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Summary
 Define a discoverable intent-entry layer for `vibe` so users can select guided shortcuts from native host skill menus without introducing a second runtime, a second router, or a `stage x grade` alias explosion.
 

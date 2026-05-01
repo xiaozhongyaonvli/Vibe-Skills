@@ -1,5 +1,7 @@
 # Historical Routing Document Compression Design
 
+> Historical / Retired Note: This document discusses retired or cleanup-context routing terminology. The current routing model is `skill_candidates -> skill_routing.selected -> selected_skill_execution -> skill_usage`; old terms here are historical only and are not current runtime states.
+
 ## Summary
 
 Compress and quarantine historical routing terminology so current Vibe-Skills
