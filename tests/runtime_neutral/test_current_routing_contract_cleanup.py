@@ -142,7 +142,7 @@ class CurrentRoutingContractCleanupTests(unittest.TestCase):
             self.assertIn("## Skill Usage", requirement_doc)
             self.assertIn("## Binary Skill Usage Plan", execution_plan)
 
-    def test_runtime_packet_keeps_legacy_fields_boxed_under_legacy_skill_routing(self) -> None:
+    def test_runtime_packet_does_not_emit_old_routing_compatibility_fields(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             payload = run_runtime(CURRENT_TASK, Path(tempdir))
             packet_path = Path(payload["summary"]["artifacts"]["runtime_input_packet"])
@@ -150,13 +150,10 @@ class CurrentRoutingContractCleanupTests(unittest.TestCase):
 
             self.assertIn("skill_routing", packet)
             self.assertIn("skill_usage", packet)
-            self.assertIn("legacy_skill_routing", packet)
+            self.assertNotIn("legacy_skill_routing", packet)
             self.assertNotIn("specialist_recommendations", packet)
             self.assertNotIn("specialist_dispatch", packet)
             self.assertNotIn("stage_assistant_hints", packet)
-            self.assertIn("specialist_recommendations", packet["legacy_skill_routing"])
-            self.assertIn("specialist_dispatch", packet["legacy_skill_routing"])
-            self.assertIn("stage_assistant_hints", packet["legacy_skill_routing"])
 
     def test_legacy_consultation_projection_is_explicitly_legacy(self) -> None:
         shell = resolve_powershell()

@@ -2069,11 +2069,6 @@ function New-VibeRuntimeInputPacketProjection {
                 rejected = @()
             }
         }
-        legacy_skill_routing = [pscustomobject]@{
-            specialist_recommendations = @($SpecialistRecommendations)
-            stage_assistant_hints = @($StageAssistantHints)
-            specialist_dispatch = $specialistDispatchProjection
-        }
         skill_usage = if ($null -ne $SkillUsage) {
             $SkillUsage
         } else {

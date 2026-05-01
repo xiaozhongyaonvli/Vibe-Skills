@@ -112,7 +112,7 @@ class SimplifiedSkillRoutingContractTests(unittest.TestCase):
 
         self.assertEqual(["new-authority"], as_list(payload["selected_skill_ids"]))
 
-    def test_selected_skill_ids_fall_back_to_legacy_only_when_skill_routing_is_absent(self) -> None:
+    def test_selected_skill_ids_ignore_old_dispatch_when_skill_routing_is_absent(self) -> None:
         payload = run_ps_json(
             "& { "
             f". {ps_quote(str(RUNTIME_COMMON))}; "
@@ -125,23 +125,7 @@ class SimplifiedSkillRoutingContractTests(unittest.TestCase):
             "}"
         )
 
-        self.assertEqual(["legacy-skill"], as_list(payload["selected_skill_ids"]))
-
-    def test_stage_assistant_hint_reader_still_reads_old_legacy_container(self) -> None:
-        payload = run_ps_json(
-            "& { "
-            f". {ps_quote(str(RUNTIME_COMMON))}; "
-            "$packet = [pscustomobject]@{ "
-            "legacy_skill_routing = [pscustomobject]@{ "
-            "stage_assistant_hints = @([pscustomobject]@{ skill_id = 'legacy-helper'; reason = 'old packet' }) "
-            "} "
-            "}; "
-            "$hints = Get-VibeRuntimeStageAssistantHints -RuntimeInputPacket $packet; "
-            "[pscustomobject]@{ hint_ids = @($hints | ForEach-Object { $_.skill_id }) } | ConvertTo-Json -Depth 20 "
-            "}"
-        )
-
-        self.assertEqual(["legacy-helper"], as_list(payload["hint_ids"]))
+        self.assertEqual([], as_list(payload["selected_skill_ids"]))
 
     def test_freeze_emits_skill_routing_with_selected_skills(self) -> None:
         shell = resolve_powershell()
@@ -184,7 +168,7 @@ class SimplifiedSkillRoutingContractTests(unittest.TestCase):
             self.assertIn("task_slice", selected)
             self.assertIn("skill_md_path", selected)
 
-    def test_new_freeze_packet_isolates_legacy_specialist_fields(self) -> None:
+    def test_new_freeze_packet_omits_old_routing_compatibility_fields(self) -> None:
         shell = resolve_powershell()
         if shell is None:
             self.skipTest("PowerShell executable not available")
@@ -216,9 +200,8 @@ class SimplifiedSkillRoutingContractTests(unittest.TestCase):
             packet = json.loads(packet_path.read_text(encoding="utf-8"))
 
         self.assertIn("skill_routing", packet)
-        self.assertIn("legacy_skill_routing", packet)
+        self.assertIn("skill_usage", packet)
+        self.assertNotIn("legacy_skill_routing", packet)
         self.assertNotIn("stage_assistant_hints", packet)
         self.assertNotIn("specialist_recommendations", packet)
         self.assertNotIn("specialist_dispatch", packet)
-        self.assertIn("specialist_recommendations", packet["legacy_skill_routing"])
-        self.assertIn("specialist_dispatch", packet["legacy_skill_routing"])

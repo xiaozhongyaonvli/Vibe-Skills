@@ -165,13 +165,6 @@ function Get-VibeSkillRoutingSelected {
         return @($routing.selected)
     }
 
-    if ($null -ne $RuntimeInputPacket -and $RuntimeInputPacket.PSObject.Properties.Name -contains 'specialist_dispatch' -and $null -ne $RuntimeInputPacket.specialist_dispatch) {
-        $dispatch = $RuntimeInputPacket.specialist_dispatch
-        if ($dispatch.PSObject.Properties.Name -contains 'approved_dispatch') {
-            return @($dispatch.approved_dispatch)
-        }
-    }
-
     return @()
 }
 
