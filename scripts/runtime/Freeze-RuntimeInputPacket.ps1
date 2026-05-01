@@ -1145,7 +1145,7 @@ foreach ($hint in @($stageAssistantHints)) {
     }
 }
 
-$hostSpecialistDispatchDecision = Resolve-VibeHostSpecialistDispatchDecision `
+$hostSpecialistDispatchDecision = Resolve-VibeHostSkillExecutionDecision `
     -HostDecision $hostDecision `
     -Recommendations @($specialistRecommendations) `
     -GovernanceScope ([string]$hierarchyState.governance_scope) `

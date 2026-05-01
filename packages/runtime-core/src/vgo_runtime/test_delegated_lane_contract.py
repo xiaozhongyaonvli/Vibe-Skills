@@ -782,7 +782,7 @@ class BridgeFailureLayeringTests(unittest.TestCase):
                                 }
                             ]
                         },
-                        "host_specialist_dispatch_decision": {
+                        "host_skill_execution_decision": {
                             "protocol_version": "v1",
                             "derived_by": "host",
                             "selection_mode": "curated_only",
@@ -876,7 +876,7 @@ class BridgeFailureLayeringTests(unittest.TestCase):
                 "deferred_skill_ids": ["scikit-learn"],
                 "rejected_skill_ids": [],
             },
-            captured["host_decision"]["specialist_dispatch_decision"],
+            captured["host_decision"]["skill_execution_decision"],
         )
 
     def test_canonical_entry_reads_shared_policy_file_override(self):

@@ -690,10 +690,10 @@ def evaluate_delivery_acceptance(repo_root: Path, session_root: Path) -> dict[st
                 "Specialist user disclosure was recorded without any effective approved dispatch."
             )
         elif approved_dispatch_skill_ids:
-            if specialist_disclosure_scope != "approved_dispatch_only":
+            if specialist_disclosure_scope != "selected_skill_execution_only":
                 specialist_disclosure_state = "failing"
                 specialist_disclosure_notes.append(
-                    "Specialist user disclosure scope did not stay aligned with approved_dispatch_only."
+                    "Specialist user disclosure scope did not stay aligned with selected_skill_execution_only."
                 )
             if specialist_disclosure_timing != "before_execution":
                 specialist_disclosure_state = "failing"

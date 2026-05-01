@@ -660,7 +660,7 @@ function Get-VibeHostSkillExecutionContract {
     }
 }
 
-function Resolve-VibeHostSpecialistDispatchDecision {
+function Resolve-VibeHostSkillExecutionDecision {
     param(
         [AllowNull()] [object]$HostDecision = $null,
         [AllowNull()] [object[]]$Recommendations = @(),
@@ -672,19 +672,19 @@ function Resolve-VibeHostSpecialistDispatchDecision {
     if (-not [bool]$contract.enabled) {
         return $null
     }
-    if ($null -eq $HostDecision -or -not (Test-VibeObjectHasProperty -InputObject $HostDecision -PropertyName 'specialist_dispatch_decision')) {
+    if ($null -eq $HostDecision -or -not (Test-VibeObjectHasProperty -InputObject $HostDecision -PropertyName 'skill_execution_decision')) {
         return $null
     }
 
-    $decision = Get-VibePropertySafe -InputObject $HostDecision -PropertyName 'specialist_dispatch_decision'
+    $decision = Get-VibePropertySafe -InputObject $HostDecision -PropertyName 'skill_execution_decision'
     if ($null -eq $decision) {
         return $null
     }
     if (-not (Test-VibeStructuredObject -InputObject $decision)) {
-        throw 'structured host specialist dispatch decision must be a JSON object'
+        throw 'structured host skill execution decision must be a JSON object'
     }
     if ([string]$contract.scope -eq 'root_only' -and -not [string]::Equals([string]$GovernanceScope, 'root', [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw 'structured host specialist dispatch decision is currently supported only in root governance scope'
+        throw 'structured host skill execution decision is currently supported only in root governance scope'
     }
 
     $selectionMode = if (
@@ -696,7 +696,7 @@ function Resolve-VibeHostSpecialistDispatchDecision {
         [string]$contract.default_selection_mode
     }
     if ($selectionMode -notin @($contract.selection_modes)) {
-        throw ('structured host specialist dispatch decision selection_mode `{0}` is not supported' -f $selectionMode)
+        throw ('structured host skill execution decision selection_mode `{0}` is not supported' -f $selectionMode)
     }
 
     $approvedSkillIds = @(Get-VibeNormalizedStringList -Values $(if (Test-VibeObjectHasProperty -InputObject $decision -PropertyName 'approved_skill_ids') { $decision.approved_skill_ids } else { @() }))
@@ -975,7 +975,7 @@ function Get-VibeExecutionPhaseMarkdownLines {
     return @($lines)
 }
 
-function Get-VibeHostSpecialistDispatchDecisionMarkdownLines {
+function Get-VibeHostSkillExecutionDecisionMarkdownLines {
     param(
         [AllowNull()] [object]$Decision = $null
     )
@@ -985,12 +985,12 @@ function Get-VibeHostSpecialistDispatchDecisionMarkdownLines {
     }
 
     return @(
-        '- Host specialist curation remains bounded to the surfaced recommendation ids from the current governed run.',
-        '- Runtime validation remains authoritative for blocked and degraded specialist outcomes.',
+        '- Host skill execution curation remains bounded to the surfaced recommendation ids from the current governed run.',
+        '- Runtime validation remains authoritative for blocked and degraded skill execution outcomes.',
         ('- Selection mode: {0}' -f [string]$Decision.selection_mode),
         ('- Reconciliation state: {0}' -f $(if ((Test-VibeObjectHasProperty -InputObject $Decision -PropertyName 'reconciliation_state') -and -not [string]::IsNullOrWhiteSpace([string]$Decision.reconciliation_state)) { [string]$Decision.reconciliation_state } else { 'current' })),
         ('- Requires re-curation: {0}' -f $(if (Test-VibeObjectHasProperty -InputObject $Decision -PropertyName 'requires_recuration') { [bool]$Decision.requires_recuration } else { $false })),
-        ('- Approved skill ids: {0}' -f $(if (@($Decision.approved_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.approved_skill_ids)) } else { 'none' })),
+        ('- Selected skill ids: {0}' -f $(if (@($Decision.approved_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.approved_skill_ids)) } else { 'none' })),
         ('- Deferred skill ids: {0}' -f $(if (@($Decision.deferred_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.deferred_skill_ids)) } else { 'none' })),
         ('- Rejected skill ids: {0}' -f $(if (@($Decision.rejected_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.rejected_skill_ids)) } else { 'none' })),
         ('- Dropped stale skill ids: {0}' -f $(if ((Test-VibeObjectHasProperty -InputObject $Decision -PropertyName 'stale_skill_ids') -and @($Decision.stale_skill_ids).Count -gt 0) { [string]::Join(', ', @($Decision.stale_skill_ids)) } else { 'none' }))
@@ -2083,7 +2083,7 @@ function New-VibeRuntimeInputPacketProjection {
         host_decision = if ($null -ne $HostDecision) { $HostDecision } else { $null }
         execution_phase_decomposition = $ExecutionPhaseDecomposition
         code_task_tdd_decision = $CodeTaskTddDecision
-        host_specialist_dispatch_decision = $HostSpecialistDispatchDecision
+        host_skill_execution_decision = $HostSpecialistDispatchDecision
         skill_routing = if ($null -ne $SkillRouting) {
             $SkillRouting
         } else {

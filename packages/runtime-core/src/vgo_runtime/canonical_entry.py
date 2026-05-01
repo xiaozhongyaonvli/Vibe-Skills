@@ -468,12 +468,12 @@ def _inherit_frozen_host_decision_fields_from_bounded_reentry(
             governance_scope = str(hierarchy.get("governance_scope") or "").strip()
     if (
         governance_scope.lower() == "root"
-        and effective_decision.get("specialist_dispatch_decision") is None
+        and effective_decision.get("skill_execution_decision") is None
     ):
-        prior_specialist_dispatch_decision = runtime_packet.get("host_specialist_dispatch_decision")
-        if isinstance(prior_specialist_dispatch_decision, dict):
-            effective_decision["specialist_dispatch_decision"] = copy.deepcopy(
-                prior_specialist_dispatch_decision
+        prior_skill_execution_decision = runtime_packet.get("host_skill_execution_decision")
+        if isinstance(prior_skill_execution_decision, dict):
+            effective_decision["skill_execution_decision"] = copy.deepcopy(
+                prior_skill_execution_decision
             )
 
     return effective_decision

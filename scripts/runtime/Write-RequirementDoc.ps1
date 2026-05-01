@@ -761,21 +761,21 @@ if ($runtimeInputPacket) {
         }
     }
 
-    $hostSpecialistDispatchDecision = if (
-        $runtimeInputPacket.PSObject.Properties.Name -contains 'host_specialist_dispatch_decision' -and
-        $null -ne $runtimeInputPacket.host_specialist_dispatch_decision
+    $hostSkillExecutionDecision = if (
+        $runtimeInputPacket.PSObject.Properties.Name -contains 'host_skill_execution_decision' -and
+        $null -ne $runtimeInputPacket.host_skill_execution_decision
     ) {
-        $runtimeInputPacket.host_specialist_dispatch_decision
+        $runtimeInputPacket.host_skill_execution_decision
     } else {
         $null
     }
-    $hostSpecialistDispatchLines = @(Get-VibeHostSpecialistDispatchDecisionMarkdownLines -Decision $hostSpecialistDispatchDecision)
-    if (@($hostSpecialistDispatchLines).Count -gt 0) {
+    $hostSkillExecutionLines = @(Get-VibeHostSkillExecutionDecisionMarkdownLines -Decision $hostSkillExecutionDecision)
+    if (@($hostSkillExecutionLines).Count -gt 0) {
         $lines += @(
             '',
-            '## Host Specialist Dispatch Decision'
+            '## Host Skill Execution Decision'
         )
-        $lines += @($hostSpecialistDispatchLines)
+        $lines += @($hostSkillExecutionLines)
     }
 
     $selectedSkillRouting = @(Get-VibeSkillRoutingSelected -RuntimeInputPacket $runtimeInputPacket)

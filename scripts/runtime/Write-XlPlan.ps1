@@ -186,12 +186,12 @@ $specialistDecision = if (
 } else {
     $null
 }
-$hostSpecialistDispatchDecision = if (
+$hostSkillExecutionDecision = if (
     $runtimeInputPacket -and
-    $runtimeInputPacket.PSObject.Properties.Name -contains 'host_specialist_dispatch_decision' -and
-    $null -ne $runtimeInputPacket.host_specialist_dispatch_decision
+    $runtimeInputPacket.PSObject.Properties.Name -contains 'host_skill_execution_decision' -and
+    $null -ne $runtimeInputPacket.host_skill_execution_decision
 ) {
-    $runtimeInputPacket.host_specialist_dispatch_decision
+    $runtimeInputPacket.host_skill_execution_decision
 } else {
     $null
 }
@@ -424,12 +424,12 @@ if ($specialistDecision) {
         $lines += ('- Repo-asset fallback assets: {0}' -f [string]::Join(', ', @($specialistDecision.repo_asset_fallback.asset_paths)))
     }
 }
-if ($hostSpecialistDispatchDecision) {
+if ($hostSkillExecutionDecision) {
     $lines += @(
         '',
-        '## Host Specialist Dispatch Decision'
+        '## Host Skill Execution Decision'
     )
-    $lines += @(Get-VibeHostSpecialistDispatchDecisionMarkdownLines -Decision $hostSpecialistDispatchDecision)
+    $lines += @(Get-VibeHostSkillExecutionDecisionMarkdownLines -Decision $hostSkillExecutionDecision)
 }
 if (@($approvedDispatch).Count -gt 0) {
     $lines += @(
@@ -569,7 +569,7 @@ if ($isChildScope) {
         ('- parent_run_id: {0}' -f [string]$hierarchyState.parent_run_id),
         ('- parent_unit_id: {0}' -f [string]$hierarchyState.parent_unit_id),
         '- canonical_write_allowed: false',
-        ('- approved_specialist_dispatch_count: {0}' -f @($approvedDispatch).Count),
+        ('- selected_skill_execution_count: {0}' -f @($approvedDispatch).Count),
         ('- local_specialist_suggestion_count: {0}' -f @($localSuggestions).Count),
         '',
         'Child-governed lanes inherit the frozen root plan and may not create a second canonical execution-plan surface.'

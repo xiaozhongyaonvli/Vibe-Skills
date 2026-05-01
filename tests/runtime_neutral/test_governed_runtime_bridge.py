@@ -409,7 +409,7 @@ class GovernedRuntimeBridgeTests(unittest.TestCase):
             self.assertIn("specialist_decision", summary)
 
             specialist_disclosure = execution_manifest["specialist_user_disclosure"]
-            self.assertEqual("approved_dispatch_only", specialist_disclosure["scope"])
+            self.assertEqual("selected_skill_execution_only", specialist_disclosure["scope"])
             self.assertEqual("before_execution", specialist_disclosure["timing"])
             self.assertEqual("native_skill_entrypoint", specialist_disclosure["path_source"])
             self.assertGreaterEqual(specialist_disclosure["routed_skill_count"], 1)

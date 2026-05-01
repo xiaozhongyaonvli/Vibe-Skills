@@ -326,7 +326,7 @@ class StructuredBoundedReentryContinuationTests(unittest.TestCase):
     def test_specialist_dispatch_accepts_hashtable_host_decision(self) -> None:
         payload = run_common_script(
             "$hostDecision = @{ "
-            "  specialist_dispatch_decision = @{ "
+            "  skill_execution_decision = @{ "
             "    selection_mode = 'curated_only'; "
             "    approved_skill_ids = @('research-lookup'); "
             "    deferred_skill_ids = @('latex-submission-pipeline'); "
@@ -337,7 +337,7 @@ class StructuredBoundedReentryContinuationTests(unittest.TestCase):
             "  @{ skill_id = 'research-lookup' }, "
             "  @{ skill_id = 'latex-submission-pipeline' }"
             "); "
-            "$result = Resolve-VibeHostSpecialistDispatchDecision "
+            "$result = Resolve-VibeHostSkillExecutionDecision "
             "-HostDecision $hostDecision "
             "-Recommendations $recommendations "
             "-GovernanceScope 'root' "
@@ -448,7 +448,7 @@ class StructuredBoundedReentryContinuationTests(unittest.TestCase):
             )
             self.assertEqual("revise_requirement", packet["host_decision"]["decision_action"])
 
-    def test_stale_host_specialist_dispatch_decision_is_safely_shrunk(self) -> None:
+    def test_stale_host_skill_execution_decision_is_safely_shrunk(self) -> None:
         shell = resolve_powershell()
         if shell is None:
             raise unittest.SkipTest("PowerShell executable not available in PATH")
@@ -461,14 +461,14 @@ class StructuredBoundedReentryContinuationTests(unittest.TestCase):
             (
                 "& { "
                 f". {ps_quote(str(REPO_ROOT / 'scripts' / 'runtime' / 'VibeRuntime.Common.ps1'))}; "
-                "$hostDecision = [pscustomobject]@{ specialist_dispatch_decision = [pscustomobject]@{ "
+                "$hostDecision = [pscustomobject]@{ skill_execution_decision = [pscustomobject]@{ "
                 "selection_mode = 'curated_only'; "
                 "approved_skill_ids = @('old-skill'); "
                 "deferred_skill_ids = @(); "
                 "rejected_skill_ids = @() "
                 "} }; "
                 "$recommendations = @([pscustomobject]@{ skill_id = 'new-skill' }); "
-                "$result = Resolve-VibeHostSpecialistDispatchDecision "
+                "$result = Resolve-VibeHostSkillExecutionDecision "
                 "-HostDecision $hostDecision "
                 "-Recommendations $recommendations "
                 "-GovernanceScope 'root' "

@@ -534,7 +534,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -571,7 +571,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -613,7 +613,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -659,7 +659,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -738,7 +738,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-pass",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -806,7 +806,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             execution_status="running",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -861,7 +861,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-sidecar-only",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -909,7 +909,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-entrypoint-normalized",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -967,7 +967,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-posix-drive-entrypoint-normalized",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1025,7 +1025,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-derived-status",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1085,7 +1085,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-degraded",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1149,7 +1149,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
             run_id="pytest-host-specialist-failed",
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1217,7 +1217,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [
@@ -1267,7 +1267,7 @@ class RuntimeDeliveryAcceptanceTests(unittest.TestCase):
         session_root = self._build_session(
             approved_dispatch=approved_dispatch,
             phase_execute_specialist_user_disclosure={
-                "scope": "approved_dispatch_only",
+                "scope": "selected_skill_execution_only",
                 "timing": "before_execution",
                 "path_source": "native_skill_entrypoint",
                 "routed_skills": [

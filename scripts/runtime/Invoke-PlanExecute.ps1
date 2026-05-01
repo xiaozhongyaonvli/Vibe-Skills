@@ -2022,7 +2022,6 @@ $executionManifest = [pscustomobject]@{
         native_usage_required = [bool](@($specialistRecommendations | Where-Object { $_.native_usage_required }).Count -gt 0)
         execution_mode = if (@($approvedDispatch).Count -gt 0) { 'native_bounded_units' } else { [string]$executionTopology.specialist_execution_mode }
         effective_execution_status = $effectiveSpecialistExecutionStatus
-        dispatch_unit_count = [int]$specialistDispatchUnitCount
         skill_execution_unit_count = [int]$specialistDispatchUnitCount
         recommendations = @($specialistRecommendations)
         selected_skill_execution_count = [int]$selectedSkillExecutionCount
